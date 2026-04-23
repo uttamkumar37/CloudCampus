@@ -1,0 +1,2 @@
+-- Reserved for future public-schema extensions.
+-- Kept intentionally minimal to ensure migration ordering for subsequent versions.
