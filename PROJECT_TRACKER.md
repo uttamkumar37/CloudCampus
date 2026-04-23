@@ -144,9 +144,9 @@ PostgreSQL (schema-routed)   ← e.g. greenwood.students, riverside.teachers
 | Read student/teacher | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Mark attendance | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Manage fees | ✅ | ✅ | ❌ | ❌ | ❌ |
-| View fee assignments | ✅ | ✅ | ❌ | ❌ | ✅ |
+| View fee assignments | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Create exam/result | ✅ | ✅ | ✅ | ❌ | ❌ |
-| View exam results | ✅ | ✅ | ✅ | ✅ | ✅ |
+| View exam results | ✅ | ✅ | ✅ | ❌ | ❌ |
 
 ---
 
@@ -259,44 +259,73 @@ PostgreSQL (schema-routed)   ← e.g. greenwood.students, riverside.teachers
 - **Files Modified:** `UserService/Impl/Controller`, `StudentService/Impl/Controller`, `TeacherService/Impl/Controller`
 - **Key Decisions:** `@PageableDefault(size=20)` with sensible sort defaults; response wraps Spring `Page<T>` metadata (page, size, totalElements, totalPages, last)
 
+### Task 18 — Swagger + Postman Artifacts
+- **Implemented:** OpenAPI/Swagger integration, endpoint annotations, Postman collection and environment generation
+- **Files Created:** `SwaggerConfig.java`, `postman/EduTenant.postman_collection.json`, `postman/EduTenant Local.postman_environment.json`
+- **Files Modified:** All module controllers with `@Tag` and `@Operation` metadata
+- **Key Decisions:** Swagger UI at `/swagger-ui.html`; OpenAPI schema at `/v3/api-docs`; Postman login auto-captures JWT token
+
+### Task 19 — Runtime Stabilization Fixes
+- **Implemented:** Startup/runtime fixes discovered during local smoke tests
+- **Files Modified:** `pom.xml`, `JwtServiceImpl.java`, `SecurityConfig.java`, `JwtAuthenticationFilter.java`, `PasswordConfig.java`
+- **Key Decisions:** Added `flyway-postgresql`; hardened JWT key parsing with 32-byte minimum; removed bean-cycle risks with cleaner wiring
+
+### Task 20 — GitHub Deployment Readiness
+- **Implemented:** CI and container publish workflows for GitHub
+- **Files Created:** `.github/workflows/ci.yml`, `.github/workflows/docker-publish.yml`
+- **Files Modified:** `README.md` runbook/deployment sections
+- **Key Decisions:** PR/push CI with PostgreSQL service + Maven verify; Docker image publish to GHCR on `main` and tags
+
+### Task 21 — Security Hardening Phase 1
+- **Implemented:** Immediate IDOR mitigations + fail-fast secret validation
+- **Files Modified:** `ExamController.java`, `FeesController.java`, `application.yml`, `DatabaseUserDetailsService.java`
+- **Key Decisions:** Restricted risky read endpoints to staff roles until ownership model is implemented; removed insecure fallback values for `JWT_SECRET`, `DB_PASSWORD`, `BOOTSTRAP_ADMIN_PASSWORD`; startup now fails fast for missing bootstrap credentials
+
 ---
 
 ## 7. 🚧 Current Task
 
-**Status: ALL PLANNED TASKS COMPLETE ✅**
+**Status: Security Hardening Checkpoint Complete ✅**
 
-The project has reached a fully functional, production-ready state with all core modules implemented, secured, tested, documented, and containerised.
+Current codebase is functionally stable and deployment-ready for internal environments, with Phase 1 security mitigations applied.
+Remaining hardening work is focused on ownership-aware authorization and security response consistency.
 
 ---
 
 ## 8. 🎯 Next Tasks (Auto-Suggested)
 
-### Task 18 — Audit Logging
+### Task 22 — Ownership-Aware Authorization
+- Introduce parent-child and student-user mapping model
+- Re-enable STUDENT/PARENT exam and fees read endpoints only with ownership checks
+- Add service-layer authorization policies for object-level access
+- **Effort:** High
+
+### Task 23 — Security Error Response Consistency
+- Add explicit `AuthenticationEntryPoint` and `AccessDeniedHandler` in `SecurityConfig`
+- Return uniform `ApiResponse` payloads for all 401/403 responses from filter chain
+- **Effort:** Medium
+
+### Task 24 — Audit Logging
 - Add a `created_by_user_id` and `updated_at` field to key entities (student, teacher, exam)
 - Implement Spring Data JPA `@CreatedBy` / `@LastModifiedBy` via `AuditorAware` reading from `SecurityContext`
 - **Effort:** Medium
 
-### Task 19 — Soft Delete
+### Task 25 — Soft Delete
 - Add `deleted_at TIMESTAMP` column to students, teachers, users
 - Override `findById` / `findAll` to filter `WHERE deleted_at IS NULL`
 - Add `DELETE /api/v1/students/{id}` endpoint (sets `deleted_at`, does not hard-delete)
 - **Effort:** Medium
 
-### Task 20 — API Versioning Strategy
+### Task 26 — API Versioning Strategy
 - Document the current `/api/v1/` prefix convention
 - Add a `@ApiVersion` annotation or path-based routing strategy for future `/api/v2/` endpoints
 - **Effort:** Low
 
-### Task 21 — Integration Tests
+### Task 27 — Integration Tests
 - Add `@SpringBootTest` + Testcontainers (PostgreSQL) integration tests for the tenant provisioning flow and fee payment reconciliation end-to-end
 - **Effort:** High
 
-### Task 22 — CI/CD Pipeline
-- Add a GitHub Actions workflow: build → test → Docker build → push to registry
-- Use repository secrets for `JWT_SECRET`, `DB_PASSWORD`, etc.
-- **Effort:** Medium
-
-### Task 23 — Student Self-Registration Flow
+### Task 28 — Student Self-Registration Flow
 - Allow a SCHOOL_ADMIN to generate a one-time invite token for a student
 - Student uses the token to set their password and activate their account
 - **Effort:** High
