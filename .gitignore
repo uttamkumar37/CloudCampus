@@ -5,8 +5,13 @@
 
 # Maven/Java build output
 target/
+backend/target/
 out/
 build/
+
+# Frontend build output
+frontend/node_modules/
+frontend/dist/
 
 # Java artifacts
 *.class

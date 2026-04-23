@@ -6,14 +6,33 @@
 
 ---
 
+## 0. ⚡ Daily Progress Snapshot
+
+**Date:** 2026-04-23
+
+### Completed Today
+- Frontend Task 1 completed: project setup, feature-based folder structure, routing, base dashboard layout.
+- Frontend Task 2 completed: auth module with login API integration, AuthContext, PrivateRoute/PublicRoute.
+- Frontend Task 3 completed: student module with paginated list + create flow, React Query hooks, reusable `DataTable` and form components.
+- Frontend build verified successfully after each task (`npm run build` passed).
+- PROJECT_TRACKER.md updated to include frontend architecture, module status, completed task logs (Tasks 22–24), and revised roadmap.
+
+### In Progress
+- No active coding task currently in progress.
+
+### Next Recommended Action
+- Start frontend Teacher module (list + create), reusing student module patterns and shared UI primitives.
+
+---
+
 ## 1. 📌 Project Overview
 
 | Field | Value |
 |---|---|
 | **Project Name** | CampusCloud |
 | **Description** | A production-grade multi-tenant SaaS school management platform. Each school (tenant) is fully isolated in its own PostgreSQL schema. The system manages students, teachers, academics, attendance, fees, and exams. |
-| **Tech Stack** | Java 17, Spring Boot 3, Spring Security 6, Spring Data JPA, PostgreSQL 16, Flyway, JWT (JJWT), Maven 3, Docker, Docker Compose |
-| **Architecture Style** | Modular Monolith (designed for future extraction to microservices) |
+| **Tech Stack** | Backend: Java 17, Spring Boot 3, Spring Security 6, Spring Data JPA, PostgreSQL 16, Flyway, JWT (JJWT), Maven 3, Docker, Docker Compose. Frontend: React (Vite), TypeScript, Tailwind CSS, React Router, Axios, TanStack Query. |
+| **Architecture Style** | Backend: Modular Monolith (future-ready for microservices). Frontend: Feature-based modular architecture aligned to backend domains. |
 | **Multi-tenancy Strategy** | Schema-per-tenant — each tenant gets a dedicated PostgreSQL schema. Schema is resolved at runtime from the `X-Tenant-ID` request header via a `ThreadLocal` (`TenantContext`). |
 | **Project Root** | `/Users/uttamkumar/uttam-all-data/01_github-projects/CampusCloud` |
 | **Base Package** | `com.campuscloud` |
@@ -61,6 +80,47 @@ Repository (Spring Data JPA) ← executes SQL in the correct tenant schema
     │
     ▼
 PostgreSQL (schema-routed)   ← e.g. greenwood.students, riverside.teachers
+```
+
+### Frontend Architecture (EduTenant UI)
+
+```
+frontend/src/
+├── app/                    App shell, router, global providers
+├── api/                    Axios client + endpoint constants
+├── components/
+│   ├── layout/             Dashboard layout and page shell
+│   └── ui/                 Reusable UI primitives (PageHeader, DataTable, FormInput, FormSelect)
+├── features/
+│   ├── auth/               Auth context, login page, route guards, auth API/hooks/types
+│   ├── student/            Student list/create pages, forms, API/hooks/types
+│   ├── teacher/            Scaffolded feature module
+│   └── academic/           Scaffolded feature module
+├── types/                  Shared API/pagination contracts
+└── utils/                  Shared storage/token utilities
+```
+
+### Frontend Request Flow
+
+```
+Route (React Router)
+    │
+    ▼
+PrivateRoute/PublicRoute guards
+    │
+    ▼
+Feature hook (TanStack Query)
+    │
+    ▼
+Feature API function
+    │
+    ▼
+Axios client interceptors
+    ├── Authorization: Bearer <JWT>
+    └── X-Tenant-ID: <tenant schema>
+    │
+    ▼
+Spring Boot /api/v1 endpoints
 ```
 
 ### Tenant Isolation Mechanism
@@ -167,6 +227,17 @@ PostgreSQL (schema-routed)   ← e.g. greenwood.students, riverside.teachers
 | `docker` | ✅ COMPLETED | Container support | Multi-stage Dockerfile, docker-compose.yml, .env.example, .gitignore |
 | `config` | ✅ COMPLETED | Application configuration | SecurityConfig, application.yml (all secrets via env vars), Flyway V1+V2 migrations |
 | `tests` | ✅ COMPLETED | Unit test suite | 33 tests across UserServiceImpl, FeesServiceImpl, ExamServiceImpl (Mockito, no Spring context) |
+
+### Frontend Module Status
+
+| Module | Status | Description | Completed Features |
+|---|---|---|---|
+| `frontend-app` | ✅ COMPLETED | App shell and routing foundation | `app/App.tsx`, `app/routes.tsx`, `app/providers.tsx`, route map for `/login`, `/dashboard`, `/students`, `/teachers`, `/academic` |
+| `frontend-api` | ✅ COMPLETED | Shared API infrastructure | Axios client with interceptors, endpoint constants, shared `ApiResponse` and pagination types, local storage token/tenant utility |
+| `frontend-auth` | ✅ COMPLETED | Authentication and route protection | Login page + API integration, AuthContext/AuthProvider, `PrivateRoute`, `PublicRoute`, JWT + tenant persistence in localStorage |
+| `frontend-student` | ✅ COMPLETED | Student list/create feature | Backend-aligned DTOs, paginated student fetch, create student mutation, reusable student form, reusable data table, page-level loading/error/pagination states |
+| `frontend-teacher` | 🟡 SCAFFOLDED | Teacher feature module | Folder structure, types, API stub, page scaffold |
+| `frontend-academic` | 🟡 SCAFFOLDED | Academic feature module | Folder structure, types, API stub, page scaffold |
 
 ---
 
@@ -281,51 +352,84 @@ PostgreSQL (schema-routed)   ← e.g. greenwood.students, riverside.teachers
 - **Files Modified:** `ExamController.java`, `FeesController.java`, `application.yml`, `DatabaseUserDetailsService.java`
 - **Key Decisions:** Restricted risky read endpoints to staff roles until ownership model is implemented; removed insecure fallback values for `JWT_SECRET`, `DB_PASSWORD`, `BOOTSTRAP_ADMIN_PASSWORD`; startup now fails fast for missing bootstrap credentials
 
+### Task 22 — Frontend Foundation (Task 1)
+- **Implemented:** React TypeScript app architecture with feature-based folder structure aligned to backend domains
+- **Files Created/Modified:** `frontend/src/app/*`, `frontend/src/api/*`, `frontend/src/components/layout/*`, `frontend/src/components/ui/PageHeader.tsx`, feature scaffolds under `frontend/src/features/*`, `frontend/src/main.tsx`, `frontend/src/index.css`, `frontend/vite.config.ts`, `frontend/package.json`
+- **Key Decisions:** Router-first shell, QueryClient provider setup, Tailwind integration via `@tailwindcss/vite`, dashboard layout as base private app container
+
+### Task 23 — Frontend Auth Module (Task 2)
+- **Implemented:** End-to-end login flow with JWT + tenant persistence, auth context, and route protection
+- **Files Created/Modified:** `frontend/src/features/auth/components/AuthProvider.tsx`, `frontend/src/features/auth/components/PrivateRoute.tsx`, `frontend/src/features/auth/components/PublicRoute.tsx`, `frontend/src/features/auth/hooks/useAuth.ts`, `frontend/src/features/auth/pages/LoginPage.tsx`, `frontend/src/app/routes.tsx`, `frontend/src/app/providers.tsx`
+- **Key Decisions:** All non-login routes guarded by `PrivateRoute`; authenticated users are redirected away from `/login`; tenant ID collected at sign-in and propagated via axios interceptor
+
+### Task 24 — Frontend Student Module (Task 3)
+- **Implemented:** Student list + create flow with backend-contract alignment and reusable UI primitives
+- **Files Created/Modified:** `frontend/src/features/student/*`, `frontend/src/components/ui/DataTable.tsx`, `frontend/src/components/ui/FormInput.tsx`, `frontend/src/components/ui/FormSelect.tsx`, `frontend/src/types/pagination.ts`
+- **Key Decisions:** DTO fields aligned to backend (`admissionNo`, `dateOfBirth`, `gender`, `email`, `phone`), paginated list uses `ApiResponse<PageResponse<Student>>`, create mutation invalidates student queries, page has explicit loading/error/pagination states
+
 ---
 
 ## 7. 🚧 Current Task
 
-**Status: Security Hardening Checkpoint Complete ✅**
+**Status: Backend Stable + Frontend Core Implemented ✅**
 
-Current codebase is functionally stable and deployment-ready for internal environments, with Phase 1 security mitigations applied.
-Remaining hardening work is focused on ownership-aware authorization and security response consistency.
+Backend is production-stable with security hardening checkpoint complete.
+Frontend now has completed foundation + auth + student module and is ready for teacher/academic feature implementation.
 
 ---
 
 ## 8. 🎯 Next Tasks (Auto-Suggested)
 
-### Task 22 — Ownership-Aware Authorization
+### Task 25 — Frontend Teacher Module
+- Implement teacher list + create flow mirroring student architecture
+- Align DTO/API contracts with backend `teacher` module
+- Reuse existing table/form components for consistency
+- **Effort:** Medium
+
+### Task 26 — Frontend Academic Module
+- Implement classes/subjects/sections list + create flows
+- Add tabs/segmented views under `/academic` for each sub-resource
+- Keep feature API layer separated from page components
+- **Effort:** Medium
+
+### Task 27 — Frontend UX Hardening
+- Add global query/mutation error handling strategy and toast notifications
+- Add optimistic UX improvements (button pending states, empty-state guidance)
+- Add minimal form validation layer (client-side required checks + shape guards)
+- **Effort:** Medium
+
+### Task 28 — Ownership-Aware Authorization (Backend)
 - Introduce parent-child and student-user mapping model
 - Re-enable STUDENT/PARENT exam and fees read endpoints only with ownership checks
 - Add service-layer authorization policies for object-level access
 - **Effort:** High
 
-### Task 23 — Security Error Response Consistency
+### Task 29 — Security Error Response Consistency
 - Add explicit `AuthenticationEntryPoint` and `AccessDeniedHandler` in `SecurityConfig`
 - Return uniform `ApiResponse` payloads for all 401/403 responses from filter chain
 - **Effort:** Medium
 
-### Task 24 — Audit Logging
+### Task 30 — Audit Logging
 - Add a `created_by_user_id` and `updated_at` field to key entities (student, teacher, exam)
 - Implement Spring Data JPA `@CreatedBy` / `@LastModifiedBy` via `AuditorAware` reading from `SecurityContext`
 - **Effort:** Medium
 
-### Task 25 — Soft Delete
+### Task 31 — Soft Delete
 - Add `deleted_at TIMESTAMP` column to students, teachers, users
 - Override `findById` / `findAll` to filter `WHERE deleted_at IS NULL`
 - Add `DELETE /api/v1/students/{id}` endpoint (sets `deleted_at`, does not hard-delete)
 - **Effort:** Medium
 
-### Task 26 — API Versioning Strategy
+### Task 32 — API Versioning Strategy
 - Document the current `/api/v1/` prefix convention
 - Add a `@ApiVersion` annotation or path-based routing strategy for future `/api/v2/` endpoints
 - **Effort:** Low
 
-### Task 27 — Integration Tests
+### Task 33 — Integration Tests
 - Add `@SpringBootTest` + Testcontainers (PostgreSQL) integration tests for the tenant provisioning flow and fee payment reconciliation end-to-end
 - **Effort:** High
 
-### Task 28 — Student Self-Registration Flow
+### Task 34 — Student Self-Registration Flow
 - Allow a SCHOOL_ADMIN to generate a one-time invite token for a student
 - Student uses the token to set their password and activate their account
 - **Effort:** High

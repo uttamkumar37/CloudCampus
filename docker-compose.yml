@@ -16,11 +16,11 @@ services:
       timeout: 5s
       retries: 10
 
-  app:
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: campuscloud-app
+    container_name: campuscloud-backend
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,6 +36,19 @@ services:
       BOOTSTRAP_ADMIN_ROLE: ${BOOTSTRAP_ADMIN_ROLE:-SUPER_ADMIN}
     ports:
       - "${SERVER_PORT:-8080}:${SERVER_PORT:-8080}"
+    restart: unless-stopped
+
+  frontend:
+    image: node:22-alpine
+    container_name: campuscloud-frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:
