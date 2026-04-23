@@ -43,7 +43,7 @@ public class ExamController {
     }
 
     @GetMapping("/classes/{classId}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT')")
+        @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
     @Operation(summary = "Get exams by class", parameters = {
             @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
@@ -65,7 +65,7 @@ public class ExamController {
     }
 
     @GetMapping("/{examId}/results")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT')")
+        @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
     @Operation(summary = "Get exam results by exam id", parameters = {
             @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)

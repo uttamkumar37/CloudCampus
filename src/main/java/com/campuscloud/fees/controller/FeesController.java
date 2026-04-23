@@ -58,7 +58,7 @@ public class FeesController {
     }
 
     @GetMapping("/students/{studentId}/assignments")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'PARENT')")
+        @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
     @Operation(summary = "Get fee assignments by student", parameters = {
             @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)

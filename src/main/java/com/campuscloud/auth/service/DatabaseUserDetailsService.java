@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Locale;
@@ -37,7 +38,23 @@ public class DatabaseUserDetailsService implements UserDetailsService {
 
     @PostConstruct
     void initBootstrapCredentials() {
+        validateBootstrapCredentials();
         this.encodedBootstrapPassword = passwordEncoder.encode(bootstrapPassword);
+    }
+
+    private void validateBootstrapCredentials() {
+        if (!StringUtils.hasText(bootstrapUsername)) {
+            throw new IllegalStateException("BOOTSTRAP_ADMIN_USERNAME is required");
+        }
+        if (!StringUtils.hasText(bootstrapPassword)) {
+            throw new IllegalStateException("BOOTSTRAP_ADMIN_PASSWORD is required");
+        }
+        if (bootstrapPassword.length() < 8) {
+            throw new IllegalStateException("BOOTSTRAP_ADMIN_PASSWORD must be at least 8 characters");
+        }
+        if (!StringUtils.hasText(bootstrapRole)) {
+            throw new IllegalStateException("BOOTSTRAP_ADMIN_ROLE is required");
+        }
     }
 
     @Override
