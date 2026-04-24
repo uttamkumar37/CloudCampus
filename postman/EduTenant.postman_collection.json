@@ -805,6 +805,75 @@
           }
         }
       ]
+    },
+    {
+      "name": "Bulk Upload",
+      "item": [
+        {
+          "name": "Download Sample Workbook",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/bulk/sample",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bulk",
+                "sample"
+              ]
+            },
+            "description": "Download the sample Excel workbook with STUDENTS, TEACHERS, CLASSES, and SECTIONS sheets."
+          }
+        },
+        {
+          "name": "Upload Bulk Workbook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{bulkUploadFilePath}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bulk/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "bulk",
+                "upload"
+              ]
+            },
+            "description": "Upload a completed bulk onboarding workbook. SCHOOL_ADMIN only."
+          }
+        }
+      ]
     }
   ]
 }

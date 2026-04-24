@@ -8,6 +8,10 @@ export const ENDPOINTS = {
     tenantSummary: '/dashboard/tenant-summary',
     superAdminSummary: '/dashboard/super-admin-summary',
   },
+  bulk: {
+    upload: '/bulk/upload',
+    sample: '/bulk/sample',
+  },
   tenants: {
     base: '/tenants',
   },

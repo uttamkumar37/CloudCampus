@@ -8,6 +8,7 @@ const navigation = [
   { to: '/students', label: 'Students', roles: ['SCHOOL_ADMIN', 'TEACHER'] },
   { to: '/teachers', label: 'Teachers', roles: ['SCHOOL_ADMIN', 'TEACHER'] },
   { to: '/academic', label: 'Academic', roles: ['SCHOOL_ADMIN', 'TEACHER'] },
+  { to: '/bulk-upload', label: 'Bulk Upload', roles: ['SCHOOL_ADMIN'] },
 ]
 
 function navClassName(isActive: boolean) {

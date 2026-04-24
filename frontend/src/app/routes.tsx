@@ -9,6 +9,7 @@ import { LoginPage } from '../features/auth/pages/LoginPage'
 import { AcademicPage } from '../features/academic/pages/AcademicPage'
 import { StudentsPage } from '../features/student/pages/StudentsPage'
 import { TeachersPage } from '../features/teacher/pages/TeachersPage'
+import { BulkUploadPage } from '../features/bulk-upload/pages/BulkUploadPage'
 import { SuperAdminDashboardPage } from '../features/super-admin/pages/SuperAdminDashboardPage'
 import { SuperAdminLoginPage } from '../features/super-admin/pages/SuperAdminLoginPage'
 import { TenantsPage } from '../features/super-admin/pages/TenantsPage'
@@ -74,6 +75,14 @@ export const router = createBrowserRouter([
         element: (
           <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
             <AcademicPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'bulk-upload',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <BulkUploadPage />
           </PrivateRoute>
         ),
       },

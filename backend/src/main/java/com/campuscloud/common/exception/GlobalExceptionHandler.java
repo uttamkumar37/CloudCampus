@@ -1,5 +1,6 @@
 package com.campuscloud.common.exception;
 
+import com.campuscloud.bulk.exception.BulkUploadValidationException;
 import com.campuscloud.common.api.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<String>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ApiResponse<>(false, ex.getMessage(), null, Instant.now()));
+    }
+
+    @ExceptionHandler(BulkUploadValidationException.class)
+    public ResponseEntity<ApiResponse<String>> handleBulkUploadValidation(BulkUploadValidationException ex) {
         return ResponseEntity.badRequest()
                 .body(new ApiResponse<>(false, ex.getMessage(), null, Instant.now()));
     }
