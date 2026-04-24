@@ -1,9 +1,6 @@
-name: Publish Docker Image
+name: Legacy Docker Publish
 
 on:
-  push:
-    branches: ["main"]
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
