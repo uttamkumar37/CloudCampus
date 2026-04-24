@@ -1,6 +1,7 @@
 package com.campuscloud.auth.dto;
 
 import java.util.Set;
+import java.util.UUID;
 
 public record LoginResponse(
         String accessToken,
@@ -8,6 +9,8 @@ public record LoginResponse(
         long expiresIn,
         String username,
         String role,
-        Set<String> roles
+        Set<String> roles,
+        UUID userId,
+        String tenantId
 ) {
 }

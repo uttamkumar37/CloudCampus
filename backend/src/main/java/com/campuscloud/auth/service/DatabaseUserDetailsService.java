@@ -1,5 +1,6 @@
 package com.campuscloud.auth.service;
 
+import com.campuscloud.auth.security.CampusUserDetails;
 import com.campuscloud.tenant.service.TenantContext;
 import com.campuscloud.user.entity.UserAccount;
 import com.campuscloud.user.repository.UserAccountRepository;
@@ -7,7 +8,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -62,11 +62,16 @@ public class DatabaseUserDetailsService implements UserDetailsService {
         String normalizedUsername = username.trim().toLowerCase(Locale.ROOT);
 
         if (bootstrapUsername.equalsIgnoreCase(normalizedUsername)) {
-            return User.builder()
-                    .username(bootstrapUsername)
-                    .password(encodedBootstrapPassword)
-                    .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + bootstrapRole)))
-                    .build();
+            return new CampusUserDetails(
+                    null,
+                    bootstrapUsername,
+                    encodedBootstrapPassword,
+                    null,
+                    "Platform Super Admin",
+                    TenantContext.DEFAULT_SCHEMA,
+                    List.of(new SimpleGrantedAuthority("ROLE_" + bootstrapRole)),
+                    true
+            );
         }
 
         if (TenantContext.DEFAULT_SCHEMA.equals(TenantContext.getTenant())) {
@@ -76,10 +81,16 @@ public class DatabaseUserDetailsService implements UserDetailsService {
         UserAccount user = userAccountRepository.findByUsernameAndActiveTrue(normalizedUsername)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        return User.builder()
-                .username(user.getUsername())
-                .password(user.getPasswordHash())
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
-                .build();
+        String schema = TenantContext.getTenant();
+        return new CampusUserDetails(
+                user.getId(),
+                user.getUsername(),
+                user.getPasswordHash(),
+                user.getEmail(),
+                user.getFullName(),
+                schema,
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
+                user.isActive()
+        );
     }
 }

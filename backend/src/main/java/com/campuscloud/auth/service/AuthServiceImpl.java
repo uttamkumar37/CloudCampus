@@ -2,10 +2,17 @@ package com.campuscloud.auth.service;
 
 import com.campuscloud.auth.dto.LoginRequest;
 import com.campuscloud.auth.dto.LoginResponse;
+import com.campuscloud.auth.dto.UserProfileResponse;
+import com.campuscloud.auth.security.CampusUserDetails;
+import com.campuscloud.tenant.service.TenantContext;
+import com.campuscloud.user.entity.UserAccount;
+import com.campuscloud.user.entity.UserRole;
+import com.campuscloud.user.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +26,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final UserAccountRepository userAccountRepository;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -27,6 +35,10 @@ public class AuthServiceImpl implements AuthService {
         );
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        if (!(userDetails instanceof CampusUserDetails campus)) {
+            throw new IllegalStateException("Unexpected principal type");
+        }
+
         String primaryRole = userDetails.getAuthorities().stream()
                 .map(authority -> authority.getAuthority().replace("ROLE_", ""))
                 .sorted(Comparator.naturalOrder())
@@ -40,13 +52,49 @@ public class AuthServiceImpl implements AuthService {
                 .map(a -> a.getAuthority())
                 .collect(Collectors.toSet());
 
+        String tenantId = "SUPER_ADMIN".equals(primaryRole)
+                ? TenantContext.DEFAULT_SCHEMA
+                : TenantContext.getTenant();
+
         return new LoginResponse(
                 token,
                 "Bearer",
                 jwtService.getAccessTokenExpirationSeconds(),
                 userDetails.getUsername(),
                 primaryRole,
-                roles
+                roles,
+                campus.getUserId(),
+                tenantId
+        );
+    }
+
+    @Override
+    public UserProfileResponse currentProfile() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof CampusUserDetails campus)) {
+            throw new IllegalStateException("Not authenticated");
+        }
+        if (campus.getUserId() == null) {
+            return new UserProfileResponse(
+                    null,
+                    campus.getUsername(),
+                    campus.getEmail() != null ? campus.getEmail() : "",
+                    campus.getFullName(),
+                    UserRole.SUPER_ADMIN,
+                    true,
+                    campus.getTenantSchema()
+            );
+        }
+        UserAccount user = userAccountRepository.findById(campus.getUserId())
+                .orElseThrow(() -> new IllegalStateException("User record not found"));
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getRole(),
+                user.isActive(),
+                TenantContext.getTenant()
         );
     }
 

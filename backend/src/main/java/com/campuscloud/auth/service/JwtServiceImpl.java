@@ -1,5 +1,7 @@
 package com.campuscloud.auth.service;
 
+import com.campuscloud.auth.security.CampusUserDetails;
+import com.campuscloud.tenant.service.TenantContext;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -36,6 +38,15 @@ public class JwtServiceImpl implements JwtService {
     public String generateAccessToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", userDetails.getAuthorities().stream().map(a -> a.getAuthority()).toList());
+        claims.put("tenant", TenantContext.getTenant());
+        if (userDetails instanceof CampusUserDetails campus) {
+            if (campus.getUserId() != null) {
+                claims.put("user_id", campus.getUserId().toString());
+            }
+            if (campus.getTenantSchema() != null) {
+                claims.put("tenant_schema", campus.getTenantSchema());
+            }
+        }
 
         Instant now = Instant.now();
         Instant expiry = now.plusMillis(accessTokenExpirationMs);
@@ -52,6 +63,18 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    @Override
+    public String extractUserId(String token) {
+        Object v = extractClaim(token, c -> c.get("user_id"));
+        return v != null ? v.toString() : null;
+    }
+
+    @Override
+    public String extractTenantSchema(String token) {
+        Object v = extractClaim(token, c -> c.get("tenant_schema"));
+        return v != null ? v.toString() : null;
     }
 
     @Override

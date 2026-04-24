@@ -18,4 +18,6 @@ export interface LoginResponse {
   username: string
   role: UserRole
   roles: string[]
+  tenantId?: string
+  userId?: string
 }

@@ -1,3 +1,23 @@
+export interface CreateUserRequest {
+  fullName: string
+  username: string
+  email: string
+  password: string
+  role: string
+  tenantId?: string
+  rollNumber?: string
+  employeeNumber?: string
+  classId?: string
+}
+
+export interface User {
+  id: number
+  username: string
+  email: string
+  role: string
+  tenantId?: string
+}
+
 export interface Tenant {
   id: string
   tenantId: string

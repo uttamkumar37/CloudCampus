@@ -2,6 +2,7 @@ const ACCESS_TOKEN_KEY = 'edutenant.accessToken'
 const TENANT_ID_KEY = 'edutenant.tenantId'
 const USERNAME_KEY = 'edutenant.username'
 const ROLE_KEY = 'edutenant.role'
+const USER_ID_KEY = 'edutenant.userId'
 
 export const storage = {
   getAccessToken: (): string | null => localStorage.getItem(ACCESS_TOKEN_KEY),
@@ -32,10 +33,18 @@ export const storage = {
   removeRole: (): void => {
     localStorage.removeItem(ROLE_KEY)
   },
+  getUserId: (): string | null => localStorage.getItem(USER_ID_KEY),
+  setUserId: (userId: string): void => {
+    localStorage.setItem(USER_ID_KEY, userId)
+  },
+  removeUserId: (): void => {
+    localStorage.removeItem(USER_ID_KEY)
+  },
   clearAuth: (): void => {
     localStorage.removeItem(ACCESS_TOKEN_KEY)
     localStorage.removeItem(TENANT_ID_KEY)
     localStorage.removeItem(USERNAME_KEY)
     localStorage.removeItem(ROLE_KEY)
+    localStorage.removeItem(USER_ID_KEY)
   },
 }

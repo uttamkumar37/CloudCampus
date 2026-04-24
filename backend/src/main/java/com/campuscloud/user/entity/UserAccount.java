@@ -41,6 +41,12 @@ public class UserAccount {
     @Column(name = "role", nullable = false, length = 40)
     private UserRole role;
 
+    /**
+     * Business / schema identifier for this account (redundant with schema-per-tenant but supports exports and future row-level models).
+     */
+    @Column(name = "tenant_id", length = 80)
+    private String tenantId;
+
     @Column(name = "active", nullable = false)
     private boolean active = true;
 

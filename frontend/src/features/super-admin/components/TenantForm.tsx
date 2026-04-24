@@ -37,7 +37,7 @@ export function TenantForm({ onSubmit, isSubmitting }: TenantFormProps) {
         <span className="text-sm font-semibold text-slate-700">Tenant ID</span>
         <input
           value={values.tenantId}
-          onChange={(event) => setValues((current) => ({ ...current, tenantId: event.target.value }))}
+          onChange={(event) => setValues((current: CreateTenantRequest) => ({ ...current, tenantId: event.target.value }))}
           className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900"
           placeholder="sunrise-academy"
           required
@@ -47,7 +47,7 @@ export function TenantForm({ onSubmit, isSubmitting }: TenantFormProps) {
         <span className="text-sm font-semibold text-slate-700">School Name</span>
         <input
           value={values.schoolName}
-          onChange={(event) => setValues((current) => ({ ...current, schoolName: event.target.value }))}
+          onChange={(event) => setValues((current: CreateTenantRequest) => ({ ...current, schoolName: event.target.value }))}
           className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900"
           placeholder="Sunrise Academy"
           required
@@ -57,7 +57,7 @@ export function TenantForm({ onSubmit, isSubmitting }: TenantFormProps) {
         <span className="text-sm font-semibold text-slate-700">Schema Name</span>
         <input
           value={values.schemaName}
-          onChange={(event) => setValues((current) => ({ ...current, schemaName: event.target.value }))}
+          onChange={(event) => setValues((current: CreateTenantRequest) => ({ ...current, schemaName: event.target.value }))}
           className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900"
           placeholder="sunrise"
         />
@@ -66,7 +66,7 @@ export function TenantForm({ onSubmit, isSubmitting }: TenantFormProps) {
         <span className="text-sm font-semibold text-slate-700">Logo URL</span>
         <input
           value={values.logoUrl}
-          onChange={(event) => setValues((current) => ({ ...current, logoUrl: event.target.value }))}
+          onChange={(event) => setValues((current: CreateTenantRequest) => ({ ...current, logoUrl: event.target.value }))}
           className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900"
           placeholder="https://example.com/logo.png"
         />
@@ -78,14 +78,14 @@ export function TenantForm({ onSubmit, isSubmitting }: TenantFormProps) {
             type="color"
             value={values.primaryColor}
             onChange={(event) =>
-              setValues((current) => ({ ...current, primaryColor: event.target.value }))
+              setValues((current: CreateTenantRequest) => ({ ...current, primaryColor: event.target.value }))
             }
             className="h-12 w-16 rounded-xl border border-slate-300 bg-white p-1"
           />
           <input
             value={values.primaryColor}
             onChange={(event) =>
-              setValues((current) => ({ ...current, primaryColor: event.target.value }))
+              setValues((current: CreateTenantRequest) => ({ ...current, primaryColor: event.target.value }))
             }
             className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900"
             placeholder="#10b981"

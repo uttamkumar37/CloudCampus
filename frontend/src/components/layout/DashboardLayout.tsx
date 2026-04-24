@@ -9,6 +9,13 @@ const navigation = [
   { to: '/teachers', label: 'Teachers', roles: ['SCHOOL_ADMIN', 'TEACHER'] },
   { to: '/academic', label: 'Academic', roles: ['SCHOOL_ADMIN', 'TEACHER'] },
   { to: '/bulk-upload', label: 'Bulk Upload', roles: ['SCHOOL_ADMIN'] },
+  { to: '/homework', label: 'Homework', roles: ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+  { to: '/timetable', label: 'Timetable', roles: ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+  { to: '/attendance', label: 'Attendance', roles: ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+  { to: '/fees', label: 'Fees', roles: ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+  { to: '/marks', label: 'Marks', roles: ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+  { to: '/my-children', label: 'My children', roles: ['PARENT'] },
+  { to: '/profile', label: 'Profile', roles: ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
 ]
 
 function navClassName(isActive: boolean) {

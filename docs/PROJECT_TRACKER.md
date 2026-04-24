@@ -332,7 +332,7 @@ Spring Boot /api/v1 endpoints
 
 ### Task 18 — Swagger + Postman Artifacts
 - **Implemented:** OpenAPI/Swagger integration, endpoint annotations, Postman collection and environment generation
-- **Files Created:** `SwaggerConfig.java`, `postman/EduTenant.postman_collection.json`, `postman/EduTenant Local.postman_environment.json`
+- **Files Created:** `SwaggerConfig.java`, `postman/CampusCloud.postman_collection.json`, `postman/CampusCloud.local.postman_environment.json`
 - **Files Modified:** All module controllers with `@Tag` and `@Operation` metadata
 - **Key Decisions:** Swagger UI at `/swagger-ui.html`; OpenAPI schema at `/v3/api-docs`; Postman login auto-captures JWT token
 

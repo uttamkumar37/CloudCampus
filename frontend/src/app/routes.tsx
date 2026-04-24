@@ -13,6 +13,14 @@ import { BulkUploadPage } from '../features/bulk-upload/pages/BulkUploadPage'
 import { SuperAdminDashboardPage } from '../features/super-admin/pages/SuperAdminDashboardPage'
 import { SuperAdminLoginPage } from '../features/super-admin/pages/SuperAdminLoginPage'
 import { TenantsPage } from '../features/super-admin/pages/TenantsPage'
+import { UsersPage } from '../features/super-admin/pages/UsersPage'
+import { ProfilePage } from '../features/profile/pages/ProfilePage'
+import { HomeworkPage } from '../features/homework/pages/HomeworkPage'
+import { TimetablePage } from '../features/timetable/pages/TimetablePage'
+import { MyChildrenPage } from '../features/parent/pages/MyChildrenPage'
+import { AttendanceHubPage } from '../features/attendance/pages/AttendanceHubPage'
+import { FeesHubPage } from '../features/fees/pages/FeesHubPage'
+import { MarksHubPage } from '../features/marks/pages/MarksHubPage'
 
 export const router = createBrowserRouter([
   {
@@ -34,6 +42,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/super-admin/dashboard" replace /> },
       { path: 'dashboard', element: <SuperAdminDashboardPage /> },
       { path: 'tenants', element: <TenantsPage /> },
+      { path: 'users', element: <UsersPage /> },
     ],
   },
   {
@@ -83,6 +92,62 @@ export const router = createBrowserRouter([
         element: (
           <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
             <BulkUploadPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+            <ProfilePage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'homework',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+            <HomeworkPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'timetable',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+            <TimetablePage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'attendance',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+            <AttendanceHubPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'fees',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+            <FeesHubPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'marks',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+            <MarksHubPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'my-children',
+        element: (
+          <PrivateRoute allowedRoles={['PARENT']}>
+            <MyChildrenPage />
           </PrivateRoute>
         ),
       },

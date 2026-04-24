@@ -27,6 +27,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     storage.setAccessToken(response.accessToken)
     storage.setUsername(response.username)
     storage.setRole(response.role)
+    if (response.userId) {
+      storage.setUserId(response.userId)
+    } else {
+      storage.removeUserId()
+    }
 
     if (nextTenantId) {
       storage.setTenantId(nextTenantId)

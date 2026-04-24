@@ -1,26 +1,37 @@
 {
   "info": {
-    "name": "EduTenant API",
-    "description": "Postman collection generated from existing CampusCloud controllers.",
+    "name": "CampusCloud API",
+    "description": "REST API for CampusCloud (v1: baseUrl = http://localhost:8080/api/v1). Import `CampusCloud.local.postman_environment.json` and select it before running requests. See docs/API_REFERENCE.md.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "apiRoot",
+      "value": "http://localhost:8080"
+    }
+  ],
   "item": [
     {
       "name": "Auth",
       "item": [
         {
-          "name": "Super Admin Login",
+          "name": "Super Admin Login (v1)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const response = pm.response.json();",
-                  "pm.environment.set(\"token\", response.data.accessToken);",
-                  "pm.environment.set(\"username\", response.data.username);",
-                  "pm.environment.set(\"role\", response.data.role);",
-                  "pm.environment.set(\"tenantHeader\", pm.environment.get(\"publicTenantId\"));"
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.accessToken) {",
+                  "  pm.environment.set(\"token\", json.data.accessToken);",
+                  "}",
+                  "if (json && json.data && json.data.username) pm.environment.set(\"username\", json.data.username);",
+                  "if (json && json.data && json.data.role) pm.environment.set(\"role\", json.data.role);"
                 ]
               }
             }
@@ -35,7 +46,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"superadmin\",\n  \"password\": \"admin@123\"\n}"
+              "raw": "{\n  \"username\": \"superadmin\",\n  \"password\": \"CHANGEME\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -47,22 +58,23 @@
                 "login"
               ]
             },
-            "description": "Super admin login without tenant schema."
+            "description": "No X-Tenant-ID required for bootstrap super admin. Password from BOOTSTRAP_ADMIN_PASSWORD."
           }
         },
         {
-          "name": "Tenant User Login",
+          "name": "Tenant User Login (v1)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const response = pm.response.json();",
-                  "pm.environment.set(\"token\", response.data.accessToken);",
-                  "pm.environment.set(\"username\", response.data.username);",
-                  "pm.environment.set(\"role\", response.data.role);",
-                  "pm.environment.set(\"tenantHeader\", pm.environment.get(\"tenantSchema\"));"
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.accessToken) {",
+                  "  pm.environment.set(\"token\", json.data.accessToken);",
+                  "}",
+                  "if (json && json.data && json.data.username) pm.environment.set(\"username\", json.data.username);",
+                  "if (json && json.data && json.data.role) pm.environment.set(\"role\", json.data.role);"
                 ]
               }
             }
@@ -81,7 +93,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"schooladmin\",\n  \"password\": \"StrongPass123\"\n}"
+              "raw": "{\n  \"username\": \"schooladmin\",\n  \"password\": \"CHANGEME\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -93,13 +105,13 @@
                 "login"
               ]
             },
-            "description": "Tenant-scoped login for SCHOOL_ADMIN, TEACHER, STUDENT, or PARENT users."
+            "description": "SCHOOL_ADMIN / TEACHER / etc. Must send X-Tenant-ID = tenant schema name."
           }
         }
       ]
     },
     {
-      "name": "Tenant",
+      "name": "Tenants",
       "item": [
         {
           "name": "Create Tenant",
@@ -121,7 +133,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"tenantId\": \"greenwood-high\",\n  \"schoolName\": \"Greenwood High\",\n  \"schemaName\": \"greenwood\",\n  \"logoUrl\": \"https://example.com/greenwood-logo.png\",\n  \"primaryColor\": \"#10b981\"\n}"
+              "raw": "{\n  \"tenantId\": \"greenwood-high\",\n  \"schoolName\": \"Greenwood High\",\n  \"schemaName\": \"greenwood\",\n  \"logoUrl\": \"https://example.com/logo.png\",\n  \"primaryColor\": \"#10b981\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/tenants",
@@ -132,11 +144,11 @@
                 "tenants"
               ]
             },
-            "description": "Create a new tenant in the public schema registry."
+            "description": "Requires SUPER_ADMIN (typically)."
           }
         },
         {
-          "name": "Get Tenants",
+          "name": "List Tenants",
           "request": {
             "method": "GET",
             "header": [
@@ -161,12 +173,11 @@
               "path": [
                 "tenants"
               ]
-            },
-            "description": "List all tenants. SUPER_ADMIN only."
+            }
           }
         },
         {
-          "name": "Get Tenant By Tenant ID",
+          "name": "Get Tenant by tenantId",
           "request": {
             "method": "GET",
             "header": [
@@ -192,14 +203,13 @@
                 "tenants",
                 "{{targetTenantId}}"
               ]
-            },
-            "description": "TenantController#getTenant"
+            }
           }
         }
       ]
     },
     {
-      "name": "User",
+      "name": "Users",
       "item": [
         {
           "name": "Create User",
@@ -231,12 +241,11 @@
               "path": [
                 "users"
               ]
-            },
-            "description": "UserController#createUser"
+            }
           }
         },
         {
-          "name": "Get Users",
+          "name": "List Users",
           "request": {
             "method": "GET",
             "header": [
@@ -275,14 +284,13 @@
                   "value": "username,asc"
                 }
               ]
-            },
-            "description": "UserController#getUsers"
+            }
           }
         }
       ]
     },
     {
-      "name": "Student",
+      "name": "Students",
       "item": [
         {
           "name": "Create Student",
@@ -304,7 +312,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"admissionNo\": \"ADM-1001\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"dateOfBirth\": \"2010-05-12\",\n  \"gender\": \"MALE\",\n  \"email\": \"john.doe@student.com\",\n  \"phone\": \"9876543210\"\n}"
+              "raw": "{\n  \"admissionNo\": \"ADM-1001\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"dateOfBirth\": \"2010-05-12\",\n  \"gender\": \"MALE\",\n  \"email\": \"john@student.com\",\n  \"phone\": \"9876543210\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/students",
@@ -314,39 +322,7 @@
               "path": [
                 "students"
               ]
-            },
-            "description": "StudentController#createStudent"
-          }
-        },
-        {
-          "name": "Get Student By Id",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-Tenant-ID",
-                "value": "{{tenantSchema}}"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/students/{{studentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "students",
-                "{{studentId}}"
-              ]
-            },
-            "description": "StudentController#getStudentById"
+            }
           }
         },
         {
@@ -389,14 +365,43 @@
                   "value": "lastName,asc"
                 }
               ]
-            },
-            "description": "StudentController#getStudents"
+            }
+          }
+        },
+        {
+          "name": "Get Student by Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/students/{{studentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "{{studentId}}"
+              ]
+            }
           }
         }
       ]
     },
     {
-      "name": "Teacher",
+      "name": "Teachers",
       "item": [
         {
           "name": "Create Teacher",
@@ -418,7 +423,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"employeeNo\": \"EMP-2001\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@school.com\",\n  \"phone\": \"9876543211\",\n  \"hireDate\": \"2022-06-01\"\n}"
+              "raw": "{\n  \"employeeNo\": \"EMP-2001\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane@school.com\",\n  \"phone\": \"9876543211\",\n  \"hireDate\": \"2022-06-01\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/teachers",
@@ -428,39 +433,7 @@
               "path": [
                 "teachers"
               ]
-            },
-            "description": "TeacherController#createTeacher"
-          }
-        },
-        {
-          "name": "Get Teacher By Id",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-Tenant-ID",
-                "value": "{{tenantSchema}}"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/teachers/{{teacherId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "teachers",
-                "{{teacherId}}"
-              ]
-            },
-            "description": "TeacherController#getTeacherById"
+            }
           }
         },
         {
@@ -503,14 +476,43 @@
                   "value": "lastName,asc"
                 }
               ]
-            },
-            "description": "TeacherController#getTeachers"
+            }
+          }
+        },
+        {
+          "name": "Get Teacher by Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/teachers/{{teacherId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "teachers",
+                "{{teacherId}}"
+              ]
+            }
           }
         }
       ]
     },
     {
-      "name": "Academic",
+      "name": "Academics",
       "item": [
         {
           "name": "Create Class",
@@ -543,12 +545,11 @@
                 "academics",
                 "classes"
               ]
-            },
-            "description": "AcademicController#createClass"
+            }
           }
         },
         {
-          "name": "Get Classes",
+          "name": "List Classes",
           "request": {
             "method": "GET",
             "header": [
@@ -574,8 +575,7 @@
                 "academics",
                 "classes"
               ]
-            },
-            "description": "AcademicController#getClasses"
+            }
           }
         },
         {
@@ -609,12 +609,11 @@
                 "academics",
                 "subjects"
               ]
-            },
-            "description": "AcademicController#createSubject"
+            }
           }
         },
         {
-          "name": "Get Subjects",
+          "name": "List Subjects",
           "request": {
             "method": "GET",
             "header": [
@@ -640,8 +639,7 @@
                 "academics",
                 "subjects"
               ]
-            },
-            "description": "AcademicController#getSubjects"
+            }
           }
         },
         {
@@ -664,7 +662,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"A\",\n  \"classId\": \"00000000-0000-0000-0000-000000000001\"\n}"
+              "raw": "{\n  \"name\": \"A\",\n  \"classId\": \"{{classId}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/academics/sections",
@@ -675,12 +673,11 @@
                 "academics",
                 "sections"
               ]
-            },
-            "description": "AcademicController#createSection"
+            }
           }
         },
         {
-          "name": "Get Sections",
+          "name": "List Sections",
           "request": {
             "method": "GET",
             "header": [
@@ -690,7 +687,7 @@
               },
               {
                 "key": "X-Tenant-ID",
-                "value": "{{tenantId}}"
+                "value": "{{tenantSchema}}"
               },
               {
                 "key": "Authorization",
@@ -706,8 +703,7 @@
                 "academics",
                 "sections"
               ]
-            },
-            "description": "AcademicController#getSections"
+            }
           }
         }
       ]
@@ -716,7 +712,7 @@
       "name": "Dashboard",
       "item": [
         {
-          "name": "Get Tenant Dashboard Summary",
+          "name": "Tenant summary",
           "request": {
             "method": "GET",
             "header": [
@@ -742,12 +738,11 @@
                 "dashboard",
                 "tenant-summary"
               ]
-            },
-            "description": "Tenant KPI, chart, quick insight, and recent activity payload."
+            }
           }
         },
         {
-          "name": "Get Tenant Branding",
+          "name": "Tenant branding",
           "request": {
             "method": "GET",
             "header": [
@@ -773,12 +768,11 @@
                 "dashboard",
                 "branding"
               ]
-            },
-            "description": "Current tenant branding resolved from schema."
+            }
           }
         },
         {
-          "name": "Get Super Admin Dashboard Summary",
+          "name": "Super admin summary",
           "request": {
             "method": "GET",
             "header": [
@@ -800,8 +794,7 @@
                 "dashboard",
                 "super-admin-summary"
               ]
-            },
-            "description": "Platform-level tenant stats for SUPER_ADMIN."
+            }
           }
         }
       ]
@@ -810,7 +803,7 @@
       "name": "Bulk Upload",
       "item": [
         {
-          "name": "Download Sample Workbook",
+          "name": "Download sample XLSX",
           "request": {
             "method": "GET",
             "header": [
@@ -832,12 +825,11 @@
                 "bulk",
                 "sample"
               ]
-            },
-            "description": "Download the sample Excel workbook with STUDENTS, TEACHERS, CLASSES, and SECTIONS sheets."
+            }
           }
         },
         {
-          "name": "Upload Bulk Workbook",
+          "name": "Upload workbook",
           "request": {
             "method": "POST",
             "header": [
@@ -856,7 +848,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": "{{bulkUploadFilePath}}"
+                  "src": []
                 }
               ]
             },
@@ -869,8 +861,431 @@
                 "bulk",
                 "upload"
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fees",
+      "item": [
+        {
+          "name": "Create fee assignment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"feeTitle\": \"Annual\",\n  \"amount\": 5000.0,\n  \"dueDate\": \"2026-12-01\"\n}"
             },
-            "description": "Upload a completed bulk onboarding workbook. SCHOOL_ADMIN only."
+            "url": {
+              "raw": "{{baseUrl}}/fees/assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fees",
+                "assignments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Record fee payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"feeAssignmentId\": \"{{feeAssignmentId}}\",\n  \"amountPaid\": 2500.0,\n  \"paymentDate\": \"2026-04-25\",\n  \"paymentMethod\": \"CASH\",\n  \"referenceNo\": \"REF-1\",\n  \"receivedByUserId\": \"00000000-0000-0000-0000-000000000099\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/fees/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fees",
+                "payments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List student fee assignments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fees/students/{{studentId}}/assignments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fees",
+                "students",
+                "{{studentId}}",
+                "assignments"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Exams",
+      "item": [
+        {
+          "name": "Create exam",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Midterm\",\n  \"examDate\": \"2026-05-10\",\n  \"classId\": \"{{classId}}\",\n  \"sectionId\": \"00000000-0000-0000-0000-000000000010\",\n  \"subjectId\": \"00000000-0000-0000-0000-000000000011\",\n  \"maxMarks\": 100.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/exams",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List exams for class",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/exams/classes/{{classId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exams",
+                "classes",
+                "{{classId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create exam result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"examId\": \"{{examId}}\",\n  \"studentId\": \"{{studentId}}\",\n  \"marksObtained\": 85.5,\n  \"grade\": \"A\",\n  \"remarks\": \"\",\n  \"published\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/exams/results",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exams",
+                "results"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List exam results",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/exams/{{examId}}/results",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "exams",
+                "{{examId}}",
+                "results"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance",
+      "item": [
+        {
+          "name": "Create attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": \"{{studentId}}\",\n  \"classId\": \"{{classId}}\",\n  \"sectionId\": \"00000000-0000-0000-0000-000000000010\",\n  \"attendanceDate\": \"2026-04-25\",\n  \"status\": \"PRESENT\",\n  \"remarks\": null,\n  \"markedByUserId\": \"00000000-0000-0000-0000-000000000099\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/attendances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendances?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendances"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get attendance by id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendances/{{attendanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendances",
+                "{{attendanceId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin (path /api — not v1)",
+      "item": [
+        {
+          "name": "Create user (legacy DTO)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user1\",\n  \"email\": \"u1@school.com\",\n  \"password\": \"Password123\",\n  \"role\": \"STUDENT\",\n  \"tenantId\": \"{{tenantSchema}}\"\n}"
+            },
+            "url": {
+              "raw": "{{apiRoot}}/api/admin/users",
+              "host": [
+                "{{apiRoot}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users"
+              ]
+            },
+            "description": "Uses /api/admin not /api/v1. Align frontend or backend if you need /api/v1/admin."
+          }
+        },
+        {
+          "name": "Update user role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenantSchema}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"TEACHER\"\n}"
+            },
+            "url": {
+              "raw": "{{apiRoot}}/api/admin/users/{{userId}}/role",
+              "host": [
+                "{{apiRoot}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{userId}}",
+                "role"
+              ]
+            }
           }
         }
       ]

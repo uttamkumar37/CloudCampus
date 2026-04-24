@@ -3,6 +3,7 @@ export const API_BASE_URL = 'http://localhost:8080/api/v1'
 export const ENDPOINTS = {
   auth: {
     login: '/auth/login',
+    me: '/auth/me',
   },
   dashboard: {
     tenantSummary: '/dashboard/tenant-summary',
@@ -15,6 +16,9 @@ export const ENDPOINTS = {
   tenants: {
     base: '/tenants',
   },
+  users: {
+    base: '/users',
+  },
   students: {
     base: '/students',
   },
@@ -23,5 +27,14 @@ export const ENDPOINTS = {
   },
   academic: {
     base: '/academics',
+  },
+  homework: {
+    base: '/homework',
+  },
+  timetable: {
+    base: '/timetable',
+  },
+  parent: {
+    myChildren: '/parents/me/children',
   },
 } as const

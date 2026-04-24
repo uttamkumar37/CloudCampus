@@ -90,6 +90,7 @@ public class TenantServiceImpl implements TenantService {
                     email VARCHAR(160) NOT NULL UNIQUE,
                     password_hash VARCHAR(200) NOT NULL,
                     role VARCHAR(40) NOT NULL,
+                    tenant_id VARCHAR(80),
                     active BOOLEAN NOT NULL DEFAULT TRUE,
                     created_at TIMESTAMPTZ NOT NULL
                 )
@@ -105,10 +106,11 @@ public class TenantServiceImpl implements TenantService {
                     gender VARCHAR(20) NOT NULL,
                     email VARCHAR(160),
                     phone VARCHAR(30),
+                    user_id UUID REFERENCES "%s".users(id),
                     active BOOLEAN NOT NULL DEFAULT TRUE,
                     created_at TIMESTAMPTZ NOT NULL
                 )
-                """.formatted(schemaName);
+                """.formatted(schemaName, schemaName);
 
         String createTeachersTable = """
                 CREATE TABLE IF NOT EXISTS "%s".teachers (
@@ -119,10 +121,11 @@ public class TenantServiceImpl implements TenantService {
                     email VARCHAR(160) NOT NULL UNIQUE,
                     phone VARCHAR(30),
                     hire_date DATE NOT NULL,
+                    user_id UUID REFERENCES "%s".users(id),
                     active BOOLEAN NOT NULL DEFAULT TRUE,
                     created_at TIMESTAMPTZ NOT NULL
                 )
-                """.formatted(schemaName);
+                """.formatted(schemaName, schemaName);
 
         String createClassesTable = """
                 CREATE TABLE IF NOT EXISTS "%s".classes (
@@ -240,6 +243,48 @@ public class TenantServiceImpl implements TenantService {
         String idxExamResultsExam = "CREATE INDEX IF NOT EXISTS idx_exam_results_exam ON \"" + schemaName + "\".exam_results (exam_id)";
         String idxExamResultsStudent = "CREATE INDEX IF NOT EXISTS idx_exam_results_student ON \"" + schemaName + "\".exam_results (student_id)";
 
+        String createParentStudentsTable = """
+                CREATE TABLE IF NOT EXISTS "%s".parent_students (
+                    id UUID PRIMARY KEY,
+                    parent_user_id UUID NOT NULL REFERENCES "%s".users(id) ON DELETE CASCADE,
+                    student_id UUID NOT NULL REFERENCES "%s".students(id) ON DELETE CASCADE,
+                    created_at TIMESTAMPTZ NOT NULL,
+                    CONSTRAINT uq_parent_student UNIQUE (parent_user_id, student_id)
+                )
+                """.formatted(schemaName, schemaName, schemaName);
+
+        String createHomeworkTable = """
+                CREATE TABLE IF NOT EXISTS "%s".homework_assignments (
+                    id UUID PRIMARY KEY,
+                    title VARCHAR(200) NOT NULL,
+                    instructions TEXT,
+                    class_id UUID NOT NULL REFERENCES "%s".classes(id),
+                    section_id UUID REFERENCES "%s".sections(id),
+                    assigned_by_user_id UUID NOT NULL,
+                    due_date DATE,
+                    created_at TIMESTAMPTZ NOT NULL
+                )
+                """.formatted(schemaName, schemaName, schemaName);
+
+        String createTimetableTable = """
+                CREATE TABLE IF NOT EXISTS "%s".timetable_slots (
+                    id UUID PRIMARY KEY,
+                    class_id UUID NOT NULL REFERENCES "%s".classes(id),
+                    section_id UUID NOT NULL REFERENCES "%s".sections(id),
+                    subject_id UUID NOT NULL REFERENCES "%s".subjects(id),
+                    teacher_id UUID REFERENCES "%s".teachers(id),
+                    day_of_week SMALLINT NOT NULL,
+                    start_time TIME NOT NULL,
+                    end_time TIME NOT NULL,
+                    label VARCHAR(80),
+                    created_at TIMESTAMPTZ NOT NULL
+                )
+                """.formatted(schemaName, schemaName, schemaName, schemaName, schemaName);
+
+        String alterUsersTenantId = "ALTER TABLE \"" + schemaName + "\".users ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(80)";
+        String alterStudentsUserId = "ALTER TABLE \"" + schemaName + "\".students ADD COLUMN IF NOT EXISTS user_id UUID";
+        String alterTeachersUserId = "ALTER TABLE \"" + schemaName + "\".teachers ADD COLUMN IF NOT EXISTS user_id UUID";
+
         jdbcTemplate.execute(createUsersTable);
         jdbcTemplate.execute(createStudentsTable);
         jdbcTemplate.execute(createTeachersTable);
@@ -251,6 +296,12 @@ public class TenantServiceImpl implements TenantService {
         jdbcTemplate.execute(createFeePaymentsTable);
         jdbcTemplate.execute(createExamsTable);
         jdbcTemplate.execute(createExamResultsTable);
+        jdbcTemplate.execute(alterUsersTenantId);
+        jdbcTemplate.execute(alterStudentsUserId);
+        jdbcTemplate.execute(alterTeachersUserId);
+        jdbcTemplate.execute(createParentStudentsTable);
+        jdbcTemplate.execute(createHomeworkTable);
+        jdbcTemplate.execute(createTimetableTable);
         jdbcTemplate.execute(idxUsername);
         jdbcTemplate.execute(idxEmail);
         jdbcTemplate.execute(idxAdmissionNo);

@@ -29,7 +29,10 @@ export function LoginPage() {
         return
       }
 
-      setAuthSession(response.data, formValues.tenantId)
+      // Prefer tenantId returned from backend; fall back to entered tenantId
+      const returnedTenantId = response.data?.tenantId ?? formValues.tenantId
+
+      setAuthSession(response.data, returnedTenantId)
       navigate(response.data.role === 'SUPER_ADMIN' ? '/super-admin/dashboard' : '/dashboard', {
         replace: true,
       })

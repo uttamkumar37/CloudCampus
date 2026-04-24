@@ -8,6 +8,10 @@ public interface JwtService {
 
     String extractUsername(String token);
 
+    String extractUserId(String token);
+
+    String extractTenantSchema(String token);
+
     boolean isTokenValid(String token, UserDetails userDetails);
 
     long getAccessTokenExpirationSeconds();

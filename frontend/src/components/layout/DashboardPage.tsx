@@ -1,4 +1,7 @@
+import { Link } from 'react-router-dom'
+
 import { PageHeader } from '../ui/PageHeader'
+import { useAuth } from '../../features/auth/hooks/useAuth'
 import { ActivityFeed } from '../../features/dashboard/components/ActivityFeed'
 import { DashboardChartCard } from '../../features/dashboard/components/DashboardChartCard'
 import { DashboardKpiCard } from '../../features/dashboard/components/DashboardKpiCard'
@@ -10,6 +13,7 @@ import { useTenantDashboardSummary } from '../../features/dashboard/hooks/useTen
 export function DashboardPage() {
   const summaryQuery = useTenantDashboardSummary()
   const summary = summaryQuery.data?.data
+  const { role } = useAuth()
 
   if (summaryQuery.isLoading) {
     return (
@@ -33,6 +37,37 @@ export function DashboardPage() {
         <PageHeader title="Dashboard" subtitle="Unable to load tenant dashboard data." />
         <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
           Dashboard data could not be loaded. Please verify your tenant session and try again.
+        </div>
+      </section>
+    )
+  }
+
+  if (role === 'STUDENT' || role === 'PARENT') {
+    return (
+      <section className="space-y-8">
+        <PageHeader
+          title={role === 'PARENT' ? 'Family dashboard' : 'Student dashboard'}
+          subtitle="Jump to homework, timetable, fees, and more. Your school branding follows you in the sidebar."
+        />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            { to: '/homework', label: 'Homework', desc: 'Assignments by class' },
+            { to: '/timetable', label: 'Timetable', desc: 'Weekly schedule' },
+            { to: '/attendance', label: 'Attendance', desc: 'Your records' },
+            { to: '/fees', label: 'Fees', desc: 'Balances & payments' },
+            { to: '/marks', label: 'Marks', desc: 'Exams & results' },
+            { to: '/profile', label: 'Profile', desc: 'Account details' },
+            ...(role === 'PARENT' ? [{ to: '/my-children', label: 'My children', desc: 'Linked students' }] : []),
+          ].map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
+            >
+              <p className="text-lg font-semibold text-slate-900">{item.label}</p>
+              <p className="mt-1 text-sm text-slate-500">{item.desc}</p>
+            </Link>
+          ))}
         </div>
       </section>
     )

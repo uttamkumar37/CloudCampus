@@ -4,7 +4,7 @@ interface FormInputProps {
   label: string
   value: string
   onChange: (value: string) => void
-  type?: 'text' | 'email' | 'date'
+  type?: 'text' | 'email' | 'date' | 'password'
   placeholder?: string
   required?: boolean
 }

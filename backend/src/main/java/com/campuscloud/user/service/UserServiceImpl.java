@@ -44,6 +44,7 @@ public class UserServiceImpl implements UserService {
         user.setEmail(normalizedEmail);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(request.role());
+        user.setTenantId(TenantContext.getTenant());
         user.setActive(true);
 
         UserAccount saved = userAccountRepository.save(user);

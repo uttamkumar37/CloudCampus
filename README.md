@@ -15,8 +15,13 @@ CampusCloud/
 │   ├── package.json
 │   └── vite.config.ts
 ├── docs/
+│   ├── API_REFERENCE.md   # REST API (v1) + admin paths
 │   ├── PROJECT_TRACKER.md
+│   ├── TESTING.md
 │   └── ARCHITECTURE.md
+├── postman/
+│   ├── CampusCloud.postman_collection.json
+│   └── CampusCloud.local.postman_environment.json
 ├── scripts/
 │   ├── start-dev.sh
 │   └── build.sh
@@ -69,11 +74,35 @@ Axios request interceptors already send:
 - Authorization: Bearer <token>
 - X-Tenant-ID: <tenant-schema>
 
+## API documentation
+
+- [REST API reference (v1)](docs/API_REFERENCE.md) — paths, auth, and response envelope
+- [Platform blueprint](docs/PLATFORM_BLUEPRINT.md) — unified users, tenant DDL, homework/timetable/parent APIs, roadmap
+- **Postman:** import `postman/CampusCloud.postman_collection.json` and `postman/CampusCloud.local.postman_environment.json`, then set `baseUrl` to `http://localhost:8080/api/v1` and your credentials. Run **Auth → Super Admin** or **Tenant User Login** first to populate `{{token}}`.
+- **Swagger UI (when the backend is running):** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
 ## Run Full Stack With Docker
 
+1. Create a `.env` from `.env.example` and set at least `DB_PASSWORD`, `JWT_SECRET` (32+ characters; e.g. `openssl rand -hex 32`), and `BOOTSTRAP_ADMIN_PASSWORD` (8+ characters).
+
+2. Build and start:
+
 ```bash
-docker compose up --build
+docker compose build
+docker compose up -d
 ```
+
+3. Check services:
+
+| Service  | URL |
+|----------|-----|
+| Frontend (Vite dev) | http://localhost:5173 |
+| Backend API | http://localhost:8080 |
+| OpenAPI docs | http://localhost:8080/swagger-ui.html |
+| PostgreSQL | `localhost:5432` (user/db from `.env`) |
+
+Stop without removing data: `docker compose down`  
+Recreate the database volume (e.g. after changing `DB_PASSWORD`): `docker compose down -v` then `docker compose up -d --build`
 
 Services:
 

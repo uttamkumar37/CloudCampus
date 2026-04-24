@@ -1,7 +1,12 @@
 package com.campuscloud.teacher.entity;
 
+import com.campuscloud.user.entity.UserAccount;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -41,6 +46,10 @@ public class Teacher {
 
     @Column(name = "hire_date", nullable = false)
     private LocalDate hireDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserAccount linkedUser;
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
