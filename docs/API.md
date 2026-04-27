@@ -21,7 +21,10 @@
 13. [Parent APIs](#13-parent-apis)
 14. [Dashboard APIs](#14-dashboard-apis)
 15. [Bulk Upload APIs](#15-bulk-upload-apis)
-16. [Error Reference](#16-error-reference)
+16. [Subscription Plan APIs](#16-subscription-plan-apis)
+17. [Tenant Subscription APIs](#17-tenant-subscription-apis)
+18. [Platform Payment APIs](#18-platform-payment-apis)
+19. [Error Reference](#19-error-reference)
 
 ---
 
@@ -1165,7 +1168,179 @@ X-Tenant-ID: greenwood
 
 ---
 
-## 16. Error Reference
+---
+
+## 16. Subscription Plan APIs
+
+Base path: `/api/v1/plans` | Auth: Bearer token
+
+---
+
+### 16.1 List Active Plans (Public)
+
+```
+GET /api/v1/plans
+```
+
+No authentication required.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "name": "PRO",
+      "price": 7999.00,
+      "billingCycleDays": 30,
+      "maxStudents": 1500,
+      "maxTeachers": 150,
+      "description": "For large schools",
+      "active": true,
+      "features": ["STUDENT_MANAGEMENT", "BULK_UPLOAD", "PARENT_PORTAL"],
+      "createdAt": "2026-04-28T10:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### 16.2 Get Plan by ID
+
+```
+GET /api/v1/plans/{id}
+Authorization: Bearer <token>
+```
+
+---
+
+### 16.3 Create Plan (Super Admin)
+
+```
+POST /api/v1/plans
+Authorization: Bearer <superadmin-token>
+```
+
+**Request:**
+```json
+{
+  "name": "PRO",
+  "price": 7999.00,
+  "billingCycleDays": 30,
+  "maxStudents": 1500,
+  "maxTeachers": 150,
+  "description": "For large schools",
+  "features": ["STUDENT_MANAGEMENT", "TEACHER_MANAGEMENT", "BULK_UPLOAD", "PARENT_PORTAL"]
+}
+```
+
+---
+
+## 17. Tenant Subscription APIs
+
+Base path: `/api/v1/tenants/{tenantId}` | Auth: SUPER_ADMIN Bearer token
+
+---
+
+### 17.1 Subscribe Tenant to Plan
+
+```
+POST /api/v1/tenants/{tenantId}/subscribe
+Authorization: Bearer <superadmin-token>
+```
+
+**Request:**
+```json
+{
+  "planId": "uuid-of-plan",
+  "durationDays": 365
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "tenantId": "greenwood",
+    "plan": { "name": "PRO", ... },
+    "startDate": "2026-04-28",
+    "endDate": "2027-04-28",
+    "status": "ACTIVE",
+    "paymentStatus": "PENDING"
+  }
+}
+```
+
+---
+
+### 17.2 Get Active Subscription
+
+```
+GET /api/v1/tenants/{tenantId}/subscription
+Authorization: Bearer <superadmin-token>
+```
+
+Returns `data: null` if no active subscription exists.
+
+---
+
+### 17.3 Cancel Subscription
+
+```
+DELETE /api/v1/tenants/{tenantId}/subscription
+Authorization: Bearer <superadmin-token>
+```
+
+Sets `status = CANCELLED` on the active subscription.
+
+---
+
+## 18. Platform Payment APIs
+
+Base path: `/api/v1/payments` | Auth: SUPER_ADMIN Bearer token
+
+---
+
+### 18.1 Record Payment
+
+```
+POST /api/v1/payments
+Authorization: Bearer <superadmin-token>
+```
+
+**Request:**
+```json
+{
+  "tenantId": "greenwood",
+  "subscriptionId": "uuid-optional",
+  "amount": 7999.00,
+  "paymentDate": "2026-04-28",
+  "paymentMethod": "BANK_TRANSFER",
+  "referenceNo": "TXN-2026-001",
+  "notes": "Annual PRO plan payment"
+}
+```
+
+When `subscriptionId` is provided, `TenantSubscription.paymentStatus` is automatically updated to `PAID`.
+
+---
+
+### 18.2 Get Payments by Tenant
+
+```
+GET /api/v1/payments/tenant/{tenantId}
+Authorization: Bearer <superadmin-token>
+```
+
+Returns all payments for the tenant in reverse chronological order.
+
+---
+
+## 19. Error Reference
 
 ### 16.1 Standard Error Response
 

@@ -1,6 +1,6 @@
 # CampusCloud — System Architecture
 
-> Version: 1.0 | Last Updated: 2026-04-28 | Based on actual source code
+> Version: 1.0 | Last Updated: 2026-04-28 (subscription system added) | Based on actual source code
 
 ---
 
@@ -144,6 +144,7 @@ backend/src/main/java/com/campuscloud/
 ├── tenant/          tenant registry, schema provisioning, multi-tenancy infra
 ├── timetable/       timetable slots
 ├── user/            user account management
+├── subscription/    subscription plans, tenant subscriptions, platform payments
 └── web/             web utilities
 ```
 
@@ -194,6 +195,33 @@ Paginated response uses `PageResponse<T>`:
 | **L** (Liskov Substitution) | `StudentService` interface allows swappable implementations |
 | **I** (Interface Segregation) | Each service interface is narrow (5–8 methods); no God interfaces |
 | **D** (Dependency Inversion) | Controllers depend on service interfaces, injected via constructor |
+
+### 3.4 Subscription & Billing System
+
+The `com.campuscloud.subscription` module manages SaaS plan gating for tenants. All tables live in the `public` schema.
+
+```
+subscription_plans          ← available SaaS plans (FREE, BASIC, PRO, ENTERPRISE)
+subscription_plan_features  ← features included per plan (join table)
+tenant_subscriptions        ← which plan each tenant is on (with dates and status)
+platform_payments           ← manually recorded payment receipts per tenant
+```
+
+**Key class:** `SubscriptionGuardService.requireFeature(PlanFeature)` — called in service methods to gate feature access.
+
+**Fail-open rule:** If a tenant has no active subscription, all features are permitted (backward compatible for pre-subscription tenants).
+
+**Endpoints:**
+| Method | Path | Role Required |
+|--------|------|---------------|
+| GET | `/api/v1/plans` | Public |
+| POST | `/api/v1/plans` | SUPER_ADMIN |
+| POST | `/api/v1/tenants/{id}/subscribe` | SUPER_ADMIN |
+| GET | `/api/v1/tenants/{id}/subscription` | SUPER_ADMIN |
+| DELETE | `/api/v1/tenants/{id}/subscription` | SUPER_ADMIN |
+| POST | `/api/v1/payments` | SUPER_ADMIN |
+| GET | `/api/v1/payments/tenant/{id}` | SUPER_ADMIN |
+
 
 ---
 

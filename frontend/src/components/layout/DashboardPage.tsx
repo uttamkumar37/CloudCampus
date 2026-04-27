@@ -13,7 +13,7 @@ import { useTenantDashboardSummary } from '../../features/dashboard/hooks/useTen
 export function DashboardPage() {
   const summaryQuery = useTenantDashboardSummary()
   const summary = summaryQuery.data?.data
-  const { role } = useAuth()
+  const { role, username } = useAuth()
 
   if (summaryQuery.isLoading) {
     return (
@@ -42,27 +42,114 @@ export function DashboardPage() {
     )
   }
 
-  if (role === 'STUDENT' || role === 'PARENT') {
+  if (role === 'TEACHER') {
     return (
       <section className="space-y-8">
         <PageHeader
-          title={role === 'PARENT' ? 'Family dashboard' : 'Student dashboard'}
-          subtitle="Jump to homework, timetable, fees, and more. Your school branding follows you in the sidebar."
+          title={`${summary.branding.schoolName} — Teacher Dashboard`}
+          subtitle={`Welcome, ${username ?? 'Teacher'}. Manage your classes, homework, attendance, and marks.`}
+        />
+
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          <DashboardKpiCard
+            title="School Attendance"
+            value={`${summary.attendancePercentage.toFixed(1)}%`}
+            accent={summary.branding.primaryColor}
+            hint="School-wide attendance last 7 days"
+          />
+          <DashboardKpiCard
+            title="Total Students"
+            value={summary.totalStudents.toLocaleString()}
+            accent="#0f172a"
+            hint="Enrolled students in your school"
+          />
+          <DashboardKpiCard
+            title="Total Teachers"
+            value={summary.totalTeachers.toLocaleString()}
+            accent="#2563eb"
+            hint="Faculty currently onboarded"
+          />
+        </div>
+
+        <DashboardChartCard
+          title="Attendance Trend"
+          subtitle="Daily attendance quality over the last 7 days"
+        >
+          <LineTrendChart data={summary.attendanceTrend} strokeColor={summary.branding.primaryColor} />
+        </DashboardChartCard>
+
+        <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_22px_50px_-32px_rgba(15,23,42,0.35)]">
+          <h2 className="text-lg font-semibold text-slate-900 mb-1">Quick Actions</h2>
+          <p className="text-sm text-slate-500 mb-5">Jump into your most common teaching tasks.</p>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+            {[
+              { to: '/attendance', label: 'Mark Attendance', desc: 'Track today\'s class', accent: summary.branding.primaryColor },
+              { to: '/homework', label: 'Homework', desc: 'Assign & review', accent: '#2563eb' },
+              { to: '/marks', label: 'Enter Marks', desc: 'Exam results', accent: '#7c3aed' },
+              { to: '/timetable', label: 'Timetable', desc: 'Your weekly schedule', accent: '#0f172a' },
+            ].map((item) => (
+              <QuickActionCard key={item.to} title={item.label} subtitle={item.desc} to={item.to} accent={item.accent} />
+            ))}
+          </div>
+        </div>
+
+        <ActivityFeed items={summary.recentActivity} />
+      </section>
+    )
+  }
+
+  if (role === 'STUDENT') {
+    return (
+      <section className="space-y-8">
+        <PageHeader
+          title={`${summary.branding.schoolName} — Student Dashboard`}
+          subtitle={`Welcome back, ${username ?? 'Student'}. Here's everything in one place.`}
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { to: '/homework', label: 'Homework', desc: 'Assignments by class' },
-            { to: '/timetable', label: 'Timetable', desc: 'Weekly schedule' },
-            { to: '/attendance', label: 'Attendance', desc: 'Your records' },
-            { to: '/fees', label: 'Fees', desc: 'Balances & payments' },
-            { to: '/marks', label: 'Marks', desc: 'Exams & results' },
-            { to: '/profile', label: 'Profile', desc: 'Account details' },
-            ...(role === 'PARENT' ? [{ to: '/my-children', label: 'My children', desc: 'Linked students' }] : []),
+            { to: '/homework', label: 'Homework', desc: 'Assignments & due dates' },
+            { to: '/timetable', label: 'Timetable', desc: 'Your weekly schedule' },
+            { to: '/attendance', label: 'Attendance', desc: 'Your attendance record' },
+            { to: '/fees', label: 'Fees', desc: 'Balances & payment status' },
+            { to: '/marks', label: 'Marks', desc: 'Exam results & grades' },
+            { to: '/profile', label: 'Profile', desc: 'Your account details' },
           ].map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-emerald-300 hover:shadow-md"
+              className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+              style={{ borderTopColor: summary.branding.primaryColor, borderTopWidth: 3 }}
+            >
+              <p className="text-lg font-semibold text-slate-900">{item.label}</p>
+              <p className="mt-1 text-sm text-slate-500">{item.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  if (role === 'PARENT') {
+    return (
+      <section className="space-y-8">
+        <PageHeader
+          title={`${summary.branding.schoolName} — Parent Dashboard`}
+          subtitle={`Welcome, ${username ?? 'Parent'}. Stay connected with your children's school life.`}
+        />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            { to: '/my-children', label: 'My Children', desc: 'View linked student profiles' },
+            { to: '/homework', label: 'Homework', desc: 'Assignments & due dates' },
+            { to: '/timetable', label: 'Timetable', desc: 'Class schedule' },
+            { to: '/attendance', label: 'Attendance', desc: 'Attendance records' },
+            { to: '/fees', label: 'Fees', desc: 'Pending & paid fees' },
+            { to: '/marks', label: 'Marks', desc: 'Exam results & grades' },
+          ].map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+              style={{ borderTopColor: summary.branding.primaryColor, borderTopWidth: 3 }}
             >
               <p className="text-lg font-semibold text-slate-900">{item.label}</p>
               <p className="mt-1 text-sm text-slate-500">{item.desc}</p>

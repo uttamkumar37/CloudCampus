@@ -8,9 +8,9 @@
 
 | Status | Count |
 |--------|-------|
-| ✅ Completed | 24 |
-| ⚠️ In Progress | 3 |
-| ❌ Pending | 7 |
+| ✅ Completed | 31 |
+| ⚠️ In Progress | 4 |
+| ❌ Pending | 6 |
 
 ---
 
@@ -59,6 +59,10 @@
 | 27 | Dashboard page with KPI cards | Dashboard | `useTenantDashboardSummary` hook |
 | 28 | Student module (list, create, pagination) | Student | Full CRUD UI with DataTable and form |
 | 29 | Super Admin module (tenant list + create, user list) | Super Admin | Separate layout + routes |
+| 30 | Subscription plans backend (entities, repos, DTOs, services, controllers) | Subscription | Flyway V3, 4 enums, 3 entities, 7 endpoints |
+| 31 | Tenant subscription & payment backend | Subscription | Subscribe/cancel/record, SubscriptionGuardService (fail-open) |
+| 32 | Subscription UI (Super Admin) | Frontend/Subscription | SubscriptionPlansPage, TenantSubscriptionPage, subscriptionApi, hooks |
+| 33 | Role-based dashboards (Teacher, Student, Parent) | Frontend/Dashboard | Distinct views per role using existing summary data |
 
 ---
 
@@ -66,8 +70,6 @@
 
 | # | Task | Module | Status |
 |---|------|--------|--------|
-| 30 | Teacher module (frontend) | Frontend/Teacher | API + hooks scaffolded, UI pages incomplete |
-| 31 | Academic module (frontend) | Frontend/Academic | Tabbed page scaffolded, forms incomplete |
 | 32 | Frontend UX hardening | Frontend (all) | Error boundaries, loading states, form validation messages partially done |
 
 ---
@@ -76,13 +78,12 @@
 
 | # | Task | Module | Priority | Description |
 |---|------|--------|----------|-------------|
-| 33 | Attendance, Fees, Marks UI | Frontend | High | Hub pages are stubs — need full form + list implementation |
-| 34 | Homework + Timetable UI | Frontend | High | Read-only views needed for all roles |
-| 35 | Parent portal UI | Frontend | Medium | `MyChildrenPage` is a stub |
-| 36 | Ownership-aware authorization | Backend/Security | High | Students/parents should only access their own data |
-| 37 | Audit logging (created_by, updated_by) | Backend | Medium | JPA auditing with `@CreatedBy`, `@LastModifiedBy` |
-| 38 | Soft delete (`deleted_at` column) | Backend | Medium | Deactivate records without hard delete |
-| 39 | Integration tests (Testcontainers) | Testing | Medium | `@SpringBootTest` + real PostgreSQL container |
+| 38 | Attendance, Fees, Marks UI | Frontend | High | Hub pages are stubs — need full form + list implementation |
+| 39 | Homework + Timetable UI | Frontend | High | Read-only views needed for all roles |
+| 40 | Parent portal UI | Frontend | Medium | `MyChildrenPage` is a stub |
+| 41 | Ownership-aware authorization | Backend/Security | High | Students/parents should only access their own data |
+| 42 | Audit logging (created_by, updated_by) | Backend | Medium | JPA auditing with `@CreatedBy`, `@LastModifiedBy` |
+| 43 | Integration tests (Testcontainers) | Testing | Medium | `@SpringBootTest` + real PostgreSQL container |
 
 ---
 
@@ -104,6 +105,9 @@
 | Parent Portal | ✅ Complete | ❌ Pending |
 | Dashboard | ✅ Complete | ✅ Complete |
 | Bulk Upload | ✅ Complete | ❌ Pending |
+| Subscription Plans | ✅ Complete | ✅ Complete |
+| Tenant Subscriptions | ✅ Complete | ✅ Complete |
+| Platform Payments | ✅ Complete | ✅ Complete |
 
 ---
 

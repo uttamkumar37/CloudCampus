@@ -234,3 +234,28 @@
 - [ ] `bulkApi.ts` — POST upload + GET sample
 
 **Backend ready:** ✅ `POST /bulk/upload`, `GET /bulk/sample`
+
+---
+
+## Task 41 — Payment Gateway Integration
+
+**Priority:** Medium | **Depends on:** subscription backend (V3 migration)
+
+### Goal
+Integrate Razorpay (or Stripe) so tenants can pay online and subscriptions activate automatically on webhook receipt.
+
+### Backend Steps
+1. Add `gateway_order_id` to `tenant_subscriptions` via Flyway V4 migration.
+2. Create `PaymentGatewayService` interface with `createOrder()` and `verifyWebhook()`.
+3. Implement `RazorpayPaymentGatewayServiceImpl`.
+4. New endpoints:
+   - `POST /api/v1/tenants/{tenantId}/subscribe/initiate` → returns Razorpay `orderId`
+   - `POST /api/v1/payments/webhook` → verifies signature, activates subscription + marks PAID
+5. Store API keys via env vars: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`.
+
+### Frontend Steps
+1. In `TenantSubscriptionPage.tsx`, add "Pay Online" button using Razorpay checkout.js.
+2. On success, poll `GET /api/v1/tenants/{tenantId}/subscription` to confirm activation.
+
+### References
+- See `docs/PAYMENT_FLOW.md` for full sequence diagram.

@@ -19,6 +19,7 @@ This document explains how CampusCloud works from the perspective of each user r
 9. [Fee Payment Flow](#9-fee-payment-flow)
 10. [Timetable System](#10-timetable-system)
 11. [Bulk Upload System](#11-bulk-upload-system)
+12. [Subscription & Billing System](#12-subscription--billing-system)
 
 ---
 
@@ -151,6 +152,10 @@ When a new tenant is provisioned, the following are created in the new schema:
 | Bulk upload | ✅ | ✅ | — | — | — |
 | Super Admin dashboard | ✅ | — | — | — | — |
 | Tenant dashboard | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Manage subscription plans | ✅ | — | — | — | — |
+| Assign plan to tenant | ✅ | — | — | — | — |
+| Record SaaS payment | ✅ | — | — | — | — |
+| View subscription plans | ✅ | ✅ | ✅ | — | — |
 
 ---
 
@@ -190,6 +195,35 @@ GET /api/v1/dashboard/super-admin-summary
 ```
 GET /api/v1/tenants
 → List of all provisioned schools with their status
+```
+
+### 4.5 Manage Subscriptions
+
+```
+1. Assign a plan to a tenant:
+   POST /api/v1/tenants/{tenantId}/subscribe
+   Body: { "planId": "<uuid>", "durationDays": 365 }
+
+2. Record payment received:
+   POST /api/v1/payments
+   Body: { "tenantId": "greenwood", "amount": 7999, "paymentDate": "2026-04-28", "paymentMethod": "BANK_TRANSFER" }
+
+3. View tenant subscription:
+   GET /api/v1/tenants/{tenantId}/subscription
+
+4. Cancel subscription (downgrade):
+   DELETE /api/v1/tenants/{tenantId}/subscription
+```
+
+### 4.6 Manage Plans
+
+```
+1. View all active plans:
+   GET /api/v1/plans
+
+2. Create a new plan:
+   POST /api/v1/plans
+   Body: { "name": "ENTERPRISE", "price": 0, "billingCycleDays": 30, "maxStudents": -1, "maxTeachers": -1, "features": [...] }
 ```
 
 ---
@@ -510,3 +544,49 @@ Step 4: Review the response
 - Valid rows in the same upload are still processed
 - Errors include sheet name, row number, and reason
 - Re-upload only the failed rows after fixing them
+
+---
+
+## 12. Subscription & Billing System
+
+### 12.1 Plans
+
+CampusCloud offers four pre-seeded SaaS plans. Plans are stored in the `public` schema and accessible to all tenants.
+
+| Plan | Price | Billing Cycle | Max Students | Max Teachers |
+|------|-------|---------------|--------------|--------------|
+| FREE | ₹0 | 30 days | 50 | 5 |
+| BASIC | ₹2,999 | 30 days | 300 | 30 |
+| PRO | ₹7,999 | 30 days | 1,500 | 150 |
+| ENTERPRISE | Custom | 30 days | Unlimited | Unlimited |
+
+### 12.2 Subscription Lifecycle
+
+```
+Tenant created (no subscription)
+   ↓
+Super Admin assigns plan → TenantSubscription (ACTIVE, paymentStatus=PENDING)
+   ↓
+Payment received offline
+   ↓
+Super Admin records payment → paymentStatus updated to PAID
+   ↓
+Subscription expires on endDate (manual renewal in v1)
+```
+
+### 12.3 Feature Gating
+
+Features are gated per plan via `SubscriptionGuardService.requireFeature(PlanFeature)`.
+
+If a tenant has **no active subscription**, all features are allowed (fail-open, backward compatible).
+
+If a plan does **not include** a feature, the service throws an error:
+```
+403: "Your current plan 'BASIC' does not include the 'BULK_UPLOAD' feature. Please upgrade."
+```
+
+### 12.4 Available Features (PlanFeature enum)
+
+`STUDENT_MANAGEMENT`, `TEACHER_MANAGEMENT`, `ACADEMIC_MANAGEMENT`, `ATTENDANCE_TRACKING`,
+`FEE_MANAGEMENT`, `EXAM_MANAGEMENT`, `HOMEWORK_MANAGEMENT`, `TIMETABLE_MANAGEMENT`,
+`PARENT_PORTAL`, `BULK_UPLOAD`, `DASHBOARD_ACCESS`, `ADVANCED_REPORTS`, `CUSTOM_BRANDING`
