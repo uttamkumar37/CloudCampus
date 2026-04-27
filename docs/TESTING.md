@@ -1,842 +1,509 @@
-# CampusCloud — Full API Testing Guide
+# CampusCloud — Testing Guide
 
-> **Base URL:** `http://localhost:8080/api/v1`
-> **Frontend URL:** `http://localhost:5173`
-> **Swagger UI:** `http://localhost:8080/swagger-ui.html`
-
-Every request to a protected endpoint must include two headers:
-
-```
-Authorization: Bearer <token>
-X-Tenant-ID: <tenant-schema-name>
-```
+> Version: 1.0 | Last Updated: 2026-04-28
 
 ---
 
-## Prerequisites
+## Table of Contents
 
-### 1. Backend and frontend must be running
+1. [Testing Strategy Overview](#1-testing-strategy-overview)
+2. [Running Backend Unit Tests](#2-running-backend-unit-tests)
+3. [Unit Test Coverage](#3-unit-test-coverage)
+4. [Manual API Testing with curl](#4-manual-api-testing-with-curl)
+5. [Postman Testing](#5-postman-testing)
+6. [Testing Business Rules](#6-testing-business-rules)
+7. [Test Patterns Used](#7-test-patterns-used)
+8. [Planned: Integration Tests](#8-planned-integration-tests)
+
+---
+
+## 1. Testing Strategy Overview
+
+| Layer | Type | Framework | Status |
+|-------|------|-----------|--------|
+| Service Layer | Unit tests (mock dependencies) | JUnit 5 + Mockito | ✅ Done |
+| Controller Layer | (not yet tested) | MockMvc | ❌ Pending |
+| Integration | Full stack with real DB | Testcontainers + @SpringBootTest | ❌ Pending |
+| API | Manual via Postman / curl | Postman Collections | ✅ Available |
+
+---
+
+## 2. Running Backend Unit Tests
+
+### Run All Tests
 
 ```bash
-# From repo root — start both
-./scripts/start-dev.sh
-```
-
-Or manually:
-
-```bash
-# Terminal 1 — backend
 cd backend
-JWT_SECRET='MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=' \
-DB_URL='jdbc:postgresql://localhost:5432/campuscloud' \
-DB_USERNAME='postgres' DB_PASSWORD='postgres' \
-BOOTSTRAP_ADMIN_USERNAME='superadmin' \
-BOOTSTRAP_ADMIN_PASSWORD='admin@123' \
-mvn spring-boot:run
-
-# Terminal 2 — frontend
-cd frontend && npm run dev
+mvn test
 ```
 
-### 2. Capture a JWT token
-
-All subsequent curl examples assume you have exported `TOKEN`:
+### Run a Specific Test Class
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"superadmin","password":"admin@123"}' \
-  | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
+mvn test -Dtest=UserServiceImplTest
+mvn test -Dtest=ExamServiceImplTest
+mvn test -Dtest=FeesServiceImplTest
+```
 
-echo $TOKEN   # should print a JWT string
+### Run with Verbose Output
+
+```bash
+mvn test -Dsurefire.useFile=false
+```
+
+### Test Reports
+
+After running tests, HTML/XML reports are generated at:
+
+```
+backend/target/surefire-reports/
+├── com.campuscloud.user.service.UserServiceImplTest.txt
+├── com.campuscloud.exam.service.ExamServiceImplTest.txt
+├── com.campuscloud.fees.service.FeesServiceImplTest.txt
+├── TEST-com.campuscloud.user.service.UserServiceImplTest.xml
+├── TEST-com.campuscloud.exam.service.ExamServiceImplTest.xml
+└── TEST-com.campuscloud.fees.service.FeesServiceImplTest.xml
 ```
 
 ---
 
-## Module 1 — Auth
+## 3. Unit Test Coverage
 
-### POST /api/v1/auth/login
+### 3.1 UserServiceImplTest
 
-**No token or tenant header required.**
+**Location:** `backend/src/test/java/com/campuscloud/user/service/UserServiceImplTest.java`
 
-```bash
-curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "username": "superadmin",
-    "password": "admin@123"
-  }' | jq .
-```
+| Test Case | Description |
+|-----------|-------------|
+| `createUser_success` | Happy path — creates user, returns `UserResponse` |
+| `createUser_throwsWhenUsernameAlreadyExists` | Rejects duplicate username |
+| `createUser_normalizesUsernameAndEmail` | Username and email converted to lowercase |
+| `createUser_throwsWhenTenantIsPublicSchema` | Blocks operations on `public` schema |
 
-**Expected:**
+**Setup Pattern:**
+```java
+@ExtendWith(MockitoExtension.class)
+class UserServiceImplTest {
 
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "accessToken": "<jwt>",
-    "tokenType": "Bearer",
-    "expiresIn": 3600,
-    "username": "superadmin",
-    "roles": ["ROLE_SUPER_ADMIN"]
-  }
+    @Mock private UserAccountRepository repo;
+    @Mock private PasswordEncoder passwordEncoder;
+    @InjectMocks private UserServiceImpl service;
+
+    @BeforeEach
+    void setTenantContext() {
+        TenantContext.setTenant("school_a");
+    }
+
+    @AfterEach
+    void clearTenantContext() {
+        TenantContext.clear();
+    }
 }
 ```
 
 ---
 
-## Module 2 — Tenant Management
+### 3.2 ExamServiceImplTest
 
-> Requires `SUPER_ADMIN` role. Use `X-Tenant-ID: public`.
+**Location:** `backend/src/test/java/com/campuscloud/exam/service/ExamServiceImplTest.java`
 
-### POST /api/v1/tenants — Create tenant
+| Test Case | Description |
+|-----------|-------------|
+| `createExam_success` | Schedules exam with unique title+date+class+section+subject |
+| `createExam_throwsOnDuplicateSchedule` | UNIQUE constraint violated → exception thrown |
+| `createExamResult_success` | Enters result within max marks |
+| `createExamResult_throwsWhenMarksExceedMaxMarks` | `marksObtained > maxMarks` → rejected |
+| `createExamResult_throwsWhenDuplicateResult` | UNIQUE(exam_id, student_id) violated |
+
+---
+
+### 3.3 FeesServiceImplTest
+
+**Location:** `backend/src/test/java/com/campuscloud/fees/service/FeesServiceImplTest.java`
+
+| Test Case | Description |
+|-----------|-------------|
+| `createFeeAssignment_success` | Creates assignment with PENDING status |
+| `recordPayment_partialPayment_transitionsToPartiallyPaid` | Partial amount → status: PARTIALLY_PAID |
+| `recordPayment_fullPayment_transitionsToPaid` | Full remaining amount → status: PAID |
+| `recordPayment_throwsWhenNoBalanceRemains` | Overpayment → exception: "No balance to receive" |
+| `recordPayment_throwsWhenAmountExceedsBalance` | Amount > remaining → rejected |
+
+---
+
+## 4. Manual API Testing with curl
+
+### 4.1 Super Admin Login
+
+```bash
+curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"superadmin","password":"YourPassword123"}' \
+  | python3 -m json.tool
+```
+
+Save the token:
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"superadmin","password":"YourPassword123"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['accessToken'])")
+echo "Token: $TOKEN"
+```
+
+---
+
+### 4.2 Create a New Tenant
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/tenants \
   -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: public' \
-  -H 'Content-Type: application/json' \
+  -H "Content-Type: application/json" \
   -d '{
-    "tenantId": "school_1",
-    "schoolName": "Sunrise Academy",
-    "schemaName": "sunrise"
-  }' | jq .
-```
-
-**Expected:** `"message": "Tenant created successfully"` with tenant data. A new PostgreSQL schema `sunrise` is created automatically with all 11 domain tables.
-
-### GET /api/v1/tenants — List all tenants
-
-```bash
-curl -s http://localhost:8080/api/v1/tenants \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: public' | jq .
-```
-
-### GET /api/v1/tenants/{tenantId} — Get tenant by tenantId
-
-```bash
-curl -s http://localhost:8080/api/v1/tenants/school_1 \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: public' | jq .
+    "tenantId": "greenwood",
+    "schoolName": "Greenwood High School",
+    "schemaName": "greenwood",
+    "logoUrl": "https://example.com/logo.png",
+    "primaryColor": "#10b981"
+  }' | python3 -m json.tool
 ```
 
 ---
 
-## Module 3 — User Management
-
-> From here, use the tenant schema as `X-Tenant-ID` (e.g. `sunrise`).
-> Roles: `SUPER_ADMIN`, `SCHOOL_ADMIN`
-
-### POST /api/v1/users — Create user in tenant
+### 4.3 Create School Admin User
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/users \
   -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
+  -H "X-Tenant-ID: greenwood" \
+  -H "Content-Type: application/json" \
   -d '{
-    "fullName": "Alice Smith",
-    "username": "alice.smith",
-    "email": "alice@sunrise.edu",
-    "password": "SecurePass123!",
+    "fullName": "Sarah Admin",
+    "username": "sarah.admin",
+    "email": "sarah@greenwood.edu",
+    "password": "AdminPass123!",
     "role": "SCHOOL_ADMIN"
-  }' | jq .
-```
-
-Available roles: `SUPER_ADMIN`, `SCHOOL_ADMIN`, `TEACHER`, `STUDENT`, `PARENT`
-
-### GET /api/v1/users — List users in tenant
-
-```bash
-curl -s http://localhost:8080/api/v1/users \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
+  }' | python3 -m json.tool
 ```
 
 ---
 
-## Module 4 — Student Management
-
-> Roles: create — `SUPER_ADMIN`, `SCHOOL_ADMIN`; read — also `TEACHER`
-
-### POST /api/v1/students — Enroll student
+### 4.4 Tenant Login
 
 ```bash
-curl -s -X POST http://localhost:8080/api/v1/students \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "admissionNo": "STU-001",
-    "firstName": "John",
-    "lastName": "Doe",
-    "dateOfBirth": "2010-05-15",
-    "gender": "MALE",
-    "email": "john.doe@sunrise.edu",
-    "phone": "9876543210"
-  }' | jq .
-```
-
-Gender values: `MALE`, `FEMALE`, `OTHER`
-
-### GET /api/v1/students — List students (paginated)
-
-```bash
-curl -s "http://localhost:8080/api/v1/students?page=0&size=20" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
-```
-
-### GET /api/v1/students/{id} — Get student by UUID
-
-```bash
-STUDENT_ID="<uuid-from-create-response>"
-
-curl -s http://localhost:8080/api/v1/students/$STUDENT_ID \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
+TENANT_TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: greenwood" \
+  -d '{"username":"sarah.admin","password":"AdminPass123!"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['accessToken'])")
 ```
 
 ---
 
-## Module 5 — Teacher Management
-
-> Roles: create — `SUPER_ADMIN`, `SCHOOL_ADMIN`; read — also `TEACHER`
-
-### POST /api/v1/teachers — Add teacher
-
-```bash
-curl -s -X POST http://localhost:8080/api/v1/teachers \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "employeeNo": "EMP-001",
-    "firstName": "Sarah",
-    "lastName": "Connor",
-    "email": "sarah.connor@sunrise.edu",
-    "phone": "9123456789",
-    "hireDate": "2023-06-01"
-  }' | jq .
-```
-
-### GET /api/v1/teachers — List teachers (paginated)
-
-```bash
-curl -s "http://localhost:8080/api/v1/teachers?page=0&size=20" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
-```
-
-### GET /api/v1/teachers/{id} — Get teacher by UUID
-
-```bash
-TEACHER_ID="<uuid-from-create-response>"
-
-curl -s http://localhost:8080/api/v1/teachers/$TEACHER_ID \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
-```
-
----
-
-## Module 6 — Academic (Classes, Subjects, Sections)
-
-> Roles: create — `SUPER_ADMIN`, `SCHOOL_ADMIN`; read — also `TEACHER`
-
-### POST /api/v1/academics/classes — Create class
+### 4.5 Create a Class
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/academics/classes \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "name": "Grade 10",
-    "code": "G10"
-  }' | jq .
-```
-
-### GET /api/v1/academics/classes — List classes
-
-```bash
-curl -s http://localhost:8080/api/v1/academics/classes \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
-```
-
-### POST /api/v1/academics/subjects — Create subject
-
-```bash
-curl -s -X POST http://localhost:8080/api/v1/academics/subjects \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "name": "Mathematics",
-    "code": "MATH"
-  }' | jq .
-```
-
-### GET /api/v1/academics/subjects — List subjects
-
-```bash
-curl -s http://localhost:8080/api/v1/academics/subjects \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
-```
-
-### POST /api/v1/academics/sections — Create section
-
-Requires a valid `classId` UUID from the class creation response above.
-
-```bash
-CLASS_ID="<uuid-from-class-create-response>"
-
-curl -s -X POST http://localhost:8080/api/v1/academics/sections \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"name\": \"Section A\",
-    \"classId\": \"$CLASS_ID\"
-  }" | jq .
-```
-
-### GET /api/v1/academics/sections — List sections
-
-```bash
-curl -s http://localhost:8080/api/v1/academics/sections \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  -H "X-Tenant-ID: greenwood" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Grade 10","code":"G10"}' \
+  | python3 -m json.tool
 ```
 
 ---
 
-## Module 7 — Attendance
+### 4.6 Enroll a Student
 
-> Roles: `SUPER_ADMIN`, `SCHOOL_ADMIN`, `TEACHER`
+```bash
+curl -s -X POST http://localhost:8080/api/v1/students \
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  -H "X-Tenant-ID: greenwood" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "admissionNo": "ADM-2024-001",
+    "firstName": "Alice",
+    "lastName": "Johnson",
+    "dateOfBirth": "2010-05-15",
+    "gender": "FEMALE",
+    "email": "alice@example.com"
+  }' | python3 -m json.tool
+```
 
-### POST /api/v1/attendances — Mark attendance
+---
 
-Requires valid UUIDs for student, class, section, and markedByUserId.
+### 4.7 Mark Attendance
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/attendances \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"studentId\": \"$STUDENT_ID\",
-    \"classId\": \"$CLASS_ID\",
-    \"sectionId\": \"$SECTION_ID\",
-    \"attendanceDate\": \"$(date +%Y-%m-%d)\",
-    \"status\": \"PRESENT\",
-    \"markedByUserId\": \"$USER_ID\"
-  }" | jq .
-```
-
-Status values: `PRESENT`, `ABSENT`, `LATE`, `EXCUSED`
-
-### GET /api/v1/attendances/{attendanceId} — Get by ID
-
-```bash
-curl -s http://localhost:8080/api/v1/attendances/$ATTENDANCE_ID \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
-```
-
-### GET /api/v1/attendances?date=YYYY-MM-DD — Get by date
-
-```bash
-curl -s "http://localhost:8080/api/v1/attendances?date=$(date +%Y-%m-%d)" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  -H "X-Tenant-ID: greenwood" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "studentId": "<student_uuid>",
+    "classId": "<class_uuid>",
+    "sectionId": "<section_uuid>",
+    "attendanceDate": "2026-04-28",
+    "status": "PRESENT"
+  }' | python3 -m json.tool
 ```
 
 ---
 
-## Module 8 — Fees
-
-> Roles: `SUPER_ADMIN`, `SCHOOL_ADMIN`
-
-### POST /api/v1/fees/assignments — Assign fee to student
+### 4.8 Assign a Fee
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/fees/assignments \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"studentId\": \"$STUDENT_ID\",
-    \"feeTitle\": \"Term 1 Tuition Fee\",
-    \"amount\": 5000.00,
-    \"dueDate\": \"2026-05-31\"
-  }" | jq .
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  -H "X-Tenant-ID: greenwood" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "studentId": "<student_uuid>",
+    "feeTitle": "Term 1 Tuition Fee",
+    "amount": 15000.00,
+    "dueDate": "2026-05-31"
+  }' | python3 -m json.tool
 ```
 
-### POST /api/v1/fees/payments — Record payment
+---
 
-Requires a valid `feeAssignmentId` from the assignment response.
+### 4.9 Record a Payment
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/fees/payments \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"feeAssignmentId\": \"$FEE_ASSIGNMENT_ID\",
-    \"amountPaid\": 2500.00,
-    \"paymentDate\": \"$(date +%Y-%m-%d)\",
-    \"paymentMethod\": \"CASH\",
-    \"referenceNo\": \"REF-001\",
-    \"receivedByUserId\": \"$USER_ID\"
-  }" | jq .
-```
-
-Status auto-transitions: `PENDING` → `PARTIALLY_PAID` → `PAID`. Overpaying returns a 400.
-
-### GET /api/v1/fees/students/{studentId}/assignments — Get fees for student
-
-```bash
-curl -s http://localhost:8080/api/v1/fees/students/$STUDENT_ID/assignments \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  -H "X-Tenant-ID: greenwood" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "feeAssignmentId": "<assignment_uuid>",
+    "amountPaid": 8000.00,
+    "paymentDate": "2026-04-28",
+    "paymentMethod": "CASH",
+    "referenceNo": "RCP-001"
+  }' | python3 -m json.tool
 ```
 
 ---
 
-## Module 9 — Exams
-
-> Roles: create — `SUPER_ADMIN`, `SCHOOL_ADMIN`, `TEACHER`; read — same
-
-### POST /api/v1/exams — Schedule exam
-
-Requires valid UUIDs for classId, sectionId, subjectId.
+### 4.10 Schedule an Exam
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/exams \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"title\": \"Mid-Term Math Exam\",
-    \"examDate\": \"2026-06-15\",
-    \"classId\": \"$CLASS_ID\",
-    \"sectionId\": \"$SECTION_ID\",
-    \"subjectId\": \"$SUBJECT_ID\",
-    \"maxMarks\": 100
-  }" | jq .
-```
-
-### GET /api/v1/exams/classes/{classId} — Get exams by class
-
-```bash
-curl -s http://localhost:8080/api/v1/exams/classes/$CLASS_ID \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
-```
-
-### POST /api/v1/exams/results — Enter exam result
-
-```bash
-curl -s -X POST http://localhost:8080/api/v1/exams/results \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"examId\": \"$EXAM_ID\",
-    \"studentId\": \"$STUDENT_ID\",
-    \"marksObtained\": 87,
-    \"grade\": \"A\",
-    \"remarks\": \"Excellent performance\",
-    \"published\": true
-  }" | jq .
-```
-
-Marks exceeding `maxMarks` returns a 400 error.
-
-### GET /api/v1/exams/{examId}/results — Get results for exam
-
-```bash
-curl -s http://localhost:8080/api/v1/exams/$EXAM_ID/results \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' | jq .
-```
-
----
-
-## End-to-End Test Sequence (Copy-Paste Shell Script)
-
-Run this entire block in one terminal after starting the backend.
-
-```bash
-#!/usr/bin/env sh
-set -eu
-BASE="http://localhost:8080/api/v1"
-TENANT="sunrise"
-
-# ── Step 1: Login ─────────────────────────────────────────────────────────────
-echo "=== Step 1: Login ==="
-LOGIN=$(curl -s -X POST "$BASE/auth/login" \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"superadmin","password":"admin@123"}')
-echo "$LOGIN" | jq .
-TOKEN=$(printf '%s' "$LOGIN" | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
-AUTH="Authorization: Bearer $TOKEN"
-
-# ── Step 2: Create tenant ─────────────────────────────────────────────────────
-echo "=== Step 2: Create tenant ==="
-curl -s -X POST "$BASE/tenants" \
-  -H "$AUTH" -H 'X-Tenant-ID: public' -H 'Content-Type: application/json' \
-  -d '{"tenantId":"sunrise","schoolName":"Sunrise Academy","schemaName":"sunrise"}' | jq .
-
-# ── Step 3: Create user ───────────────────────────────────────────────────────
-echo "=== Step 3: Create user ==="
-USER_RESP=$(curl -s -X POST "$BASE/users" \
-  -H "$AUTH" -H "X-Tenant-ID: $TENANT" -H 'Content-Type: application/json' \
-  -d '{"fullName":"Alice Smith","username":"alice.smith","email":"alice@sunrise.edu","password":"SecurePass123!","role":"SCHOOL_ADMIN"}')
-echo "$USER_RESP" | jq .
-USER_ID=$(printf '%s' "$USER_RESP" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
-
-# ── Step 4: Create student ────────────────────────────────────────────────────
-echo "=== Step 4: Create student ==="
-STU_RESP=$(curl -s -X POST "$BASE/students" \
-  -H "$AUTH" -H "X-Tenant-ID: $TENANT" -H 'Content-Type: application/json' \
-  -d '{"admissionNo":"STU-001","firstName":"John","lastName":"Doe","dateOfBirth":"2010-05-15","gender":"MALE","email":"john@sunrise.edu","phone":"9876543210"}')
-echo "$STU_RESP" | jq .
-STUDENT_ID=$(printf '%s' "$STU_RESP" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
-
-# ── Step 5: Create class ──────────────────────────────────────────────────────
-echo "=== Step 5: Create class ==="
-CLASS_RESP=$(curl -s -X POST "$BASE/academics/classes" \
-  -H "$AUTH" -H "X-Tenant-ID: $TENANT" -H 'Content-Type: application/json' \
-  -d '{"name":"Grade 10","code":"G10"}')
-echo "$CLASS_RESP" | jq .
-CLASS_ID=$(printf '%s' "$CLASS_RESP" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
-
-# ── Step 6: Create subject ────────────────────────────────────────────────────
-echo "=== Step 6: Create subject ==="
-SUBJ_RESP=$(curl -s -X POST "$BASE/academics/subjects" \
-  -H "$AUTH" -H "X-Tenant-ID: $TENANT" -H 'Content-Type: application/json' \
-  -d '{"name":"Mathematics","code":"MATH"}')
-echo "$SUBJ_RESP" | jq .
-SUBJECT_ID=$(printf '%s' "$SUBJ_RESP" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
-
-# ── Step 7: Create section ────────────────────────────────────────────────────
-echo "=== Step 7: Create section ==="
-SEC_RESP=$(curl -s -X POST "$BASE/academics/sections" \
-  -H "$AUTH" -H "X-Tenant-ID: $TENANT" -H 'Content-Type: application/json' \
-  -d "{\"name\":\"Section A\",\"classId\":\"$CLASS_ID\"}")
-echo "$SEC_RESP" | jq .
-SECTION_ID=$(printf '%s' "$SEC_RESP" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
-
-# ── Step 8: Mark attendance ───────────────────────────────────────────────────
-echo "=== Step 8: Mark attendance ==="
-TODAY=$(date +%Y-%m-%d)
-curl -s -X POST "$BASE/attendances" \
-  -H "$AUTH" -H "X-Tenant-ID: $TENANT" -H 'Content-Type: application/json' \
-  -d "{\"studentId\":\"$STUDENT_ID\",\"classId\":\"$CLASS_ID\",\"sectionId\":\"$SECTION_ID\",\"attendanceDate\":\"$TODAY\",\"status\":\"PRESENT\",\"markedByUserId\":\"$USER_ID\"}" | jq .
-
-# ── Step 9: Assign fee ────────────────────────────────────────────────────────
-echo "=== Step 9: Assign fee ==="
-FEE_RESP=$(curl -s -X POST "$BASE/fees/assignments" \
-  -H "$AUTH" -H "X-Tenant-ID: $TENANT" -H 'Content-Type: application/json' \
-  -d "{\"studentId\":\"$STUDENT_ID\",\"feeTitle\":\"Term 1 Tuition\",\"amount\":5000.00,\"dueDate\":\"2026-05-31\"}")
-echo "$FEE_RESP" | jq .
-FEE_ID=$(printf '%s' "$FEE_RESP" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
-
-# ── Step 10: Record payment ───────────────────────────────────────────────────
-echo "=== Step 10: Record payment ==="
-curl -s -X POST "$BASE/fees/payments" \
-  -H "$AUTH" -H "X-Tenant-ID: $TENANT" -H 'Content-Type: application/json' \
-  -d "{\"feeAssignmentId\":\"$FEE_ID\",\"amountPaid\":5000.00,\"paymentDate\":\"$TODAY\",\"paymentMethod\":\"CASH\",\"referenceNo\":\"REF-001\",\"receivedByUserId\":\"$USER_ID\"}" | jq .
-
-# ── Step 11: Schedule exam ────────────────────────────────────────────────────
-echo "=== Step 11: Schedule exam ==="
-EXAM_RESP=$(curl -s -X POST "$BASE/exams" \
-  -H "$AUTH" -H "X-Tenant-ID: $TENANT" -H 'Content-Type: application/json' \
-  -d "{\"title\":\"Mid-Term Math\",\"examDate\":\"2026-06-15\",\"classId\":\"$CLASS_ID\",\"sectionId\":\"$SECTION_ID\",\"subjectId\":\"$SUBJECT_ID\",\"maxMarks\":100}")
-echo "$EXAM_RESP" | jq .
-EXAM_ID=$(printf '%s' "$EXAM_RESP" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
-
-# ── Step 12: Enter exam result ────────────────────────────────────────────────
-echo "=== Step 12: Enter exam result ==="
-curl -s -X POST "$BASE/exams/results" \
-  -H "$AUTH" -H "X-Tenant-ID: $TENANT" -H 'Content-Type: application/json' \
-  -d "{\"examId\":\"$EXAM_ID\",\"studentId\":\"$STUDENT_ID\",\"marksObtained\":87,\"grade\":\"A\",\"remarks\":\"Excellent\",\"published\":true}" | jq .
-
-echo "=== All tests passed ==="
-```
-
----
-
-## Error Scenarios
-
-| Scenario | Expected HTTP Status |
-|---|---|
-| Wrong password / username | `401 Unauthorized` |
-| Missing or invalid JWT | `401 Unauthorized` |
-| Valid JWT but insufficient role | `403 Forbidden` |
-| Missing X-Tenant-ID header | `400 Bad Request` |
-| Duplicate admissionNo / email | `400 Bad Request` |
-| Overpay fee (amount > remaining) | `400 Bad Request` |
-| Marks exceed maxMarks | `400 Bad Request` |
-| Duplicate attendance same student + date | `400 Bad Request` |
-| Resource not found by UUID | `404 Not Found` |
-
----
-
-## Quick Reference — All Endpoints
-
-| Module | Method | Path | Min Role |
-|---|---|---|---|
-| Auth | POST | /api/v1/auth/login | Public |
-| Tenant | POST | /api/v1/tenants | SUPER_ADMIN |
-| Tenant | GET | /api/v1/tenants | SUPER_ADMIN |
-| Tenant | GET | /api/v1/tenants/{tenantId} | SUPER_ADMIN |
-| User | POST | /api/v1/users | SCHOOL_ADMIN |
-| User | GET | /api/v1/users | SCHOOL_ADMIN |
-| Student | POST | /api/v1/students | SCHOOL_ADMIN |
-| Student | GET | /api/v1/students | TEACHER |
-| Student | GET | /api/v1/students/{id} | TEACHER |
-| Teacher | POST | /api/v1/teachers | SCHOOL_ADMIN |
-| Teacher | GET | /api/v1/teachers | TEACHER |
-| Teacher | GET | /api/v1/teachers/{id} | TEACHER |
-| Academic | POST | /api/v1/academics/classes | SCHOOL_ADMIN |
-| Academic | GET | /api/v1/academics/classes | TEACHER |
-| Academic | POST | /api/v1/academics/subjects | SCHOOL_ADMIN |
-| Academic | GET | /api/v1/academics/subjects | TEACHER |
-| Academic | POST | /api/v1/academics/sections | SCHOOL_ADMIN |
-| Academic | GET | /api/v1/academics/sections | TEACHER |
-| Attendance | POST | /api/v1/attendances | TEACHER |
-| Attendance | GET | /api/v1/attendances/{id} | TEACHER |
-| Attendance | GET | /api/v1/attendances?date= | TEACHER |
-| Fees | POST | /api/v1/fees/assignments | SCHOOL_ADMIN |
-| Fees | POST | /api/v1/fees/payments | SCHOOL_ADMIN |
-| Fees | GET | /api/v1/fees/students/{id}/assignments | SCHOOL_ADMIN |
-| Exam | POST | /api/v1/exams | TEACHER |
-| Exam | GET | /api/v1/exams/classes/{classId} | TEACHER |
-| Exam | POST | /api/v1/exams/results | TEACHER |
-| Exam | GET | /api/v1/exams/{examId}/results | TEACHER |
-
----
-
-## UI Testing Guide
-
-> **Frontend URL:** `http://localhost:5173`
-> Start the frontend with `cd frontend && npm run dev` (or `./scripts/start-dev.sh`).
-
-The React frontend currently has **four routes** wired:
-
-| Route | Page | Status |
-|---|---|---|
-| `/login` | Login page | ✅ Fully implemented |
-| `/dashboard` | Dashboard overview | ✅ Placeholder cards |
-| `/students` | Students list + create form | ✅ Fully implemented |
-| `/teachers` | Teachers page | 🟡 Scaffold (no form yet) |
-| `/academic` | Academic page | 🟡 Scaffold (no form yet) |
-
----
-
-### Step 1 — Logging in
-
-1. Open `http://localhost:5173` in a browser. You are redirected to `/login`.
-2. Fill in the three fields and click **Sign in**.
-
-#### Which credentials to use
-
-There are two types of accounts — the bootstrap super-admin and school users created inside a tenant schema.
-
-**Super-admin (system-level, no tenant schema)**
-
-| Field | Value |
-|---|---|
-| **Tenant ID** | `public` |
-| **Username** | `superadmin` |
-| **Password** | `admin@123` |
-
-Use this account to manage tenants and bootstrap a new school.
-
----
-
-**School Admin (lives inside a tenant schema)**
-
-This is the `schooladmin` user you created via `POST /api/v1/users`. Use the **schema name** of that tenant as the Tenant ID — not the tenantId string.
-
-| Field | Value |
-|---|---|
-| **Tenant ID** | `sunrise` ← the `schemaName` you used when creating the tenant |
-| **Username** | `schooladmin` |
-| **Password** | the password you set when creating the user (e.g. `SecurePass123!`) |
-
-> **How to find your tenant's schema name:**
-> ```bash
-> curl -s http://localhost:8080/api/v1/tenants \
->   -H "Authorization: Bearer $TOKEN" \
->   -H 'X-Tenant-ID: public' | jq '.data[] | {tenantId, schemaName}'
-> ```
-> The `schemaName` value is what you put in the **Tenant ID** field on the login form.
-
----
-
-**To create a school admin user for a tenant** (one-time setup via curl, then log in via UI):
-
-```bash
-# 1. Login as superadmin to get token
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"superadmin","password":"admin@123"}' \
-  | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
-
-# 2. Create school admin inside the tenant schema
-curl -s -X POST http://localhost:8080/api/v1/users \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'X-Tenant-ID: sunrise' \
-  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  -H "X-Tenant-ID: greenwood" \
+  -H "Content-Type: application/json" \
   -d '{
-    "fullName": "Admin User",
-    "username": "schooladmin",
-    "email": "admin@school.com",
-    "password": "SecurePass123!",
-    "role": "SCHOOL_ADMIN"
-  }' | jq .
+    "title": "Mid-Term Mathematics",
+    "examDate": "2026-05-15",
+    "classId": "<class_uuid>",
+    "sectionId": "<section_uuid>",
+    "subjectId": "<subject_uuid>",
+    "maxMarks": 100
+  }' | python3 -m json.tool
 ```
 
-Now go to `http://localhost:5173` and log in with `Tenant ID: sunrise`, `Username: schooladmin`.
-
 ---
 
-3. On success you land on `/dashboard`. The JWT and tenant ID are stored in `localStorage` under keys `authToken` and `tenantId`.
-4. **What to verify:**
-   - Page title reads "Dashboard — Welcome to EduTenant."
-   - Three stat cards (Students / Teachers / Classes) are visible (values show `-` until API data is wired).
-   - No error toast or red message.
+### 4.11 Get Dashboard Summary
 
-**Error cases to test:**
+```bash
+# Tenant dashboard
+curl -s http://localhost:8080/api/v1/dashboard/tenant-summary \
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  -H "X-Tenant-ID: greenwood" \
+  | python3 -m json.tool
 
-| Input | Expected result |
-|---|---|
-| Wrong password | Red inline error: "Invalid credentials" |
-| Non-existent username | Red inline error: "Invalid credentials" |
-| `public` as Tenant ID for a school user | `401 Unauthorized` — user does not exist in public schema |
-| Tenant schema name for super-admin | `401 Unauthorized` — superadmin does not exist in tenant schema |
-| Empty Tenant ID | Browser prevents submit (field is `required`) |
-| Correct credentials | Redirect to `/dashboard` |
-
----
-
-### Step 2 — Sidebar navigation
-
-After login the left sidebar is visible. Click each item:
-
-- **Dashboard** → `/dashboard` — stat cards
-- **Students** → `/students` — student table + create form
-- **Teachers** → `/teachers` — scaffold placeholder
-- **Academic** → `/academic` — scaffold placeholder
-
----
-
-### Step 3 — Testing the Students module (fully wired)
-
-Navigate to `http://localhost:5173/students`.
-
-#### 3a — List view
-
-- The table loads immediately via `GET /api/v1/students?page=0&size=20`.
-- Open **DevTools → Network** and confirm the request includes:
-  - `Authorization: Bearer <jwt>`
-  - `X-Tenant-ID: <your-tenant>`
-- An empty list shows an empty table with headers: Admission No, Name, DOB, Gender, Contact, Status.
-
-#### 3b — Create a student
-
-Fill the **Create Student** form on the same page:
-
-| Field | Example value |
-|---|---|
-| Admission No | `STU-001` |
-| Date of Birth | `2010-05-15` |
-| First Name | `John` |
-| Last Name | `Doe` |
-| Email | `john@sunrise.edu` |
-| Phone | `9876543210` |
-| Gender | Select `Male` |
-
-Click **Save** (or the submit button):
-
-- The form calls `POST /api/v1/students`.
-- On success the form resets and the new student appears in the table immediately (TanStack Query cache invalidation).
-- **What to verify:**
-  - New row shows correct Admission No, Name, DOB, Gender, Contact.
-  - Status badge shows **Active** in green.
-
-**Error cases to test:**
-
-| Input | Expected result |
-|---|---|
-| Duplicate Admission No | Red error message below the form |
-| Missing required field | Browser prevents submit |
-
----
-
-### Step 4 — Verifying auth guards
-
-1. Clear `localStorage` (DevTools → Application → Local Storage → clear all).
-2. Navigate to `http://localhost:5173/students`.
-3. You should be redirected to `/login` (PrivateRoute guard).
-4. Log in again and confirm you return to `/students`.
-
----
-
-### Step 5 — Inspecting requests in DevTools
-
-For every API call you can verify the headers sent by the frontend:
-
-1. DevTools → **Network** tab → filter by `Fetch/XHR`.
-2. Click any `/api/v1/...` request.
-3. **Request Headers** panel should show:
-
-   ```
-   Authorization: Bearer eyJ...
-   X-Tenant-ID: sunrise
-   Content-Type: application/json
-   ```
-
-This confirms the Axios interceptors in `src/api/client.ts` are working.
-
----
-
-### Step 6 — Swagger UI (alternative to curl)
-
-Swagger is auto-generated by SpringDoc OpenAPI:
-
-```
-http://localhost:8080/swagger-ui.html
+# Super admin dashboard
+curl -s http://localhost:8080/api/v1/dashboard/super-admin-summary \
+  -H "Authorization: Bearer $TOKEN" \
+  | python3 -m json.tool
 ```
 
-1. Open the URL.
-2. Click **Authorize** (lock icon top-right).
-3. Enter `Bearer <your-jwt>` in the value field and click **Authorize**.
-4. Expand any endpoint group (e.g. **student-controller**) and click **Try it out**.
-5. Add `X-Tenant-ID: sunrise` in the header field that appears.
-6. Click **Execute** — response body and HTTP status appear inline.
+---
 
-> Note: Swagger does not auto-add `X-Tenant-ID`. You must set it manually in each "Try it out" panel.
+### 4.12 Test Error Scenarios
+
+**Duplicate admission number (expected 409):**
+```bash
+# Enroll same student twice — second call should fail
+curl -s -X POST http://localhost:8080/api/v1/students \
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  -H "X-Tenant-ID: greenwood" \
+  -H "Content-Type: application/json" \
+  -d '{"admissionNo":"ADM-2024-001","firstName":"Alice","lastName":"Johnson","dateOfBirth":"2010-05-15","gender":"FEMALE"}' \
+  | python3 -m json.tool
+```
+
+**Missing X-Tenant-ID (expected 500 or error):**
+```bash
+curl -s -X GET http://localhost:8080/api/v1/students \
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  | python3 -m json.tool
+```
+
+**Unauthorized role (expected 403):**
+```bash
+# Try to create a tenant as SCHOOL_ADMIN
+curl -s -X POST http://localhost:8080/api/v1/tenants \
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"tenantId":"test","schoolName":"Test","schemaName":"test"}' \
+  | python3 -m json.tool
+```
 
 ---
 
-### What is NOT yet testable from the UI
+## 5. Postman Testing
 
-The following backend modules have no frontend UI yet. Use curl or Swagger for these:
+See [postman/README.md](./postman/README.md) for full import and usage instructions.
 
-| Module | Status |
-|---|---|
-| Tenant creation | API only (SUPER_ADMIN via curl) |
-| Teacher create/edit | Route exists, form not built yet |
-| Academic (classes/subjects/sections) | Route exists, form not built yet |
-| Attendance | API only |
-| Fees | API only |
-| Exams | API only |
+### Quick Start
+
+1. Open Postman
+2. Import `docs/postman/CampusCloud.postman_collection.json`
+3. Import `docs/postman/CampusCloud.local.postman_environment.json`
+4. Select the **CampusCloud Local** environment
+5. Run **Auth → Login** first — the token is auto-captured
+6. All subsequent requests use `{{token}}` and `{{tenantId}}` automatically
+
+---
+
+## 6. Testing Business Rules
+
+### 6.1 Tenant Isolation Test
+
+Verify that data in tenant A is not visible in tenant B:
+
+```bash
+# Create student in greenwood
+curl -s -X POST http://localhost:8080/api/v1/students \
+  -H "Authorization: Bearer $TENANT_TOKEN" \
+  -H "X-Tenant-ID: greenwood" \
+  -H "Content-Type: application/json" \
+  -d '{"admissionNo":"ISO-001","firstName":"Test","lastName":"Isolation","dateOfBirth":"2010-01-01","gender":"MALE"}' \
+  | python3 -m json.tool
+
+# List students from sunrise — should NOT see greenwood's student
+curl -s http://localhost:8080/api/v1/students \
+  -H "Authorization: Bearer $SUNRISE_TOKEN" \
+  -H "X-Tenant-ID: sunrise" \
+  | python3 -m json.tool
+```
+
+---
+
+### 6.2 Fee Status Transition Test
+
+```bash
+# 1. Assign fee of 1000
+ASSIGNMENT_ID=$(... create fee assignment, capture ID ...)
+
+# 2. Pay 600 → expect PARTIALLY_PAID
+curl -X POST .../fees/payments -d '{"feeAssignmentId":"...","amountPaid":600,...}'
+
+# 3. Pay remaining 400 → expect PAID
+curl -X POST .../fees/payments -d '{"feeAssignmentId":"...","amountPaid":400,...}'
+
+# 4. Attempt overpayment → expect error
+curl -X POST .../fees/payments -d '{"feeAssignmentId":"...","amountPaid":100,...}'
+# Expected: {"success":false,"message":"No balance to receive"}
+```
+
+---
+
+### 6.3 Exam Marks Overflow Test
+
+```bash
+# Create exam with maxMarks: 50
+# Attempt to enter result with marksObtained: 60
+curl -X POST .../exams/results \
+  -d '{"examId":"...","studentId":"...","marksObtained":60}'
+# Expected: 422 {"success":false,"message":"Marks obtained exceed maximum marks"}
+```
+
+---
+
+## 7. Test Patterns Used
+
+### Pattern 1: TenantContext Setup/Teardown
+
+Every service test must set and clear the tenant context:
+
+```java
+@BeforeEach
+void setUp() {
+    TenantContext.setTenant("test_school");
+}
+
+@AfterEach
+void tearDown() {
+    TenantContext.clear();
+}
+```
+
+### Pattern 2: Repository Mocking
+
+```java
+@Mock private StudentRepository studentRepository;
+@InjectMocks private StudentServiceImpl studentService;
+
+@Test
+void createStudent_throwsOnDuplicateAdmissionNo() {
+    when(studentRepository.existsByAdmissionNo("ADM-001")).thenReturn(true);
+
+    assertThrows(IllegalArgumentException.class, () ->
+        studentService.createStudent(new StudentCreateRequest("ADM-001", ...)));
+}
+```
+
+### Pattern 3: Verify Normalization
+
+```java
+@Test
+void createUser_normalizesUsernameToLowercase() {
+    when(repo.existsByUsername(anyString())).thenReturn(false);
+    when(repo.existsByEmail(anyString())).thenReturn(false);
+    when(passwordEncoder.encode(anyString())).thenReturn("hashed");
+
+    UserResponse response = service.createUser(
+        new UserCreateRequest("Jane", "JANE.DOE", "JANE@SCHOOL.EDU", "pass", "TEACHER")
+    );
+
+    assertEquals("jane.doe", response.username());
+    assertEquals("jane@school.edu", response.email());
+}
+```
+
+---
+
+## 8. Planned: Integration Tests
+
+These are currently pending (see [PENDING_TASKS.md](./PENDING_TASKS.md) — Task 42).
+
+### Planned Setup
+
+```xml
+<!-- pom.xml additions needed -->
+<dependency>
+    <groupId>org.testcontainers</groupId>
+    <artifactId>postgresql</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.testcontainers</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+### Planned Test Scenarios
+
+| Scenario | Description |
+|----------|-------------|
+| Tenant provisioning | `POST /tenants` creates schema and all 13 tables |
+| Student CRUD | Create → list → get by ID, all in correct schema |
+| Fee state machine | Full payment lifecycle from PENDING to PAID |
+| Tenant isolation | Student in schema A not visible via schema B |
+| Exam marks guard | `marksObtained > maxMarks` rejected |
+| JWT expiry | Expired token returns 401 |
+| Role enforcement | TEACHER cannot access `/tenants` (403) |

@@ -1,121 +1,512 @@
-# CampusCloud platform blueprint
+# CampusCloud — Platform Blueprint
 
-This document captures the **unified identity model**, **tenant DDL**, **new REST modules**, and **frontend role routing** introduced for a production-style school SaaS. Multi-tenancy remains **schema-per-tenant** with header `X-Tenant-ID` (PostgreSQL schema name, lowercased).
+> Version: 1.0 | Last Updated: 2026-04-28
+
+This document explains how CampusCloud works from the perspective of each user role, covering workflows, access boundaries, and system capabilities.
 
 ---
 
-## 1. Unified user & authentication
+## Table of Contents
 
-### Principal: `CampusUserDetails`
+1. [What is a Tenant?](#1-what-is-a-tenant)
+2. [Tenant Onboarding Flow](#2-tenant-onboarding-flow)
+3. [Role Definitions & Permissions](#3-role-definitions--permissions)
+4. [Super Admin Workflows](#4-super-admin-workflows)
+5. [School Admin Workflows](#5-school-admin-workflows)
+6. [Teacher Workflows](#6-teacher-workflows)
+7. [Student Workflows](#7-student-workflows)
+8. [Parent Workflows](#8-parent-workflows)
+9. [Fee Payment Flow](#9-fee-payment-flow)
+10. [Timetable System](#10-timetable-system)
+11. [Bulk Upload System](#11-bulk-upload-system)
 
-All authenticated principals (bootstrap super-admin and tenant `UserAccount` rows) implement `UserDetails` via `CampusUserDetails`:
+---
+
+## 1. What is a Tenant?
+
+A **tenant** is an individual school registered on the CampusCloud platform. Each tenant:
+
+- Has a **unique schema** in the PostgreSQL database (complete data isolation)
+- Has a **unique `tenantId`** (business identifier, e.g., `greenwood`)
+- Has a **schema name** (used as the `X-Tenant-ID` header in API requests)
+- Has customizable **branding** (school name, logo, primary color)
+- Is completely isolated — no data is shared between tenants
+
+All API requests targeting a specific school must include the `X-Tenant-ID` header set to that school's schema name.
+
+---
+
+## 2. Tenant Onboarding Flow
+
+### Step-by-Step: Creating a New School Tenant
+
+**Prerequisite:** You must be authenticated as `SUPER_ADMIN`.
+
+```
+Step 1: Log in as Super Admin
+────────────────────────────────
+POST /api/v1/auth/login
+Body: { "username": "superadmin", "password": "<bootstrap_password>" }
+→ Receive JWT token
+
+Step 2: Create the tenant
+────────────────────────────────
+POST /api/v1/tenants
+Authorization: Bearer <token>
+Body:
+{
+  "tenantId":    "greenwood",
+  "schoolName":  "Greenwood High School",
+  "schemaName":  "greenwood",
+  "logoUrl":     "https://example.com/logo.png",
+  "primaryColor": "#10b981"
+}
+→ Schema "greenwood" created
+→ All 13 domain tables provisioned automatically
+
+Step 3: Create the School Admin user
+────────────────────────────────
+POST /api/v1/users
+Authorization: Bearer <token>
+X-Tenant-ID: greenwood
+Body:
+{
+  "fullName": "Sarah Admin",
+  "username": "sarah.admin",
+  "email":    "sarah@greenwood.edu",
+  "password": "SecurePass123!",
+  "role":     "SCHOOL_ADMIN"
+}
+
+Step 4: School Admin logs in
+────────────────────────────────
+POST /api/v1/auth/login
+X-Tenant-ID: greenwood
+Body: { "username": "sarah.admin", "password": "SecurePass123!" }
+→ School is ready for use
+```
+
+### What Gets Created Automatically
+
+When a new tenant is provisioned, the following are created in the new schema:
+
+| Table | Purpose |
+|-------|---------|
+| `users` | Staff accounts |
+| `students` | Student records |
+| `teachers` | Teacher records |
+| `classes` | Class levels |
+| `subjects` | Academic subjects |
+| `sections` | Class sections |
+| `attendance_records` | Daily attendance |
+| `fee_assignments` | Fee assignments |
+| `fee_payments` | Payment records |
+| `exams` | Scheduled exams |
+| `exam_results` | Student results |
+| `homework_assignments` | Homework tasks |
+| `timetable_slots` | Weekly schedule |
+| `parent_students` | Parent-child links |
+
+---
+
+## 3. Role Definitions & Permissions
+
+### Role Overview
+
+| Role | Scope | Description |
+|------|-------|-------------|
+| `SUPER_ADMIN` | Platform-wide | Manages all tenants and platform settings. Not bound to a specific school. |
+| `SCHOOL_ADMIN` | Tenant-scoped | Manages all operations within one school. |
+| `TEACHER` | Tenant-scoped | Manages students, attendance, exams, and homework within the school. |
+| `STUDENT` | Tenant-scoped | Read-only access to own academic data, homework, and timetable. |
+| `PARENT` | Tenant-scoped | Views linked children's data, fee status, and academic progress. |
+
+### Detailed Permission Matrix
+
+| Feature | SUPER_ADMIN | SCHOOL_ADMIN | TEACHER | STUDENT | PARENT |
+|---------|:-----------:|:------------:|:-------:|:-------:|:------:|
+| Create tenant | ✅ | — | — | — | — |
+| View all tenants | ✅ | — | — | — | — |
+| Create users | ✅ | ✅ | — | — | — |
+| View users | ✅ | ✅ | — | — | — |
+| Enroll students | ✅ | ✅ | ✅ | — | — |
+| View students | ✅ | ✅ | ✅ | — | — |
+| Create teachers | ✅ | ✅ | — | — | — |
+| View teachers | ✅ | ✅ | ✅ | — | — |
+| Manage classes/subjects/sections | ✅ | ✅ | — | — | — |
+| View classes/subjects/sections | ✅ | ✅ | ✅ | — | — |
+| Mark attendance | ✅ | ✅ | ✅ | — | — |
+| View attendance | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Assign fees | ✅ | ✅ | — | — | — |
+| Record payments | ✅ | ✅ | — | — | — |
+| View fee history | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Schedule exams | ✅ | ✅ | ✅ | — | — |
+| Enter exam results | ✅ | ✅ | ✅ | — | — |
+| View exam results | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Assign homework | ✅ | ✅ | ✅ | — | — |
+| View homework | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Manage timetable | ✅ | ✅ | ✅ | — | — |
+| View timetable | ✅ | ✅ | ✅ | ✅ | ✅ |
+| View linked children | — | — | — | — | ✅ |
+| Bulk upload | ✅ | ✅ | — | — | — |
+| Super Admin dashboard | ✅ | — | — | — | — |
+| Tenant dashboard | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+---
+
+## 4. Super Admin Workflows
+
+The Super Admin operates at the **platform level** and is not bound to any specific school.
+
+### 4.1 Login
+
+```
+POST /api/v1/auth/login
+No X-Tenant-ID required
+Body: { "username": "superadmin", "password": "<password>" }
+```
+
+### 4.2 Create a New School
+
+```
+1. POST /api/v1/tenants          — Provision the school schema
+2. POST /api/v1/users            — Create SCHOOL_ADMIN user
+   (with X-Tenant-ID: <new_schema>)
+```
+
+### 4.3 Platform Dashboard
+
+```
+GET /api/v1/dashboard/super-admin-summary
+→ {
+    "totalTenants": 15,
+    "totalUsers": 4320,
+    "activeSchools": 14
+  }
+```
+
+### 4.4 View All Schools
+
+```
+GET /api/v1/tenants
+→ List of all provisioned schools with their status
+```
+
+---
+
+## 5. School Admin Workflows
+
+The School Admin manages all operations within their school.
+
+### 5.1 Initial School Setup Sequence
+
+```
+1. Create academic structure:
+   POST /api/v1/academics/classes    → e.g., "Grade 10"
+   POST /api/v1/academics/subjects   → e.g., "Mathematics"
+   POST /api/v1/academics/sections   → e.g., "Section A" linked to Grade 10
+
+2. Add teachers:
+   POST /api/v1/teachers
+
+3. Enroll students:
+   POST /api/v1/students
+   (or bulk: POST /api/v1/bulk/upload with Excel file)
+
+4. Create teacher user accounts:
+   POST /api/v1/users  (role: TEACHER)
+
+5. Set up timetable:
+   POST /api/v1/timetable/slots
+
+6. Assign fees for the term:
+   POST /api/v1/fees/assignments
+```
+
+### 5.2 Day-to-Day Admin Operations
+
+| Task | Endpoint |
+|------|----------|
+| View dashboard KPIs | `GET /dashboard/tenant-summary` |
+| Add new student | `POST /students` |
+| View fee reports | `GET /fees/students/{id}/assignments` |
+| Record payment | `POST /fees/payments` |
+| Schedule exam | `POST /exams` |
+| Enter exam results | `POST /exams/results` |
+| Bulk import data | `POST /bulk/upload` |
+
+---
+
+## 6. Teacher Workflows
+
+Teachers focus on academic delivery, attendance, and assessment.
+
+### 6.1 Daily Attendance
+
+```
+POST /api/v1/attendances
+Headers: X-Tenant-ID: greenwood
+Body per student:
+{
+  "studentId": "<uuid>",
+  "classId": "<uuid>",
+  "sectionId": "<uuid>",
+  "attendanceDate": "2026-04-28",
+  "status": "PRESENT",
+  "markedByUserId": "<teacher_user_id>"
+}
+```
+
+Rules:
+- One attendance record per student per date (duplicates rejected)
+- Date cannot be in the future
+- Status: `PRESENT`, `ABSENT`, `LATE`, `EXCUSED`
+
+### 6.2 Assign Homework
+
+```
+POST /api/v1/homework
+Body:
+{
+  "title": "Chapter 5 Exercises",
+  "description": "Complete problems 1–20",
+  "classId": "<uuid>",
+  "sectionId": "<uuid>",
+  "assignedByUserId": "<teacher_user_id>",
+  "dueDate": "2026-05-02"
+}
+```
+
+### 6.3 Manage Exams
+
+```
+Step 1: Schedule exam
+POST /api/v1/exams
+Body:
+{
+  "title": "Mid-Term Mathematics",
+  "examDate": "2026-05-15",
+  "classId": "<uuid>",
+  "sectionId": "<uuid>",
+  "subjectId": "<uuid>",
+  "maxMarks": 100
+}
+
+Step 2: Enter results (after exam)
+POST /api/v1/exams/results
+Body per student:
+{
+  "examId": "<exam_uuid>",
+  "studentId": "<student_uuid>",
+  "marksObtained": 87.5,
+  "grade": "A",
+  "published": false
+}
+```
+
+---
+
+## 7. Student Workflows
+
+Students have **read-only** access to their academic data.
+
+### 7.1 Login
+
+```
+POST /api/v1/auth/login
+X-Tenant-ID: greenwood
+Body: { "username": "alice.johnson", "password": "<password>" }
+```
+
+> Note: A student must have a corresponding `users` table record (role: STUDENT) created by the Admin.
+
+### 7.2 View Academic Data
+
+| Task | Endpoint |
+|------|----------|
+| View homework for class | `GET /homework/classes/{classId}` |
+| View exam results | `GET /exams/{examId}/results` |
+| View timetable | `GET /timetable/classes/{classId}/sections/{sectionId}` |
+| View attendance | `GET /attendances?date=YYYY-MM-DD` |
+| View fee status | `GET /fees/students/{studentId}/assignments` |
+
+---
+
+## 8. Parent Workflows
+
+Parents can monitor their linked children's activity.
+
+### 8.1 Login
+
+```
+POST /api/v1/auth/login
+X-Tenant-ID: greenwood
+Body: { "username": "parent.johnson", "password": "<password>" }
+```
+
+> A parent user account must be created by the Admin with role `PARENT`. The parent-student link is stored in `parent_students` table.
+
+### 8.2 View Children
+
+```
+GET /api/v1/parents/me/children
+→ List of linked students with name and admission number
+```
+
+### 8.3 Monitor Child's Progress
+
+Using the child's `studentId`:
+
+| Task | Endpoint |
+|------|----------|
+| View child's attendance | `GET /attendances?date=YYYY-MM-DD` |
+| View child's fee status | `GET /fees/students/{studentId}/assignments` |
+| View child's exam results | `GET /exams/{examId}/results` |
+| View homework | `GET /homework/classes/{classId}` |
+| View timetable | `GET /timetable/classes/{classId}/sections/{sectionId}` |
+
+---
+
+## 9. Fee Payment Flow
+
+The fee system tracks assignments and payments with automatic status transitions.
+
+### 9.1 Fee Assignment Statuses
+
+```
+PENDING           No payments recorded yet
+    │
+    ├─ Partial payment ──→ PARTIALLY_PAID    Some balance remains
+    │
+    └─ Full payment ─────→ PAID              Fully settled
+    
+PENDING / PARTIALLY_PAID → OVERDUE           (after due date, not yet fully paid)
+```
+
+### 9.2 End-to-End Fee Flow
+
+```
+1. Admin assigns fee:
+   POST /fees/assignments
+   { studentId, feeTitle: "Term 1 Tuition", amount: 15000, dueDate: "2026-05-31" }
+   → status: PENDING
+
+2. Student/Parent views fee:
+   GET /fees/students/{studentId}/assignments
+   → sees amount, dueDate, status: PENDING
+
+3. Admin records payment (partial):
+   POST /fees/payments
+   { feeAssignmentId, amountPaid: 8000, paymentMethod: "CASH", referenceNo: "RCP-001" }
+   → fee status auto-transitions to: PARTIALLY_PAID
+
+4. Admin records remaining payment:
+   POST /fees/payments
+   { feeAssignmentId, amountPaid: 7000, referenceNo: "RCP-002" }
+   → fee status auto-transitions to: PAID
+
+5. Overpayment attempt:
+   POST /fees/payments { amountPaid: 500 }
+   → ERROR: "No balance to receive"
+```
+
+### 9.3 Business Rules
+
+- Payment amount cannot exceed remaining balance
+- All amounts stored as `DECIMAL` for precision (no floating point)
+- Payment method field accepts any string (e.g., `CASH`, `BANK_TRANSFER`, `CHEQUE`)
+- Reference number is optional but recommended for audit trail
+
+---
+
+## 10. Timetable System
+
+The timetable stores weekly recurring class schedules per class/section.
+
+### 10.1 Structure
+
+Each timetable slot represents one period in the weekly schedule:
 
 | Field | Description |
-|--------|-------------|
-| `userId` | UUID of `users.id` in the tenant schema; **null** for bootstrap super-admin |
-| `username`, `password`, `authorities` | Standard Spring Security |
-| `email`, `fullName` | From `UserAccount`; bootstrap may use placeholders |
-| `tenantSchema` | Current schema / `public` for platform login |
+|-------|-------------|
+| `classId` | Which class this slot belongs to |
+| `sectionId` | Optional: which section |
+| `subjectId` | Optional: which subject is taught |
+| `dayOfWeek` | 1 = Monday … 7 = Sunday |
+| `startTime` | Period start (HH:mm) |
+| `endTime` | Period end (HH:mm) |
+| `label` | Description (e.g., "Mathematics - Period 1") |
 
-### JWT claims
+### 10.2 Creating a Full Weekly Schedule
 
-Issued by `JwtServiceImpl` in addition to `roles`:
+```
+POST /api/v1/timetable/slots  (repeat per period)
 
-- `tenant` — value from `TenantContext` at login time  
-- `user_id` — UUID string when not bootstrap  
-- `tenant_schema` — same as principal’s `tenantSchema`
+Monday Period 1:
+{ classId, sectionId, subjectId, dayOfWeek: 1, startTime: "08:00", endTime: "09:00", label: "Maths" }
 
-### Login response (`POST /api/v1/auth/login`)
+Monday Period 2:
+{ classId, sectionId, subjectId, dayOfWeek: 1, startTime: "09:00", endTime: "10:00", label: "English" }
 
-`LoginResponse` now includes:
+Tuesday Period 1:
+{ classId, sectionId, subjectId, dayOfWeek: 2, startTime: "08:00", endTime: "09:00", label: "Science" }
+...
+```
 
-- `userId` (UUID, nullable)  
-- `tenantId` (`public` for super-admin, else active tenant schema)
+### 10.3 Viewing the Timetable
 
-### Current user (`GET /api/v1/auth/me`)
+```
+GET /api/v1/timetable/classes/{classId}/sections/{sectionId}
+→ Returns all slots for that class/section, sorted by dayOfWeek and startTime
+```
 
-Returns `UserProfileResponse` for the authenticated principal (bootstrap returns role `SUPER_ADMIN` without DB row).
-
----
-
-## 2. Database schema (per-tenant)
-
-DDL is provisioned in `TenantServiceImpl.initializeTenantTables` (plus `ALTER ... ADD COLUMN IF NOT EXISTS` for older schemas).
-
-### `users`
-
-| Column | Notes |
-|--------|--------|
-| `id` UUID PK | |
-| `full_name`, `username`, `email`, `password_hash`, `role` | |
-| `tenant_id` VARCHAR(80) | Filled from `TenantContext` on create |
-| `active`, `created_at` | |
-
-### `students` / `teachers`
-
-Optional link to login account:
-
-- `user_id` UUID → `users(id)` nullable
-
-### `parent_students`
-
-| Column | Notes |
-|--------|--------|
-| `parent_user_id` | `users.id` with role `PARENT` |
-| `student_id` | `students.id` |
-| Unique `(parent_user_id, student_id)` | |
-
-### `homework_assignments`
-
-Teacher/admin-authored work tied to `class_id`, optional `section_id`, `assigned_by_user_id`, `due_date`.
-
-### `timetable_slots`
-
-Per class/section: `subject_id`, optional `teacher_id`, `day_of_week` (1–7), `start_time`, `end_time`, `label`.
+Accessible by: all authenticated users (Admin, Teacher, Student, Parent).
 
 ---
 
-## 3. REST API summary (v1)
+## 11. Bulk Upload System
 
-| Area | Method | Path | Roles |
-|------|--------|------|--------|
-| Auth | POST | `/api/v1/auth/login` | Public |
-| Auth | GET | `/api/v1/auth/me` | Authenticated |
-| Homework | POST | `/api/v1/homework` | `SCHOOL_ADMIN`, `TEACHER` |
-| Homework | GET | `/api/v1/homework/classes/{classId}` | All school roles |
-| Timetable | POST | `/api/v1/timetable/slots` | `SCHOOL_ADMIN`, `TEACHER` |
-| Timetable | GET | `/api/v1/timetable/classes/{classId}/sections/{sectionId}` | All school roles |
-| Parent | GET | `/api/v1/parents/me/children` | `PARENT` |
+The bulk upload feature allows School Admins to import large datasets via Excel.
 
-Existing modules (`/students`, `/teachers`, `/academics`, `/attendances`, `/fees`, `/exams`, `/dashboard`, `/bulk`) stay as before.
+### 11.1 Supported Data Types
 
----
+The Excel workbook can contain these sheets:
 
-## 4. Frontend role model
+| Sheet Name | Data |
+|------------|------|
+| `Students` | Admission no, name, DOB, gender, email, phone |
+| `Teachers` | Employee no, name, email, phone, hire date |
+| `Classes` | Class name, code |
+| `Sections` | Section name, class code |
 
-| Role | Experience |
-|------|------------|
-| `SUPER_ADMIN` | `/super-admin/*` — tenants, platform users (with tenant header when hitting tenant APIs) |
-| `SCHOOL_ADMIN` / `TEACHER` | Full KPI dashboard + sidebar: students, teachers, academic, bulk (admin only), homework, timetable, attendance, fees, marks, profile |
-| `STUDENT` / `PARENT` | Simplified home with cards → homework, timetable, attendance, fees, marks, profile; parents also **My children** |
+### 11.2 Upload Steps
 
-Branding: `DashboardLayout` already applies `primaryColor` and `logoUrl` from tenant dashboard summary.
+```
+Step 1: Download the sample template
+GET /api/v1/bulk/sample
+→ Save the .xlsx file
 
----
+Step 2: Fill in the template with your data
+(follow column headers exactly)
 
-## 5. Next implementation steps
+Step 3: Upload the filled file
+POST /api/v1/bulk/upload
+Content-Type: multipart/form-data
+file: <your_filled_template.xlsx>
 
-1. **Enrollment model** — `class_id` / `section_id` on `students` for scoped homework and timetable defaults.  
-2. **Parent linking API** — `POST /api/v1/parents/links` (admin) to populate `parent_students`.  
-3. **Homework submissions** — `homework_submissions` table + file metadata.  
-4. **Wire hub pages** — Replace attendance/fees/marks stubs with TanStack Query + tables.  
-5. **Integration tests** — `@SpringBootTest` with Testcontainers for auth + tenant isolation.  
-6. **Payment gateway** — Optional adapter behind `FeesService`.
+Step 4: Review the response
+{
+  "successCount": 48,
+  "failedCount": 2,
+  "errors": [
+    { "sheet": "Students", "row": 5, "error": "Duplicate admission number" }
+  ]
+}
+```
 
----
+### 11.3 Error Handling
 
-## 6. Testing notes
-
-- **Unit**: Continue service-layer tests with `TenantContext` set/cleared.  
-- **API**: Postman collection should set `baseUrl` = `http://localhost:8080/api/v1`; login stores `token` and use `X-Tenant-ID` for school routes.  
-- **Edge cases**: Login without `X-Tenant-ID` for non–super-admin; homework create without tenant header; parent `/me/children` with no links.
+- Rows with errors are **skipped**, not rolled back entirely
+- Valid rows in the same upload are still processed
+- Errors include sheet name, row number, and reason
+- Re-upload only the failed rows after fixing them

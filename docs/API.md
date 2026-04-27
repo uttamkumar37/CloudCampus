@@ -1,188 +1,250 @@
-# CampusCloud — API Reference
+# CampusCloud — API Documentation
 
-Complete HTTP API reference for all modules. All endpoints return `ApiResponse<T>`.
-
-**Base URL:** `http://localhost:8080/api/v1`
-
-**Required headers (all tenant-scoped endpoints):**
-```
-Authorization: Bearer <token>
-X-Tenant-ID:   <schema_name>
-Content-Type:  application/json
-```
+> Version: 1.0 | Last Updated: 2026-04-28 | Base URL: `http://localhost:8080/api/v1`
 
 ---
 
 ## Table of Contents
 
-1. [Response Envelope](#1-response-envelope)
-2. [Auth](#2-auth)
-3. [Tenant Management](#3-tenant-management)
-4. [Users](#4-users)
-5. [Students](#5-students)
-6. [Teachers](#6-teachers)
-7. [Academic Structure](#7-academic-structure)
-8. [Attendance](#8-attendance)
-9. [Fees](#9-fees)
-10. [Exams & Results](#10-exams--results)
-11. [Enums](#11-enums)
-12. [Error Reference](#12-error-reference)
+1. [Overview](#1-overview)
+2. [Authentication APIs](#2-authentication-apis)
+3. [Tenant Management APIs](#3-tenant-management-apis)
+4. [User Management APIs](#4-user-management-apis)
+5. [Student APIs](#5-student-apis)
+6. [Teacher APIs](#6-teacher-apis)
+7. [Academic APIs](#7-academic-apis)
+8. [Attendance APIs](#8-attendance-apis)
+9. [Fee APIs](#9-fee-apis)
+10. [Exam APIs](#10-exam-apis)
+11. [Homework APIs](#11-homework-apis)
+12. [Timetable APIs](#12-timetable-apis)
+13. [Parent APIs](#13-parent-apis)
+14. [Dashboard APIs](#14-dashboard-apis)
+15. [Bulk Upload APIs](#15-bulk-upload-apis)
+16. [Error Reference](#16-error-reference)
 
 ---
 
-## 1. Response Envelope
+## 1. Overview
 
-Every response — success or error — uses this wrapper:
+### Base URL
 
-```json
-{
-  "success":   true,
-  "message":   "Human-readable description",
-  "data":      { ... },
-  "timestamp": "2026-04-27T10:00:00.000Z"
-}
+```
+http://localhost:8080/api/v1
 ```
 
-On error: `success: false`, `data: null`, `message` describes the violation.
+### Required Headers
 
-### Paginated Response
+| Header | Required On | Example |
+|--------|-------------|---------|
+| `Authorization` | All authenticated endpoints | `Bearer eyJhbGci...` |
+| `X-Tenant-ID` | All tenant-scoped endpoints | `greenwood` |
+| `Content-Type` | POST/PUT requests | `application/json` |
 
-List endpoints wrap `data` in `PageResponse<T>`:
+### Response Envelope
+
+Every response is wrapped in `ApiResponse<T>`:
 
 ```json
 {
   "success": true,
-  "message": "Students retrieved successfully",
-  "data": {
-    "content": [ { ... }, { ... } ],
-    "page":          0,
-    "size":          20,
-    "totalElements": 87,
-    "totalPages":    5,
-    "last":          false
-  },
-  "timestamp": "2026-04-27T10:00:00.000Z"
+  "message": "Operation completed",
+  "data": { },
+  "timestamp": "2026-04-28T10:00:00Z"
 }
 ```
 
-**Pagination query parameters (all list endpoints):**
-
-| Parameter | Default | Description |
-|---|---|---|
-| `page` | `0` | Zero-based page index |
-| `size` | `20` | Items per page |
-| `sort` | `createdAt,desc` | Sort field and direction |
-
----
-
-## 2. Auth
-
-### POST /api/v1/auth/login
-
-No authentication required. No `X-Tenant-ID` required.
-
-**Request body:**
+Paginated responses return `PageResponse<T>` inside `data`:
 
 ```json
 {
-  "username": "superadmin",
-  "password": "your-password"
+  "success": true,
+  "data": {
+    "content": [],
+    "page": 0,
+    "size": 20,
+    "totalElements": 150,
+    "totalPages": 8,
+    "last": false
+  }
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `username` | string | Yes | Trimmed; case-insensitive match |
-| `password` | string | Yes | Plaintext; validated against BCrypt hash |
+### HTTP Status Codes
 
-**Response 200:**
+| Code | Meaning |
+|------|---------|
+| `200` | Success |
+| `201` | Created |
+| `400` | Validation error or bad request |
+| `401` | Missing or invalid JWT |
+| `403` | Insufficient role/permissions |
+| `404` | Resource not found |
+| `409` | Conflict (e.g., duplicate admission number) |
+| `500` | Internal server error |
 
+---
+
+## 2. Authentication APIs
+
+### 2.1 Login
+
+> Authenticate a user and obtain a JWT token.
+> For **Super Admin** login, omit `X-Tenant-ID`.
+> For **tenant users** (Admin, Teacher, etc.), include `X-Tenant-ID`.
+
+**Endpoint:** `POST /auth/login`
+
+**Headers:**
+```
+Content-Type: application/json
+X-Tenant-ID: greenwood       (tenant users only; omit for Super Admin)
+```
+
+**Request Body:**
+```json
+{
+  "username": "john.admin",
+  "password": "SecretPass123"
+}
+```
+
+**Response (200 OK):**
 ```json
 {
   "success": true,
   "message": "Login successful",
   "data": {
-    "token":    "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzdXBlcmFkbWluIiwicm9sZSI6IlJPTEVfU1VQRVJfQURNSU4iLCJpYXQiOjE3NDU3NDQ4MDAsImV4cCI6MTc0NTc0ODQwMH0.SIGNATURE",
-    "username": "superadmin",
-    "role":     "SUPER_ADMIN"
-  },
-  "timestamp": "2026-04-27T10:00:00.000Z"
+    "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+    "tokenType": "Bearer",
+    "expiresIn": 3600,
+    "username": "john.admin",
+    "role": "SCHOOL_ADMIN",
+    "roles": ["SCHOOL_ADMIN"],
+    "userId": "550e8400-e29b-41d4-a716-446655440000",
+    "tenantId": "greenwood"
+  }
 }
 ```
 
-| Response field | Description |
-|---|---|
-| `token` | JWT — include as `Authorization: Bearer <token>` on all subsequent requests |
-| `username` | Authenticated username |
-| `role` | One of: `SUPER_ADMIN`, `SCHOOL_ADMIN`, `TEACHER`, `STUDENT`, `PARENT` |
-
-**Error 400:** Invalid credentials
-
-**Token expiry:** Configured by `JWT_ACCESS_TOKEN_EXPIRATION_MS` (default 3600000 ms = 1 hour). Re-call this endpoint to get a new token.
+**Error (401):**
+```json
+{
+  "success": false,
+  "message": "Invalid username or password",
+  "data": null
+}
+```
 
 ---
 
-## 3. Tenant Management
+### 2.2 Get Current User Profile
 
-All endpoints require `SUPER_ADMIN` role. No `X-Tenant-ID` needed for these endpoints.
+> Returns the profile of the currently authenticated user.
 
-### POST /api/v1/tenants
+**Endpoint:** `GET /auth/me`
 
-Creates a new school tenant and provisions its PostgreSQL schema + 11 domain tables.
+**Headers:**
+```
+Authorization: Bearer <token>
+X-Tenant-ID: greenwood
+```
 
-**Request body:**
-
+**Response (200 OK):**
 ```json
 {
-  "name":       "Greenwood High School",
-  "schemaName": "greenwood"
+  "success": true,
+  "data": {
+    "userId": "550e8400-e29b-41d4-a716-446655440000",
+    "username": "john.admin",
+    "email": "john@greenwood.edu",
+    "fullName": "John Smith",
+    "role": "SCHOOL_ADMIN",
+    "active": true,
+    "tenantSchema": "greenwood"
+  }
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `name` | string | Yes | Must be globally unique |
-| `schemaName` | string | Yes | Must be globally unique; used as PostgreSQL schema name; lowercase, no spaces |
+---
 
-**Response 200:**
+## 3. Tenant Management APIs
 
+> These endpoints require the `SUPER_ADMIN` role.
+> `X-Tenant-ID` header is **not required** for these endpoints.
+
+### 3.1 Create Tenant
+
+> Provisions a new school tenant: creates a PostgreSQL schema and initializes all 13 domain tables.
+
+**Endpoint:** `POST /tenants`
+
+**Headers:**
+```
+Authorization: Bearer <superadmin_token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "tenantId": "greenwood",
+  "schoolName": "Greenwood High School",
+  "schemaName": "greenwood",
+  "logoUrl": "https://example.com/logo.png",
+  "primaryColor": "#10b981"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `tenantId` | string | Yes | Unique business identifier for the tenant |
+| `schoolName` | string | Yes | Display name of the school |
+| `schemaName` | string | Yes | PostgreSQL schema name (alphanumeric + underscore only) |
+| `logoUrl` | string | No | URL to school logo |
+| `primaryColor` | string | No | Brand color hex code (default: `#10b981`) |
+
+**Response (201 Created):**
 ```json
 {
   "success": true,
   "message": "Tenant created successfully",
   "data": {
-    "id":         "550e8400-e29b-41d4-a716-446655440000",
-    "name":       "Greenwood High School",
+    "id": "a3d5e7f9-...",
+    "tenantId": "greenwood",
+    "schoolName": "Greenwood High School",
     "schemaName": "greenwood",
-    "active":     true,
-    "createdAt":  "2026-04-27T10:00:00.000Z"
+    "active": true,
+    "logoUrl": "https://example.com/logo.png",
+    "primaryColor": "#10b981",
+    "createdAt": "2026-04-28T10:00:00Z"
   }
 }
 ```
 
-**Error 400:** Duplicate name or schema name
-
-**Side effects:** Creates PostgreSQL schema `greenwood` and runs 11 `CREATE TABLE IF NOT EXISTS` statements in a single transaction. See the full SQL in [README.md](../README.md#5-multi-tenancy).
-
 ---
 
-### GET /api/v1/tenants
+### 3.2 List All Tenants
 
-Returns all tenants.
+**Endpoint:** `GET /tenants`
 
-**Response 200:**
+**Headers:**
+```
+Authorization: Bearer <superadmin_token>
+```
 
+**Response (200 OK):**
 ```json
 {
   "success": true,
-  "message": "Tenants retrieved successfully",
   "data": [
     {
-      "id":         "550e8400-e29b-41d4-a716-446655440000",
-      "name":       "Greenwood High School",
+      "id": "a3d5e7f9-...",
+      "tenantId": "greenwood",
+      "schoolName": "Greenwood High School",
       "schemaName": "greenwood",
-      "active":     true,
-      "createdAt":  "2026-04-27T10:00:00.000Z"
+      "active": true,
+      "createdAt": "2026-04-28T10:00:00Z"
     }
   ]
 }
@@ -190,241 +252,257 @@ Returns all tenants.
 
 ---
 
-### GET /api/v1/tenants/{id}
+### 3.3 Get Tenant by ID
 
-Returns a single tenant by UUID.
+**Endpoint:** `GET /tenants/{tenantId}`
 
-**Path param:** `id` — UUID of the tenant
+**Path Parameter:** `tenantId` — the business tenant ID (e.g., `greenwood`)
 
-**Response 200:** Same `TenantResponse` object as create.
-
-**Error 400:** Tenant not found
+**Response (200 OK):** Same structure as single object in 3.2.
 
 ---
 
-## 4. Users
+## 4. User Management APIs
 
-Minimum role: `SCHOOL_ADMIN` for write; `SCHOOL_ADMIN` for read. Requires `X-Tenant-ID`.
+> Requires: `X-Tenant-ID` header. Role: `SUPER_ADMIN` or `SCHOOL_ADMIN`.
 
-### POST /api/v1/users
+### 4.1 Create User
 
-Creates a new staff user account in the tenant schema.
+> Creates a staff user account within a tenant schema.
 
-**Request body:**
+**Endpoint:** `POST /users`
 
+**Headers:**
+```
+Authorization: Bearer <token>
+X-Tenant-ID: greenwood
+Content-Type: application/json
+```
+
+**Request Body:**
 ```json
 {
-  "fullName": "Jane Smith",
-  "username": "janesmith",
-  "email":    "jane@greenwood.edu",
+  "fullName": "Jane Doe",
+  "username": "jane.doe",
+  "email": "jane@greenwood.edu",
   "password": "SecurePass123!",
-  "role":     "SCHOOL_ADMIN"
+  "role": "TEACHER"
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `fullName` | string | Yes | 1–255 chars |
-| `username` | string | Yes | Stored lowercase; must be unique within tenant |
-| `email` | string | Yes | Stored lowercase; must be unique within tenant |
-| `password` | string | Yes | Stored as BCrypt hash; never returned |
-| `role` | string | Yes | `SUPER_ADMIN` \| `SCHOOL_ADMIN` \| `TEACHER` \| `STUDENT` \| `PARENT` |
+| Field | Type | Required | Values |
+|-------|------|----------|--------|
+| `fullName` | string | Yes | Display name |
+| `username` | string | Yes | Login username (normalized to lowercase) |
+| `email` | string | Yes | Email address (normalized to lowercase) |
+| `password` | string | Yes | Plaintext (BCrypt hashed before storage) |
+| `role` | enum | Yes | `SUPER_ADMIN`, `SCHOOL_ADMIN`, `TEACHER`, `STUDENT`, `PARENT` |
 
-**Response 200:**
-
+**Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "User created successfully",
   "data": {
-    "id":        "uuid",
-    "fullName":  "Jane Smith",
-    "username":  "janesmith",
-    "email":     "jane@greenwood.edu",
-    "role":      "SCHOOL_ADMIN",
-    "active":    true,
-    "createdAt": "2026-04-27T10:00:00.000Z"
+    "id": "...",
+    "fullName": "Jane Doe",
+    "username": "jane.doe",
+    "email": "jane@greenwood.edu",
+    "role": "TEACHER",
+    "active": true,
+    "createdAt": "2026-04-28T10:00:00Z"
   }
 }
 ```
 
-**Note:** `password` is never included in any response.
+---
 
-**Error 400:** Duplicate username | Duplicate email | Missing tenant context
+### 4.2 List Users (Paginated)
+
+**Endpoint:** `GET /users`
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `page` | int | `0` | Zero-based page number |
+| `size` | int | `20` | Items per page |
+| `sort` | string | `username,asc` | Sort field and direction |
+
+**Response (200 OK):** `PageResponse<UserResponse>`
 
 ---
 
-### GET /api/v1/users
+## 5. Student APIs
 
-Returns paginated list of users in the tenant.
+> Requires: `X-Tenant-ID` header.
 
-**Query params:** `page`, `size`, `sort` (see [Section 1](#1-response-envelope))
+### 5.1 Create Student
 
-**Response 200:** `PageResponse<UserResponse>`
+**Endpoint:** `POST /students`
 
----
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
 
-## 5. Students
+**Headers:**
+```
+Authorization: Bearer <token>
+X-Tenant-ID: greenwood
+Content-Type: application/json
+```
 
-Write: min `SCHOOL_ADMIN`. Read: min `TEACHER`. Requires `X-Tenant-ID`.
-
-### POST /api/v1/students
-
-Enrolls a new student.
-
-**Request body:**
-
+**Request Body:**
 ```json
 {
-  "admissionNo":  "STU2026001",
-  "firstName":    "Alice",
-  "lastName":     "Johnson",
-  "dateOfBirth":  "2010-06-15",
-  "gender":       "FEMALE",
-  "email":        "alice@greenwood.edu",
-  "phone":        "+1-555-0100"
+  "admissionNo": "ADM-2024-001",
+  "firstName": "Alice",
+  "lastName": "Johnson",
+  "dateOfBirth": "2010-05-15",
+  "gender": "FEMALE",
+  "email": "alice@example.com",
+  "phone": "+91-9876543210"
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `admissionNo` | string | Yes | Stored UPPERCASE; must be unique within tenant |
-| `firstName` | string | Yes | 1–100 chars |
-| `lastName` | string | Yes | 1–100 chars |
-| `dateOfBirth` | string | No | ISO 8601 date: `yyyy-MM-dd` |
-| `gender` | string | No | `MALE` \| `FEMALE` \| `OTHER` |
-| `email` | string | No | Optional student email |
-| `phone` | string | No | Optional phone number |
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `admissionNo` | string | Yes | Normalized to UPPERCASE; must be unique |
+| `firstName` | string | Yes | |
+| `lastName` | string | Yes | |
+| `dateOfBirth` | date | Yes | ISO 8601 (YYYY-MM-DD) |
+| `gender` | enum | Yes | `MALE`, `FEMALE`, `OTHER` |
+| `email` | string | No | Optional |
+| `phone` | string | No | Optional |
 
-**Response 200:**
-
+**Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Student enrolled successfully",
   "data": {
-    "id":          "uuid",
-    "admissionNo": "STU2026001",
-    "firstName":   "Alice",
-    "lastName":    "Johnson",
-    "dateOfBirth": "2010-06-15",
-    "gender":      "FEMALE",
-    "email":       "alice@greenwood.edu",
-    "phone":       "+1-555-0100",
-    "active":      true,
-    "createdAt":   "2026-04-27T10:00:00.000Z"
+    "id": "...",
+    "admissionNo": "ADM-2024-001",
+    "firstName": "Alice",
+    "lastName": "Johnson",
+    "dateOfBirth": "2010-05-15",
+    "gender": "FEMALE",
+    "email": "alice@example.com",
+    "phone": "+91-9876543210",
+    "active": true,
+    "createdAt": "2026-04-28T10:00:00Z"
   }
 }
 ```
 
-**Error 400:** Duplicate admission number | Missing tenant context
-
----
-
-### GET /api/v1/students
-
-Paginated list of students.
-
-**Query params:** `page`, `size`, `sort`
-
-**Response 200:** `PageResponse<StudentResponse>`
-
----
-
-### GET /api/v1/students/{id}
-
-**Path param:** `id` — student UUID
-
-**Response 200:** `StudentResponse` object
-
-**Error 400:** Student not found
-
----
-
-## 6. Teachers
-
-Write: min `SCHOOL_ADMIN`. Read: min `TEACHER`. Requires `X-Tenant-ID`.
-
-### POST /api/v1/teachers
-
-Adds a teacher record.
-
-**Request body:**
-
+**Error (409 Conflict):**
 ```json
 {
-  "employeeNo": "EMP2026001",
-  "firstName":  "Robert",
-  "lastName":   "Williams",
-  "email":      "r.williams@greenwood.edu",
-  "phone":      "+1-555-0200",
-  "hireDate":   "2026-01-15"
+  "success": false,
+  "message": "Admission number already exists"
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `employeeNo` | string | Yes | Stored UPPERCASE; must be unique within tenant |
-| `firstName` | string | Yes | 1–100 chars |
-| `lastName` | string | Yes | 1–100 chars |
-| `email` | string | Yes | Stored lowercase; must be unique within tenant |
-| `phone` | string | No | Optional phone number |
-| `hireDate` | string | No | ISO 8601 date: `yyyy-MM-dd` |
+---
 
-**Response 200:**
+### 5.2 Get Student by ID
 
+**Endpoint:** `GET /students/{id}`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
+
+**Response (200 OK):** Single `StudentResponse` object.
+
+---
+
+### 5.3 List Students (Paginated)
+
+**Endpoint:** `GET /students`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
+
+**Query Parameters:** `page`, `size`, `sort` (default: `lastName,asc`)
+
+**Response (200 OK):** `PageResponse<StudentResponse>`
+
+---
+
+## 6. Teacher APIs
+
+> Requires: `X-Tenant-ID` header.
+
+### 6.1 Create Teacher
+
+**Endpoint:** `POST /teachers`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN
+
+**Request Body:**
+```json
+{
+  "employeeNo": "EMP-001",
+  "firstName": "Robert",
+  "lastName": "Wilson",
+  "email": "robert@greenwood.edu",
+  "phone": "+91-9876543211",
+  "hireDate": "2022-08-01"
+}
+```
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `employeeNo` | string | Yes | Normalized to UPPERCASE; must be unique |
+| `firstName` | string | Yes | |
+| `lastName` | string | Yes | |
+| `email` | string | Yes | Normalized to lowercase; must be unique |
+| `phone` | string | No | |
+| `hireDate` | date | No | ISO 8601 (YYYY-MM-DD) |
+
+**Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Teacher added successfully",
   "data": {
-    "id":         "uuid",
-    "employeeNo": "EMP2026001",
-    "firstName":  "Robert",
-    "lastName":   "Williams",
-    "email":      "r.williams@greenwood.edu",
-    "phone":      "+1-555-0200",
-    "hireDate":   "2026-01-15",
-    "active":     true,
-    "createdAt":  "2026-04-27T10:00:00.000Z"
+    "id": "...",
+    "employeeNo": "EMP-001",
+    "firstName": "Robert",
+    "lastName": "Wilson",
+    "email": "robert@greenwood.edu",
+    "phone": "+91-9876543211",
+    "hireDate": "2022-08-01",
+    "active": true,
+    "createdAt": "2026-04-28T10:00:00Z"
   }
 }
 ```
 
-**Error 400:** Duplicate employee number | Duplicate email | Missing tenant context
+---
+
+### 6.2 Get Teacher by ID
+
+**Endpoint:** `GET /teachers/{id}`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
 
 ---
 
-### GET /api/v1/teachers
+### 6.3 List Teachers (Paginated)
 
-Paginated list of teachers.
+**Endpoint:** `GET /teachers`
 
-**Query params:** `page`, `size`, `sort`
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
 
-**Response 200:** `PageResponse<TeacherResponse>`
-
----
-
-### GET /api/v1/teachers/{id}
-
-**Path param:** `id` — teacher UUID
-
-**Response 200:** `TeacherResponse` object
-
-**Error 400:** Teacher not found
+**Query Parameters:** `page`, `size`, `sort` (default: `lastName,asc`)
 
 ---
 
-## 7. Academic Structure
+## 7. Academic APIs
 
-Write: min `SCHOOL_ADMIN`. Read: min `TEACHER`. Requires `X-Tenant-ID`.
+> Requires: `X-Tenant-ID` header.
+> Write operations: SUPER_ADMIN, SCHOOL_ADMIN
+> Read operations: SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
 
-All three sub-resources follow the same pattern.
+### 7.1 Create Class
 
-### POST /api/v1/academic/classes
+**Endpoint:** `POST /academics/classes`
 
-**Request body:**
-
+**Request Body:**
 ```json
 {
   "name": "Grade 10",
@@ -432,501 +510,703 @@ All three sub-resources follow the same pattern.
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `name` | string | Yes | 1–100 chars |
-| `code` | string | Yes | 1–20 chars; must be unique within tenant |
-
-**Response 200:**
-
+**Response (201 Created):**
 ```json
 {
+  "success": true,
   "data": {
-    "id":        "uuid",
-    "name":      "Grade 10",
-    "code":      "G10",
-    "active":    true,
-    "createdAt": "2026-04-27T10:00:00.000Z"
+    "id": "...",
+    "name": "Grade 10",
+    "code": "G10",
+    "active": true,
+    "createdAt": "2026-04-28T10:00:00Z"
   }
 }
 ```
 
-**Error 400:** Duplicate code
+---
+
+### 7.2 List Classes
+
+**Endpoint:** `GET /academics/classes`
+
+**Response (200 OK):** `List<ClassResponse>`
 
 ---
 
-### GET /api/v1/academic/classes
+### 7.3 Create Subject
 
-Returns list of all classes. No pagination (typically small dataset).
+**Endpoint:** `POST /academics/subjects`
 
-**Response 200:** `List<SchoolClassResponse>`
-
----
-
-### POST /api/v1/academic/subjects
-
-**Request body:**
-
+**Request Body:**
 ```json
 {
   "name": "Mathematics",
-  "code": "MATH101"
+  "code": "MATH"
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `name` | string | Yes | 1–100 chars |
-| `code` | string | Yes | 1–20 chars; must be unique within tenant |
-
-**Response 200:** `SubjectResponse` with `id`, `name`, `code`, `active`, `createdAt`
+**Response (201 Created):** `SubjectResponse` with `id`, `name`, `code`, `active`, `createdAt`.
 
 ---
 
-### GET /api/v1/academic/subjects
+### 7.4 List Subjects
 
-Returns list of all subjects.
+**Endpoint:** `GET /academics/subjects`
 
-**Response 200:** `List<SubjectResponse>`
+**Response (200 OK):** `List<SubjectResponse>`
 
 ---
 
-### POST /api/v1/academic/sections
+### 7.5 Create Section
 
-Creates a section within an existing class.
+**Endpoint:** `POST /academics/sections`
 
-**Request body:**
-
+**Request Body:**
 ```json
 {
-  "name":    "Section A",
-  "classId": "uuid-of-existing-class"
+  "name": "Section A",
+  "classId": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `name` | string | Yes | 1–50 chars |
-| `classId` | UUID | Yes | Must reference an existing class in the same tenant |
-
-**Response 200:**
-
-```json
-{
-  "data": {
-    "id":        "uuid",
-    "name":      "Section A",
-    "classId":   "uuid-of-class",
-    "active":    true,
-    "createdAt": "2026-04-27T10:00:00.000Z"
-  }
-}
-```
-
-**Error 400:** Class not found
+**Response (201 Created):** `SectionResponse` with `id`, `name`, `classId`, `active`, `createdAt`.
 
 ---
 
-### GET /api/v1/academic/sections
+### 7.6 List Sections
 
-Returns list of all sections.
+**Endpoint:** `GET /academics/sections`
 
-**Response 200:** `List<SectionResponse>`
+**Response (200 OK):** `List<SectionResponse>`
 
 ---
 
-## 8. Attendance
+## 8. Attendance APIs
 
-Minimum role: `TEACHER`. Requires `X-Tenant-ID`.
+> Requires: `X-Tenant-ID` header.
 
-### POST /api/v1/attendance
+### 8.1 Mark Attendance
 
-Marks attendance for a student on a given date.
+**Endpoint:** `POST /attendances`
 
-**Request body:**
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
 
+**Request Body:**
 ```json
 {
-  "studentId":      "uuid",
-  "classId":        "uuid",
-  "sectionId":      "uuid",
-  "attendanceDate": "2026-04-27",
-  "status":         "PRESENT",
-  "remarks":        "On time"
+  "studentId": "550e8400-...",
+  "classId": "a1b2c3d4-...",
+  "sectionId": "e5f6a7b8-...",
+  "attendanceDate": "2026-04-28",
+  "status": "PRESENT",
+  "remarks": "On time",
+  "markedByUserId": "c9d0e1f2-..."
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `studentId` | UUID | Yes | Must reference an existing student |
-| `classId` | UUID | Yes | Must reference an existing class |
-| `sectionId` | UUID | Yes | Must reference an existing section |
-| `attendanceDate` | string | Yes | ISO 8601 date: `yyyy-MM-dd` |
-| `status` | string | Yes | `PRESENT` \| `ABSENT` \| `LATE` \| `EXCUSED` |
-| `remarks` | string | No | Free-text note |
+| Field | Type | Required | Values |
+|-------|------|----------|--------|
+| `studentId` | UUID | Yes | |
+| `classId` | UUID | Yes | |
+| `sectionId` | UUID | Yes | |
+| `attendanceDate` | date | Yes | ISO 8601; cannot be future date |
+| `status` | enum | Yes | `PRESENT`, `ABSENT`, `LATE`, `EXCUSED` |
+| `remarks` | string | No | |
+| `markedByUserId` | UUID | No | User who marked attendance |
 
-**Response 200:**
-
+**Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Attendance marked successfully",
   "data": {
-    "id":             "uuid",
-    "studentId":      "uuid",
-    "classId":        "uuid",
-    "sectionId":      "uuid",
-    "attendanceDate": "2026-04-27",
-    "status":         "PRESENT",
-    "remarks":        "On time",
-    "createdAt":      "2026-04-27T10:00:00.000Z"
+    "id": "...",
+    "studentId": "550e8400-...",
+    "classId": "a1b2c3d4-...",
+    "sectionId": "e5f6a7b8-...",
+    "attendanceDate": "2026-04-28",
+    "status": "PRESENT",
+    "remarks": "On time",
+    "createdAt": "2026-04-28T10:00:00Z"
   }
 }
 ```
 
-**Error 400:** Attendance already marked for this student on this date (`UNIQUE(student_id, attendance_date)`)
+**Error (409):** Duplicate attendance for same student + date.
 
 ---
 
-### GET /api/v1/attendance/{id}
+### 8.2 Get Attendance by ID
 
-**Path param:** `id` — attendance record UUID
+**Endpoint:** `GET /attendances/{attendanceId}`
 
-**Response 200:** `AttendanceResponse` object
-
-**Error 400:** Record not found
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT
 
 ---
 
-### GET /api/v1/attendance/date/{date}
+### 8.3 List Attendance by Date
 
-Returns all attendance records for a given date.
+**Endpoint:** `GET /attendances?date=2026-04-28`
 
-**Path param:** `date` — ISO 8601 date: `yyyy-MM-dd`
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT
 
-**Response 200:** `List<AttendanceResponse>`
+**Query Parameter:** `date` — ISO 8601 date string
+
+**Response (200 OK):** `List<AttendanceResponse>`
 
 ---
 
-## 9. Fees
+## 9. Fee APIs
 
-Minimum role: `SCHOOL_ADMIN`. Requires `X-Tenant-ID`.
+> Requires: `X-Tenant-ID` header.
 
-### POST /api/v1/fees/assignments
+### 9.1 Assign Fee to Student
 
-Assigns a fee item to a student.
+**Endpoint:** `POST /fees/assignments`
 
-**Request body:**
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN
 
+**Request Body:**
 ```json
 {
-  "studentId": "uuid",
-  "feeTitle":  "Term 1 Tuition Fee",
-  "amount":    5000.00,
-  "dueDate":   "2026-05-31"
+  "studentId": "550e8400-...",
+  "feeTitle": "Term 1 Tuition Fee",
+  "amount": 15000.00,
+  "dueDate": "2026-05-31"
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `studentId` | UUID | Yes | Must reference an existing student |
-| `feeTitle` | string | Yes | 1–255 chars |
-| `amount` | decimal | Yes | Positive amount; stored as NUMERIC(12,2) |
-| `dueDate` | string | Yes | ISO 8601 date: `yyyy-MM-dd` |
-
-**Response 200:**
-
+**Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Fee assigned successfully",
   "data": {
-    "id":        "uuid",
-    "studentId": "uuid",
-    "feeTitle":  "Term 1 Tuition Fee",
-    "amount":    5000.00,
-    "dueDate":   "2026-05-31",
-    "status":    "PENDING",
-    "createdAt": "2026-04-27T10:00:00.000Z"
+    "id": "...",
+    "studentId": "550e8400-...",
+    "feeTitle": "Term 1 Tuition Fee",
+    "amount": 15000.00,
+    "dueDate": "2026-05-31",
+    "status": "PENDING",
+    "createdAt": "2026-04-28T10:00:00Z"
   }
 }
 ```
 
-Initial `status` is always `PENDING`.
-
-**Error 400:** Student not found | Missing tenant context
-
----
-
-### GET /api/v1/fees/assignments/student/{studentId}
-
-Returns all fee assignments for a student.
-
-**Path param:** `studentId` — student UUID
-
-**Response 200:** `List<FeeAssignmentResponse>`
+Fee status lifecycle:
+```
+PENDING → PARTIALLY_PAID → PAID
+PENDING → OVERDUE  (if due date passes without full payment)
+```
 
 ---
 
-### POST /api/v1/fees/payments
+### 9.2 Record Fee Payment
 
-Records a payment against a fee assignment.
+**Endpoint:** `POST /fees/payments`
 
-**Request body:**
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN
 
+**Request Body:**
 ```json
 {
-  "feeAssignmentId": "uuid",
-  "amountPaid":      2500.00,
-  "paymentDate":     "2026-04-27",
-  "paymentMethod":   "BANK_TRANSFER",
-  "referenceNo":     "TXN20260427001"
+  "feeAssignmentId": "a1b2c3d4-...",
+  "amountPaid": 8000.00,
+  "paymentDate": "2026-04-28",
+  "paymentMethod": "CASH",
+  "referenceNo": "RCP-20260428-001",
+  "receivedByUserId": "c9d0e1f2-..."
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `feeAssignmentId` | UUID | Yes | Must reference an existing fee assignment |
-| `amountPaid` | decimal | Yes | Must not exceed remaining unpaid balance |
-| `paymentDate` | string | Yes | ISO 8601 date: `yyyy-MM-dd` |
-| `paymentMethod` | string | No | Free-text (e.g. `CASH`, `BANK_TRANSFER`, `CARD`) |
-| `referenceNo` | string | No | Transaction reference |
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `feeAssignmentId` | UUID | Yes | Must exist |
+| `amountPaid` | decimal | Yes | Cannot exceed remaining balance |
+| `paymentDate` | date | Yes | |
+| `paymentMethod` | string | No | e.g., `CASH`, `BANK_TRANSFER`, `CHEQUE` |
+| `referenceNo` | string | No | Receipt / transaction reference |
+| `receivedByUserId` | UUID | No | Staff member who received payment |
 
-**Response 200:**
-
+**Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Payment recorded successfully",
   "data": {
-    "id":               "uuid",
-    "feeAssignmentId":  "uuid",
-    "amountPaid":       2500.00,
-    "paymentDate":      "2026-04-27",
-    "paymentMethod":    "BANK_TRANSFER",
-    "referenceNo":      "TXN20260427001",
-    "createdAt":        "2026-04-27T10:00:00.000Z"
+    "id": "...",
+    "feeAssignmentId": "a1b2c3d4-...",
+    "amountPaid": 8000.00,
+    "paymentDate": "2026-04-28",
+    "paymentMethod": "CASH",
+    "referenceNo": "RCP-20260428-001",
+    "createdAt": "2026-04-28T10:00:00Z"
   }
 }
 ```
 
-**Status transitions after payment:**
-
-| Condition | Resulting status |
-|---|---|
-| `totalPaid + amountPaid < assignment.amount` | `PARTIALLY_PAID` |
-| `totalPaid + amountPaid == assignment.amount` | `PAID` |
-| `totalPaid + amountPaid > assignment.amount` | **400** — overpayment rejected |
-
-**Error 400:** Fee assignment not found | Overpayment (`amountPaid > remaining`) | Missing tenant context
+**Business rules:**
+- Payment amount cannot exceed remaining balance
+- Fee assignment status auto-transitions:
+  - Partial payment → `PARTIALLY_PAID`
+  - Full payment → `PAID`
+  - Overpayment → rejected with error
 
 ---
 
-## 10. Exams & Results
+### 9.3 Get Fee Assignments for Student
 
-Minimum role: `TEACHER`. Requires `X-Tenant-ID`.
+**Endpoint:** `GET /fees/students/{studentId}/assignments`
 
-### POST /api/v1/exams
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT
 
-Schedules a new exam.
+**Response (200 OK):** `List<FeeAssignmentResponse>`
 
-**Request body:**
+---
 
+## 10. Exam APIs
+
+> Requires: `X-Tenant-ID` header.
+
+### 10.1 Create Exam
+
+**Endpoint:** `POST /exams`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
+
+**Request Body:**
 ```json
 {
-  "title":     "Mid-Term Mathematics",
-  "examDate":  "2026-05-15",
-  "classId":   "uuid",
-  "sectionId": "uuid",
-  "subjectId": "uuid",
-  "maxMarks":  100
+  "title": "Mid-Term Mathematics",
+  "examDate": "2026-05-15",
+  "classId": "550e8400-...",
+  "sectionId": "a1b2c3d4-...",
+  "subjectId": "e5f6a7b8-...",
+  "maxMarks": 100.0
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `title` | string | Yes | 1–255 chars |
-| `examDate` | string | Yes | ISO 8601 date: `yyyy-MM-dd` |
-| `classId` | UUID | Yes | Must reference an existing class |
-| `sectionId` | UUID | Yes | Must reference an existing section |
-| `subjectId` | UUID | Yes | Must reference an existing subject |
-| `maxMarks` | integer | Yes | Positive integer; marks cap for results |
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `title` | string | Yes | |
+| `examDate` | date | Yes | ISO 8601 |
+| `classId` | UUID | Yes | |
+| `sectionId` | UUID | Yes | |
+| `subjectId` | UUID | Yes | |
+| `maxMarks` | decimal | Yes | Must be > 0 |
 
-**Response 200:**
-
+**Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Exam scheduled successfully",
   "data": {
-    "id":        "uuid",
-    "title":     "Mid-Term Mathematics",
-    "examDate":  "2026-05-15",
-    "classId":   "uuid",
-    "sectionId": "uuid",
-    "subjectId": "uuid",
-    "maxMarks":  100,
-    "active":    true,
-    "createdAt": "2026-04-27T10:00:00.000Z"
+    "id": "...",
+    "title": "Mid-Term Mathematics",
+    "examDate": "2026-05-15",
+    "classId": "550e8400-...",
+    "sectionId": "a1b2c3d4-...",
+    "subjectId": "e5f6a7b8-...",
+    "maxMarks": 100.0,
+    "active": true,
+    "createdAt": "2026-04-28T10:00:00Z"
   }
 }
 ```
 
-**Uniqueness:** The combination `(title, examDate, classId, sectionId, subjectId)` must be unique.
-
-**Error 400:** Duplicate exam schedule | Missing tenant context
+**Error (409):** Duplicate exam schedule (same title + date + class + section + subject).
 
 ---
 
-### GET /api/v1/exams/class/{classId}
+### 10.2 Get Exams for Class
 
-Returns all exams for a class.
+**Endpoint:** `GET /exams/classes/{classId}`
 
-**Path param:** `classId` — class UUID
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT
 
-**Response 200:** `List<ExamResponse>`
+**Response (200 OK):** `List<ExamResponse>`
 
 ---
 
-### POST /api/v1/exams/results
+### 10.3 Enter Exam Result
 
-Enters a result for a student in an exam.
+**Endpoint:** `POST /exams/results`
 
-**Request body:**
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
 
+**Request Body:**
 ```json
 {
-  "examId":        "uuid",
-  "studentId":     "uuid",
-  "marksObtained": 87,
-  "grade":         "A",
-  "remarks":       "Excellent performance"
+  "examId": "550e8400-...",
+  "studentId": "a1b2c3d4-...",
+  "marksObtained": 87.5,
+  "grade": "A",
+  "remarks": "Excellent performance",
+  "published": false
 }
 ```
 
-| Field | Type | Required | Constraint |
-|---|---|---|---|
-| `examId` | UUID | Yes | Must reference an existing exam |
-| `studentId` | UUID | Yes | One result per student per exam |
-| `marksObtained` | decimal | Yes | Must be `>= 0` and `<= exam.maxMarks` |
-| `grade` | string | No | Letter grade (e.g. `A`, `B+`) — not validated by API |
-| `remarks` | string | No | Teacher notes |
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `examId` | UUID | Yes | |
+| `studentId` | UUID | Yes | |
+| `marksObtained` | decimal | Yes | Cannot exceed `exam.maxMarks` |
+| `grade` | string | No | e.g., `A`, `B+`, `C` |
+| `remarks` | string | No | |
+| `published` | boolean | No | Default: false |
 
-**Response 200:**
+**Business rules:**
+- `marksObtained` cannot exceed `maxMarks`
+- Only one result per student per exam (UNIQUE constraint)
 
+**Response (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Result entered successfully",
   "data": {
-    "id":             "uuid",
-    "examId":         "uuid",
-    "studentId":      "uuid",
-    "marksObtained":  87,
-    "grade":          "A",
-    "remarks":        "Excellent performance",
-    "published":      false,
-    "createdAt":      "2026-04-27T10:00:00.000Z"
+    "id": "...",
+    "examId": "550e8400-...",
+    "studentId": "a1b2c3d4-...",
+    "marksObtained": 87.5,
+    "grade": "A",
+    "remarks": "Excellent performance",
+    "published": false,
+    "createdAt": "2026-04-28T10:00:00Z"
   }
 }
 ```
 
-`published` defaults to `false`. Publication endpoint is a future task.
+---
 
-**Error 400:** Exam not found | Duplicate result (same student + exam) | `marksObtained > exam.maxMarks` | Missing tenant context
+### 10.4 Get Results for Exam
+
+**Endpoint:** `GET /exams/{examId}/results`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT
+
+**Response (200 OK):** `List<ExamResultResponse>`
 
 ---
 
-### GET /api/v1/exams/results/exam/{examId}
+## 11. Homework APIs
 
-Returns all results for an exam.
+> Requires: `X-Tenant-ID` header.
 
-**Path param:** `examId` — exam UUID
+### 11.1 Create Homework Assignment
 
-**Response 200:** `List<ExamResultResponse>`
+**Endpoint:** `POST /homework`
 
----
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
 
-## 11. Enums
-
-### UserRole
-
-| Value | Description |
-|---|---|
-| `SUPER_ADMIN` | Platform administrator; manages tenants |
-| `SCHOOL_ADMIN` | School administrator; manages all school data |
-| `TEACHER` | Teacher; marks attendance, enters results |
-| `STUDENT` | Student account (ownership model — roadmap) |
-| `PARENT` | Parent account (ownership model — roadmap) |
-
-### Gender
-
-| Value |
-|---|
-| `MALE` |
-| `FEMALE` |
-| `OTHER` |
-
-### AttendanceStatus
-
-| Value | Description |
-|---|---|
-| `PRESENT` | Student was present |
-| `ABSENT` | Student was absent |
-| `LATE` | Student arrived late |
-| `EXCUSED` | Absence was excused |
-
-### FeeStatus
-
-| Value | Description |
-|---|---|
-| `PENDING` | No payment received |
-| `PARTIALLY_PAID` | Some payment received |
-| `PAID` | Fully paid |
-
----
-
-## 12. Error Reference
-
-### Error Response Format
-
+**Request Body:**
 ```json
 {
-  "success":   false,
-  "message":   "Admission number STU001 already exists",
-  "data":      null,
-  "timestamp": "2026-04-27T10:00:00.000Z"
+  "title": "Chapter 5 Exercises",
+  "description": "Complete problems 1–20 on page 87",
+  "classId": "550e8400-...",
+  "sectionId": "a1b2c3d4-...",
+  "assignedByUserId": "c9d0e1f2-...",
+  "dueDate": "2026-05-02"
 }
 ```
 
-### HTTP Status Codes
-
-| Status | When |
-|---|---|
-| `200 OK` | Successful response (both success and business errors use `ApiResponse`) |
-| `400 Bad Request` | `IllegalArgumentException` — duplicate data, business rule violation, missing tenant, not found |
-| `401 Unauthorized` | Missing or invalid JWT (Spring Security default response) |
-| `403 Forbidden` | Valid JWT but insufficient role |
-| `500 Internal Server Error` | Unhandled exception (logged server-side) |
-
-### Common 400 Messages
-
-| Message | Endpoint | Cause |
-|---|---|---|
-| `Username <x> already exists` | POST /users | Duplicate username in tenant |
-| `Email <x> already exists` | POST /users, POST /teachers | Duplicate email in tenant |
-| `Admission number <x> already exists` | POST /students | Duplicate admission number |
-| `Employee number <x> already exists` | POST /teachers | Duplicate employee number |
-| `Class code <x> already exists` | POST /academic/classes | Duplicate class code |
-| `Subject code <x> already exists` | POST /academic/subjects | Duplicate subject code |
-| `Attendance already marked for student <id> on date <d>` | POST /attendance | Duplicate attendance |
-| `Overpayment: remaining balance is <n>` | POST /fees/payments | Payment exceeds balance |
-| `An exam with these details already exists` | POST /exams | Duplicate exam schedule |
-| `Result already exists for student <id> in exam <id>` | POST /exams/results | Duplicate result |
-| `Marks <n> exceed maximum <m>` | POST /exams/results | Marks overflow |
-| `No valid tenant context` | Any tenant-scoped | Missing or invalid `X-Tenant-ID` |
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "...",
+    "title": "Chapter 5 Exercises",
+    "description": "Complete problems 1–20 on page 87",
+    "classId": "550e8400-...",
+    "sectionId": "a1b2c3d4-...",
+    "assignedByUserId": "c9d0e1f2-...",
+    "dueDate": "2026-05-02",
+    "createdAt": "2026-04-28T10:00:00Z"
+  }
+}
+```
 
 ---
 
-> See [README.md](../README.md) for full setup, auth workflow, and environment configuration.
-> See [docs/ARCHITECTURE.md](ARCHITECTURE.md) for architecture deep-dive and design decisions.
+### 11.2 Get Homework for Class
+
+**Endpoint:** `GET /homework/classes/{classId}`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT
+
+**Response (200 OK):** `List<HomeworkResponse>`
+
+---
+
+## 12. Timetable APIs
+
+> Requires: `X-Tenant-ID` header.
+
+### 12.1 Create Timetable Slot
+
+**Endpoint:** `POST /timetable/slots`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
+
+**Request Body:**
+```json
+{
+  "classId": "550e8400-...",
+  "sectionId": "a1b2c3d4-...",
+  "subjectId": "e5f6a7b8-...",
+  "dayOfWeek": 1,
+  "startTime": "08:00",
+  "endTime": "09:00",
+  "label": "Mathematics - Period 1"
+}
+```
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `classId` | UUID | Yes | |
+| `sectionId` | UUID | No | |
+| `subjectId` | UUID | No | |
+| `dayOfWeek` | int | Yes | 1 = Monday … 7 = Sunday |
+| `startTime` | time | Yes | HH:mm format; must be < endTime |
+| `endTime` | time | Yes | HH:mm format |
+| `label` | string | No | Description for the slot |
+
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "...",
+    "classId": "550e8400-...",
+    "sectionId": "a1b2c3d4-...",
+    "subjectId": "e5f6a7b8-...",
+    "dayOfWeek": 1,
+    "startTime": "08:00",
+    "endTime": "09:00",
+    "label": "Mathematics - Period 1",
+    "createdAt": "2026-04-28T10:00:00Z"
+  }
+}
+```
+
+---
+
+### 12.2 Get Timetable for Class & Section
+
+**Endpoint:** `GET /timetable/classes/{classId}/sections/{sectionId}`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT
+
+**Response (200 OK):** `List<TimetableSlotResponse>`
+
+---
+
+## 13. Parent APIs
+
+> Requires: `X-Tenant-ID` header. Role: `PARENT` only.
+
+### 13.1 Get My Children
+
+> Returns the list of students linked to the currently authenticated parent.
+
+**Endpoint:** `GET /parents/me/children`
+
+**Headers:**
+```
+Authorization: Bearer <parent_token>
+X-Tenant-ID: greenwood
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "studentId": "550e8400-...",
+      "firstName": "Alice",
+      "lastName": "Johnson",
+      "admissionNo": "ADM-2024-001"
+    }
+  ]
+}
+```
+
+---
+
+## 14. Dashboard APIs
+
+> Requires: `X-Tenant-ID` header (except super-admin summary).
+
+### 14.1 Get Tenant Dashboard Summary
+
+**Endpoint:** `GET /dashboard/tenant-summary`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "totalStudents": 350,
+    "totalTeachers": 28,
+    "totalClasses": 12,
+    "branding": {
+      "schoolName": "Greenwood High School",
+      "logoUrl": "https://example.com/logo.png",
+      "primaryColor": "#10b981"
+    }
+  }
+}
+```
+
+---
+
+### 14.2 Get Tenant Branding
+
+**Endpoint:** `GET /dashboard/branding`
+
+**Role Access:** SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "schoolName": "Greenwood High School",
+    "logoUrl": "https://example.com/logo.png",
+    "primaryColor": "#10b981"
+  }
+}
+```
+
+---
+
+### 14.3 Get Super Admin Dashboard Summary
+
+**Endpoint:** `GET /dashboard/super-admin-summary`
+
+**Role Access:** SUPER_ADMIN only (no `X-Tenant-ID` required)
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "totalTenants": 15,
+    "totalUsers": 4320,
+    "activeSchools": 14
+  }
+}
+```
+
+---
+
+## 15. Bulk Upload APIs
+
+> Requires: `X-Tenant-ID` header. Role: SUPER_ADMIN, SCHOOL_ADMIN.
+
+### 15.1 Upload Excel File
+
+> Accepts an Excel workbook (`.xlsx`) with sheets for Students, Teachers, Classes, and Sections.
+
+**Endpoint:** `POST /bulk/upload`
+
+**Headers:**
+```
+Authorization: Bearer <token>
+X-Tenant-ID: greenwood
+Content-Type: multipart/form-data
+```
+
+**Form Data:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | file | `.xlsx` workbook |
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "successCount": 48,
+    "failedCount": 2,
+    "errors": [
+      {
+        "sheet": "Students",
+        "row": 5,
+        "error": "Duplicate admission number: ADM-2024-010"
+      },
+      {
+        "sheet": "Teachers",
+        "row": 3,
+        "error": "Email is required"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 15.2 Download Sample Template
+
+> Returns a downloadable Excel template with correct sheet structure.
+
+**Endpoint:** `GET /bulk/sample`
+
+**Headers:**
+```
+Authorization: Bearer <token>
+X-Tenant-ID: greenwood
+```
+
+**Response:** Binary file download (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`)
+
+---
+
+## 16. Error Reference
+
+### 16.1 Standard Error Response
+
+```json
+{
+  "success": false,
+  "message": "Human-readable error description",
+  "data": null,
+  "timestamp": "2026-04-28T10:00:00Z"
+}
+```
+
+### 16.2 Validation Error (400)
+
+Returned when `@Valid` constraints fail:
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "data": {
+    "errors": [
+      { "field": "admissionNo", "message": "must not be blank" },
+      { "field": "gender", "message": "must be MALE, FEMALE, or OTHER" }
+    ]
+  }
+}
+```
+
+### 16.3 Common Error Messages
+
+| HTTP Status | Message | Cause |
+|-------------|---------|-------|
+| 401 | `Invalid username or password` | Wrong credentials on login |
+| 401 | `JWT token is expired` | Token past expiry time |
+| 401 | `Authorization header missing` | No Bearer token sent |
+| 403 | `Access denied` | Role not permitted for this endpoint |
+| 404 | `Student not found` | UUID does not exist in tenant schema |
+| 409 | `Admission number already exists` | Duplicate `admissionNo` |
+| 409 | `Duplicate exam schedule` | Same title+date+class+section+subject |
+| 409 | `Result already exists for this student` | UNIQUE(exam_id, student_id) violated |
+| 422 | `Marks obtained exceed maximum marks` | `marksObtained > exam.maxMarks` |
+| 422 | `No balance to receive` | Payment exceeds remaining fee balance |
+| 500 | `Tenant context not set` | Missing `X-Tenant-ID` on tenant-scoped endpoint |
