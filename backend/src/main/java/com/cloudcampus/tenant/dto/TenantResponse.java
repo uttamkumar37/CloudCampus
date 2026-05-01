@@ -1,10 +1,8 @@
 package com.cloudcampus.tenant.dto;
 
 import java.time.Instant;
-import java.util.UUID;
 
 public record TenantResponse(
-        UUID id,
         String tenantId,
         String slug,
         String schoolName,

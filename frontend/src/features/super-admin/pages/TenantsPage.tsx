@@ -128,7 +128,7 @@ export function TenantsPage() {
           <DataTable
             columns={columns}
             rows={tenantsQuery.data.data}
-            rowKey={(tenant) => tenant.id}
+            rowKey={(tenant) => tenant.slug}
             emptyText="No tenants found."
           />
         ) : null}

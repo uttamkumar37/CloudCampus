@@ -137,7 +137,7 @@ public class ExamServiceImpl implements ExamService {
 
     private void validateTenantContext() {
         if (TenantContext.DEFAULT_SCHEMA.equals(TenantContext.getTenant())) {
-            throw new IllegalArgumentException("X-Tenant-ID header is required for exam operations");
+            throw new IllegalArgumentException("X-Tenant-Slug header is required for exam operations");
         }
     }
 

@@ -110,12 +110,12 @@ Bulk Upload → Download Sample      → get Excel template
 
 ---
 
-## Setting `X-Tenant-ID`
+## Setting `X-Tenant-Slug`
 
-All tenant-scoped endpoints require the `X-Tenant-ID` header. This is pre-configured in all collection requests as:
+All tenant-scoped endpoints require the `X-Tenant-Slug` header. This is pre-configured in all collection requests as:
 
 ```
-X-Tenant-ID: {{tenantId}}
+X-Tenant-Slug: {{tenantId}}
 ```
 
 Update `tenantId` in the active environment to match the tenant you are testing.

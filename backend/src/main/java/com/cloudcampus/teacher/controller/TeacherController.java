@@ -38,7 +38,7 @@ public class TeacherController {
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
     @Operation(summary = "Create a teacher", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<TeacherResponse>> createTeacher(@Valid @RequestBody TeacherCreateRequest request) {
@@ -49,7 +49,7 @@ public class TeacherController {
     @GetMapping("/me")
     @PreAuthorize("hasRole('TEACHER')")
     @Operation(summary = "Get own teacher profile", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<TeacherResponse>> getMyProfile() {
@@ -60,7 +60,7 @@ public class TeacherController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
     @Operation(summary = "Get teacher by id", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<TeacherResponse>> getTeacherById(@PathVariable UUID id) {
@@ -71,7 +71,7 @@ public class TeacherController {
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
     @Operation(summary = "List teachers", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<PageResponse<TeacherResponse>>> getTeachers(
@@ -83,7 +83,7 @@ public class TeacherController {
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
     @Operation(summary = "Update a teacher", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<TeacherResponse>> updateTeacher(
@@ -96,7 +96,7 @@ public class TeacherController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
     @Operation(summary = "Soft-delete a teacher", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<Void> deleteTeacher(@PathVariable UUID id) {

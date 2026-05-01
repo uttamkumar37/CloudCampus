@@ -46,7 +46,7 @@ public class AuthServiceImpl implements AuthService {
         );
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        if (!(userDetails instanceof CloudCampusUserDetails campus)) {
+        if (!(userDetails instanceof CloudCampusUserDetails)) {
             throw new IllegalStateException("Unexpected principal type");
         }
 
@@ -63,10 +63,6 @@ public class AuthServiceImpl implements AuthService {
                 .map(a -> a.getAuthority())
                 .collect(Collectors.toSet());
 
-        String tenantId = "SUPER_ADMIN".equals(primaryRole)
-                ? TenantContext.DEFAULT_SCHEMA
-            : tenant.tenantId();
-
         return new LoginResponse(
                 token,
                 "Bearer",
@@ -74,8 +70,6 @@ public class AuthServiceImpl implements AuthService {
                 userDetails.getUsername(),
                 primaryRole,
                 roles,
-                campus.getUserId(),
-                tenantId,
                 tenant != null ? tenant.slug() : null,
                 tenant != null ? tenant.schoolName() : null
         );
@@ -89,25 +83,26 @@ public class AuthServiceImpl implements AuthService {
         }
         if (campus.getUserId() == null) {
             return new UserProfileResponse(
-                    null,
                     campus.getUsername(),
                     campus.getEmail() != null ? campus.getEmail() : "",
                     campus.getFullName(),
                     UserRole.SUPER_ADMIN,
                     true,
-                    campus.getTenantSchema()
+                null,
+                "CloudCampus Platform"
             );
         }
         UserAccount user = userAccountRepository.findById(campus.getUserId())
                 .orElseThrow(() -> new IllegalStateException("User record not found"));
+        TenantResponse tenant = tenantService.getCurrentTenant();
         return new UserProfileResponse(
-                user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getFullName(),
                 user.getRole(),
                 user.isActive(),
-                TenantContext.getTenant()
+            tenant.slug(),
+            tenant.schoolName()
         );
     }
 

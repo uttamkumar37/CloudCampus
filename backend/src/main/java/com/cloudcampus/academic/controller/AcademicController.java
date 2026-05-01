@@ -34,7 +34,7 @@ public class AcademicController {
     @PostMapping("/classes")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
     @Operation(summary = "Create class", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<ClassResponse>> createClass(@Valid @RequestBody ClassCreateRequest request) {
@@ -45,7 +45,7 @@ public class AcademicController {
     @GetMapping("/classes")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
     @Operation(summary = "List classes", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<List<ClassResponse>>> getClasses() {
@@ -56,7 +56,7 @@ public class AcademicController {
     @PostMapping("/subjects")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
     @Operation(summary = "Create subject", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<SubjectResponse>> createSubject(@Valid @RequestBody SubjectCreateRequest request) {
@@ -67,7 +67,7 @@ public class AcademicController {
     @GetMapping("/subjects")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
     @Operation(summary = "List subjects", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<List<SubjectResponse>>> getSubjects() {
@@ -78,7 +78,7 @@ public class AcademicController {
     @PostMapping("/sections")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
     @Operation(summary = "Create section", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<SectionResponse>> createSection(@Valid @RequestBody SectionCreateRequest request) {
@@ -89,7 +89,7 @@ public class AcademicController {
     @GetMapping("/sections")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
     @Operation(summary = "List sections", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<List<SectionResponse>>> getSections() {

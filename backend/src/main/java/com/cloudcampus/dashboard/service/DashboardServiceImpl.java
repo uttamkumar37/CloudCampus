@@ -258,7 +258,6 @@ public class DashboardServiceImpl implements DashboardService {
 
     private TenantResponse mapTenant(Tenant tenant) {
         return new TenantResponse(
-                tenant.getId(),
                 tenant.getTenantId(),
                                 tenant.getSlug(),
                 tenant.getSchoolName(),
@@ -272,7 +271,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     private void validateTenantContext() {
         if (TenantContext.DEFAULT_SCHEMA.equals(TenantContext.getTenant())) {
-            throw new IllegalArgumentException("X-Tenant-ID header is required for tenant dashboard operations");
+            throw new IllegalArgumentException("X-Tenant-Slug header is required for tenant dashboard operations");
         }
     }
 

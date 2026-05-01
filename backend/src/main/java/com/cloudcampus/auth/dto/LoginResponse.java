@@ -1,7 +1,6 @@
 package com.cloudcampus.auth.dto;
 
 import java.util.Set;
-import java.util.UUID;
 
 public record LoginResponse(
         String accessToken,
@@ -10,8 +9,6 @@ public record LoginResponse(
         String username,
         String role,
         Set<String> roles,
-        UUID userId,
-        String tenantId,
         String tenantSlug,
         String schoolName
 ) {

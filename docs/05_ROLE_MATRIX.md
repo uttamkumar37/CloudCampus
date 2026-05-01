@@ -73,7 +73,7 @@ JWT access tokens include:
 
 - `role` (singular) is the primary role string without the `ROLE_` prefix — used by the frontend for routing and UI gating.
 - `roles` (array) contains Spring Security authority strings (`ROLE_*`) — used internally.
-- `tenant` / `tenant_schema` is set as `X-Tenant-ID` header in every frontend API request.
+- `tenant` / `tenant_schema` is set as `X-Tenant-Slug` header in every frontend API request.
 - Backend `TenantFilter` reads this header and sets `TenantContext` for schema routing.
 - `SUPER_ADMIN` does not have a `tenantId` — requests routed to `public` schema.
 

@@ -4,6 +4,7 @@ import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.SchoolSearchResponse;
 import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.entity.Tenant;
+import com.cloudcampus.tenant.mapper.TenantMapper;
 import com.cloudcampus.tenant.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ public class TenantServiceImpl implements TenantService {
 
     private final TenantRepository tenantRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final TenantMapper tenantMapper;
 
     @Override
     @Transactional
@@ -72,7 +74,7 @@ public class TenantServiceImpl implements TenantService {
 
         return tenantRepository.searchActiveSchools(query.trim()).stream()
                 .limit(8)
-                .map(this::mapSchool)
+            .map(tenantMapper::toSchoolSearch)
                 .toList();
     }
 
@@ -82,7 +84,7 @@ public class TenantServiceImpl implements TenantService {
         Tenant tenant = tenantRepository.findBySlug(normalizeSlug(tenantSlug))
                 .filter(Tenant::isActive)
                 .orElseThrow(() -> new IllegalArgumentException("School not found: " + tenantSlug));
-        return mapSchool(tenant);
+        return tenantMapper.toSchoolSearch(tenant);
     }
 
     @Override
@@ -470,30 +472,12 @@ public class TenantServiceImpl implements TenantService {
 
     private void validateTenantContext(String schemaName) {
         if (schemaName == null || TenantContext.DEFAULT_SCHEMA.equals(schemaName)) {
-            throw new IllegalArgumentException("X-Tenant-ID header is required for tenant operations");
+            throw new IllegalArgumentException("X-Tenant-Slug header is required for tenant operations");
         }
     }
 
     private TenantResponse map(Tenant tenant) {
-        return new TenantResponse(
-                tenant.getId(),
-                tenant.getTenantId(),
-                tenant.getSlug(),
-                tenant.getSchoolName(),
-                tenant.getSchemaName(),
-                tenant.getLogoUrl(),
-                tenant.getPrimaryColor(),
-                tenant.isActive(),
-                tenant.getCreatedAt()
-        );
+        return tenantMapper.toResponse(tenant);
     }
 
-    private SchoolSearchResponse mapSchool(Tenant tenant) {
-        return new SchoolSearchResponse(
-                tenant.getSlug(),
-                tenant.getSchoolName(),
-                tenant.getLogoUrl(),
-                tenant.getPrimaryColor()
-        );
-    }
 }

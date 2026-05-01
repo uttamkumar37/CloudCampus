@@ -61,7 +61,7 @@ public class TimetableServiceImpl implements TimetableService {
 
     private void validateTenant() {
         if (TenantContext.DEFAULT_SCHEMA.equals(TenantContext.getTenant())) {
-            throw new IllegalArgumentException("X-Tenant-ID header is required");
+            throw new IllegalArgumentException("X-Tenant-Slug header is required");
         }
     }
 }

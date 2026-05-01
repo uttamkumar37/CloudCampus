@@ -1,5 +1,6 @@
 package com.cloudcampus.fees;
 
+import com.cloudcampus.auth.security.CloudCampusUserDetails;
 import com.cloudcampus.IntegrationTestBase;
 import com.cloudcampus.fees.dto.FeeAssignmentCreateRequest;
 import com.cloudcampus.fees.dto.FeeAssignmentResponse;
@@ -17,6 +18,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -56,11 +59,26 @@ class FeePaymentStatusIT extends IntegrationTestBase {
         student = studentService.createStudent(new StudentCreateRequest(
                 admissionNo, "Test", "Student", LocalDate.of(2010, 1, 1),
                 Gender.MALE, null, null));
+
+        CloudCampusUserDetails principal = new CloudCampusUserDetails(
+                UUID.randomUUID(),
+                "fees.it.admin",
+                "pwd",
+                "fees.it.admin@cloudcampus.local",
+                "Fees IT Admin",
+                SCHEMA,
+                List.of(),
+                true
+        );
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities())
+        );
     }
 
     @AfterEach
     void tearDown() {
         TenantContext.clear();
+                SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -81,10 +99,9 @@ class FeePaymentStatusIT extends IntegrationTestBase {
                 new FeeAssignmentCreateRequest(student.id(), "Activity Fee",
                         new BigDecimal("1000.00"), LocalDate.of(2026, 7, 31)));
 
-        UUID receiverId = UUID.randomUUID();
         feesService.recordFeePayment(new FeePaymentCreateRequest(
                 assignment.id(), new BigDecimal("400.00"), LocalDate.now(),
-                "CASH", null, receiverId));
+                "CASH", null));
 
         List<FeeAssignmentResponse> assignments = feesService.getFeeAssignmentsByStudent(student.id());
         FeeAssignmentResponse updated = assignments.stream()
@@ -102,10 +119,9 @@ class FeePaymentStatusIT extends IntegrationTestBase {
                 new FeeAssignmentCreateRequest(student.id(), "Registration Fee",
                         new BigDecimal("500.00"), LocalDate.of(2026, 5, 31)));
 
-        UUID receiverId = UUID.randomUUID();
         feesService.recordFeePayment(new FeePaymentCreateRequest(
                 assignment.id(), new BigDecimal("500.00"), LocalDate.now(),
-                "BANK_TRANSFER", "REF-001", receiverId));
+                "BANK_TRANSFER", "REF-001"));
 
         List<FeeAssignmentResponse> assignments = feesService.getFeeAssignmentsByStudent(student.id());
         FeeAssignmentResponse updated = assignments.stream()
@@ -123,13 +139,12 @@ class FeePaymentStatusIT extends IntegrationTestBase {
                 new FeeAssignmentCreateRequest(student.id(), "Annual Fee",
                         new BigDecimal("2000.00"), LocalDate.of(2026, 12, 31)));
 
-        UUID receiverId = UUID.randomUUID();
         feesService.recordFeePayment(new FeePaymentCreateRequest(
                 assignment.id(), new BigDecimal("800.00"), LocalDate.now(),
-                "CASH", null, receiverId));
+                "CASH", null));
         feesService.recordFeePayment(new FeePaymentCreateRequest(
                 assignment.id(), new BigDecimal("1200.00"), LocalDate.now(),
-                "CASH", null, receiverId));
+                "CASH", null));
 
         List<FeeAssignmentResponse> assignments = feesService.getFeeAssignmentsByStudent(student.id());
         FeeAssignmentResponse updated = assignments.stream()
@@ -146,10 +161,9 @@ class FeePaymentStatusIT extends IntegrationTestBase {
                 new FeeAssignmentCreateRequest(student.id(), "Lab Fee",
                         new BigDecimal("300.00"), LocalDate.of(2026, 8, 31)));
 
-        UUID receiverId = UUID.randomUUID();
         assertThatThrownBy(() -> feesService.recordFeePayment(new FeePaymentCreateRequest(
                 assignment.id(), new BigDecimal("400.00"), LocalDate.now(),
-                "CASH", null, receiverId)))
+                "CASH", null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("exceeds total fee amount");
     }

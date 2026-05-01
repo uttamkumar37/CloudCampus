@@ -30,11 +30,11 @@ A **tenant** is an individual school registered on the CloudCampus platform. Eac
 
 - Has a **unique schema** in the PostgreSQL database (complete data isolation)
 - Has a **unique `tenantId`** (business identifier, e.g., `greenwood`)
-- Has a **schema name** (used as the `X-Tenant-ID` header in API requests)
+- Has a **schema name** (used as the `X-Tenant-Slug` header in API requests)
 - Has customizable **branding** (school name, logo, primary color)
 - Is completely isolated — no data is shared between tenants
 
-All API requests targeting a specific school must include the `X-Tenant-ID` header set to that school's schema name.
+All API requests targeting a specific school must include the `X-Tenant-Slug` header set to that school's schema name.
 
 ---
 
@@ -70,7 +70,7 @@ Step 3: Create the School Admin user
 ────────────────────────────────
 POST /api/v1/users
 Authorization: Bearer <token>
-X-Tenant-ID: greenwood
+X-Tenant-Slug: greenwood
 Body:
 {
   "fullName": "Sarah Admin",
@@ -83,7 +83,7 @@ Body:
 Step 4: School Admin logs in
 ────────────────────────────────
 POST /api/v1/auth/login
-X-Tenant-ID: greenwood
+X-Tenant-Slug: greenwood
 Body: { "username": "sarah.admin", "password": "SecurePass123!" }
 → School is ready for use
 ```
@@ -168,7 +168,7 @@ The Super Admin operates at the **platform level** and is not bound to any speci
 
 ```
 POST /api/v1/auth/login
-No X-Tenant-ID required
+No X-Tenant-Slug required
 Body: { "username": "superadmin", "password": "<password>" }
 ```
 
@@ -177,7 +177,7 @@ Body: { "username": "superadmin", "password": "<password>" }
 ```
 1. POST /api/v1/tenants          — Provision the school schema
 2. POST /api/v1/users            — Create SCHOOL_ADMIN user
-   (with X-Tenant-ID: <new_schema>)
+   (with X-Tenant-Slug: <new_schema>)
 ```
 
 ### 4.3 Platform Dashboard
@@ -282,7 +282,7 @@ Teachers focus on academic delivery, attendance, and assessment.
 
 ```
 POST /api/v1/attendances
-Headers: X-Tenant-ID: greenwood
+Headers: X-Tenant-Slug: greenwood
 Body per student:
 {
   "studentId": "<uuid>",
@@ -351,7 +351,7 @@ Students have **read-only** access to their academic data.
 
 ```
 POST /api/v1/auth/login
-X-Tenant-ID: greenwood
+X-Tenant-Slug: greenwood
 Body: { "username": "alice.johnson", "password": "<password>" }
 ```
 
@@ -377,7 +377,7 @@ Parents can monitor their linked children's activity.
 
 ```
 POST /api/v1/auth/login
-X-Tenant-ID: greenwood
+X-Tenant-Slug: greenwood
 Body: { "username": "parent.johnson", "password": "<password>" }
 ```
 

@@ -76,7 +76,7 @@ Workflows for every role and every feature:
 
 Pre-configured school tenants for local development and testing:
 - `sunrise-academy` / `greenwood-high` / `riverdale-public` / `oakridge-international`
-- Use these `tenantId` values as the `X-Tenant-ID` header
+- Use these `tenantId` values as the `X-Tenant-Slug` header
 
 ---
 
@@ -122,7 +122,7 @@ Complete request/response documentation for every endpoint:
 How to import and use the Postman collection:
 - Import steps for collection + environment
 - Environment variable reference
-- Pre-request scripts (auto-sets `X-Tenant-ID`)
+- Pre-request scripts (auto-sets `X-Tenant-Slug`)
 - Test scripts (auto-saves token to environment)
 - Includes: Super Admin login, School Admin login, **Teacher login**, **Student login**, **Parent login**
 
@@ -195,9 +195,9 @@ How to import and use the Postman collection:
 
 | Role | Username | Header |
 |------|----------|--------|
-| Super Admin | `superadmin` (from env `BOOTSTRAP_ADMIN_USERNAME`) | No `X-Tenant-ID` |
-| School Admin | Tenant-specific (created via API) | `X-Tenant-ID: <schema>` |
-| Teacher / Student / Parent | Tenant-specific (created via API) | `X-Tenant-ID: <schema>` |
+| Super Admin | `superadmin` (from env `BOOTSTRAP_ADMIN_USERNAME`) | No `X-Tenant-Slug` |
+| School Admin | Tenant-specific (created via API) | `X-Tenant-Slug: <schema>` |
+| Teacher / Student / Parent | Tenant-specific (created via API) | `X-Tenant-Slug: <schema>` |
 
 ### JWT Token Structure
 

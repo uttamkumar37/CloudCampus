@@ -14,19 +14,19 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: campuscloud
+          POSTGRES_DB: cloudcampus
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d campuscloud"
+          --health-cmd "pg_isready -U postgres -d cloudcampus"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
 
     env:
-      DB_URL: jdbc:postgresql://localhost:5432/campuscloud
+      DB_URL: jdbc:postgresql://localhost:5432/cloudcampus
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       JWT_SECRET: 0123456789abcdef0123456789abcdef

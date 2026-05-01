@@ -33,7 +33,7 @@ public class ParentController {
     @GetMapping("/me/children")
     @PreAuthorize("hasRole('PARENT')")
     @Operation(summary = "Linked students for current parent", parameters = {
-            @Parameter(name = "X-Tenant-ID", required = true),
+            @Parameter(name = "X-Tenant-Slug", required = true),
             @Parameter(name = "Authorization", required = true)
     })
     public ResponseEntity<ApiResponse<List<LinkedStudentResponse>>> myChildren() {
@@ -43,7 +43,7 @@ public class ParentController {
     @PostMapping("/links")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
     @Operation(summary = "Link a parent user to a student", parameters = {
-            @Parameter(name = "X-Tenant-ID", required = true),
+            @Parameter(name = "X-Tenant-Slug", required = true),
             @Parameter(name = "Authorization", required = true)
     })
     public ResponseEntity<ApiResponse<Void>> linkStudent(
@@ -55,7 +55,7 @@ public class ParentController {
     @DeleteMapping("/links/{linkId}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
     @Operation(summary = "Remove a parent–student link", parameters = {
-            @Parameter(name = "X-Tenant-ID", required = true),
+            @Parameter(name = "X-Tenant-Slug", required = true),
             @Parameter(name = "Authorization", required = true)
     })
     public ResponseEntity<Void> unlinkStudent(@PathVariable UUID linkId) {

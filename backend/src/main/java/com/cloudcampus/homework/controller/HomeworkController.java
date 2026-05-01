@@ -32,7 +32,7 @@ public class HomeworkController {
     @PostMapping
     @PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TEACHER')")
     @Operation(summary = "Create homework", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT", required = true)
     })
     public ResponseEntity<ApiResponse<HomeworkResponse>> create(@Valid @RequestBody HomeworkCreateRequest request) {
@@ -42,7 +42,7 @@ public class HomeworkController {
     @GetMapping("/classes/{classId}")
     @PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TEACHER','STUDENT','PARENT')")
     @Operation(summary = "List homework for a class", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT", required = true)
     })
     public ResponseEntity<ApiResponse<List<HomeworkResponse>>> list(@PathVariable UUID classId) {

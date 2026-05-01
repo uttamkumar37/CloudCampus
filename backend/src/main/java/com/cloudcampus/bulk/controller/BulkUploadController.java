@@ -30,7 +30,7 @@ public class BulkUploadController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('SCHOOL_ADMIN')")
     @Operation(summary = "Upload student, teacher, class, and section data in a single Excel workbook", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<BulkUploadResponse>> upload(@RequestParam("file") MultipartFile file) {
@@ -44,7 +44,7 @@ public class BulkUploadController {
     @GetMapping("/sample")
     @PreAuthorize("hasRole('SCHOOL_ADMIN')")
     @Operation(summary = "Download sample bulk upload workbook", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<Resource> downloadSampleWorkbook() {

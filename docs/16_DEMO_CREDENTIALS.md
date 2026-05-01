@@ -13,7 +13,7 @@
 | username | `superadmin` |
 | password | `SuperAdmin_Docker_2026!` |
 
-> **Note:** Super Admin login does **not** require `X-Tenant-ID`.
+> **Note:** Super Admin login does **not** require `X-Tenant-Slug`.
 
 ---
 
@@ -22,7 +22,7 @@
 | Field | Value |
 |-------|-------|
 | Tenant ID | `sunrise-academy` |
-| Schema (X-Tenant-ID) | `sunrise` |
+| Schema (X-Tenant-Slug) | `sunrise` |
 | Login URL | http://localhost:5173/login |
 
 ### School Admin
@@ -70,7 +70,7 @@
 | Field | Value |
 |-------|-------|
 | Tenant ID | `greenwood-high` |
-| Schema (X-Tenant-ID) | `school_greenwood-high` |
+| Schema (X-Tenant-Slug) | `school_greenwood-high` |
 | Login URL | http://localhost:5173/login |
 
 ### School Admin
@@ -117,7 +117,7 @@
 | Field | Value |
 |-------|-------|
 | Tenant ID | `riverdale-public` |
-| Schema (X-Tenant-ID) | `school_riverdale-public` |
+| Schema (X-Tenant-Slug) | `school_riverdale-public` |
 | Login URL | http://localhost:5173/login |
 
 ### School Admin
@@ -164,7 +164,7 @@
 | Field | Value |
 |-------|-------|
 | Tenant ID | `oakridge-international` |
-| Schema (X-Tenant-ID) | `school_oakridge-international` |
+| Schema (X-Tenant-Slug) | `school_oakridge-international` |
 | Login URL | http://localhost:5173/login |
 
 ### School Admin
@@ -209,38 +209,38 @@
 ## Postman / curl Quick Start
 
 ```bash
-# 1. Super Admin login (no X-Tenant-ID)
+# 1. Super Admin login (no X-Tenant-Slug)
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"superadmin","password":"SuperAdmin_Docker_2026!"}'
 
-# 2. School Admin login (include X-Tenant-ID)
+# 2. School Admin login (include X-Tenant-Slug)
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: school_greenwood-high" \
+  -H "X-Tenant-Slug: school_greenwood-high" \
   -d '{"username":"arjun.mehta","password":"Greenwood@2026!"}'
 
 # 3. Teacher login
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: school_greenwood-high" \
+  -H "X-Tenant-Slug: school_greenwood-high" \
   -d '{"username":"sunita.aggarwal","password":"Sunita@Teacher126!"}'
 
 # 4. Student login
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: school_greenwood-high" \
+  -H "X-Tenant-Slug: school_greenwood-high" \
   -d '{"username":"aarav.sharma1","password":"Aarav@Student126!"}'\n
 # 5. Parent login
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: school_greenwood-high" \
+  -H "X-Tenant-Slug: school_greenwood-high" \
   -d '{"username":"ramesh.sharma1","password":"Ramesh@Parent126!"}'
 
 # 6. Parent — view linked children (after login, use returned token)
 curl http://localhost:8080/api/v1/parents/me/children \
   -H "Authorization: Bearer <parent_token>" \
-  -H "X-Tenant-ID: school_greenwood-high"
+  -H "X-Tenant-Slug: school_greenwood-high"
 ```
 
 ---

@@ -90,7 +90,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private void validateTenantContext() {
         if (TenantContext.DEFAULT_SCHEMA.equals(TenantContext.getTenant())) {
-            throw new IllegalArgumentException("X-Tenant-ID header is required for attendance operations");
+            throw new IllegalArgumentException("X-Tenant-Slug header is required for attendance operations");
         }
     }
 

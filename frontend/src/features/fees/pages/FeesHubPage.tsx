@@ -13,7 +13,6 @@ import { Skeleton } from '../../../components/ui/Skeleton'
 import { useSchoolDirectory } from '../../academic/hooks/useSchoolDirectory'
 import type { ApiResponse } from '../../../types/api'
 import { showToast } from '../../../utils/toast'
-import { useAuth } from '../../auth/hooks/useAuth'
 
 import { useAssignFee, useFeeAssignments, useRecordPayment } from '../hooks/useFees'
 import type { AssignFeeRequest, FeeAssignment, FeeStatus, RecordPaymentRequest } from '../types'
@@ -32,11 +31,9 @@ const emptyPayForm: RecordPaymentRequest = {
   paymentDate: new Date().toISOString().slice(0, 10),
   paymentMethod: null,
   referenceNo: null,
-  receivedByUserId: '',
 }
 
 export function FeesHubPage() {
-  const { userId } = useAuth()
   const [searchId, setSearchId] = useState('')
   const [assignForm, setAssignForm] = useState<AssignFeeRequest>(emptyAssignForm)
   const [payForm, setPayForm] = useState<RecordPaymentRequest>(emptyPayForm)
@@ -110,7 +107,6 @@ export function FeesHubPage() {
         amountPaid: Number(payForm.amountPaid),
         paymentMethod: payForm.paymentMethod?.trim() || null,
         referenceNo: payForm.referenceNo?.trim() || null,
-        receivedByUserId: userId ?? '',
       })
       if (!res.success) {
         showToast({ title: 'Payment not recorded', description: res.message, tone: 'error' })

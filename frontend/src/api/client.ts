@@ -17,7 +17,7 @@ apiClient.interceptors.request.use((config) => {
   const tenantSlug = storage.getTenantSlug()
 
   if (tenantSlug) {
-    config.headers['X-Tenant-ID'] = tenantSlug
+    config.headers['X-Tenant-Slug'] = tenantSlug
   }
 
   return config

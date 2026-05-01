@@ -32,7 +32,7 @@ public class TimetableController {
     @PostMapping("/slots")
     @PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TEACHER')")
     @Operation(summary = "Create timetable slot", parameters = {
-            @Parameter(name = "X-Tenant-ID", required = true),
+            @Parameter(name = "X-Tenant-Slug", required = true),
             @Parameter(name = "Authorization", required = true)
     })
     public ResponseEntity<ApiResponse<TimetableSlotResponse>> create(@Valid @RequestBody TimetableSlotRequest request) {
@@ -42,7 +42,7 @@ public class TimetableController {
     @GetMapping("/classes/{classId}/sections/{sectionId}")
     @PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TEACHER','STUDENT','PARENT')")
     @Operation(summary = "List slots for class & section", parameters = {
-            @Parameter(name = "X-Tenant-ID", required = true),
+            @Parameter(name = "X-Tenant-Slug", required = true),
             @Parameter(name = "Authorization", required = true)
     })
     public ResponseEntity<ApiResponse<List<TimetableSlotResponse>>> list(

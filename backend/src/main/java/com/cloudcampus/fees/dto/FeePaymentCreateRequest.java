@@ -25,9 +25,6 @@ public record FeePaymentCreateRequest(
         String paymentMethod,
 
         @Size(max = 80, message = "referenceNo must be at most 80 characters")
-        String referenceNo,
-
-        @NotNull(message = "receivedByUserId is required")
-        UUID receivedByUserId
+        String referenceNo
 ) {
 }

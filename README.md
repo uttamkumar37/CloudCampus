@@ -1,133 +1,126 @@
 # CloudCampus
 
-> Multi-tenant School Management SaaS Platform
+CloudCampus is a multi-tenant school management SaaS platform built with Spring Boot, React, and PostgreSQL schema isolation.
 
-CloudCampus is a production-grade SaaS platform for managing K-12 schools. Each school (tenant) is fully isolated using PostgreSQL schema-per-tenant. The platform covers the complete school operations lifecycle: enrollment, academics, attendance, exams, fees, homework, and timetables.
+## What Is Included
 
----
+- Multi-tenant backend with schema-per-tenant isolation
+- JWT authentication with role-based authorization
+- School-first login UX (school search + role selection)
+- Domain modules for academics, attendance, exams, fees, homework, timetable, parent portal, and dashboards
+- Dockerized local stack (Postgres + backend + frontend)
 
-## Technology Stack
+## Architecture Snapshot
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Java 17 · Spring Boot 3.4.4 · Spring Security 6 · Spring Data JPA |
-| Database | PostgreSQL 16 · Flyway · Schema-per-tenant multi-tenancy |
-| Authentication | Stateless JWT (HS256) · BCrypt |
-| API Docs | SpringDoc OpenAPI 2.6 (Swagger UI) |
-| Frontend | React 19 · TypeScript · Vite · Tailwind CSS 4 |
-| State Mgmt | TanStack Query 5 · Axios |
-| Routing | React Router 7 |
-| Containerization | Docker Compose (3 services) |
+```text
+Browser SPA (React)
+	-> /api/v1 via Axios (HttpOnly cookie + X-Tenant-Slug)
 
----
+Spring Boot API
+	-> TenantRequestFilter (header/subdomain to schema)
+	-> JwtAuthenticationFilter
+	-> Controller -> Service -> Repository
+	-> Hibernate multi-tenancy routing
 
-## Quick Start
+PostgreSQL
+	-> public schema (tenant registry, platform tables)
+	-> school_<slug>/custom schemas (tenant domain data)
+```
+
+## Core Tech
+
+- Backend: Java 17, Spring Boot 3.4.4, Spring Security, Spring Data JPA, Flyway
+- Frontend: React 19, TypeScript, Vite, TanStack Query, Axios
+- Data: PostgreSQL 16
+- Runtime: Docker Compose
+
+## Quick Start (Docker)
 
 ```bash
 git clone https://github.com/your-org/CloudCampus.git
 cd CloudCampus
+cp .env.example .env
 
-# Set required env vars
-cat > .env << 'EOF'
-POSTGRES_DB=cloudcampus
-POSTGRES_USER=cloudcampus
-POSTGRES_PASSWORD=cloudcampus_dev
-JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-32-chars
-BOOTSTRAP_ADMIN_PASSWORD=SuperAdmin123!
-EOF
+# Set required values in .env at minimum:
+# - DB_PASSWORD
+# - JWT_SECRET
+# - BOOTSTRAP_ADMIN_USERNAME
+# - BOOTSTRAP_ADMIN_PASSWORD
 
+docker compose down -v
 docker compose up --build
 ```
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8080/api/v1 |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
+### Endpoints
 
-Login with: **superadmin** / **SuperAdmin123!**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8080/api/v1
+- Swagger UI: http://localhost:8080/swagger-ui.html
 
----
+## Tenant Handling
 
-## Documentation
+- Primary tenant header: X-Tenant-Slug
+- Legacy fallback header (temporary compatibility): X-Tenant-ID
+- Subdomain resolution is supported and configurable
+- External contracts use school slug; internal schema mapping is resolved server-side
 
-| Document | Description |
-|----------|-------------|
-| [docs/SETUP.md](docs/SETUP.md) | Full local setup, environment variables, first-time init |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, tech stack, multi-tenancy, database schema |
-| [docs/API.md](docs/API.md) | Complete API reference with request/response examples |
-| [docs/API_REFERENCE.md](docs/API_REFERENCE.md) | Quick-reference endpoint tables, enums, pagination |
-| [docs/PLATFORM_BLUEPRINT.md](docs/PLATFORM_BLUEPRINT.md) | Role model, workflows, business rules |
-| [docs/TESTING.md](docs/TESTING.md) | Unit tests, curl test scripts, business rule tests |
-| [docs/PROJECT_TRACKER.md](docs/PROJECT_TRACKER.md) | Feature completion status, architecture decisions |
-| [docs/PENDING_TASKS.md](docs/PENDING_TASKS.md) | Backlog with actionable task checklists |
-| [docs/postman/README.md](docs/postman/README.md) | Postman collection import and usage guide |
+## API Envelope Standard
 
----
+All APIs return the standardized envelope:
 
-## Project Structure
-
+```json
+{
+	"success": true,
+	"message": "string",
+	"data": {}
+}
 ```
+
+## Repository Layout
+
+```text
 CloudCampus/
-├── backend/                     # Spring Boot application
-│   ├── src/main/java/com/cloudcampus/
-│   │   ├── auth/                # JWT login endpoint
-│   │   ├── security/            # JWT filter, role guards
-│   │   ├── tenant/              # Tenant CRUD, schema provisioning
-│   │   ├── user/                # User management
-│   │   ├── student/             # Student enrollment
-│   │   ├── teacher/             # Teacher management
-│   │   ├── academic/            # Classes, subjects, sections
-│   │   ├── attendance/          # Daily attendance records
-│   │   ├── exam/                # Exams and results
-│   │   ├── fees/                # Fee assignments and payments
-│   │   ├── homework/            # Homework assignments
-│   │   ├── timetable/           # Weekly schedule slots
-│   │   ├── parent/              # Parent-student links
-│   │   ├── bulk/                # Excel bulk upload
-│   │   └── dashboard/           # KPI summaries
-│   └── src/main/resources/
-│       ├── application.yml
-│       └── db/migration/        # Flyway SQL migrations
-├── frontend/                    # React + Vite SPA
-│   └── src/
-│       ├── features/            # Feature modules
-│       ├── api/                 # Axios client + endpoint constants
-│       └── app/                 # Routes, providers, query keys
-├── docs/                        # Full documentation
-├── scripts/                     # build.sh, start-dev.sh
-└── docker-compose.yml
+	backend/
+		src/main/java/com/cloudcampus/
+			auth/ config/ common/ tenant/ user/ student/ teacher/ academic/
+			attendance/ exam/ fees/ homework/ timetable/ parent/ dashboard/
+			subscription/
+		src/main/resources/
+			application.yml
+			db/migration/
+	frontend/
+		src/
+			app/ api/ components/ features/ hooks/ types/ utils/
+	docs/
+	scripts/
+	docker-compose.yml
 ```
 
----
+## Roles
 
-## User Roles
+- SUPER_ADMIN: platform-wide administration
+- SCHOOL_ADMIN: tenant administration
+- TEACHER: operational academic workflows
+- STUDENT: personal academic view
+- PARENT: linked-student view
 
-| Role | Access |
-|------|--------|
-| `SUPER_ADMIN` | Global — manage all tenants and super admin users |
-| `SCHOOL_ADMIN` | Tenant-scoped — full school operations management |
-| `TEACHER` | Tenant-scoped — attendance, exams, homework, timetable |
-| `STUDENT` | Tenant-scoped — own records (read only) |
-| `PARENT` | Tenant-scoped — own children's records (read only) |
-
----
-
-## Running Tests
+## Testing
 
 ```bash
 cd backend
 mvn test
 ```
 
----
+## Documentation Index
 
-## Contributing
-
-See [docs/SETUP.md](docs/SETUP.md) for development environment setup and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for system design details before contributing.
-
----
+- [docs/01_README.md](docs/01_README.md)
+- [docs/02_SETUP.md](docs/02_SETUP.md)
+- [docs/03_ARCHITECTURE.md](docs/03_ARCHITECTURE.md)
+- [docs/07_API_REFERENCE.md](docs/07_API_REFERENCE.md)
+- [docs/08_API.md](docs/08_API.md)
+- [docs/09_TESTING.md](docs/09_TESTING.md)
+- [docs/05_ROLE_MATRIX.md](docs/05_ROLE_MATRIX.md)
 
 ## License
 
-Proprietary — CloudCampus Team
+Proprietary. CloudCampus.

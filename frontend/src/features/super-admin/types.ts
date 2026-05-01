@@ -19,7 +19,6 @@ export interface User {
 }
 
 export interface Tenant {
-  id: string
   tenantId: string
   slug: string
   schoolName: string

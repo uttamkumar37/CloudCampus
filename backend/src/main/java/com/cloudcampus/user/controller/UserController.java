@@ -32,7 +32,7 @@ public class UserController {
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
         @Operation(summary = "Create a user", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
         })
     public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserCreateRequest request) {
@@ -43,7 +43,7 @@ public class UserController {
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
         @Operation(summary = "List users", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
         })
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getUsers(

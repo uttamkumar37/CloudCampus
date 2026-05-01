@@ -425,7 +425,7 @@ public class BulkUploadServiceImpl implements BulkUploadService {
 
     private void validateTenantContext() {
         if (TenantContext.DEFAULT_SCHEMA.equals(TenantContext.getTenant())) {
-            throw new BulkUploadValidationException("X-Tenant-ID header is required for bulk upload");
+            throw new BulkUploadValidationException("X-Tenant-Slug header is required for bulk upload");
         }
     }
 

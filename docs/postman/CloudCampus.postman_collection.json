@@ -58,7 +58,7 @@
                 "login"
               ]
             },
-            "description": "No X-Tenant-ID required for bootstrap super admin. Password from BOOTSTRAP_ADMIN_PASSWORD."
+            "description": "No X-Tenant-Slug required for bootstrap super admin. Password from BOOTSTRAP_ADMIN_PASSWORD."
           }
         },
         {
@@ -87,7 +87,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               }
             ],
@@ -105,7 +105,7 @@
                 "login"
               ]
             },
-            "description": "SCHOOL_ADMIN / TEACHER / etc. Must send X-Tenant-ID = tenant schema name."
+            "description": "SCHOOL_ADMIN / TEACHER / etc. Must send X-Tenant-Slug = tenant schema name."
           }
         },
         {
@@ -129,7 +129,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" }
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" }
             ],
             "body": {
               "mode": "raw",
@@ -164,7 +164,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" }
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" }
             ],
             "body": {
               "mode": "raw",
@@ -199,7 +199,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" }
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" }
             ],
             "body": {
               "mode": "raw",
@@ -219,14 +219,14 @@
             "method": "GET",
             "header": [
               { "key": "Authorization", "value": "Bearer {{token}}" },
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" }
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" }
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/me",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "me"]
             },
-            "description": "Returns profile of the authenticated user. Omit X-Tenant-ID for Super Admin."
+            "description": "Returns profile of the authenticated user. Omit X-Tenant-Slug for Super Admin."
           }
         },
         {
@@ -245,7 +245,7 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
@@ -262,7 +262,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
@@ -292,7 +292,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{publicTenantId}}"
               },
               {
@@ -326,7 +326,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{publicTenantId}}"
               },
               {
@@ -355,7 +355,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{publicTenantId}}"
               },
               {
@@ -392,7 +392,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["tenants", "{{targetTenantId}}", "subscribe"]
             },
-            "description": "SUPER_ADMIN only. No X-Tenant-ID required."
+            "description": "SUPER_ADMIN only. No X-Tenant-Slug required."
           }
         },
         {
@@ -440,7 +440,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -473,7 +473,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -521,7 +521,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -554,7 +554,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -592,7 +592,7 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{student_token}}" }
             ],
             "url": {
@@ -613,7 +613,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -639,7 +639,7 @@
             "method": "PATCH",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
@@ -659,7 +659,7 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
@@ -685,7 +685,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -718,7 +718,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -756,7 +756,7 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{teacher_token}}" }
             ],
             "url": {
@@ -777,7 +777,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -803,7 +803,7 @@
             "method": "PATCH",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
@@ -823,7 +823,7 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
@@ -849,7 +849,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -883,7 +883,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -913,7 +913,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -947,7 +947,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -977,7 +977,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1011,7 +1011,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1046,7 +1046,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1076,7 +1076,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1133,7 +1133,7 @@
             "method": "GET",
             "header": [
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1159,7 +1159,7 @@
             "method": "POST",
             "header": [
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1204,7 +1204,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1238,7 +1238,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1272,7 +1272,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1309,7 +1309,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1342,7 +1342,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1373,7 +1373,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1407,7 +1407,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1443,7 +1443,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1476,7 +1476,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1513,7 +1513,7 @@
                 "value": "application/json"
               },
               {
-                "key": "X-Tenant-ID",
+                "key": "X-Tenant-Slug",
                 "value": "{{tenantSchema}}"
               },
               {
@@ -1544,7 +1544,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
@@ -1564,7 +1564,7 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
@@ -1586,7 +1586,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
@@ -1606,7 +1606,7 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
@@ -1627,7 +1627,7 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{parent_token}}" }
             ],
             "url": {
@@ -1644,7 +1644,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "body": {
@@ -1664,7 +1664,7 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "X-Tenant-ID", "value": "{{tenantSchema}}" },
+              { "key": "X-Tenant-Slug", "value": "{{tenantSchema}}" },
               { "key": "Authorization", "value": "Bearer {{token}}" }
             ],
             "url": {
@@ -1725,7 +1725,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["plans"]
             },
-            "description": "SUPER_ADMIN only. No X-Tenant-ID required."
+            "description": "SUPER_ADMIN only. No X-Tenant-Slug required."
           }
         }
       ]
