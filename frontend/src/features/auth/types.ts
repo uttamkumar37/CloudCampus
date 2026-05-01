@@ -19,10 +19,8 @@ export interface LoginResponse {
   username: string
   role: UserRole
   roles: string[]
-  tenantId?: string
   tenantSlug?: string
   schoolName?: string
-  userId?: string
 }
 
 export interface SchoolSearchResult {

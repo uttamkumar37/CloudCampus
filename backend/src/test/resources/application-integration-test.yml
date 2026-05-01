@@ -17,7 +17,7 @@ spring:
 
 app:
   tenant:
-    header-name: X-Tenant-ID
+    header-name: X-Tenant-Slug
     default-schema: public
   security:
     jwt:

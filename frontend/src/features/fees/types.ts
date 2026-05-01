@@ -33,5 +33,4 @@ export interface RecordPaymentRequest {
   paymentDate: string
   paymentMethod: string | null
   referenceNo: string | null
-  receivedByUserId: string
 }

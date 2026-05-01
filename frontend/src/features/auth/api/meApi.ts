@@ -3,13 +3,13 @@ import { ENDPOINTS } from '../../../api/endpoints'
 import type { ApiResponse } from '../../../types/api'
 
 export interface UserProfile {
-  userId: string | null
   username: string
   email: string
   fullName: string
   role: string
   active: boolean
-  tenantSchema: string
+  tenantSlug: string | null
+  schoolName: string | null
 }
 
 export async function fetchCurrentProfile() {

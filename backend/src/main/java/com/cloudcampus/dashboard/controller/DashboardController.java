@@ -30,7 +30,7 @@ public class DashboardController {
     @GetMapping("/tenant-summary")
     @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT')")
     @Operation(summary = "Get tenant dashboard summary", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<TenantDashboardSummaryResponse>> getTenantDashboardSummary() {
@@ -43,7 +43,7 @@ public class DashboardController {
     @GetMapping("/branding")
     @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT')")
     @Operation(summary = "Get current tenant branding", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<TenantResponse>> getTenantBranding() {
@@ -68,7 +68,7 @@ public class DashboardController {
     @GetMapping("/student")
     @PreAuthorize("hasRole('STUDENT')")
     @Operation(summary = "Get student personal dashboard", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<StudentDashboardResponse>> getStudentDashboard() {
@@ -81,7 +81,7 @@ public class DashboardController {
     @GetMapping("/teacher")
     @PreAuthorize("hasRole('TEACHER')")
     @Operation(summary = "Get teacher personal dashboard", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<TeacherDashboardResponse>> getTeacherDashboard() {

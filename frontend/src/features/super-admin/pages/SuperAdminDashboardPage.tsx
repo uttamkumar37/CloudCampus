@@ -94,7 +94,7 @@ export function SuperAdminDashboardPage() {
           <DataTable
             columns={columns}
             rows={summary.newestTenants}
-            rowKey={(tenant) => tenant.id}
+            rowKey={(tenant) => tenant.slug}
             emptyText="No tenants have been created yet."
           />
         ) : null}

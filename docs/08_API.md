@@ -42,7 +42,7 @@ http://localhost:8080/api/v1
 | Header | Required On | Example |
 |--------|-------------|---------|
 | `Authorization` | All authenticated endpoints | `Bearer eyJhbGci...` |
-| `X-Tenant-ID` | All tenant-scoped endpoints | `greenwood` |
+| `X-Tenant-Slug` | All tenant-scoped endpoints | `greenwood` |
 | `Content-Type` | POST/PUT requests | `application/json` |
 
 ### Response Envelope
@@ -94,15 +94,15 @@ Paginated responses return `PageResponse<T>` inside `data`:
 ### 2.1 Login
 
 > Authenticate a user and obtain a JWT token.
-> For **Super Admin** login, omit `X-Tenant-ID`.
-> For **tenant users** (Admin, Teacher, etc.), include `X-Tenant-ID`.
+> For **Super Admin** login, omit `X-Tenant-Slug`.
+> For **tenant users** (Admin, Teacher, etc.), include `X-Tenant-Slug`.
 
 **Endpoint:** `POST /auth/login`
 
 **Headers:**
 ```
 Content-Type: application/json
-X-Tenant-ID: greenwood       (tenant users only; omit for Super Admin)
+X-Tenant-Slug: greenwood       (tenant users only; omit for Super Admin)
 ```
 
 **Request Body:**
@@ -151,7 +151,7 @@ X-Tenant-ID: greenwood       (tenant users only; omit for Super Admin)
 **Headers:**
 ```
 Authorization: Bearer <token>
-X-Tenant-ID: greenwood
+X-Tenant-Slug: greenwood
 ```
 
 **Response (200 OK):**
@@ -175,7 +175,7 @@ X-Tenant-ID: greenwood
 ## 3. Tenant Management APIs
 
 > These endpoints require the `SUPER_ADMIN` role.
-> `X-Tenant-ID` header is **not required** for these endpoints.
+> `X-Tenant-Slug` header is **not required** for these endpoints.
 
 ### 3.1 Create Tenant
 
@@ -268,7 +268,7 @@ Authorization: Bearer <superadmin_token>
 
 ## 4. User Management APIs
 
-> Requires: `X-Tenant-ID` header. Role: `SUPER_ADMIN` or `SCHOOL_ADMIN`.
+> Requires: `X-Tenant-Slug` header. Role: `SUPER_ADMIN` or `SCHOOL_ADMIN`.
 
 ### 4.1 Create User
 
@@ -279,7 +279,7 @@ Authorization: Bearer <superadmin_token>
 **Headers:**
 ```
 Authorization: Bearer <token>
-X-Tenant-ID: greenwood
+X-Tenant-Slug: greenwood
 Content-Type: application/json
 ```
 
@@ -338,7 +338,7 @@ Content-Type: application/json
 
 ## 5. Student APIs
 
-> Requires: `X-Tenant-ID` header.
+> Requires: `X-Tenant-Slug` header.
 
 ### 5.1 Create Student
 
@@ -349,7 +349,7 @@ Content-Type: application/json
 **Headers:**
 ```
 Authorization: Bearer <token>
-X-Tenant-ID: greenwood
+X-Tenant-Slug: greenwood
 Content-Type: application/json
 ```
 
@@ -441,7 +441,7 @@ Content-Type: application/json
 
 ## 6. Teacher APIs
 
-> Requires: `X-Tenant-ID` header.
+> Requires: `X-Tenant-Slug` header.
 
 ### 6.1 Create Teacher
 
@@ -522,7 +522,7 @@ Content-Type: application/json
 
 ## 7. Academic APIs
 
-> Requires: `X-Tenant-ID` header.
+> Requires: `X-Tenant-Slug` header.
 > Write operations: SUPER_ADMIN, SCHOOL_ADMIN
 > Read operations: SUPER_ADMIN, SCHOOL_ADMIN, TEACHER
 
@@ -612,7 +612,7 @@ Content-Type: application/json
 
 ## 8. Attendance APIs
 
-> Requires: `X-Tenant-ID` header.
+> Requires: `X-Tenant-Slug` header.
 
 ### 8.1 Mark Attendance
 
@@ -686,7 +686,7 @@ Content-Type: application/json
 
 ## 9. Fee APIs
 
-> Requires: `X-Tenant-ID` header.
+> Requires: `X-Tenant-Slug` header.
 
 ### 9.1 Assign Fee to Student
 
@@ -792,7 +792,7 @@ PENDING → OVERDUE  (if due date passes without full payment)
 
 ## 10. Exam APIs
 
-> Requires: `X-Tenant-ID` header.
+> Requires: `X-Tenant-Slug` header.
 
 ### 10.1 Create Exam
 
@@ -915,7 +915,7 @@ PENDING → OVERDUE  (if due date passes without full payment)
 
 ## 11. Homework APIs
 
-> Requires: `X-Tenant-ID` header.
+> Requires: `X-Tenant-Slug` header.
 
 ### 11.1 Create Homework Assignment
 
@@ -973,7 +973,7 @@ PENDING → OVERDUE  (if due date passes without full payment)
 
 ## 12. Timetable APIs
 
-> Requires: `X-Tenant-ID` header.
+> Requires: `X-Tenant-Slug` header.
 
 ### 12.1 Create Timetable Slot
 
@@ -1039,7 +1039,7 @@ PENDING → OVERDUE  (if due date passes without full payment)
 
 ## 13. Parent APIs
 
-> Requires: `X-Tenant-ID` header. Role: `PARENT` only.
+> Requires: `X-Tenant-Slug` header. Role: `PARENT` only.
 
 ### 13.1 Get My Children
 
@@ -1050,7 +1050,7 @@ PENDING → OVERDUE  (if due date passes without full payment)
 **Headers:**
 ```
 Authorization: Bearer <parent_token>
-X-Tenant-ID: greenwood
+X-Tenant-Slug: greenwood
 ```
 
 **Response (200 OK):**
@@ -1072,7 +1072,7 @@ X-Tenant-ID: greenwood
 
 ## 14. Dashboard APIs
 
-> Requires: `X-Tenant-ID` header (except super-admin summary).
+> Requires: `X-Tenant-Slug` header (except super-admin summary).
 
 ### 14.1 Get Tenant Dashboard Summary
 
@@ -1151,7 +1151,7 @@ X-Tenant-ID: greenwood
 
 **Endpoint:** `GET /dashboard/super-admin-summary`
 
-**Role Access:** SUPER_ADMIN only (no `X-Tenant-ID` required)
+**Role Access:** SUPER_ADMIN only (no `X-Tenant-Slug` required)
 
 **Response (200 OK):**
 ```json
@@ -1180,7 +1180,7 @@ X-Tenant-ID: greenwood
 
 ## 15. Bulk Upload APIs
 
-> Requires: `X-Tenant-ID` header. Role: SCHOOL_ADMIN.
+> Requires: `X-Tenant-Slug` header. Role: SCHOOL_ADMIN.
 
 ### 15.1 Upload Excel File
 
@@ -1191,7 +1191,7 @@ X-Tenant-ID: greenwood
 **Headers:**
 ```
 Authorization: Bearer <token>
-X-Tenant-ID: greenwood
+X-Tenant-Slug: greenwood
 Content-Type: multipart/form-data
 ```
 
@@ -1236,7 +1236,7 @@ Content-Type: multipart/form-data
 **Headers:**
 ```
 Authorization: Bearer <token>
-X-Tenant-ID: greenwood
+X-Tenant-Slug: greenwood
 ```
 
 **Response:** Binary file download (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`)
@@ -1459,4 +1459,4 @@ Returned when `@Valid` constraints fail:
 | 409 | `Result already exists for this student` | UNIQUE(exam_id, student_id) violated |
 | 422 | `Marks obtained exceed maximum marks` | `marksObtained > exam.maxMarks` |
 | 422 | `No balance to receive` | Payment exceeds remaining fee balance |
-| 500 | `Tenant context not set` | Missing `X-Tenant-ID` on tenant-scoped endpoint |
+| 500 | `Tenant context not set` | Missing `X-Tenant-Slug` on tenant-scoped endpoint |

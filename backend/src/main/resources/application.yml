@@ -40,7 +40,8 @@ springdoc:
 
 app:
   tenant:
-    header-name: X-Tenant-ID
+    header-name: X-Tenant-Slug
+    legacy-header-name: X-Tenant-ID
     default-schema: public
     subdomain:
       enabled: ${APP_TENANT_SUBDOMAIN_ENABLED:true}
@@ -55,7 +56,7 @@ app:
       secret: ${JWT_SECRET}
       access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000}
     bootstrap-admin:
-      username: ${BOOTSTRAP_ADMIN_USERNAME:superadmin}
+      username: ${BOOTSTRAP_ADMIN_USERNAME}
       password: ${BOOTSTRAP_ADMIN_PASSWORD}
       role: ${BOOTSTRAP_ADMIN_ROLE:SUPER_ADMIN}
 razorpay:

@@ -34,7 +34,7 @@ public class FeesController {
     @PostMapping("/assignments")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
         @Operation(summary = "Create fee assignment", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
         })
     public ResponseEntity<ApiResponse<FeeAssignmentResponse>> createFeeAssignment(
@@ -47,7 +47,7 @@ public class FeesController {
     @PostMapping("/payments")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
         @Operation(summary = "Record fee payment", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
         })
     public ResponseEntity<ApiResponse<FeePaymentResponse>> recordPayment(
@@ -60,7 +60,7 @@ public class FeesController {
     @GetMapping("/students/{studentId}/assignments")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER') or @ownershipChecker.canViewStudentData(authentication, #studentId)")
     @Operation(summary = "Get fee assignments by student", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<List<FeeAssignmentResponse>>> getStudentFees(@PathVariable UUID studentId) {

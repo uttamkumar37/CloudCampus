@@ -33,7 +33,7 @@ public class TenantController {
     @PostMapping
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(summary = "Create a tenant", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<TenantResponse>> createTenant(@Valid @RequestBody TenantCreateRequest request) {
@@ -44,7 +44,7 @@ public class TenantController {
     @GetMapping
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(summary = "List tenants", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<List<TenantResponse>>> getTenants() {
@@ -71,7 +71,7 @@ public class TenantController {
     @GetMapping("/{tenantId}")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(summary = "Get tenant by tenantId", parameters = {
-            @Parameter(name = "X-Tenant-ID", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<TenantResponse>> getTenant(@PathVariable String tenantId) {

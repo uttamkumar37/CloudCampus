@@ -11,7 +11,6 @@ interface AuthContextValue {
   schoolName: string | null
   username: string | null
   role: UserRole | null
-  userId: string | null
   isAuthenticated: boolean
   isSuperAdmin: boolean
   setAuthSession: (response: LoginResponse) => void
@@ -25,16 +24,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [schoolName, setSchoolName] = useState<string | null>(storage.getSchoolName())
   const [username, setUsername] = useState<string | null>(storage.getUsername())
   const [role, setRole] = useState<UserRole | null>(storage.getRole() as UserRole | null)
-  const [userId, setUserId] = useState<string | null>(storage.getUserId())
 
   const setAuthSession = (response: LoginResponse) => {
     storage.setUsername(response.username)
     storage.setRole(response.role)
-    if (response.userId) {
-      storage.setUserId(response.userId)
-    } else {
-      storage.removeUserId()
-    }
 
     if (response.tenantSlug) {
       storage.setTenantSlug(response.tenantSlug)
@@ -52,7 +45,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSchoolName(response.schoolName ?? null)
     setUsername(response.username)
     setRole(response.role)
-    setUserId(response.userId ?? null)
   }
 
   const logout = () => {
@@ -63,7 +55,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setSchoolName(null)
     setUsername(null)
     setRole(null)
-    setUserId(null)
   }
 
   const value = useMemo(
@@ -72,7 +63,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       schoolName,
       username,
       role,
-      userId,
       // isAuthenticated is derived from non-sensitive localStorage values.
       // If the HttpOnly cookie is expired the first protected API call will
       // return 401 and the response interceptor will call clearAuth().
@@ -81,7 +71,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setAuthSession,
       logout,
     }),
-    [role, schoolName, tenantSlug, userId, username],
+    [role, schoolName, tenantSlug, username],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

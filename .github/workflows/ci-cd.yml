@@ -1,4 +1,4 @@
-name: CampusCloud CI/CD
+name: CloudCampus CI/CD
 
 # ⚠️  CI/CD disabled for local development — trigger manually from GitHub Actions tab
 # To re-enable for production: restore `push: branches: [main]` below
@@ -9,9 +9,9 @@ permissions:
   contents: read
 
 env:
-  IMAGE_NAME: campuscloud-backend
+  IMAGE_NAME: cloudcampus-backend
   IMAGE_TAG: latest
-  BACKEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/campuscloud-backend:latest
+  BACKEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/cloudcampus-backend:latest
 
 jobs:
   build:
@@ -22,13 +22,13 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: campuscloud
+          POSTGRES_DB: cloudcampus
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d campuscloud"
+          --health-cmd "pg_isready -U postgres -d cloudcampus"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
@@ -38,7 +38,7 @@ jobs:
         working-directory: backend
 
     env:
-      DB_URL: jdbc:postgresql://localhost:5432/campuscloud
+      DB_URL: jdbc:postgresql://localhost:5432/cloudcampus
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       JWT_SECRET: 0123456789abcdef0123456789abcdef
@@ -116,13 +116,13 @@ jobs:
             echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
             docker pull "$BACKEND_IMAGE"
 
-            docker stop campuscloud-backend || true
-            docker rm campuscloud-backend || true
+            docker stop cloudcampus-backend || true
+            docker rm cloudcampus-backend || true
 
             docker run -d \
-              --name campuscloud-backend \
+              --name cloudcampus-backend \
               --restart unless-stopped \
-              --env-file /opt/campuscloud/backend.env \
+              --env-file /opt/cloudcampus/backend.env \
               -p 8080:8080 \
               "$BACKEND_IMAGE"
 

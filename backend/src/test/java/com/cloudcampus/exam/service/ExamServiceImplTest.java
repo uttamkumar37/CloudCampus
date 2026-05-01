@@ -168,7 +168,7 @@ class ExamServiceImplTest {
 
         assertThatThrownBy(() -> examService.createExam(request))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("X-Tenant-ID header is required");
+                .hasMessageContaining("X-Tenant-Slug header is required");
     }
 
     // ── getExamsByClass ───────────────────────────────────────────────────────

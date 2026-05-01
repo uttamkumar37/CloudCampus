@@ -23,12 +23,19 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class TenantRequestFilter extends OncePerRequestFilter {
 
-    public static final String TENANT_HEADER = "X-Tenant-ID";
+    private static final String DEFAULT_TENANT_HEADER = "X-Tenant-Slug";
+    private static final String DEFAULT_LEGACY_TENANT_HEADER = "X-Tenant-ID";
 
     private final TenantService tenantService;
 
     @Value("${app.tenant.subdomain.enabled:true}")
     private boolean subdomainEnabled;
+
+    @Value("${app.tenant.header-name:X-Tenant-Slug}")
+    private String tenantHeaderName;
+
+    @Value("${app.tenant.legacy-header-name:X-Tenant-ID}")
+    private String legacyTenantHeaderName;
 
     @Value("${app.tenant.subdomain.root-domains:localhost}")
     private String configuredRootDomains;
@@ -68,7 +75,10 @@ public class TenantRequestFilter extends OncePerRequestFilter {
     }
 
     private String resolveTenantIdentifier(HttpServletRequest request) {
-        String tenantHeader = request.getHeader(TENANT_HEADER);
+        String tenantHeader = request.getHeader(resolvePrimaryHeaderName());
+        if (!StringUtils.hasText(tenantHeader)) {
+            tenantHeader = request.getHeader(resolveLegacyHeaderName());
+        }
         if (StringUtils.hasText(tenantHeader)) {
             return tenantHeader.trim().toLowerCase(Locale.ROOT);
         }
@@ -92,6 +102,14 @@ public class TenantRequestFilter extends OncePerRequestFilter {
         }
 
         return extractTenantSlugFromHost(normalizedHost);
+    }
+
+    private String resolvePrimaryHeaderName() {
+        return StringUtils.hasText(tenantHeaderName) ? tenantHeaderName : DEFAULT_TENANT_HEADER;
+    }
+
+    private String resolveLegacyHeaderName() {
+        return StringUtils.hasText(legacyTenantHeaderName) ? legacyTenantHeaderName : DEFAULT_LEGACY_TENANT_HEADER;
     }
 
     private String extractTenantSlugFromHost(String host) {

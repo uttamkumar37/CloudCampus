@@ -129,7 +129,7 @@ class UserServiceImplTest {
 
         assertThatThrownBy(() -> userService.createUser(request))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("X-Tenant-ID header is required");
+                .hasMessageContaining("X-Tenant-Slug header is required");
     }
 
     // ── getUsers ──────────────────────────────────────────────────────────────
@@ -156,7 +156,7 @@ class UserServiceImplTest {
 
         assertThatThrownBy(() -> userService.getUsers(PageRequest.of(0, 20)))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("X-Tenant-ID header is required");
+                .hasMessageContaining("X-Tenant-Slug header is required");
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────

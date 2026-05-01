@@ -1,250 +1,102 @@
-# CloudCampus — API Reference
+# CloudCampus API Reference
 
+Version: 2026-05-01
+Base URL: http://localhost:8080/api/v1
 
-> Quick-reference table of all REST endpoints. For full request/response details see [08_API.md](./08_API.md).
+## Contract Envelope
 
-**Base URL:** `http://localhost:8080/api/v1`
+All endpoints return:
 
----
+```json
+{
+  "success": true,
+  "message": "string",
+  "data": {}
+}
+```
+
+## Tenant Context
+
+- Tenant-scoped APIs require X-Tenant-Slug
+- Legacy X-Tenant-ID is still accepted during compatibility period
+- Super-admin platform APIs do not require tenant header
 
 ## Authentication
 
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/auth/login` | Login and get JWT token | No | Optional* | All |
-| GET | `/auth/me` | Get current user profile | Yes | Yes | All |
-
-> *Omit `X-Tenant-ID` for Super Admin login. Include it for tenant user login.
-
----
-
-## Tenant Management
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/tenants` | Create new school tenant | Yes | No | SUPER_ADMIN |
-| GET | `/tenants` | List all tenants | Yes | No | SUPER_ADMIN |
-| GET | `/tenants/{tenantId}` | Get tenant by business ID | Yes | No | SUPER_ADMIN |
-
----
-
-## User Management
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/users` | Create staff user account | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-| GET | `/users` | List users (paginated) | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-
----
-
-## Students
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/students` | Enroll new student | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-| GET | `/students` | List students (paginated) | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER |
-| GET | `/students/{id}` | Get student by UUID | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER |
-| DELETE | `/students/{id}` | Soft-delete student | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-
----
-
-## Teachers
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/teachers` | Create teacher record | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-| GET | `/teachers` | List teachers (paginated) | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER |
-| GET | `/teachers/{id}` | Get teacher by UUID | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER |
-| DELETE | `/teachers/{id}` | Soft-delete teacher | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-
----
-
-## Academic (Classes, Subjects, Sections)
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/academics/classes` | Create class | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-| GET | `/academics/classes` | List all classes | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER |
-| POST | `/academics/subjects` | Create subject | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-| GET | `/academics/subjects` | List all subjects | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER |
-| POST | `/academics/sections` | Create section | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-| GET | `/academics/sections` | List all sections | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER |
-
----
-
-## Attendance
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/attendances` | Mark student attendance | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER |
-| GET | `/attendances/{id}` | Get attendance record | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT |
-| GET | `/attendances?date=YYYY-MM-DD` | List attendance by date | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT |
-
----
-
-## Fees
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/fees/assignments` | Assign fee to student | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-| POST | `/fees/payments` | Record fee payment | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN |
-| GET | `/fees/students/{studentId}/assignments` | Get student fee history | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER + ownership |
-
----
-
-## Exams
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/exams` | Schedule exam | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER |
-| GET | `/exams/classes/{classId}` | Get exams for class | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT |
-| POST | `/exams/results` | Enter exam result | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER |
-| GET | `/exams/{examId}/results` | Get results for exam (ownership-filtered) | Yes | Yes | SUPER_ADMIN, SCHOOL_ADMIN, TEACHER, STUDENT, PARENT |
-
----
-
-## Homework
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/homework` | Create homework assignment | Yes | Yes | SCHOOL_ADMIN, TEACHER |
-| GET | `/homework/classes/{classId}` | List homework for class | Yes | Yes | SCHOOL_ADMIN, TEACHER, STUDENT, PARENT |
-
----
-
-## Timetable
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/timetable/slots` | Create timetable slot | Yes | Yes | SCHOOL_ADMIN, TEACHER |
-| GET | `/timetable/classes/{classId}/sections/{sectionId}` | Get timetable for class & section | Yes | Yes | SCHOOL_ADMIN, TEACHER, STUDENT, PARENT |
-
----
-
-## Parents
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| GET | `/parents/me/children` | Get linked children for logged-in parent | Yes | Yes | PARENT |
-
----
-
-## Dashboard
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| GET | `/dashboard/tenant-summary` | School dashboard summary | Yes | Yes | SCHOOL_ADMIN, TEACHER, STUDENT, PARENT |
-| GET | `/dashboard/branding` | Tenant branding info | Yes | Yes | SCHOOL_ADMIN, TEACHER, STUDENT, PARENT |
-| GET | `/dashboard/super-admin-summary` | Platform-wide summary | Yes | No | SUPER_ADMIN |
-
----
-
-## Bulk Upload
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/bulk/upload` | Upload Excel workbook (multipart) | Yes | Yes | SCHOOL_ADMIN |
-| GET | `/bulk/sample` | Download sample XLSX template | Yes | Yes | SCHOOL_ADMIN |
-
----
-
-## Subscription Plans
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| GET | `/plans` | List active subscription plans | No | No | Public |
-| GET | `/plans/{id}` | Get plan by UUID | Yes | No | Any authenticated |
-| POST | `/plans` | Create subscription plan | Yes | No | SUPER_ADMIN |
-
----
-
-## Tenant Subscriptions
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/tenants/{tenantId}/subscribe` | Subscribe tenant to a plan | Yes | No | SUPER_ADMIN |
-| GET | `/tenants/{tenantId}/subscription` | Get active subscription | Yes | No | SUPER_ADMIN |
-| DELETE | `/tenants/{tenantId}/subscription` | Cancel active subscription | Yes | No | SUPER_ADMIN |
-
----
-
-## Platform Payments
-
-| Method | Endpoint | Description | Auth | X-Tenant-ID | Roles |
-|--------|----------|-------------|------|-------------|-------|
-| POST | `/payments` | Record platform payment | Yes | No | SUPER_ADMIN |
-| GET | `/payments/tenant/{tenantId}` | Get payments for tenant | Yes | No | SUPER_ADMIN |
-
----
-
-## Key Enum Values
-
-### User Roles
-
-| Value | Description |
-|-------|-------------|
-| `SUPER_ADMIN` | Platform-level administrator (manages all tenants) |
-| `SCHOOL_ADMIN` | School-level administrator (manages own school) |
-| `TEACHER` | Teacher (marks attendance, enters results, assigns homework) |
-| `STUDENT` | Student (read-only: own data, homework, timetable) |
-| `PARENT` | Parent (view linked child's data and fee status) |
-
-### Attendance Status
-
-| Value | Description |
-|-------|-------------|
-| `PRESENT` | Student was present |
-| `ABSENT` | Student was absent |
-| `LATE` | Student arrived late |
-| `EXCUSED` | Excused absence |
-
-### Fee Assignment Status
-
-| Value | Description |
-|-------|-------------|
-| `PENDING` | No payments recorded yet |
-| `PARTIALLY_PAID` | Some payment made, balance remains |
-| `PAID` | Fully paid |
-| `OVERDUE` | Past due date with unpaid balance |
-
-### Gender
-
-| Value |
-|-------|
-| `MALE` |
-| `FEMALE` |
-| `OTHER` |
-
-### Day of Week (Timetable)
-
-| Value | Day |
-|-------|-----|
-| `1` | Monday |
-| `2` | Tuesday |
-| `3` | Wednesday |
-| `4` | Thursday |
-| `5` | Friday |
-| `6` | Saturday |
-| `7` | Sunday |
-
----
-
-## Pagination Query Parameters
-
-All paginated endpoints (`GET /students`, `GET /teachers`, `GET /users`) accept:
-
-| Parameter | Type | Default | Example |
-|-----------|------|---------|---------|
-| `page` | int | `0` | `page=2` |
-| `size` | int | `20` | `size=50` |
-| `sort` | string | varies | `sort=lastName,asc` |
-
----
-
-## Interactive Documentation
-
-Swagger UI is available when the backend is running:
-
+| Method | Path | Auth | Tenant Header |
+|---|---|---|---|
+| POST | /auth/login | Public | Optional (required for non-super-admin) |
+| POST | /auth/logout | Authenticated | Optional |
+| GET | /auth/me | Authenticated | Required for tenant users |
+| POST | /auth/change-password | Authenticated | Required for tenant users |
+
+Login request example:
+
+```json
+{
+  "username": "teacher01",
+  "password": "********",
+  "tenantSlug": "greenwood",
+  "role": "TEACHER"
+}
 ```
-http://localhost:8080/swagger-ui.html
-```
+
+## Tenant APIs
+
+| Method | Path | Roles |
+|---|---|---|
+| POST | /tenants | SUPER_ADMIN |
+| GET | /tenants | SUPER_ADMIN |
+| GET | /tenants/{tenantId} | SUPER_ADMIN |
+| GET | /tenants/schools/search?query=... | Public |
+| GET | /tenants/schools/{tenantSlug} | Public |
+
+## Domain APIs (Tenant Scoped)
+
+- Users: /users
+- Students: /students
+- Teachers: /teachers
+- Academic: /academics/*
+- Attendance: /attendances
+- Fees: /fees/*
+- Exams: /exams/*
+- Homework: /homework/*
+- Timetable: /timetable/*
+- Parent: /parents/*
+- Dashboard: /dashboard/tenant-summary, /dashboard/student, /dashboard/teacher
+
+All above require:
+
+- Valid auth cookie
+- Correct tenant context header
+- Role authorization via @PreAuthorize
+
+## Super Admin APIs
+
+- /dashboard/super-admin-summary
+- /plans
+- /tenants/{tenantId}/subscribe
+- /tenants/{tenantId}/subscription
+- /payments
+- /payments/tenant/{tenantId}
+
+## Common Error Statuses
+
+- 400: validation/business rule failure
+- 401: unauthenticated or invalid token
+- 403: authenticated but insufficient role
+- 404: resource not found
+- 500: unhandled server error
+
+## Pagination
+
+Paginated endpoints support:
+
+- page (default 0)
+- size (default endpoint-specific)
+- sort (field,direction)
+
+## Notes
+
+- External clients should rely on slug-based tenant context.
+- Avoid depending on internal database identifiers in UI contracts.

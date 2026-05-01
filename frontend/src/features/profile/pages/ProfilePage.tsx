@@ -48,12 +48,12 @@ export function ProfilePage() {
             <dd className="mt-1 text-slate-800">{p.role}</dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Tenant schema</dt>
-            <dd className="mt-1 font-mono text-sm text-slate-800">{p.tenantSchema}</dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">School</dt>
+            <dd className="mt-1 text-slate-800">{p.schoolName ?? 'CloudCampus Platform'}</dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">User id</dt>
-            <dd className="mt-1 font-mono text-xs text-slate-600 break-all">{p.userId ?? 'Bootstrap / platform'}</dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Workspace</dt>
+            <dd className="mt-1 text-slate-600">{p.tenantSlug ? `/${p.tenantSlug}` : 'platform'}</dd>
           </div>
         </dl>
       </div>

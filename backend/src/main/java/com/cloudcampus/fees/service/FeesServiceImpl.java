@@ -1,5 +1,6 @@
 package com.cloudcampus.fees.service;
 
+import com.cloudcampus.auth.security.CloudCampusUserDetails;
 import com.cloudcampus.fees.dto.FeeAssignmentCreateRequest;
 import com.cloudcampus.fees.dto.FeeAssignmentResponse;
 import com.cloudcampus.fees.dto.FeePaymentCreateRequest;
@@ -13,6 +14,8 @@ import com.cloudcampus.student.repository.StudentRepository;
 import com.cloudcampus.tenant.service.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +74,7 @@ public class FeesServiceImpl implements FeesService {
         payment.setPaymentDate(request.paymentDate());
         payment.setPaymentMethod(request.paymentMethod().trim());
         payment.setReferenceNo(normalizeNullable(request.referenceNo()));
-        payment.setReceivedByUserId(request.receivedByUserId());
+        payment.setReceivedByUserId(requireCurrentUserId());
 
         FeePayment savedPayment = feePaymentRepository.save(payment);
 
@@ -105,7 +108,7 @@ public class FeesServiceImpl implements FeesService {
 
     private void validateTenantContext() {
         if (TenantContext.DEFAULT_SCHEMA.equals(TenantContext.getTenant())) {
-            throw new IllegalArgumentException("X-Tenant-ID header is required for fee operations");
+            throw new IllegalArgumentException("X-Tenant-Slug header is required for fee operations");
         }
     }
 
@@ -148,5 +151,14 @@ public class FeesServiceImpl implements FeesService {
             return null;
         }
         return value.trim();
+    }
+
+    private UUID requireCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof CloudCampusUserDetails principal)
+                || principal.getUserId() == null) {
+            throw new IllegalStateException("Authenticated user id is required to record fee payment");
+        }
+        return principal.getUserId();
     }
 }

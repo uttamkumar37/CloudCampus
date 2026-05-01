@@ -1,5 +1,6 @@
 package com.cloudcampus.fees.service;
 
+import com.cloudcampus.auth.security.CloudCampusUserDetails;
 import com.cloudcampus.fees.dto.FeeAssignmentCreateRequest;
 import com.cloudcampus.fees.dto.FeeAssignmentResponse;
 import com.cloudcampus.fees.dto.FeePaymentCreateRequest;
@@ -18,6 +19,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -54,11 +57,25 @@ class FeesServiceImplTest {
     @BeforeEach
     void setTenantContext() {
         TenantContext.setTenant("school_a");
+                CloudCampusUserDetails principal = new CloudCampusUserDetails(
+                                userId,
+                                "fee.admin",
+                                "pwd",
+                                "fee.admin@cloudcampus.local",
+                                "Fee Admin",
+                                "school_a",
+                                List.of(),
+                                true
+                );
+                SecurityContextHolder.getContext().setAuthentication(
+                                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities())
+                );
     }
 
     @AfterEach
     void clearTenantContext() {
         TenantContext.clear();
+                SecurityContextHolder.clearContext();
     }
 
     // ── createFeeAssignment ───────────────────────────────────────────────────
@@ -103,7 +120,7 @@ class FeesServiceImplTest {
 
         assertThatThrownBy(() -> feesService.createFeeAssignment(request))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("X-Tenant-ID header is required");
+                .hasMessageContaining("X-Tenant-Slug header is required");
     }
 
     // ── recordFeePayment ──────────────────────────────────────────────────────
@@ -114,7 +131,7 @@ class FeesServiceImplTest {
                 new BigDecimal("5000.00"), FeeStatus.PENDING);
 
         FeePaymentCreateRequest request = new FeePaymentCreateRequest(
-                assignmentId, new BigDecimal("2000.00"), LocalDate.now(), "CASH", null, userId);
+                assignmentId, new BigDecimal("2000.00"), LocalDate.now(), "CASH", null);
 
         when(feeAssignmentRepository.findById(assignmentId)).thenReturn(Optional.of(assignment));
         // No previous payments
@@ -137,7 +154,7 @@ class FeesServiceImplTest {
                 new BigDecimal("5000.00"), FeeStatus.PENDING);
 
         FeePaymentCreateRequest request = new FeePaymentCreateRequest(
-                assignmentId, new BigDecimal("5000.00"), LocalDate.now(), "BANK_TRANSFER", "REF001", userId);
+                assignmentId, new BigDecimal("5000.00"), LocalDate.now(), "BANK_TRANSFER", "REF001");
 
         when(feeAssignmentRepository.findById(assignmentId)).thenReturn(Optional.of(assignment));
         when(feePaymentRepository.findAllByFeeAssignmentId(assignmentId)).thenReturn(List.of());
@@ -164,7 +181,7 @@ class FeesServiceImplTest {
         when(feePaymentRepository.findAllByFeeAssignmentId(assignmentId)).thenReturn(List.of(previous));
 
         FeePaymentCreateRequest request = new FeePaymentCreateRequest(
-                assignmentId, new BigDecimal("2000.00"), LocalDate.now(), "CASH", null, userId);
+                assignmentId, new BigDecimal("2000.00"), LocalDate.now(), "CASH", null);
 
         FeePayment savedPayment = buildPayment(UUID.randomUUID(), assignment, new BigDecimal("2000.00"));
         when(feePaymentRepository.save(any(FeePayment.class))).thenReturn(savedPayment);
@@ -186,7 +203,7 @@ class FeesServiceImplTest {
         when(feePaymentRepository.findAllByFeeAssignmentId(assignmentId)).thenReturn(List.of());
 
         FeePaymentCreateRequest request = new FeePaymentCreateRequest(
-                assignmentId, new BigDecimal("6000.00"), LocalDate.now(), "CASH", null, userId);
+                assignmentId, new BigDecimal("6000.00"), LocalDate.now(), "CASH", null);
 
         assertThatThrownBy(() -> feesService.recordFeePayment(request))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -198,7 +215,7 @@ class FeesServiceImplTest {
         when(feeAssignmentRepository.findById(assignmentId)).thenReturn(Optional.empty());
 
         FeePaymentCreateRequest request = new FeePaymentCreateRequest(
-                assignmentId, new BigDecimal("100.00"), LocalDate.now(), "CASH", null, userId);
+                assignmentId, new BigDecimal("100.00"), LocalDate.now(), "CASH", null);
 
         assertThatThrownBy(() -> feesService.recordFeePayment(request))
                 .isInstanceOf(IllegalArgumentException.class)
