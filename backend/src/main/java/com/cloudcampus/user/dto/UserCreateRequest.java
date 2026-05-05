@@ -11,7 +11,6 @@ public record UserCreateRequest(
         @Size(max = 120, message = "fullName must be at most 120 characters")
         String fullName,
 
-        @NotBlank(message = "username is required")
         @Size(max = 100, message = "username must be at most 100 characters")
         String username,
 
@@ -20,7 +19,6 @@ public record UserCreateRequest(
         @Size(max = 160, message = "email must be at most 160 characters")
         String email,
 
-        @NotBlank(message = "password is required")
         @Size(min = 8, max = 64, message = "password must be between 8 and 64 characters")
         String password,
 

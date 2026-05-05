@@ -14,6 +14,7 @@ const navigation = [
   { to: '/attendance', label: 'Attendance', roles: ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
   { to: '/fees', label: 'Fees', roles: ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
   { to: '/marks', label: 'Marks', roles: ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
+  { to: '/parent-links', label: 'Parent Links', roles: ['SCHOOL_ADMIN'] },
   { to: '/my-children', label: 'My children', roles: ['PARENT'] },
   { to: '/profile', label: 'Profile', roles: ['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT'] },
 ]

@@ -28,7 +28,6 @@ public record AttendanceCreateRequest(
         @Size(max = 255, message = "remarks must be at most 255 characters")
         String remarks,
 
-        @NotNull(message = "markedByUserId is required")
         UUID markedByUserId
 ) {
 }

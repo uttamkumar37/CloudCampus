@@ -3,12 +3,16 @@ package com.cloudcampus.parent.service;
 import com.cloudcampus.auth.security.CloudCampusUserDetails;
 import com.cloudcampus.parent.dto.LinkParentRequest;
 import com.cloudcampus.parent.dto.LinkedStudentResponse;
+import com.cloudcampus.parent.dto.ParentStudentLinkResponse;
 import com.cloudcampus.parent.entity.ParentStudent;
 import com.cloudcampus.parent.repository.ParentStudentRepository;
 import com.cloudcampus.student.entity.Student;
 import com.cloudcampus.student.repository.StudentRepository;
 import com.cloudcampus.tenant.service.TenantContext;
+import com.cloudcampus.user.entity.UserAccount;
+import com.cloudcampus.user.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +27,33 @@ public class ParentServiceImpl implements ParentService {
 
     private final ParentStudentRepository parentStudentRepository;
     private final StudentRepository studentRepository;
+    private final UserAccountRepository userAccountRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParentStudentLinkResponse> getLinks() {
+        validateTenantContext();
+        List<ParentStudentLinkResponse> out = new ArrayList<>();
+        for (var link : parentStudentRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))) {
+            UserAccount parent = userAccountRepository.findById(link.getParentUserId()).orElse(null);
+            Student student = studentRepository.findById(link.getStudentId()).orElse(null);
+            if (parent == null || student == null) {
+                continue;
+            }
+            out.add(new ParentStudentLinkResponse(
+                    link.getId(),
+                    parent.getId(),
+                    parent.getFullName(),
+                    parent.getEmail(),
+                    student.getId(),
+                    student.getAdmissionNo(),
+                    student.getFirstName(),
+                    student.getLastName(),
+                    link.getCreatedAt()
+            ));
+        }
+        return out;
+    }
 
     @Override
     @Transactional(readOnly = true)

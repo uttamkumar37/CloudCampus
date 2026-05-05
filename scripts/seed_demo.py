@@ -1,502 +1,380 @@
 #!/usr/bin/env python3
 """
-CloudCampus — Full Demo Seed Script
-Provisions 4 school tenants with bulk student/teacher/class data + user accounts.
+CloudCampus demo data seeder (single-school profile).
+
+Creates one tenant and a compact, realistic dataset:
+- 1 school admin
+- 1 teacher user + teacher record
+- 1 student user + student record
+- 1 parent user and parent-student link
+- classes, section, subject, timetable, homework, exam, attendance, fees
+
+Idempotent behavior: the script skips resources that already exist when possible.
 """
 
-import io
+from __future__ import annotations
+
 import json
 import sys
-import time
-import warnings
-
-warnings.filterwarnings("ignore")
+from datetime import date, timedelta
+from typing import Any
 
 import requests
-import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment
-from openpyxl.utils import get_column_letter
 
-BASE = "http://localhost:8080/api/v1"
+BASE_URL = "http://localhost:8080/api/v1"
+TIMEOUT = 25
 
-# ── Credentials ────────────────────────────────────────────────────────────────
-SA_USER = "superadmin"
-SA_PASS = "SuperAdmin_Docker_2026!"
+SUPER_ADMIN = {
+    "username": "superadmin",
+    "password": "SuperAdmin_Docker_2026!",
+}
 
-# ── Demo Tenants ───────────────────────────────────────────────────────────────
-TENANTS = [
-    {
-        "tenantId":    "sunrise-academy",
-        "schoolName":  "Sunrise Academy",
-        "schemaName":  "school_sunrise-academy",
-        "logoUrl":     "https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=200&q=80",
-        "primaryColor": "#10b981",
-        "admin":       {"fullName": "Priya Sharma",    "username": "priya.sharma",  "email": "priya@sunrise.edu",   "password": "Sunrise@2026!"},
-        "code":        "SUN",
+TENANT = {
+    "tenantId": "cloudcampus-demo-school",
+    "slug": "cloudcampus-demo-school",
+    "schoolName": "CloudCampus Demo School",
+    "schemaName": "school_cloudcampus_demo_school",
+    "primaryColor": "#0f766e",
+    "logoUrl": "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=300&q=80",
+}
+
+USERS = {
+    "schoolAdmin": {
+        "fullName": "Ananya Principal",
+        "username": "ananya.principal",
+        "email": "ananya.principal@cloudcampus.demo",
+        "password": "Admin@Demo2026!",
+        "role": "SCHOOL_ADMIN",
     },
-    {
-        "tenantId":    "greenwood-high",
-        "schoolName":  "Greenwood High",
-        "schemaName":  "school_greenwood-high",
-        "logoUrl":     "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=200&q=80",
-        "primaryColor": "#2563eb",
-        "admin":       {"fullName": "Arjun Mehta",     "username": "arjun.mehta",   "email": "arjun@greenwood.edu", "password": "Greenwood@2026!"},
-        "code":        "GWH",
+    "teacher": {
+        "fullName": "Rohit Verma",
+        "username": "rohit.verma",
+        "email": "rohit.verma@cloudcampus.demo",
+        "password": "Teacher@Demo2026!",
+        "role": "TEACHER",
     },
-    {
-        "tenantId":    "riverdale-public",
-        "schoolName":  "Riverdale Public School",
-        "schemaName":  "school_riverdale-public",
-        "logoUrl":     "https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=200&q=80",
-        "primaryColor": "#7c3aed",
-        "admin":       {"fullName": "Kavya Nair",      "username": "kavya.nair",    "email": "kavya@riverdale.edu", "password": "Riverdale@2026!"},
-        "code":        "RVD",
+    "student": {
+        "fullName": "Mira Patel",
+        "username": "mira.patel",
+        "email": "mira.patel@cloudcampus.demo",
+        "password": "Student@Demo2026!",
+        "role": "STUDENT",
     },
-    {
-        "tenantId":    "oakridge-international",
-        "schoolName":  "Oakridge International",
-        "schemaName":  "school_oakridge-international",
-        "logoUrl":     "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=200&q=80",
-        "primaryColor": "#f59e0b",
-        "admin":       {"fullName": "Rohan Kapoor",    "username": "rohan.kapoor",  "email": "rohan@oakridge.edu",  "password": "Oakridge@2026!"},
-        "code":        "OAK",
+    "parent": {
+        "fullName": "Sanjay Patel",
+        "username": "sanjay.patel",
+        "email": "sanjay.patel@cloudcampus.demo",
+        "password": "Parent@Demo2026!",
+        "role": "PARENT",
     },
-]
+}
 
-# ── Per-school template data ───────────────────────────────────────────────────
-# classes: (name, code_suffix)
-CLASSES = [
-    ("Grade 1",  "G1"),
-    ("Grade 3",  "G3"),
-    ("Grade 5",  "G5"),
-    ("Grade 7",  "G7"),
-    ("Grade 10", "G10"),
-]
-# sections per class
-SECTIONS = ["A", "B"]
 
-# 15 students per school — names cycled
-STUDENT_FIRST = ["Aarav","Diya","Kabir","Ananya","Vivaan","Ishita","Aryan","Priya",
-                 "Rohan","Sneha","Aditya","Meera","Siddharth","Pooja","Karan"]
-STUDENT_LAST  = ["Sharma","Patel","Singh","Kumar","Verma","Reddy","Nair","Joshi",
-                 "Mehta","Gupta","Iyer","Rao","Shah","Chowdhury","Malhotra"]
+class ApiClient:
+    def __init__(self, token: str | None = None, tenant_schema: str | None = None):
+        self.token = token
+        self.tenant_schema = tenant_schema
 
-# 6 teachers per school
-TEACHER_DATA = [
-    ("Sunita",  "Aggarwal",  "Math"),
-    ("Vikram",  "Desai",     "Science"),
-    ("Lakshmi", "Krishnan",  "English"),
-    ("Rajesh",  "Bose",      "History"),
-    ("Anita",   "Pillai",    "Geography"),
-    ("Deepak",  "Chauhan",   "Physics"),
-]
+    def request(self, method: str, path: str, json_body: dict[str, Any] | None = None) -> dict[str, Any]:
+        headers = {"Content-Type": "application/json"}
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+        if self.tenant_schema:
+            headers["X-Tenant-ID"] = self.tenant_schema
 
-# 3 parents per school — linked to first 3 students
-PARENT_DATA = [
-    ("Ramesh",  "Sharma"),
-    ("Sujata",  "Patel"),
-    ("Vijay",   "Singh"),
-]
+        response = requests.request(
+            method,
+            f"{BASE_URL}{path}",
+            headers=headers,
+            json=json_body,
+            timeout=TIMEOUT,
+        )
+        try:
+            return response.json()
+        except Exception:
+            return {"success": False, "message": response.text}
 
-# ── Helper ─────────────────────────────────────────────────────────────────────
-def api(method, path, token=None, tenant=None, json_body=None, files=None):
-    headers = {}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-    if tenant:
-        headers["X-Tenant-ID"] = tenant
-    if json_body is not None and files is None:
-        headers["Content-Type"] = "application/json"
 
-    resp = requests.request(
-        method, f"{BASE}{path}",
-        headers=headers,
-        json=json_body,
-        files=files,
-        timeout=30,
+def is_success(payload: dict[str, Any]) -> bool:
+    return bool(payload.get("success"))
+
+
+def login(username: str, password: str, tenant_slug: str | None = None) -> dict[str, Any]:
+    body: dict[str, Any] = {"username": username, "password": password}
+    if tenant_slug:
+        body["tenantSlug"] = tenant_slug
+
+    response = requests.post(
+        f"{BASE_URL}/auth/login",
+        headers={"Content-Type": "application/json"},
+        json=body,
+        timeout=TIMEOUT,
     )
-    try:
-        return resp.json()
-    except Exception:
-        return {"success": False, "message": resp.text}
+    response.raise_for_status()
+    payload = response.json()
+    if not payload.get("success"):
+        raise RuntimeError(payload.get("message", "Login failed"))
+    return payload["data"]
 
-def ok(r):
-    return r.get("success") or r.get("data") is not None
 
-def login(username, password, tenant=None):
-    payload = {"username": username, "password": password}
-    if tenant:
-        payload["tenantId"] = tenant
-    headers = {"Content-Type": "application/json"}
-    if tenant:
-        headers["X-Tenant-ID"] = tenant
-    r = requests.post(f"{BASE}/auth/login", json=payload, headers=headers, timeout=15)
-    data = r.json()
-    if data.get("success"):
-        return data["data"]["accessToken"], data["data"].get("userId")
-    return None, None
+def print_step(text: str) -> None:
+    print(f"\n==> {text}")
 
-def pad(s, w=35):
-    return str(s).ljust(w)
 
-def log(symbol, msg):
-    print(f"  {symbol} {msg}")
+def create_or_get_tenant(admin_client: ApiClient) -> dict[str, Any]:
+    create_payload = {
+        "tenantId": TENANT["tenantId"],
+        "slug": TENANT["slug"],
+        "schoolName": TENANT["schoolName"],
+        "schemaName": TENANT["schemaName"],
+        "primaryColor": TENANT["primaryColor"],
+        "logoUrl": TENANT["logoUrl"],
+    }
+    created = admin_client.request("POST", "/tenants", create_payload)
+    if is_success(created):
+        return created["data"]
 
-# ── Excel builder ──────────────────────────────────────────────────────────────
-def build_workbook(code, students, teachers, classes, sections):
-    wb = openpyxl.Workbook()
+    existing = admin_client.request("GET", f"/tenants/{TENANT['tenantId']}")
+    if is_success(existing):
+        return existing["data"]
 
-    header_font  = Font(bold=True, color="FFFFFF")
-    header_fill  = PatternFill("solid", fgColor="1E3A5F")
-    center       = Alignment(horizontal="center")
+    raise RuntimeError(f"Unable to create/fetch tenant: {created}")
 
-    def add_sheet(name, headers, rows):
-        ws = wb.create_sheet(name)
-        ws.append(headers)
-        for cell in ws[1]:
-            cell.font   = header_font
-            cell.fill   = header_fill
-            cell.alignment = center
-        for row in rows:
-            ws.append(row)
-        for col_idx, _ in enumerate(headers, 1):
-            col_letter = get_column_letter(col_idx)
-            max_len = max(len(str(ws.cell(r, col_idx).value or "")) for r in range(1, ws.max_row + 1))
-            ws.column_dimensions[col_letter].width = max(max_len + 4, 14)
-        return ws
 
-    add_sheet("STUDENTS", ["admission_no","first_name","last_name","dob","gender","email","phone"],
-              students)
-    add_sheet("TEACHERS", ["employee_no","first_name","last_name","email","phone","hire_date"],
-              teachers)
-    add_sheet("CLASSES",  ["class_name","class_code"],   classes)
-    add_sheet("SECTIONS", ["section_name","class_code"], sections)
-
-    # remove default sheet
-    if "Sheet" in wb.sheetnames:
-        del wb["Sheet"]
-
-    buf = io.BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-    return buf.read()
-
-# ── Main seed ──────────────────────────────────────────────────────────────────
-def seed():
-    print("\n" + "═"*60)
-    print("  CloudCampus — Demo Seed Script")
-    print("═"*60)
-
-    # ── 1. Super-admin login ───────────────────────────────────────
-    print("\n[1/6] Authenticating as Super Admin …")
-    sa_token, _ = login(SA_USER, SA_PASS)
-    if not sa_token:
-        print("  ❌  Could not log in as superadmin. Is the backend running?")
-        sys.exit(1)
-    print("  ✅  Logged in")
-
-    # ── 2. Resolve FREE plan id ────────────────────────────────────
-    plans_resp = api("GET", "/plans", token=sa_token)
-    plans = plans_resp.get("data", [])
-    basic_plan = next((p for p in plans if p["name"] == "BASIC"), None)
-    free_plan  = next((p for p in plans if p["name"] == "FREE"),  None)
-    plan       = basic_plan or free_plan
+def ensure_plan_subscription(admin_client: ApiClient) -> None:
+    plans_payload = admin_client.request("GET", "/plans")
+    plans = plans_payload.get("data") or []
+    plan = next((p for p in plans if p.get("name") == "BASIC"), None) or next((p for p in plans if p.get("name") == "FREE"), None)
     if not plan:
-        print("  ❌  No plan found. Aborting.")
-        sys.exit(1)
-    plan_id   = plan["id"]
-    plan_name = plan["name"]
-    print(f"\n[2/6] Subscription plan: {plan_name} (id={plan_id})")
+        raise RuntimeError("No BASIC/FREE plan found")
 
-    # ── 3. Per-tenant setup ────────────────────────────────────────
-    all_credentials = []
+    subscribe = admin_client.request(
+        "POST",
+        f"/tenants/{TENANT['tenantId']}/subscribe",
+        {"planId": plan["id"], "durationDays": 365},
+    )
+    if not is_success(subscribe):
+        msg = str(subscribe.get("message", ""))
+        if "already" not in msg.lower() and "active" not in msg.lower():
+            raise RuntimeError(f"Subscribe failed: {subscribe}")
 
-    for idx, tenant in enumerate(TENANTS, 1):
-        tid     = tenant["tenantId"]
-        code    = tenant["code"]
-        schema  = None
 
-        print(f"\n{'─'*60}")
-        print(f"[3/6] Tenant {idx}/4 — {tenant['schoolName']} ({tid})")
-        print(f"{'─'*60}")
+def ensure_user(client: ApiClient, payload: dict[str, Any]) -> dict[str, Any] | None:
+    result = client.request("POST", "/users", payload)
+    if is_success(result):
+        return result["data"]
+    msg = str(result.get("message", "")).lower()
+    if "already exists" in msg or "duplicate" in msg:
+        return None
+    raise RuntimeError(f"User create failed for {payload['username']}: {result}")
 
-        # 3a. Create tenant (skip if exists)
-        t_resp = api("POST", "/tenants", token=sa_token, json_body={
-            "tenantId":    tid,
-            "schoolName":  tenant["schoolName"],
-            "primaryColor": tenant["primaryColor"],
-            "logoUrl":     tenant["logoUrl"],
-        })
-        if ok(t_resp):
-            schema = t_resp["data"]["schemaName"]
-            log("✅", f"Tenant created  → schema={schema}")
-        elif "already exists" in str(t_resp.get("message", "")).lower() or \
-             "duplicate" in str(t_resp.get("message", "")).lower():
-            # fetch existing schema
-            g = api("GET", f"/tenants/{tid}", token=sa_token)
-            if ok(g):
-                schema = g["data"]["schemaName"]
-                log("ℹ️ ", f"Tenant exists   → schema={schema}")
-            else:
-                log("❌", f"Cannot resolve schema for {tid}: {t_resp}")
-                continue
-        else:
-            log("❌", f"Tenant creation failed: {t_resp}")
-            continue
 
-        # 3b. Subscribe
-        sub_resp = api("POST", f"/tenants/{tid}/subscribe", token=sa_token,
-                       json_body={"planId": plan_id, "durationDays": 365})
-        if ok(sub_resp):
-            log("✅", f"Subscribed to {plan_name}")
-        else:
-            msg = sub_resp.get("message", "")
-            if "already" in msg.lower() or "active" in msg.lower():
-                log("ℹ️ ", "Already subscribed")
-            else:
-                log("⚠️ ", f"Subscribe: {msg}")
+def main() -> int:
+    print_step("Super admin login")
+    super_admin_login = login(SUPER_ADMIN["username"], SUPER_ADMIN["password"])
+    super_admin_client = ApiClient(token=super_admin_login["accessToken"])
 
-        # 3c. Create school admin
-        adm = tenant["admin"]
-        u_resp = api("POST", "/users", token=sa_token, tenant=schema, json_body={
-            "fullName": adm["fullName"],
-            "username": adm["username"],
-            "email":    adm["email"],
-            "password": adm["password"],
-            "role":     "SCHOOL_ADMIN",
-        })
-        if ok(u_resp):
-            adm_user_id = u_resp["data"]["id"]
-            log("✅", f"School admin created  ({adm['username']})")
-        elif "already" in str(u_resp.get("message", "")).lower() or \
-             "duplicate" in str(u_resp.get("message", "")).lower():
-            log("ℹ️ ", f"Admin user exists ({adm['username']})")
-            adm_user_id = None
-        else:
-            log("❌", f"Admin user: {u_resp}")
-            adm_user_id = None
+    print_step("Create or fetch tenant")
+    tenant_info = create_or_get_tenant(super_admin_client)
+    tenant_schema = tenant_info["schemaName"]
+    print(f"Tenant schema: {tenant_schema}")
 
-        # 3d. Login as school admin
-        adm_token, adm_uid = login(adm["username"], adm["password"], tenant=schema)
-        if not adm_token:
-            log("❌", "Admin login failed — skipping bulk upload for this tenant")
-            continue
-        if adm_uid:
-            adm_user_id = adm_uid
-        log("✅", f"School admin logged in (userId={adm_user_id})")
+    print_step("Ensure tenant subscription")
+    ensure_plan_subscription(super_admin_client)
 
-        # ── Build Excel data ───────────────────────────────────────
-        students_rows = []
-        teachers_rows = []
-        classes_rows  = []
-        sections_rows = []
-        student_creds = []
-        teacher_creds = []
+    print_step("Create school admin user")
+    tenant_client = ApiClient(token=super_admin_login["accessToken"], tenant_schema=tenant_schema)
+    ensure_user(tenant_client, USERS["schoolAdmin"])
 
-        for c_name, c_sfx in CLASSES:
-            c_code = f"{code}-{c_sfx}"
-            classes_rows.append([c_name, c_code])
-            for sec in SECTIONS:
-                sections_rows.append([sec, c_code])
+    print_step("Login as school admin")
+    school_admin_login = login(USERS["schoolAdmin"]["username"], USERS["schoolAdmin"]["password"], TENANT["slug"])
+    school_admin_client = ApiClient(token=school_admin_login["accessToken"], tenant_schema=tenant_schema)
 
-        for i, (fn, ln) in enumerate(zip(STUDENT_FIRST, STUDENT_LAST), 1):
-            adm_no  = f"{code}-S{i:03d}"
-            email   = f"{fn.lower()}.{ln.lower()}{i}@{tid}.edu"
-            phone   = f"98765{i:05d}"
-            dob     = f"{2010 - (i % 5)}-{(i % 12)+1:02d}-{(i % 28)+1:02d}"
-            gender  = "MALE" if i % 2 else "FEMALE"
-            username = f"{fn.lower()}.{ln.lower()}{i}"
-            password = f"{fn}@Student{i}26!"
-            students_rows.append([adm_no, fn, ln, dob, gender, email, phone])
-            student_creds.append({
-                "name":     f"{fn} {ln}",
-                "admNo":    adm_no,
-                "username": username,
-                "password": password,
-                "email":    email,
-                "role":     "STUDENT",
-            })
+    print_step("Create role users for login testing")
+    teacher_user = ensure_user(school_admin_client, USERS["teacher"])
+    student_user = ensure_user(school_admin_client, USERS["student"])
+    parent_user = ensure_user(school_admin_client, USERS["parent"])
 
-        for i, (fn, ln, subject) in enumerate(TEACHER_DATA, 1):
-            emp_no  = f"{code}-T{i:02d}"
-            email   = f"{fn.lower()}.{ln.lower()}@{tid}.edu"
-            phone   = f"91234{i:05d}"
-            hire    = f"202{i % 4}-0{i}-15"
-            username = f"{fn.lower()}.{ln.lower()}"
-            password = f"{fn}@Teacher{i}26!"
-            teachers_rows.append([emp_no, fn, ln, email, phone, hire])
-            teacher_creds.append({
-                "name":     f"{fn} {ln}",
-                "empNo":    emp_no,
-                "subject":  subject,
-                "username": username,
-                "password": password,
-                "email":    email,
-                "role":     "TEACHER",
-            })
+    print_step("Create academic structure")
+    class_resp = school_admin_client.request("POST", "/academics/classes", {"name": "Grade 7", "code": "G7"})
+    if not is_success(class_resp):
+        classes = school_admin_client.request("GET", "/academics/classes")
+        class_data = next((c for c in (classes.get("data") or []) if c.get("code") == "G7"), None)
+    else:
+        class_data = class_resp["data"]
 
-        # 3e. Bulk upload Excel
-        xlsx_bytes = build_workbook(code, students_rows, teachers_rows, classes_rows, sections_rows)
-        up_resp = api("POST", "/bulk/upload", token=adm_token, tenant=schema,
-                      files={"file": ("bulk.xlsx", xlsx_bytes,
-                                      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")})
-        if ok(up_resp):
-            d = up_resp.get("data", {})
-            log("✅", f"Bulk upload → {d.get('successCount')}/{d.get('totalRows')} rows OK, "
-                      f"{d.get('failedCount')} failed")
-            if d.get("errors"):
-                for err in d["errors"][:3]:
-                    log("  ⚠️", f"  Row {err.get('rowNumber')} [{err.get('sheet')}]: {err.get('message')}")
-        else:
-            log("❌", f"Bulk upload failed: {up_resp.get('message')}")
+    if not class_data:
+        raise RuntimeError("Could not resolve class G7")
 
-        # 3f. Create teacher user accounts
-        log("", "Creating teacher user accounts …")
-        for tc in teacher_creds:
-            u = api("POST", "/users", token=adm_token, tenant=schema, json_body={
-                "fullName": tc["name"],
-                "username": tc["username"],
-                "email":    tc["email"],
-                "password": tc["password"],
-                "role":     "TEACHER",
-            })
-            if ok(u):
-                tc["userId"] = u["data"]["id"]
-                log("  ✅", f"{tc['username']}")
-            elif "already" in str(u.get("message","")).lower() or \
-                 "duplicate" in str(u.get("message","")).lower():
-                log("  ℹ️", f"{tc['username']} (exists)")
-            else:
-                log("  ⚠️", f"{tc['username']}: {u.get('message')}")
+    section_resp = school_admin_client.request("POST", "/academics/sections", {"name": "A", "classId": class_data["id"]})
+    if not is_success(section_resp):
+        sections = school_admin_client.request("GET", "/academics/sections")
+        section_data = next((s for s in (sections.get("data") or []) if s.get("name") == "A" and s.get("classId") == class_data["id"]), None)
+    else:
+        section_data = section_resp["data"]
 
-        # 3g. Create student user accounts (first 5 only to keep it manageable)
-        log("", "Creating student user accounts …")
-        for sc in student_creds[:5]:
-            u = api("POST", "/users", token=adm_token, tenant=schema, json_body={
-                "fullName": sc["name"],
-                "username": sc["username"],
-                "email":    sc["email"],
-                "password": sc["password"],
-                "role":     "STUDENT",
-            })
-            if ok(u):
-                sc["userId"] = u["data"]["id"]
-                log("  ✅", f"{sc['username']}")
-            elif "already" in str(u.get("message","")).lower() or \
-                 "duplicate" in str(u.get("message","")).lower():
-                log("  ℹ️", f"{sc['username']} (exists)")
-            else:
-                log("  ⚠️", f"{sc['username']}: {u.get('message')}")
+    subject_resp = school_admin_client.request("POST", "/academics/subjects", {"name": "Mathematics", "code": "MATH7"})
+    if not is_success(subject_resp):
+        subjects = school_admin_client.request("GET", "/academics/subjects")
+        subject_data = next((s for s in (subjects.get("data") or []) if s.get("code") == "MATH7"), None)
+    else:
+        subject_data = subject_resp["data"]
 
-        # 3h. Create parent user accounts and link to first 3 students
-        log("", "Creating parent user accounts …")
-        # Fetch student entity UUIDs (needed for parent–student link)
-        stu_resp = api("GET", "/students?size=20&page=0", token=adm_token, tenant=schema)
-        stu_entities = {}
-        if ok(stu_resp):
-            for s in stu_resp.get("data", {}).get("content", []):
-                stu_entities[s["admissionNo"]] = s["id"]
+    if not section_data or not subject_data:
+        raise RuntimeError("Could not resolve section/subject")
 
-        parent_creds = []
-        for i, (fn, ln) in enumerate(PARENT_DATA, 1):
-            username = f"{fn.lower()}.{ln.lower()}{i}"
-            password = f"{fn}@Parent{i}26!"
-            email    = f"parent{i}@{tid}.edu"
-            u = api("POST", "/users", token=adm_token, tenant=schema, json_body={
-                "fullName": f"{fn} {ln}",
-                "username": username,
-                "email":    email,
-                "password": password,
-                "role":     "PARENT",
-            })
-            parent_user_id = None
-            if ok(u):
-                parent_user_id = u["data"]["id"]
-                log("  ✅", f"{username}")
-            elif "already" in str(u.get("message", "")).lower() or \
-                 "duplicate" in str(u.get("message", "")).lower():
-                log("  ℹ️", f"{username} (exists)")
-            else:
-                log("  ⚠️", f"{username}: {u.get('message')}")
+    print_step("Create teacher and student records")
+    school_admin_client.request(
+        "POST",
+        "/teachers",
+        {
+            "employeeNo": "T-7001",
+            "firstName": "Rohit",
+            "lastName": "Verma",
+            "email": "rohit.teacher.record@cloudcampus.demo",
+            "phone": "+919000000701",
+            "hireDate": str(date.today() - timedelta(days=700)),
+        },
+    )
 
-            # Link parent to student i
-            student_adm_no = f"{code}-S{i:03d}"
-            student_id = stu_entities.get(student_adm_no)
-            if parent_user_id and student_id:
-                lk = api("POST", "/parents/links", token=adm_token, tenant=schema, json_body={
-                    "parentUserId": parent_user_id,
-                    "studentId":    student_id,
-                })
-                if ok(lk) or "already" in str(lk.get("message", "")).lower():
-                    log("  ✅", f"Linked {username} → {student_adm_no}")
-                else:
-                    log("  ⚠️", f"Link failed ({username}): {lk.get('message')}")
-            elif not student_id:
-                log("  ⚠️", f"Student entity {student_adm_no} not found — link skipped")
+    student_record = school_admin_client.request(
+        "POST",
+        "/students",
+        {
+            "admissionNo": "ADM-7001",
+            "firstName": "Mira",
+            "lastName": "Patel",
+            "dateOfBirth": "2012-08-14",
+            "gender": "FEMALE",
+            "email": "mira.student.record@cloudcampus.demo",
+            "phone": "+919000000702",
+        },
+    )
 
-            parent_creds.append({
-                "name":      f"{fn} {ln}",
-                "username":  username,
-                "password":  password,
-                "email":     email,
-                "linkedTo":  student_adm_no,
-                "role":      "PARENT",
-            })
+    if not is_success(student_record):
+        students_payload = school_admin_client.request("GET", "/students?page=0&size=20")
+        student_rows = (students_payload.get("data") or {}).get("content") or []
+        student_data = next((s for s in student_rows if s.get("admissionNo") == "ADM-7001"), None)
+    else:
+        student_data = student_record["data"]
 
-        all_credentials.append({
-            "tenantId":    tid,
-            "schoolName":  tenant["schoolName"],
-            "schema":      schema,
-            "admin":       adm,
-            "teachers":    teacher_creds,
-            "students":    student_creds[:5],
-            "parents":     parent_creds,
-        })
+    if not student_data:
+        raise RuntimeError("Could not resolve student ADM-7001")
 
-    # ── 4. Print credentials summary ──────────────────────────────
-    print("\n" + "═"*60)
-    print("  LOGIN CREDENTIALS SUMMARY")
-    print("═"*60)
-    print(f"\n{'SUPER ADMIN':}")
-    print(f"  username : {SA_USER}")
-    print(f"  password : {SA_PASS}")
-    print(f"  login at : http://localhost:5173/super-admin/login")
-    print(f"  NOTE     : Do NOT send X-Tenant-ID header")
+    print_step("Link parent to student")
+    if parent_user and parent_user.get("id"):
+        school_admin_client.request(
+            "POST",
+            "/parents/links",
+            {"parentUserId": parent_user["id"], "studentId": student_data["id"]},
+        )
 
-    for t in all_credentials:
-        tid    = t["tenantId"]
-        schema = t["schema"]
-        adm    = t["admin"]
-        print(f"\n{'─'*60}")
-        print(f"  {t['schoolName'].upper()}  (tenantId: {tid})")
-        print(f"  X-Tenant-ID: {schema}")
-        print(f"  login at  : http://localhost:5173/login")
-        print(f"{'─'*60}")
-        print(f"  [SCHOOL_ADMIN]")
-        print(f"    username : {adm['username']}")
-        print(f"    password : {adm['password']}")
-        print()
-        print(f"  [TEACHERS]")
-        for tc in t["teachers"]:
-            print(f"    {pad(tc['username'])} {pad(tc['password'])} ({tc['subject']})")
-        print()
-        print(f"  [STUDENTS — with login]")
-        for sc in t["students"]:
-            print(f"    {pad(sc['username'])} {pad(sc['password'])} adm:{sc['admNo']}")
-        print()
-        print(f"  [PARENTS — linked to students]")
-        for pc in t.get("parents", []):
-            print(f"    {pad(pc['username'])} {pad(pc['password'])} → {pc['linkedTo']}")
+    print_step("Create timetable, homework, exam, attendance and fee")
+    school_admin_client.request(
+        "POST",
+        "/timetable/slots",
+        {
+            "classId": class_data["id"],
+            "sectionId": section_data["id"],
+            "subjectId": subject_data["id"],
+            "teacherId": None,
+            "dayOfWeek": 1,
+            "startTime": "09:00",
+            "endTime": "09:45",
+            "label": "Math Period",
+        },
+    )
 
-    # ── 5. Write JSON credentials file ────────────────────────────
-    out_path = "/tmp/cloudcampus_credentials.json"
-    with open(out_path, "w") as f:
-        json.dump({
-            "superAdmin": {"username": SA_USER, "password": SA_PASS},
-            "tenants": all_credentials,
-        }, f, indent=2)
-    print(f"\n  📄 Full credentials saved to: {out_path}")
-    print("\n" + "═"*60 + "\n")
+    school_admin_client.request(
+        "POST",
+        "/homework",
+        {
+            "title": "Fractions Worksheet",
+            "instructions": "Complete exercises 1-10",
+            "classId": class_data["id"],
+            "sectionId": section_data["id"],
+            "dueDate": str(date.today() + timedelta(days=3)),
+        },
+    )
+
+    exam_payload = school_admin_client.request(
+        "POST",
+        "/exams",
+        {
+            "title": "Math Unit Test",
+            "examDate": str(date.today() + timedelta(days=10)),
+            "classId": class_data["id"],
+            "sectionId": section_data["id"],
+            "subjectId": subject_data["id"],
+            "maxMarks": 100,
+        },
+    )
+
+    if is_success(exam_payload):
+        school_admin_client.request(
+            "POST",
+            "/exams/results",
+            {
+                "examId": exam_payload["data"]["id"],
+                "studentId": student_data["id"],
+                "marksObtained": 86,
+                "remarks": "Strong performance",
+            },
+        )
+
+    school_admin_client.request(
+        "POST",
+        "/attendances",
+        {
+            "studentId": student_data["id"],
+            "classId": class_data["id"],
+            "sectionId": section_data["id"],
+            "attendanceDate": str(date.today()),
+            "status": "PRESENT",
+        },
+    )
+
+    fee_payload = school_admin_client.request(
+        "POST",
+        "/fees/assignments",
+        {
+            "studentId": student_data["id"],
+            "feeTitle": "Term 1 Tuition",
+            "amount": 25000,
+            "dueDate": str(date.today() + timedelta(days=20)),
+        },
+    )
+
+    if is_success(fee_payload):
+        school_admin_client.request(
+            "POST",
+            "/fees/payments",
+            {
+                "feeAssignmentId": fee_payload["data"]["id"],
+                "amountPaid": 10000,
+                "paymentDate": str(date.today()),
+                "paymentMethod": "UPI",
+                "referenceNo": "DEMO-UPI-1001",
+            },
+        )
+
+    print("\nDemo data seed completed successfully.")
+    print("\nLogin credentials:")
+    print(json.dumps({
+        "tenantSlug": TENANT["slug"],
+        "tenantSchema": tenant_schema,
+        "superAdmin": SUPER_ADMIN,
+        "schoolAdmin": {"username": USERS["schoolAdmin"]["username"], "password": USERS["schoolAdmin"]["password"]},
+        "teacher": {"username": USERS["teacher"]["username"], "password": USERS["teacher"]["password"]},
+        "student": {"username": USERS["student"]["username"], "password": USERS["student"]["password"]},
+        "parent": {"username": USERS["parent"]["username"], "password": USERS["parent"]["password"]},
+    }, indent=2))
+    return 0
+
 
 if __name__ == "__main__":
-    seed()
+    try:
+        sys.exit(main())
+    except Exception as exc:
+        print(f"\nSeed failed: {exc}")
+        sys.exit(1)

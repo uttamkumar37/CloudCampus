@@ -17,7 +17,6 @@ import com.cloudcampus.dashboard.dto.SuperAdminDashboardSummaryResponse;
 import com.cloudcampus.dashboard.dto.TeacherDashboardResponse;
 import com.cloudcampus.dashboard.dto.TenantBrandingResponse;
 import com.cloudcampus.dashboard.dto.TenantDashboardSummaryResponse;
-import com.cloudcampus.exam.entity.Exam;
 import com.cloudcampus.exam.entity.ExamResult;
 import com.cloudcampus.exam.repository.ExamRepository;
 import com.cloudcampus.exam.repository.ExamResultRepository;
@@ -26,7 +25,6 @@ import com.cloudcampus.fees.entity.FeePayment;
 import com.cloudcampus.fees.entity.FeeStatus;
 import com.cloudcampus.fees.repository.FeeAssignmentRepository;
 import com.cloudcampus.fees.repository.FeePaymentRepository;
-import com.cloudcampus.homework.entity.HomeworkAssignment;
 import com.cloudcampus.homework.repository.HomeworkAssignmentRepository;
 import com.cloudcampus.student.entity.Student;
 import com.cloudcampus.student.repository.StudentRepository;
@@ -62,7 +60,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -282,8 +279,7 @@ public class DashboardServiceImpl implements DashboardService {
     public StudentDashboardResponse getStudentDashboard() {
         validateTenantContext();
         CloudCampusUserDetails principal = currentPrincipal();
-        Student student = studentRepository.findByLinkedUser_Id(principal.getUserId())
-                .orElseThrow(() -> new IllegalStateException("No student profile linked to this account"));
+                Student student = resolveStudentProfile(principal);
 
         UUID studentId = student.getId();
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
@@ -391,8 +387,7 @@ public class DashboardServiceImpl implements DashboardService {
     public TeacherDashboardResponse getTeacherDashboard() {
         validateTenantContext();
         CloudCampusUserDetails principal = currentPrincipal();
-        Teacher teacher = teacherRepository.findByLinkedUser_Id(principal.getUserId())
-                .orElseThrow(() -> new IllegalStateException("No teacher profile linked to this account"));
+                Teacher teacher = resolveTeacherProfile(principal);
 
         UUID teacherId = teacher.getId();
         UUID userId = principal.getUserId();
@@ -477,4 +472,49 @@ public class DashboardServiceImpl implements DashboardService {
         }
         return details;
     }
+
+    private Student resolveStudentProfile(CloudCampusUserDetails principal) {
+        UUID userId = principal.getUserId();
+        Optional<Student> byLinkedUser = userId == null
+                ? Optional.empty()
+                : studentRepository.findByLinkedUser_Id(userId);
+        Optional<Student> byName = extractNamePair(principal.getFullName())
+                .flatMap(name -> studentRepository.findFirstByFirstNameIgnoreCaseAndLastNameIgnoreCase(name.firstName(), name.lastName()));
+
+        return byLinkedUser
+                .or(() -> studentRepository.findByEmailIgnoreCase(principal.getEmail()))
+                .or(() -> byName)
+                .orElseThrow(() -> new IllegalArgumentException("No student profile linked to this account"));
+    }
+
+    private Teacher resolveTeacherProfile(CloudCampusUserDetails principal) {
+        UUID userId = principal.getUserId();
+        Optional<Teacher> byLinkedUser = userId == null
+                ? Optional.empty()
+                : teacherRepository.findByLinkedUser_Id(userId);
+        Optional<Teacher> byName = extractNamePair(principal.getFullName())
+                .flatMap(name -> teacherRepository.findFirstByFirstNameIgnoreCaseAndLastNameIgnoreCase(name.firstName(), name.lastName()));
+
+        return byLinkedUser
+                .or(() -> teacherRepository.findByEmailIgnoreCase(principal.getEmail()))
+                .or(() -> byName)
+                .orElseThrow(() -> new IllegalArgumentException("No teacher profile linked to this account"));
+    }
+
+    private Optional<NamePair> extractNamePair(String fullName) {
+        if (fullName == null) {
+            return Optional.empty();
+        }
+        String normalized = fullName.trim();
+        if (normalized.isEmpty()) {
+            return Optional.empty();
+        }
+        String[] parts = normalized.split("\\s+");
+        if (parts.length < 2) {
+            return Optional.empty();
+        }
+        return Optional.of(new NamePair(parts[0], parts[parts.length - 1]));
+    }
+
+    private record NamePair(String firstName, String lastName) {}
 }

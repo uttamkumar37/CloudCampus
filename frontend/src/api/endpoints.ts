@@ -6,6 +6,8 @@ export const ENDPOINTS = {
     logout: '/auth/logout',
     me: '/auth/me',
     changePassword: '/auth/change-password',
+    sendCredentialsOtp: '/auth/credentials/send-otp',
+    updateCredentials: '/auth/credentials/update',
   },
   dashboard: {
     tenantSummary: '/dashboard/tenant-summary',
@@ -20,6 +22,7 @@ export const ENDPOINTS = {
   tenants: {
     base: '/tenants',
     searchSchools: '/tenants/schools/search',
+    schoolBySlug: (slug: string) => `/tenants/schools/${slug}`,
   },
   users: {
     base: '/users',

@@ -27,4 +27,8 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     long countByCreatedAtAfter(Instant createdAt);
 
     Optional<Student> findByLinkedUser_Id(UUID userId);
+
+    Optional<Student> findByEmailIgnoreCase(String email);
+
+    Optional<Student> findFirstByFirstNameIgnoreCaseAndLastNameIgnoreCase(String firstName, String lastName);
 }

@@ -1,7 +1,7 @@
 # CloudCampus — Testing Guide
 
 
-> Version: 1.0 | Last Updated: 2026-04-28
+> Version: 1.1 | Last Updated: 2026-05-05
 
 ---
 
@@ -14,7 +14,7 @@
 5. [Postman Testing](#5-postman-testing)
 6. [Testing Business Rules](#6-testing-business-rules)
 7. [Test Patterns Used](#7-test-patterns-used)
-8. [Planned: Integration Tests](#8-planned-integration-tests)
+8. [Integration Tests](#8-integration-tests)
 
 ---
 
@@ -23,8 +23,8 @@
 | Layer | Type | Framework | Status |
 |-------|------|-----------|--------|
 | Service Layer | Unit tests (mock dependencies) | JUnit 5 + Mockito | ✅ Done |
-| Controller Layer | (not yet tested) | MockMvc | ❌ Pending |
-| Integration | Full stack with real DB | Testcontainers + @SpringBootTest | ❌ Pending |
+| Controller Layer | Basic auth/tenant behavior via integration tests | @SpringBootTest | ⚠️ Partial |
+| Integration | Full stack with real DB | Testcontainers + @SpringBootTest | ✅ Available |
 | API | Manual via Postman / curl | Postman Collections | ✅ Available |
 
 ---
@@ -65,6 +65,23 @@ backend/target/surefire-reports/
 ├── TEST-com.cloudcampus.exam.service.ExamServiceImplTest.xml
 └── TEST-com.cloudcampus.fees.service.FeesServiceImplTest.xml
 ```
+
+### Seed Demo Test Data
+
+```bash
+python3 scripts/seed_demo.py
+```
+
+The seed script provisions one school tenant with representative users and academic/operational data for end-to-end verification.
+
+### Run Frontend Unit Tests
+
+```bash
+cd frontend
+npm run test
+```
+
+This executes Vitest + Testing Library suites (for example endpoint builders and parent-link admin page behavior).
 
 ---
 
@@ -477,14 +494,14 @@ void createUser_normalizesUsernameToLowercase() {
 
 ---
 
-## 8. Planned: Integration Tests
+## 8. Integration Tests
 
-These are currently pending (see [14_PENDING_TASKS.md](./14_PENDING_TASKS.md) — Task 42).
+Integration tests are available and run with Testcontainers + Spring Boot.
 
-### Planned Setup
+### Setup
 
 ```xml
-<!-- pom.xml additions needed -->
+<!-- dependencies already included -->
 <dependency>
     <groupId>org.testcontainers</groupId>
     <artifactId>postgresql</artifactId>
@@ -497,7 +514,7 @@ These are currently pending (see [14_PENDING_TASKS.md](./14_PENDING_TASKS.md) �
 </dependency>
 ```
 
-### Planned Test Scenarios
+### Covered Scenarios
 
 | Scenario | Description |
 |----------|-------------|

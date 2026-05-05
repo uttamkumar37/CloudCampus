@@ -1,6 +1,7 @@
 package com.cloudcampus.config;
 
 import com.cloudcampus.auth.service.JwtAuthenticationFilter;
+import com.cloudcampus.auth.service.FirstLoginEnforcementFilter;
 import com.cloudcampus.tenant.service.TenantRequestFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
@@ -26,6 +27,8 @@ public class SecurityConfig {
     @Lazy
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    private final FirstLoginEnforcementFilter firstLoginEnforcementFilter;
+
     private final TenantRequestFilter tenantRequestFilter;
 
     @Bean
@@ -47,6 +50,7 @@ public class SecurityConfig {
             // ✅ Authorization rules
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/plans").permitAll()
                 .requestMatchers("/api/v1/tenants/schools/search").permitAll()
                 .requestMatchers("/api/v1/tenants/schools/*").permitAll()
                 .requestMatchers("/api/v1/payments/webhook").permitAll()
@@ -66,7 +70,10 @@ public class SecurityConfig {
             .addFilterBefore(tenantRequestFilter, UsernamePasswordAuthenticationFilter.class)
 
             // ✅ JWT filter
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+            // ✅ First-login credential update guard
+            .addFilterAfter(firstLoginEnforcementFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

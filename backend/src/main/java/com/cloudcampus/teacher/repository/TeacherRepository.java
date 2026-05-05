@@ -27,4 +27,8 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID> {
     long countByCreatedAtAfter(Instant createdAt);
 
     Optional<Teacher> findByLinkedUser_Id(UUID userId);
+
+    Optional<Teacher> findByEmailIgnoreCase(String email);
+
+    Optional<Teacher> findFirstByFirstNameIgnoreCaseAndLastNameIgnoreCase(String firstName, String lastName);
 }

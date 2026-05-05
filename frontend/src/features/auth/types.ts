@@ -34,3 +34,16 @@ export interface ChangePasswordRequest {
   currentPassword: string
   newPassword: string
 }
+
+export type NotificationChannel = 'EMAIL' | 'SMS'
+
+export interface CredentialOtpRequest {
+  channel: NotificationChannel
+}
+
+export interface UpdateCredentialsRequest {
+  channel: NotificationChannel
+  otp: string
+  newUsername: string
+  newPassword: string
+}

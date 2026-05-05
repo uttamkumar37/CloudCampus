@@ -1,7 +1,7 @@
 # CloudCampus — Pending Tasks
 
 
-> Last Updated: 2026-05-01 | See [13_PROJECT_TRACKER.md](./13_PROJECT_TRACKER.md) for completed work.
+> Last Updated: 2026-05-05 | See [13_PROJECT_TRACKER.md](./13_PROJECT_TRACKER.md) for completed work.
 
 ---
 
@@ -35,6 +35,11 @@
 | Task 46 — Bulk Upload UI | `frontend/src/features/bulk-upload/` | File picker (.xlsx), drag-and-drop, progress bar, result card, per-row error table, sample download, instructions modal |
 | Task 47 — Documentation Update | `docs/`, `docs/postman/` | 07_API_REFERENCE.md, 08_API.md (v1.1), Postman collection: 16 folders, 49 endpoints, legacy folder removed |
 | Task 48 — Payment Gateway Integration | Backend + Frontend | Flyway V4; `PaymentGatewayService` interface; `RazorpayPaymentGatewayServiceImpl`; `POST /subscribe/initiate`; `POST /payments/webhook` (HMAC-SHA256 verified); "Pay Online" button + Razorpay checkout.js in `TenantSubscriptionPage`; `12_PAYMENT_FLOW.md` updated to v2 |
+| Task 49 — First Login Credential Enforcement | Backend/Security | `FirstLoginEnforcementFilter`; first-login users can access credential endpoints only until update completes |
+| Task 50 — OTP Credential Update Flow | Backend/Auth | `POST /auth/credentials/send-otp` and `POST /auth/credentials/update`; OTP persistence and verification controls |
+| Task 51 — Auto User Credential Provisioning | Backend/User | Optional username/password mode; generated credentials + first-login-required flag |
+| Task 52 — Parent Links Admin Management | Backend + Frontend | `GET /parents/links` plus admin UI for linking/unlinking parent/student records |
+| Task 53 — Frontend Unit Test Foundation | Frontend/Testing | Vitest + Testing Library + jsdom setup with initial endpoint and parent-link tests |
 
 ---
 

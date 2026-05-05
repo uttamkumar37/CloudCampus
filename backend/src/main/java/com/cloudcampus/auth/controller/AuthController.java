@@ -3,7 +3,11 @@ package com.cloudcampus.auth.controller;
 import com.cloudcampus.auth.dto.ChangePasswordRequest;
 import com.cloudcampus.auth.dto.LoginRequest;
 import com.cloudcampus.auth.dto.LoginResponse;
+import com.cloudcampus.auth.dto.SendOtpRequest;
+import com.cloudcampus.auth.dto.UpdateCredentialsRequest;
 import com.cloudcampus.auth.service.AuthService;
+import com.cloudcampus.auth.service.CredentialsUpdateService;
+import com.cloudcampus.auth.security.CloudCampusUserDetails;
 import com.cloudcampus.common.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,11 +20,15 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import com.cloudcampus.auth.dto.UserProfileResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -29,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final CredentialsUpdateService credentialsUpdateService;
 
     @Value("${app.security.jwt.access-token-expiration-ms:3600000}")
     private long jwtExpirationMs;
@@ -81,5 +90,37 @@ public class AuthController {
             @Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(request);
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
+    }
+
+    @PostMapping("/credentials/send-otp")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Send OTP for credential update (email or SMS)")
+    public ResponseEntity<ApiResponse<Void>> sendCredentialOtp(
+            @Valid @RequestBody SendOtpRequest request) {
+        credentialsUpdateService.sendOtpForCredentialUpdate(requireCurrentUserId(), request.channel());
+        return ResponseEntity.ok(ApiResponse.success("OTP sent", null));
+    }
+
+    @PostMapping("/credentials/update")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Verify OTP and update username/password")
+    public ResponseEntity<ApiResponse<Void>> updateCredentials(
+            @Valid @RequestBody UpdateCredentialsRequest request) {
+        credentialsUpdateService.verifyOtpAndUpdateCredentials(
+                requireCurrentUserId(),
+                request.channel(),
+                request.otp(),
+                request.newUsername(),
+                request.newPassword()
+        );
+        return ResponseEntity.ok(ApiResponse.success("Credentials updated successfully", null));
+    }
+
+    private UUID requireCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof CloudCampusUserDetails campus) || campus.getUserId() == null) {
+            throw new IllegalStateException("Authenticated tenant user is required");
+        }
+        return campus.getUserId();
     }
 }

@@ -142,10 +142,12 @@ public class TenantServiceImpl implements TenantService {
                     full_name VARCHAR(120) NOT NULL,
                     username VARCHAR(100) NOT NULL UNIQUE,
                     email VARCHAR(160) NOT NULL UNIQUE,
+                    phone VARCHAR(30),
                     password_hash VARCHAR(200) NOT NULL,
                     role VARCHAR(40) NOT NULL,
                     tenant_id VARCHAR(80),
                     active BOOLEAN NOT NULL DEFAULT TRUE,
+                    first_login_required BOOLEAN NOT NULL DEFAULT FALSE,
                     created_at TIMESTAMPTZ NOT NULL,
                     updated_at TIMESTAMPTZ,
                     created_by UUID,
@@ -367,7 +369,26 @@ public class TenantServiceImpl implements TenantService {
                 )
                 """.formatted(schemaName, schemaName, schemaName, schemaName, schemaName);
 
+            String createOtpsTable = """
+                CREATE TABLE IF NOT EXISTS "%s".otps (
+                    id UUID PRIMARY KEY,
+                    user_id UUID NOT NULL,
+                    channel VARCHAR(10) NOT NULL,
+                    purpose VARCHAR(40) NOT NULL,
+                    destination VARCHAR(160) NOT NULL,
+                    otp_hash VARCHAR(200) NOT NULL,
+                    expires_at TIMESTAMPTZ NOT NULL,
+                    verify_attempts INTEGER NOT NULL DEFAULT 0,
+                    created_at TIMESTAMPTZ NOT NULL,
+                    updated_at TIMESTAMPTZ,
+                    created_by UUID,
+                    updated_by UUID
+                )
+                """.formatted(schemaName);
+
         String alterUsersTenantId = "ALTER TABLE \"" + schemaName + "\".users ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(80)";
+            String alterUsersPhone = "ALTER TABLE \"" + schemaName + "\".users ADD COLUMN IF NOT EXISTS phone VARCHAR(30)";
+            String alterUsersFirstLoginRequired = "ALTER TABLE \"" + schemaName + "\".users ADD COLUMN IF NOT EXISTS first_login_required BOOLEAN NOT NULL DEFAULT FALSE";
         String alterStudentsUserId = "ALTER TABLE \"" + schemaName + "\".students ADD COLUMN IF NOT EXISTS user_id UUID";
         String alterTeachersUserId = "ALTER TABLE \"" + schemaName + "\".teachers ADD COLUMN IF NOT EXISTS user_id UUID";
 
@@ -383,11 +404,14 @@ public class TenantServiceImpl implements TenantService {
         jdbcTemplate.execute(createExamsTable);
         jdbcTemplate.execute(createExamResultsTable);
         jdbcTemplate.execute(alterUsersTenantId);
+        jdbcTemplate.execute(alterUsersPhone);
+        jdbcTemplate.execute(alterUsersFirstLoginRequired);
         jdbcTemplate.execute(alterStudentsUserId);
         jdbcTemplate.execute(alterTeachersUserId);
         jdbcTemplate.execute(createParentStudentsTable);
         jdbcTemplate.execute(createHomeworkTable);
         jdbcTemplate.execute(createTimetableTable);
+        jdbcTemplate.execute(createOtpsTable);
 
         // Add audit columns to all tables for existing tenants (safe no-op when columns already present)
         String[] auditTables = {"users", "students", "teachers", "attendance_records", "fee_assignments",
