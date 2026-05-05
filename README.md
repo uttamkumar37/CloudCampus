@@ -121,6 +121,71 @@ mvn test
 - [docs/09_TESTING.md](docs/09_TESTING.md)
 - [docs/05_ROLE_MATRIX.md](docs/05_ROLE_MATRIX.md)
 
+## Git Branching Strategy
+
+### Branch Naming Convention
+
+```
+<type>/<module>/<short-description>
+```
+
+| Type | When to use |
+|---|---|
+| `feature/` | New functionality |
+| `fix/` | Bug fix |
+| `hotfix/` | Urgent production fix |
+| `refactor/` | Code cleanup, no new feature |
+| `chore/` | Config, deps, tooling |
+| `test/` | Adding or fixing tests |
+| `docs/` | Documentation only |
+
+### Examples
+
+```bash
+feature/academic/add-assignment-module
+feature/fees/payment-receipt-api
+fix/auth/jwt-expiry-not-refreshing
+refactor/academic/add-mapper-layer
+hotfix/tenant/schema-creation-failure
+chore/deps/upgrade-spring-boot-3.3
+```
+
+### Workflow
+
+```bash
+# Start new work — always branch from main
+git checkout main && git pull origin main
+git checkout -b feature/<module>/<what-you-are-building>
+
+# Commit using conventional commits
+git commit -m "feat(<module>): <what you did>"
+git commit -m "fix(<module>): <what you fixed>"
+git commit -m "refactor(<module>): <what you changed>"
+
+# Push and open Pull Request
+git push origin feature/<module>/<what-you-are-building>
+
+# After PR is merged — clean up
+git checkout main && git pull origin main
+git branch -d feature/<module>/<what-you-are-building>
+```
+
+### Commit Message Format
+
+```
+feat(fees): add payment receipt generation
+fix(auth): resolve jwt token expiry refresh issue
+refactor(academic): extract mapper layer for dto conversion
+test(exam): add unit tests for ExamServiceImpl
+chore(deps): upgrade spring-boot to 3.4.5
+```
+
+### Branch Protection (main)
+
+- No direct pushes to `main`
+- All changes go through Pull Requests
+- Force pushes and deletions are not allowed
+
 ## License
 
 Proprietary. CloudCampus.
