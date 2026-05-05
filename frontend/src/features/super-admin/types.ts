@@ -2,7 +2,7 @@ export interface CreateUserRequest {
   fullName: string
   username: string
   email: string
-  password: string
+  password?: string
   role: string
   tenantId?: string
   rollNumber?: string
@@ -11,7 +11,7 @@ export interface CreateUserRequest {
 }
 
 export interface User {
-  id: number
+  id: string
   username: string
   email: string
   role: string

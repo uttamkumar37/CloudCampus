@@ -48,7 +48,7 @@ app:
       root-domains: ${APP_TENANT_ROOT_DOMAINS:localhost}
       reserved-labels: ${APP_TENANT_RESERVED_LABELS:www,app,api,admin,super-admin}
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   cookie:
     secure: ${APP_COOKIE_SECURE:false}
   security:

@@ -6,12 +6,15 @@ import com.cloudcampus.attendance.dto.AttendanceCreateRequest;
 import com.cloudcampus.attendance.dto.AttendanceResponse;
 import com.cloudcampus.attendance.entity.AttendanceRecord;
 import com.cloudcampus.attendance.repository.AttendanceRecordRepository;
+import com.cloudcampus.auth.security.CloudCampusUserDetails;
 import com.cloudcampus.student.repository.StudentRepository;
 import com.cloudcampus.tenant.service.TenantContext;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,7 +58,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         attendanceRecord.setAttendanceDate(request.attendanceDate());
         attendanceRecord.setStatus(request.status());
         attendanceRecord.setRemarks(normalizeNullable(request.remarks()));
-        attendanceRecord.setMarkedByUserId(request.markedByUserId());
+        attendanceRecord.setMarkedByUserId(resolveActorUserId(request.markedByUserId()));
 
         AttendanceRecord saved = attendanceRecordRepository.save(attendanceRecord);
         log.info("Attendance marked: studentId={}, date={}, status={}, tenant={}",
@@ -99,6 +102,17 @@ public class AttendanceServiceImpl implements AttendanceService {
             return null;
         }
         return value.trim();
+    }
+
+    private UUID resolveActorUserId(UUID requestedUserId) {
+        if (requestedUserId != null) {
+            return requestedUserId;
+        }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof CloudCampusUserDetails principal) || principal.getUserId() == null) {
+            throw new IllegalArgumentException("Unable to resolve acting user from authentication context");
+        }
+        return principal.getUserId();
     }
 
     private AttendanceResponse map(AttendanceRecord record) {

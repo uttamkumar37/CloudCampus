@@ -7,6 +7,8 @@ import com.cloudcampus.teacher.entity.Teacher;
 import com.cloudcampus.teacher.repository.TeacherRepository;
 import com.cloudcampus.tenant.service.TenantContext;
 import com.cloudcampus.auth.security.CloudCampusUserDetails;
+import com.cloudcampus.user.entity.UserRole;
+import com.cloudcampus.user.service.UserAccountProvisioningService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,6 +28,7 @@ import java.util.UUID;
 public class TeacherServiceImpl implements TeacherService {
 
     private final TeacherRepository teacherRepository;
+    private final UserAccountProvisioningService userAccountProvisioningService;
 
     @Override
     @Transactional
@@ -49,6 +52,13 @@ public class TeacherServiceImpl implements TeacherService {
         teacher.setEmail(email);
         teacher.setPhone(normalizeNullable(request.phone()));
         teacher.setHireDate(request.hireDate());
+        teacher.setLinkedUser(userAccountProvisioningService.createDefaultUserAccount(
+            request.firstName() + " " + request.lastName(),
+            request.firstName(),
+            request.phone(),
+            request.email(),
+            UserRole.TEACHER
+        ));
         teacher.setActive(true);
 
         Teacher saved = teacherRepository.save(teacher);

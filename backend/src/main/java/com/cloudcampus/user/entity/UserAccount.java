@@ -34,6 +34,9 @@ public class UserAccount extends Auditable {
     @Column(name = "email", nullable = false, unique = true, length = 160)
     private String email;
 
+    @Column(name = "phone", length = 30)
+    private String phone;
+
     @Column(name = "password_hash", nullable = false, length = 200)
     private String passwordHash;
 
@@ -49,6 +52,9 @@ public class UserAccount extends Auditable {
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
+
+    @Column(name = "first_login_required", nullable = false)
+    private boolean firstLoginRequired = false;
 
     @Column(name = "deleted_at")
     private Instant deletedAt;

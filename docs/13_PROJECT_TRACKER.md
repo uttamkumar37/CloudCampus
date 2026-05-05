@@ -1,7 +1,7 @@
 # CloudCampus — Project Tracker
 
 
-> Last Updated: 2026-04-30 | Reflects actual codebase state
+> Last Updated: 2026-05-05 | Reflects actual codebase state
 
 ---
 
@@ -9,7 +9,7 @@
 
 | Status | Count |
 |--------|-------|
-| ✅ Completed | 42 |
+| ✅ Completed | 50 |
 | ⚠️ In Progress | 0 |
 | ❌ Pending | 0 |
 
@@ -65,6 +65,11 @@
 | 46 | Bulk upload UI | Frontend/Bulk | File picker (.xlsx filter), drag-and-drop, upload progress bar, result card with per-row errors, sample download, instructions modal |
 | 47 | Documentation update | Docs/Postman | 07_API_REFERENCE.md (8 new sections); 08_API.md (13 fixes, v1.1); Postman (16 folders, 49 endpoints, legacy folder removed) |
 | 48 | Payment gateway integration (Razorpay) | Backend+Frontend | Flyway V4; `PaymentGatewayService`; `RazorpayPaymentGatewayServiceImpl`; `POST /subscribe/initiate`; `POST /payments/webhook` (HMAC-SHA256); "Pay Online" button + Razorpay checkout.js; `12_PAYMENT_FLOW.md` v2 |
+| 49 | First-login credential enforcement | Backend/Security | `FirstLoginEnforcementFilter`; blocks non-credential endpoints until secure update is completed |
+| 50 | OTP-based credential update flow | Backend/Auth | `POST /auth/credentials/send-otp`; `POST /auth/credentials/update`; OTP storage + validation + retry limits |
+| 51 | Auto credential provisioning | Backend/User | Optional username/password on user create; generated credentials + notification dispatch |
+| 52 | Parent links administration UI/API | Backend+Frontend | `GET /parents/links`; admin page for list/link/unlink parent-student pairs |
+| 53 | Frontend test harness upgrades | Frontend/Testing | Vitest + Testing Library + jsdom setup and initial tests for endpoints and parent-link UI |
 
 ### Frontend
 

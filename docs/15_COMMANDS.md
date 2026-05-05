@@ -1,6 +1,6 @@
 # CloudCampus — Commands Reference
 
-> Version: 1.0 | Last Updated: 2026-04-28
+> Version: 1.1 | Last Updated: 2026-05-05
 
 Complete reference for all commands used to develop, test, and deploy CloudCampus.
 
@@ -103,13 +103,11 @@ cd backend
 mvn spring-boot:run
 
 # Run with custom env vars inline
-JWT_SECRET=myjwtsecret \
-DB_URL=jdbc:postgresql://localhost:5432/cloudcampus \
+DB_URL=jdbc:postgresql://localhost:5432/campuscloud \
 DB_USERNAME=postgres \
-DB_PASSWORD=postgres \
-BOOTSTRAP_ADMIN_USERNAME=superadmin \
-BOOTSTRAP_ADMIN_PASSWORD=admin12345 \
-BOOTSTRAP_ADMIN_ROLE=SUPER_ADMIN \
+DB_PASSWORD=campuscloud_db_dev_2026! \
+JWT_SECRET=<32+ char secret> \
+BOOTSTRAP_ADMIN_PASSWORD=<super-admin-password> \
 mvn spring-boot:run
 ```
 
@@ -129,6 +127,12 @@ npm run dev -- --port 3000
 # Build for production
 npm run build
 
+# Run frontend tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
 # Preview production build
 npm run preview
 ```
@@ -145,6 +149,9 @@ mvn compile -q
 
 # Run all tests
 mvn test
+
+# Run integration tests
+mvn verify
 
 # Package JAR (skip tests)
 mvn clean package -DskipTests
@@ -231,12 +238,12 @@ git diff --cached
 
 ### Connect to PostgreSQL (via Docker)
 ```bash
-docker exec -it cloudcampus-postgres psql -U postgres -d cloudcampus
+docker exec -it cloudcampus-postgres psql -U postgres -d campuscloud
 ```
 
 ### Connect to PostgreSQL (local install)
 ```bash
-psql -U postgres -d cloudcampus
+psql -U postgres -d campuscloud
 ```
 
 ### Useful SQL inside psql
@@ -258,6 +265,12 @@ SELECT id, username, role FROM public.platform_users;
 SELECT id, name, schema_name, status FROM public.tenants;
 
 -- List subscription plans
+
+-- Repair flyway checksums after intentional SQL migration edits
+flyway repair
+
+-- Run demo seed data (single-school profile)
+python3 scripts/seed_demo.py
 SELECT * FROM public.subscription_plans;
 
 -- Count students in a tenant

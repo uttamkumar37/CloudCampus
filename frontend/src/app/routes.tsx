@@ -21,6 +21,7 @@ import { ProfilePage } from '../features/profile/pages/ProfilePage'
 import { HomeworkPage } from '../features/homework/pages/HomeworkPage'
 import { TimetablePage } from '../features/timetable/pages/TimetablePage'
 import { MyChildrenPage } from '../features/parent/pages/MyChildrenPage'
+import { ParentLinksAdminPage } from '../features/parent/pages/ParentLinksAdminPage'
 import { AttendanceHubPage } from '../features/attendance/pages/AttendanceHubPage'
 import { FeesHubPage } from '../features/fees/pages/FeesHubPage'
 import { MarksHubPage } from '../features/marks/pages/MarksHubPage'
@@ -180,6 +181,14 @@ export const router = createBrowserRouter([
         element: (
           <PrivateRoute allowedRoles={['PARENT']}>
             <MyChildrenPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'parent-links',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <ParentLinksAdminPage />
           </PrivateRoute>
         ),
       },

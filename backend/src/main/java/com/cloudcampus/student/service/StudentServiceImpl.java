@@ -7,6 +7,8 @@ import com.cloudcampus.student.entity.Student;
 import com.cloudcampus.student.repository.StudentRepository;
 import com.cloudcampus.tenant.service.TenantContext;
 import com.cloudcampus.auth.security.CloudCampusUserDetails;
+import com.cloudcampus.user.entity.UserRole;
+import com.cloudcampus.user.service.UserAccountProvisioningService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,6 +28,7 @@ import java.util.UUID;
 public class StudentServiceImpl implements StudentService {
 
     private final StudentRepository studentRepository;
+    private final UserAccountProvisioningService userAccountProvisioningService;
 
     @Override
     @Transactional
@@ -45,6 +48,13 @@ public class StudentServiceImpl implements StudentService {
         student.setGender(request.gender());
         student.setEmail(normalizeNullable(request.email()));
         student.setPhone(normalizeNullable(request.phone()));
+        student.setLinkedUser(userAccountProvisioningService.createDefaultUserAccount(
+            request.firstName() + " " + request.lastName(),
+            request.firstName(),
+            request.phone(),
+            request.email(),
+            UserRole.STUDENT
+        ));
         student.setActive(true);
 
         Student saved = studentRepository.save(student);

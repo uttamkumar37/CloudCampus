@@ -3,6 +3,7 @@ package com.cloudcampus.parent.controller;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.parent.dto.LinkParentRequest;
 import com.cloudcampus.parent.dto.LinkedStudentResponse;
+import com.cloudcampus.parent.dto.ParentStudentLinkResponse;
 import com.cloudcampus.parent.service.ParentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,6 +30,16 @@ import java.util.UUID;
 public class ParentController {
 
     private final ParentService parentService;
+
+    @GetMapping("/links")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
+    @Operation(summary = "List parent-student links", parameters = {
+            @Parameter(name = "X-Tenant-ID", required = true),
+            @Parameter(name = "Authorization", required = true)
+    })
+    public ResponseEntity<ApiResponse<List<ParentStudentLinkResponse>>> links() {
+        return ResponseEntity.ok(ApiResponse.success("Parent links", parentService.getLinks()));
+    }
 
     @GetMapping("/me/children")
     @PreAuthorize("hasRole('PARENT')")
