@@ -15,6 +15,19 @@
 
 ---
 
+## Changelog
+
+### 2026-05-05
+
+- Commit: `6f7ef6c`  
+	Message: Add dashboard and learning page updates across backend and frontend
+- Added dedicated learning pages for parent and student workflows.
+- Updated dashboard routes/layout and role-focused pages (student, parent, teacher).
+- Updated backend auth/filter and exam/homework/timetable controllers to support the new UI flow.
+- Updated dashboard seeding script to align demo/dev data with the latest dashboard behavior.
+
+---
+
 ## ✅ Completed Features
 
 ### Infrastructure & Foundation
