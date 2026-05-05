@@ -1,6 +1,7 @@
 package com.cloudcampus.tenant.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -34,6 +35,27 @@ public record TenantCreateRequest(
                 regexp = "^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})$",
                 message = "primaryColor must be a valid hex color"
         )
-        String primaryColor
+        String primaryColor,
+
+        @NotBlank(message = "schoolAdminFullName is required")
+        @Size(max = 120, message = "schoolAdminFullName must be at most 120 characters")
+        String schoolAdminFullName,
+
+        @NotBlank(message = "schoolAdminUsername is required")
+        @Size(max = 100, message = "schoolAdminUsername must be at most 100 characters")
+        @Pattern(regexp = "^[a-z0-9._-]+$", message = "schoolAdminUsername must contain lowercase letters, numbers, dot, underscore or hyphen")
+        String schoolAdminUsername,
+
+        @NotBlank(message = "schoolAdminEmail is required")
+        @Email(message = "schoolAdminEmail must be valid")
+        @Size(max = 160, message = "schoolAdminEmail must be at most 160 characters")
+        String schoolAdminEmail,
+
+        @Size(max = 30, message = "schoolAdminPhone must be at most 30 characters")
+        String schoolAdminPhone,
+
+        @NotBlank(message = "schoolAdminPassword is required")
+        @Size(min = 8, max = 64, message = "schoolAdminPassword must be between 8 and 64 characters")
+        String schoolAdminPassword
 ) {
 }

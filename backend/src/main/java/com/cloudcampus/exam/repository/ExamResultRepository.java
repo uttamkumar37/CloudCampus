@@ -14,4 +14,6 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, UUID> {
 
     // Student dashboard
     List<ExamResult> findTop5ByStudentIdOrderByCreatedAtDesc(UUID studentId);
+
+    List<ExamResult> findTop20ByStudentIdOrderByCreatedAtDesc(UUID studentId);
 }

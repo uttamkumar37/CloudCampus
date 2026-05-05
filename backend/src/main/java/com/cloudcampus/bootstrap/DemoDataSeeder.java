@@ -137,7 +137,12 @@ public class DemoDataSeeder implements ApplicationRunner {
                 SCHOOL_NAME,
                 TENANT_SCHEMA,
                 null,
-                "#2563EB"
+            "#2563EB",
+            "Demo School Admin",
+            "ananya.principal",
+            "ananya.principal@cloudcampus.demo",
+            "9000000000",
+            DEFAULT_USER_PASSWORD
         );
         tenantService.createTenant(request);
         log.info("Demo tenant created: tenantId={}, schema={}", TENANT_ID, TENANT_SCHEMA);

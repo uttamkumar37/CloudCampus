@@ -4,8 +4,10 @@ import com.cloudcampus.academic.entity.SchoolClass;
 import com.cloudcampus.academic.entity.Section;
 import com.cloudcampus.academic.repository.SchoolClassRepository;
 import com.cloudcampus.academic.repository.SectionRepository;
+import com.cloudcampus.bulk.dto.BulkCredentialResponse;
 import com.cloudcampus.bulk.dto.BulkUploadErrorResponse;
 import com.cloudcampus.bulk.dto.BulkUploadResponse;
+import com.cloudcampus.bulk.dto.BulkValidationRowResponse;
 import com.cloudcampus.bulk.exception.BulkUploadValidationException;
 import com.cloudcampus.student.entity.Gender;
 import com.cloudcampus.student.entity.Student;
@@ -13,6 +15,10 @@ import com.cloudcampus.student.repository.StudentRepository;
 import com.cloudcampus.teacher.entity.Teacher;
 import com.cloudcampus.teacher.repository.TeacherRepository;
 import com.cloudcampus.tenant.service.TenantContext;
+import com.cloudcampus.user.entity.UserRole;
+import com.cloudcampus.user.service.GeneratedCredentials;
+import com.cloudcampus.user.service.UserAccountProvisioningService;
+import com.cloudcampus.user.service.UserProvisioningResult;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -70,6 +76,7 @@ public class BulkUploadServiceImpl implements BulkUploadService {
     private final TeacherRepository teacherRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final SectionRepository sectionRepository;
+    private final UserAccountProvisioningService userAccountProvisioningService;
 
     private final DataFormatter dataFormatter = new DataFormatter();
 
@@ -114,7 +121,10 @@ public class BulkUploadServiceImpl implements BulkUploadService {
             UploadOutcome studentOutcome = processStudents(
                     sheets.get(STUDENTS_SHEET),
                     studentAdmissionNumbersInFile,
-                    errors
+                    errors,
+                    List.of(),
+                    false,
+                    false
             );
             totalRows += studentOutcome.totalRows();
             successCount += studentOutcome.successCount();
@@ -122,7 +132,10 @@ public class BulkUploadServiceImpl implements BulkUploadService {
             UploadOutcome teacherOutcome = processTeachers(
                     sheets.get(TEACHERS_SHEET),
                     teacherEmployeeNumbersInFile,
-                    errors
+                    errors,
+                    List.of(),
+                    false,
+                    false
             );
             totalRows += teacherOutcome.totalRows();
             successCount += teacherOutcome.successCount();
@@ -134,7 +147,8 @@ public class BulkUploadServiceImpl implements BulkUploadService {
                 totalRows,
                 successCount,
                 errors.size(),
-                errors
+            errors,
+            List.of()
         );
     }
 
@@ -167,7 +181,10 @@ public class BulkUploadServiceImpl implements BulkUploadService {
     private UploadOutcome processStudents(
             Sheet sheet,
             Set<String> admissionNumbersInFile,
-            List<BulkUploadErrorResponse> errors
+            List<BulkUploadErrorResponse> errors,
+            List<BulkCredentialResponse> credentials,
+            boolean includeCredentials,
+            boolean forcePasswordReset
     ) {
         validateHeaders(sheet, STUDENT_HEADERS);
         int totalRows = 0;
@@ -199,11 +216,8 @@ public class BulkUploadServiceImpl implements BulkUploadService {
                 if (!admissionNumbersInFile.add(admissionNo)) {
                     throw new BulkUploadValidationException("Duplicate admission_no in uploaded file");
                 }
-                if (studentRepository.existsByAdmissionNo(admissionNo)) {
-                    throw new BulkUploadValidationException("admission_no already exists");
-                }
-
-                Student student = new Student();
+                Student student = studentRepository.findByAdmissionNo(admissionNo).orElseGet(Student::new);
+                boolean existingStudent = student.getId() != null;
                 student.setAdmissionNo(admissionNo);
                 student.setFirstName(firstName);
                 student.setLastName(lastName);
@@ -211,6 +225,38 @@ public class BulkUploadServiceImpl implements BulkUploadService {
                 student.setGender(gender);
                 student.setEmail(normalizeEmail(email));
                 student.setPhone(normalizeNullable(phone));
+                if (student.getLinkedUser() == null) {
+                    UserProvisioningResult provisioning = userAccountProvisioningService.createDefaultUserAccountWithCredentials(
+                            firstName + " " + lastName,
+                            firstName,
+                            phone,
+                            email,
+                            UserRole.STUDENT,
+                            false
+                    );
+                    student.setLinkedUser(provisioning.user());
+                    if (includeCredentials) {
+                        credentials.add(toCredential(
+                                "STUDENT",
+                                admissionNo,
+                                firstName + " " + lastName,
+                                provisioning.credentials(),
+                                existingStudent ? "updated+credentials_created" : "created"
+                        ));
+                    }
+                } else if (forcePasswordReset) {
+                    GeneratedCredentials reset = userAccountProvisioningService
+                            .resetPasswordToDefaultWithCredentials(student.getLinkedUser(), false);
+                    if (includeCredentials) {
+                        credentials.add(toCredential(
+                                "STUDENT",
+                                admissionNo,
+                                firstName + " " + lastName,
+                                reset,
+                                existingStudent ? "updated+password_reset" : "password_reset"
+                        ));
+                    }
+                }
                 student.setActive(true);
                 studentRepository.save(student);
                 successCount++;
@@ -225,7 +271,10 @@ public class BulkUploadServiceImpl implements BulkUploadService {
     private UploadOutcome processTeachers(
             Sheet sheet,
             Set<String> employeeNumbersInFile,
-            List<BulkUploadErrorResponse> errors
+            List<BulkUploadErrorResponse> errors,
+            List<BulkCredentialResponse> credentials,
+            boolean includeCredentials,
+            boolean forcePasswordReset
     ) {
         validateHeaders(sheet, TEACHER_HEADERS);
         int totalRows = 0;
@@ -256,20 +305,49 @@ public class BulkUploadServiceImpl implements BulkUploadService {
                 if (!employeeNumbersInFile.add(employeeNo)) {
                     throw new BulkUploadValidationException("Duplicate employee_no in uploaded file");
                 }
-                if (teacherRepository.existsByEmployeeNo(employeeNo)) {
-                    throw new BulkUploadValidationException("employee_no already exists");
-                }
-                if (teacherRepository.existsByEmail(email)) {
+                Teacher teacher = teacherRepository.findByEmployeeNo(employeeNo).orElseGet(Teacher::new);
+                boolean existingTeacher = teacher.getId() != null;
+                if (!existingTeacher && teacherRepository.existsByEmail(email)) {
                     throw new BulkUploadValidationException("email already exists");
                 }
-
-                Teacher teacher = new Teacher();
                 teacher.setEmployeeNo(employeeNo);
                 teacher.setFirstName(firstName);
                 teacher.setLastName(lastName);
                 teacher.setEmail(email);
                 teacher.setPhone(normalizeNullable(phone));
                 teacher.setHireDate(hireDate);
+                if (teacher.getLinkedUser() == null) {
+                    UserProvisioningResult provisioning = userAccountProvisioningService.createDefaultUserAccountWithCredentials(
+                            firstName + " " + lastName,
+                            firstName,
+                            phone,
+                            email,
+                            UserRole.TEACHER,
+                            false
+                    );
+                    teacher.setLinkedUser(provisioning.user());
+                    if (includeCredentials) {
+                        credentials.add(toCredential(
+                                "TEACHER",
+                                employeeNo,
+                                firstName + " " + lastName,
+                                provisioning.credentials(),
+                                existingTeacher ? "updated+credentials_created" : "created"
+                        ));
+                    }
+                } else if (forcePasswordReset) {
+                    GeneratedCredentials reset = userAccountProvisioningService
+                            .resetPasswordToDefaultWithCredentials(teacher.getLinkedUser(), false);
+                    if (includeCredentials) {
+                        credentials.add(toCredential(
+                                "TEACHER",
+                                employeeNo,
+                                firstName + " " + lastName,
+                                reset,
+                                existingTeacher ? "updated+password_reset" : "password_reset"
+                        ));
+                    }
+                }
                 teacher.setActive(true);
                 teacherRepository.save(teacher);
                 successCount++;
@@ -508,6 +586,23 @@ public class BulkUploadServiceImpl implements BulkUploadService {
         return value.trim();
     }
 
+    private BulkCredentialResponse toCredential(
+            String entityType,
+            String identifier,
+            String fullName,
+            GeneratedCredentials generatedCredentials,
+            String action
+    ) {
+        return new BulkCredentialResponse(
+                entityType,
+                identifier,
+                fullName,
+                generatedCredentials.username(),
+                generatedCredentials.rawPassword(),
+                action
+        );
+    }
+
     private void createSheet(XSSFWorkbook workbook, String sheetName, List<String> headers, List<List<String>> sampleRows) {
         Sheet sheet = workbook.createSheet(sheetName);
         Row headerRow = sheet.createRow(0);
@@ -522,6 +617,292 @@ public class BulkUploadServiceImpl implements BulkUploadService {
             for (int cellIndex = 0; cellIndex < values.size(); cellIndex++) {
                 row.createCell(cellIndex).setCellValue(values.get(cellIndex));
             }
+        }
+    }
+
+    @Override
+    public List<BulkValidationRowResponse> previewStudentsSheet(MultipartFile file) {
+        validateTenantContext();
+        validateStudentsFile(file);
+
+        List<BulkValidationRowResponse> result = new ArrayList<>();
+        try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheet(STUDENTS_SHEET);
+            if (sheet == null) {
+                sheet = workbook.getSheetAt(0);
+            }
+            if (sheet == null) {
+                throw new BulkUploadValidationException("No sheets found in the workbook");
+            }
+            validateHeaders(sheet, STUDENT_HEADERS);
+
+            Set<String> seenAdmissionNos = new HashSet<>();
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+                if (isRowEmpty(row, STUDENT_HEADERS.size())) {
+                    continue;
+                }
+                int displayRow = rowIndex + 1;
+                Map<String, String> values = new LinkedHashMap<>();
+                String status;
+                String issue;
+                try {
+                    String admissionNo = required(row, 0, "admission_no").toUpperCase(Locale.ROOT);
+                    String firstName = required(row, 1, "first_name");
+                    String lastName = required(row, 2, "last_name");
+                    LocalDate dob = requiredDate(row, 3, "dob");
+                    Gender gender = requiredGender(row, 4);
+                    String email = optional(row, 5);
+                    String phone = optional(row, 6);
+
+                    values.put("admission_no", admissionNo);
+                    values.put("first_name", firstName);
+                    values.put("last_name", lastName);
+                    values.put("dob", dob.toString());
+                    values.put("gender", gender.name());
+                    values.put("email", email != null ? email : "");
+                    values.put("phone", phone != null ? phone : "");
+
+                    if (dob.isAfter(LocalDate.now())) {
+                        throw new BulkUploadValidationException("dob must be in the past");
+                    }
+                    if (StringUtils.hasText(email) && !EMAIL_PATTERN.matcher(email).matches()) {
+                        throw new BulkUploadValidationException("Invalid email format");
+                    }
+
+                    if (!seenAdmissionNos.add(admissionNo)) {
+                        status = "error";
+                        issue = "Duplicate admission_no in file";
+                    } else if (studentRepository.existsByAdmissionNo(admissionNo)) {
+                        status = "warning";
+                        issue = "Already exists – will be updated on execute";
+                    } else {
+                        status = "ready";
+                        issue = "Ready to import";
+                    }
+                } catch (BulkUploadValidationException ex) {
+                    for (int col = 0; col < STUDENT_HEADERS.size(); col++) {
+                        String header = STUDENT_HEADERS.get(col);
+                        values.putIfAbsent(header, getCellValue(row.getCell(col)));
+                    }
+                    status = "error";
+                    issue = ex.getMessage();
+                }
+                result.add(new BulkValidationRowResponse(displayRow, values, status, issue));
+            }
+        } catch (IOException ex) {
+            throw new BulkUploadValidationException("Unable to read the uploaded Excel file");
+        }
+        return result;
+    }
+
+    @Override
+    public List<BulkValidationRowResponse> previewTeachersSheet(MultipartFile file) {
+        validateTenantContext();
+        validateStudentsFile(file);
+
+        List<BulkValidationRowResponse> result = new ArrayList<>();
+        try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheet(TEACHERS_SHEET);
+            if (sheet == null) {
+                sheet = workbook.getSheetAt(0);
+            }
+            if (sheet == null) {
+                throw new BulkUploadValidationException("No sheets found in the workbook");
+            }
+            validateHeaders(sheet, TEACHER_HEADERS);
+
+            Set<String> seenEmployeeNos = new HashSet<>();
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                Row row = sheet.getRow(rowIndex);
+                if (isRowEmpty(row, TEACHER_HEADERS.size())) {
+                    continue;
+                }
+                int displayRow = rowIndex + 1;
+                Map<String, String> values = new LinkedHashMap<>();
+                String status;
+                String issue;
+                try {
+                    String employeeNo = required(row, 0, "employee_no").toUpperCase(Locale.ROOT);
+                    String firstName = required(row, 1, "first_name");
+                    String lastName = required(row, 2, "last_name");
+                    String email = required(row, 3, "email").toLowerCase(Locale.ROOT);
+                    String phone = optional(row, 4);
+                    LocalDate hireDate = requiredDate(row, 5, "hire_date");
+
+                    values.put("employee_no", employeeNo);
+                    values.put("first_name", firstName);
+                    values.put("last_name", lastName);
+                    values.put("email", email);
+                    values.put("phone", phone != null ? phone : "");
+                    values.put("hire_date", hireDate.toString());
+
+                    if (!EMAIL_PATTERN.matcher(email).matches()) {
+                        throw new BulkUploadValidationException("Invalid email format");
+                    }
+                    if (hireDate.isAfter(LocalDate.now())) {
+                        throw new BulkUploadValidationException("hire_date must be in the past or present");
+                    }
+
+                    if (!seenEmployeeNos.add(employeeNo)) {
+                        status = "error";
+                        issue = "Duplicate employee_no in file";
+                    } else if (teacherRepository.existsByEmployeeNo(employeeNo)) {
+                        status = "warning";
+                        issue = "Already exists – will be updated on execute";
+                    } else {
+                        status = "ready";
+                        issue = "Ready to import";
+                    }
+                } catch (BulkUploadValidationException ex) {
+                    for (int col = 0; col < TEACHER_HEADERS.size(); col++) {
+                        String header = TEACHER_HEADERS.get(col);
+                        values.putIfAbsent(header, getCellValue(row.getCell(col)));
+                    }
+                    status = "error";
+                    issue = ex.getMessage();
+                }
+                result.add(new BulkValidationRowResponse(displayRow, values, status, issue));
+            }
+        } catch (IOException ex) {
+            throw new BulkUploadValidationException("Unable to read the uploaded Excel file");
+        }
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public BulkUploadResponse processStudentsSheet(MultipartFile file, boolean sendCredentials, boolean forcePasswordReset) {
+        validateTenantContext();
+        validateStudentsFile(file);
+
+        List<BulkUploadErrorResponse> errors = new ArrayList<>();
+        List<BulkCredentialResponse> credentials = new ArrayList<>();
+        try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheet(STUDENTS_SHEET);
+            if (sheet == null) {
+                sheet = workbook.getSheetAt(0);
+            }
+            if (sheet == null) {
+                throw new BulkUploadValidationException("No sheets found in the workbook");
+            }
+            Set<String> admissionNumbers = new HashSet<>();
+            UploadOutcome outcome = processStudents(sheet, admissionNumbers, errors, credentials, sendCredentials, forcePasswordReset);
+            return new BulkUploadResponse(outcome.totalRows(), outcome.successCount(), errors.size(), errors, credentials);
+        } catch (IOException ex) {
+            throw new BulkUploadValidationException("Unable to read the uploaded Excel file");
+        }
+    }
+
+    @Override
+    @Transactional
+    public BulkUploadResponse processTeachersSheet(MultipartFile file, boolean sendCredentials, boolean forcePasswordReset) {
+        validateTenantContext();
+        validateStudentsFile(file);
+
+        List<BulkUploadErrorResponse> errors = new ArrayList<>();
+        List<BulkCredentialResponse> credentials = new ArrayList<>();
+        try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheet(TEACHERS_SHEET);
+            if (sheet == null) {
+                sheet = workbook.getSheetAt(0);
+            }
+            if (sheet == null) {
+                throw new BulkUploadValidationException("No sheets found in the workbook");
+            }
+            Set<String> employeeNumbers = new HashSet<>();
+            UploadOutcome outcome = processTeachers(sheet, employeeNumbers, errors, credentials, sendCredentials, forcePasswordReset);
+            return new BulkUploadResponse(outcome.totalRows(), outcome.successCount(), errors.size(), errors, credentials);
+        } catch (IOException ex) {
+            throw new BulkUploadValidationException("Unable to read the uploaded Excel file");
+        }
+    }
+
+    private void validateStudentsFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BulkUploadValidationException("Please upload a non-empty Excel file");
+        }
+        if (file.getSize() > MAX_FILE_SIZE_BYTES) {
+            throw new BulkUploadValidationException("File size must be 5MB or less");
+        }
+        String filename = Optional.ofNullable(file.getOriginalFilename()).orElse("");
+        if (!filename.toLowerCase(Locale.ROOT).endsWith(".xlsx")) {
+            throw new BulkUploadValidationException("Only .xlsx files are supported");
+        }
+    }
+
+    @Override
+    public Resource generateSampleForOperation(String operation) {
+        String op = operation == null ? "master" : operation.trim().toLowerCase(Locale.ROOT);
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            switch (op) {
+                case "students" -> createSheet(workbook, STUDENTS_SHEET, STUDENT_HEADERS, List.of(
+                        List.of("ADM-1001", "Aarav", "Mehta", "2010-05-12", "MALE", "aarav.mehta@student.com", "9000000001"),
+                        List.of("ADM-1002", "Priya", "Sharma", "2011-08-20", "FEMALE", "priya.sharma@student.com", "9000000002"),
+                        List.of("ADM-1003", "Rohan", "Kumar", "2012-01-15", "MALE", "", "9000000003")
+                ));
+                case "teachers" -> createSheet(workbook, TEACHERS_SHEET, TEACHER_HEADERS, List.of(
+                        List.of("EMP-2001", "Sunita", "Nair", "sunita.nair@school.com", "9000001001", "2022-06-01"),
+                        List.of("EMP-2002", "Rahul", "Das", "rahul.das@school.com", "9000001002", "2021-07-15"),
+                        List.of("EMP-2003", "Anita", "Bose", "anita.bose@school.com", "9000001003", "2023-01-10")
+                ));
+                case "academic" -> {
+                    createSheet(workbook, CLASSES_SHEET, CLASS_HEADERS, List.of(
+                            List.of("Grade 8", "G8"),
+                            List.of("Grade 9", "G9"),
+                            List.of("Grade 10", "G10")
+                    ));
+                    createSheet(workbook, SECTIONS_SHEET, SECTION_HEADERS, List.of(
+                            List.of("A", "G8"),
+                            List.of("B", "G8"),
+                            List.of("A", "G9"),
+                            List.of("A", "G10")
+                    ));
+                }
+                case "timetable" -> createSheet(workbook, "TIMETABLE",
+                        List.of("day", "start_time", "end_time", "class_code", "section_name", "employee_no", "subject"),
+                        List.of(
+                                List.of("Monday", "09:00", "10:00", "G8", "A", "EMP-2001", "Mathematics"),
+                                List.of("Monday", "10:00", "11:00", "G8", "B", "EMP-2002", "Physics"),
+                                List.of("Tuesday", "09:00", "10:00", "G9", "A", "EMP-2001", "Mathematics")
+                        ));
+                case "attendance" -> createSheet(workbook, "ATTENDANCE",
+                        List.of("date", "class_code", "section_name", "admission_no", "status"),
+                        List.of(
+                                List.of("2026-05-06", "G8", "A", "ADM-1001", "PRESENT"),
+                                List.of("2026-05-06", "G8", "A", "ADM-1002", "ABSENT"),
+                                List.of("2026-05-06", "G8", "B", "ADM-1003", "PRESENT")
+                        ));
+                case "parents" -> createSheet(workbook, "PARENTS",
+                        List.of("student_admission_no", "parent_name", "parent_email", "parent_phone"),
+                        List.of(
+                                List.of("ADM-1001", "Riya Mehta", "riya.mehta@parent.com", "9000002001"),
+                                List.of("ADM-1002", "Suresh Sharma", "", "9000002002"),
+                                List.of("ADM-1003", "Maya Kumar", "maya.kumar@parent.com", "9000002003")
+                        ));
+                default -> {
+                    // master / full workbook
+                    createSheet(workbook, STUDENTS_SHEET, STUDENT_HEADERS, List.of(
+                            List.of("ADM-1001", "Aarav", "Mehta", "2010-05-12", "MALE", "aarav.mehta@student.com", "9000000001")
+                    ));
+                    createSheet(workbook, TEACHERS_SHEET, TEACHER_HEADERS, List.of(
+                            List.of("EMP-2001", "Sunita", "Nair", "sunita.nair@school.com", "9000001001", "2022-06-01")
+                    ));
+                    createSheet(workbook, CLASSES_SHEET, CLASS_HEADERS, List.of(
+                            List.of("Grade 8", "G8"),
+                            List.of("Grade 9", "G9")
+                    ));
+                    createSheet(workbook, SECTIONS_SHEET, SECTION_HEADERS, List.of(
+                            List.of("A", "G8"),
+                            List.of("B", "G9")
+                    ));
+                }
+            }
+            workbook.write(out);
+            return new ByteArrayResource(out.toByteArray());
+        } catch (IOException ex) {
+            throw new BulkUploadValidationException("Unable to generate sample workbook for operation: " + op);
         }
     }
 

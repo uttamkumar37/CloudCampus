@@ -35,4 +35,6 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
 
     // Teacher dashboard queries
     long countByClassIdAndSectionIdAndAttendanceDateAndMarkedByUserId(UUID classId, UUID sectionId, LocalDate date, UUID markedByUserId);
+
+    List<AttendanceRecord> findTop20ByStudentIdOrderByAttendanceDateDesc(UUID studentId);
 }

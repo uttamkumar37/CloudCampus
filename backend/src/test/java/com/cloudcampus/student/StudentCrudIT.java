@@ -35,7 +35,8 @@ class StudentCrudIT extends IntegrationTestBase {
     void setUp() {
         if (!tenantCreated) {
             tenantService.createTenant(new TenantCreateRequest(
-                    "student-it", null, "Student IT School", SCHEMA, null, "#10b981"));
+                                        "student-it", null, "Student IT School", SCHEMA, null, "#10b981",
+                                        "Student IT Admin", "student.it.admin", "student.it.admin@example.com", "9000002001", "Admin@Test123"));
             tenantCreated = true;
         }
         TenantContext.setTenant(SCHEMA);

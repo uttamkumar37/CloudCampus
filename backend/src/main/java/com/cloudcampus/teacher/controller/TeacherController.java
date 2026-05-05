@@ -3,6 +3,7 @@ package com.cloudcampus.teacher.controller;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.api.PageResponse;
 import com.cloudcampus.teacher.dto.TeacherCreateRequest;
+import com.cloudcampus.teacher.dto.TeacherDetailResponse;
 import com.cloudcampus.teacher.dto.TeacherResponse;
 import com.cloudcampus.teacher.dto.TeacherUpdateRequest;
 import com.cloudcampus.teacher.service.TeacherService;
@@ -66,6 +67,17 @@ public class TeacherController {
     public ResponseEntity<ApiResponse<TeacherResponse>> getTeacherById(@PathVariable UUID id) {
         TeacherResponse response = teacherService.getTeacherById(id);
         return ResponseEntity.ok(ApiResponse.success("Teacher fetched successfully", response));
+    }
+
+    @GetMapping("/{id}/details")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
+    @Operation(summary = "Get teacher with timetable assignments and issued homework", parameters = {
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
+    })
+    public ResponseEntity<ApiResponse<TeacherDetailResponse>> getTeacherDetails(@PathVariable UUID id) {
+        TeacherDetailResponse response = teacherService.getTeacherDetails(id);
+        return ResponseEntity.ok(ApiResponse.success("Teacher details fetched successfully", response));
     }
 
     @GetMapping

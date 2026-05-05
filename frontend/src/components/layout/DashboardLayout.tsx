@@ -10,7 +10,7 @@ const navigation = [
   { to: '/students', label: 'Students', roles: ['SCHOOL_ADMIN', 'TEACHER'] },
   { to: '/teachers', label: 'Teachers', roles: ['SCHOOL_ADMIN', 'TEACHER'] },
   { to: '/academic', label: 'Academic', roles: ['SCHOOL_ADMIN', 'TEACHER'] },
-  { to: '/bulk-upload', label: 'Bulk Upload', roles: ['SCHOOL_ADMIN'] },
+  { to: '/bulk-upload', label: 'Bulk Operations', roles: ['SCHOOL_ADMIN'] },
   { to: '/homework', label: 'Homework', roles: ['SCHOOL_ADMIN', 'TEACHER'] },
   { to: '/timetable', label: 'Timetable', roles: ['SCHOOL_ADMIN', 'TEACHER'] },
   { to: '/attendance', label: 'Attendance', roles: ['SCHOOL_ADMIN', 'TEACHER'] },

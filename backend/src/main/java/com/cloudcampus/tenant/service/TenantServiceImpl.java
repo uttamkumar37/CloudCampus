@@ -6,9 +6,13 @@ import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.entity.Tenant;
 import com.cloudcampus.tenant.mapper.TenantMapper;
 import com.cloudcampus.tenant.repository.TenantRepository;
+import com.cloudcampus.user.entity.UserAccount;
+import com.cloudcampus.user.entity.UserRole;
+import com.cloudcampus.user.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,6 +29,8 @@ public class TenantServiceImpl implements TenantService {
     private final TenantRepository tenantRepository;
     private final JdbcTemplate jdbcTemplate;
     private final TenantMapper tenantMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final UserAccountRepository userAccountRepository;
 
     @Override
     @Transactional
@@ -44,10 +50,11 @@ public class TenantServiceImpl implements TenantService {
         }
 
         createSchemaIfNotExists(schemaName);
+        createSchoolAdminUser(schemaName, tenantId, request);
 
         Tenant tenant = new Tenant();
         tenant.setTenantId(tenantId);
-    tenant.setSlug(slug);
+        tenant.setSlug(slug);
         tenant.setSchoolName(request.schoolName().trim());
         tenant.setSchemaName(schemaName);
         tenant.setLogoUrl(normalizeNullable(request.logoUrl()));
@@ -57,6 +64,44 @@ public class TenantServiceImpl implements TenantService {
         Tenant saved = tenantRepository.save(tenant);
         log.info("Tenant created: tenantId={}, slug={}, schema={}", saved.getTenantId(), saved.getSlug(), saved.getSchemaName());
         return map(saved);
+    }
+
+    private void createSchoolAdminUser(String schemaName, String tenantId, TenantCreateRequest request) {
+        String username = request.schoolAdminUsername().trim().toLowerCase(Locale.ROOT);
+        String email = request.schoolAdminEmail().trim().toLowerCase(Locale.ROOT);
+        String phone = normalizeNullable(request.schoolAdminPhone());
+
+        String previousTenant = TenantContext.getTenant();
+        try {
+            TenantContext.setTenant(schemaName);
+
+            if (userAccountRepository.existsByUsername(username)) {
+                throw new IllegalArgumentException("School admin username already exists in tenant schema");
+            }
+            if (userAccountRepository.existsByEmail(email)) {
+                throw new IllegalArgumentException("School admin email already exists in tenant schema");
+            }
+
+            UserAccount admin = new UserAccount();
+            admin.setFullName(request.schoolAdminFullName().trim());
+            admin.setUsername(username);
+            admin.setEmail(email);
+            admin.setPhone(phone);
+            admin.setPasswordHash(passwordEncoder.encode(request.schoolAdminPassword()));
+            admin.setRole(UserRole.SCHOOL_ADMIN);
+            admin.setTenantId(tenantId);
+            admin.setActive(true);
+            admin.setFirstLoginRequired(false);
+            userAccountRepository.save(admin);
+        } finally {
+            if (StringUtils.hasText(previousTenant)) {
+                TenantContext.setTenant(previousTenant);
+            } else {
+                TenantContext.clear();
+            }
+        }
+
+        log.info("Provisioned school admin user: tenantId={}, schema={}, username={}", tenantId, schemaName, username);
     }
 
     @Override
@@ -102,6 +147,18 @@ public class TenantServiceImpl implements TenantService {
                 .filter(Tenant::isActive)
                 .orElseThrow(() -> new IllegalArgumentException("School not found: " + tenantSlug));
         return map(tenant);
+    }
+
+    @Override
+    @Transactional
+    public TenantResponse updateTenantActiveStatus(String tenantId, boolean active) {
+        Tenant tenant = tenantRepository.findByTenantId(normalize(tenantId))
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantId));
+
+        tenant.setActive(active);
+        Tenant saved = tenantRepository.save(tenant);
+        log.info("Tenant status changed: tenantId={}, active={}", saved.getTenantId(), saved.isActive());
+        return map(saved);
     }
 
     @Override

@@ -49,7 +49,8 @@ class FeePaymentStatusIT extends IntegrationTestBase {
     void setUp() {
         if (!tenantCreated) {
             tenantService.createTenant(new TenantCreateRequest(
-                    "fees-it", null, "Fees IT School", SCHEMA, null, "#10b981"));
+                                        "fees-it", null, "Fees IT School", SCHEMA, null, "#10b981",
+                                        "Fees IT Admin", "fees.it.admin", "fees.it.admin@example.com", "9000005001", "Admin@Test123"));
             tenantCreated = true;
         }
         TenantContext.setTenant(SCHEMA);

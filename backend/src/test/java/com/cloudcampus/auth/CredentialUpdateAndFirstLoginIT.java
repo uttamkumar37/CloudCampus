@@ -65,7 +65,8 @@ class CredentialUpdateAndFirstLoginIT extends IntegrationTestBase {
     void setUp() {
         if (!tenantCreated) {
             tenantService.createTenant(new TenantCreateRequest(
-                    TENANT_ID, TENANT_SLUG, "Credential IT School", TENANT_SCHEMA, null, "#10b981"));
+                                        TENANT_ID, TENANT_SLUG, "Credential IT School", TENANT_SCHEMA, null, "#10b981",
+                                        "Credential Admin", "credential.admin", "credential.admin@example.com", "9000004001", "Admin@Test123"));
             tenantCreated = true;
         }
 

@@ -43,7 +43,12 @@ class AuthTenantContractIT extends IntegrationTestBase {
                 "Contract Test School",
                 TENANT_SCHEMA,
                 null,
-                "#10b981"
+            "#10b981",
+            "Contract Admin",
+            "contract.admin",
+            "contract.admin@example.com",
+            "9000003001",
+            "Admin@Test123"
         ));
         tenantSeeded = true;
     }
