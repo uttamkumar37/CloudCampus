@@ -109,11 +109,9 @@ export function DashboardPage() {
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { to: '/homework', label: 'Homework', desc: 'Assignments & due dates' },
-            { to: '/timetable', label: 'Timetable', desc: 'Your weekly schedule' },
-            { to: '/attendance', label: 'Attendance', desc: 'Your attendance record' },
+            { to: '/student/learning', label: 'My Learning Snapshot', desc: 'Homework, timetable, attendance, and results' },
             { to: '/fees', label: 'Fees', desc: 'Balances & payment status' },
-            { to: '/marks', label: 'Marks', desc: 'Exam results & grades' },
+            { to: '/change-password', label: 'Security', desc: 'Update your password' },
             { to: '/profile', label: 'Profile', desc: 'Your account details' },
           ].map((item) => (
             <Link
@@ -141,11 +139,10 @@ export function DashboardPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             { to: '/my-children', label: 'My Children', desc: 'View linked student profiles' },
-            { to: '/homework', label: 'Homework', desc: 'Assignments & due dates' },
-            { to: '/timetable', label: 'Timetable', desc: 'Class schedule' },
-            { to: '/attendance', label: 'Attendance', desc: 'Attendance records' },
             { to: '/fees', label: 'Fees', desc: 'Pending & paid fees' },
-            { to: '/marks', label: 'Marks', desc: 'Exam results & grades' },
+            { to: '/profile', label: 'Profile', desc: 'Account details and contact info' },
+            { to: '/change-password', label: 'Security', desc: 'Update your password' },
+            { to: '/parent/learning', label: 'Parent Home', desc: 'Open your personalized parent dashboard' },
           ].map((item) => (
             <Link
               key={item.to}

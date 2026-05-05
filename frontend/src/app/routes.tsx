@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 import { DashboardLayout } from '../components/layout/DashboardLayout'
@@ -25,8 +26,41 @@ import { ParentLinksAdminPage } from '../features/parent/pages/ParentLinksAdminP
 import { AttendanceHubPage } from '../features/attendance/pages/AttendanceHubPage'
 import { FeesHubPage } from '../features/fees/pages/FeesHubPage'
 import { MarksHubPage } from '../features/marks/pages/MarksHubPage'
-import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboardPage'
-import { TeacherDashboardPage } from '../features/dashboard/pages/TeacherDashboardPage'
+
+const StudentDashboardPage = lazy(() =>
+  import('../features/dashboard/pages/StudentDashboardPage').then((module) => ({
+    default: module.StudentDashboardPage,
+  })),
+)
+const TeacherDashboardPage = lazy(() =>
+  import('../features/dashboard/pages/TeacherDashboardPage').then((module) => ({
+    default: module.TeacherDashboardPage,
+  })),
+)
+const StudentLearningPage = lazy(() =>
+  import('../features/student/pages/StudentLearningPage').then((module) => ({
+    default: module.StudentLearningPage,
+  })),
+)
+const ParentLearningPage = lazy(() =>
+  import('../features/parent/pages/ParentLearningPage').then((module) => ({
+    default: module.ParentLearningPage,
+  })),
+)
+
+function withSuspense(element: ReactNode) {
+  return (
+    <Suspense
+      fallback={(
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+          Loading page...
+        </div>
+      )}
+    >
+      {element}
+    </Suspense>
+  )
+}
 
 export const router = createBrowserRouter([
   {
@@ -76,7 +110,7 @@ export const router = createBrowserRouter([
         path: 'teacher/dashboard',
         element: (
           <PrivateRoute allowedRoles={['TEACHER']}>
-            <TeacherDashboardPage />
+            {withSuspense(<TeacherDashboardPage />)}
           </PrivateRoute>
         ),
       },
@@ -84,7 +118,15 @@ export const router = createBrowserRouter([
         path: 'student/dashboard',
         element: (
           <PrivateRoute allowedRoles={['STUDENT']}>
-            <StudentDashboardPage />
+            {withSuspense(<StudentDashboardPage />)}
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'student/learning',
+        element: (
+          <PrivateRoute allowedRoles={['STUDENT']}>
+            {withSuspense(<StudentLearningPage />)}
           </PrivateRoute>
         ),
       },
@@ -93,6 +135,14 @@ export const router = createBrowserRouter([
         element: (
           <PrivateRoute allowedRoles={['PARENT']}>
             <MyChildrenPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'parent/learning',
+        element: (
+          <PrivateRoute allowedRoles={['PARENT']}>
+            {withSuspense(<ParentLearningPage />)}
           </PrivateRoute>
         ),
       },
@@ -139,7 +189,7 @@ export const router = createBrowserRouter([
       {
         path: 'homework',
         element: (
-          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
             <HomeworkPage />
           </PrivateRoute>
         ),
@@ -147,7 +197,7 @@ export const router = createBrowserRouter([
       {
         path: 'timetable',
         element: (
-          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
             <TimetablePage />
           </PrivateRoute>
         ),
@@ -155,7 +205,7 @@ export const router = createBrowserRouter([
       {
         path: 'attendance',
         element: (
-          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
             <AttendanceHubPage />
           </PrivateRoute>
         ),
@@ -171,7 +221,7 @@ export const router = createBrowserRouter([
       {
         path: 'marks',
         element: (
-          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
             <MarksHubPage />
           </PrivateRoute>
         ),

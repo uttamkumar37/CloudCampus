@@ -21,6 +21,7 @@ export function TeachersPage() {
   const [page, setPage] = useState(0)
   const size = 20
   const { role } = useAuth()
+  const canCreate = role === 'SUPER_ADMIN' || role === 'SCHOOL_ADMIN'
   const canDelete = role === 'SUPER_ADMIN' || role === 'SCHOOL_ADMIN'
 
   const teachersQuery = useTeachers({ page, size })
@@ -136,7 +137,7 @@ export function TeachersPage() {
     <section className="space-y-6">
       <PageHeader
         title="Teachers"
-        subtitle="Manage faculty records with paginated directory views and secure onboarding flows."
+        subtitle="View faculty records. Create and delete actions are limited to school administrators."
       />
 
       <ConfirmDialog
@@ -150,7 +151,13 @@ export function TeachersPage() {
         onCancel={() => { setPendingDeleteId(null); setDeletingTeacherName('') }}
       />
 
-      <TeacherForm onSubmit={handleCreateTeacher} isSubmitting={createTeacherMutation.isPending} />
+      {canCreate ? (
+        <TeacherForm onSubmit={handleCreateTeacher} isSubmitting={createTeacherMutation.isPending} />
+      ) : (
+        <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          You have read-only access to the teacher directory.
+        </div>
+      )}
 
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">

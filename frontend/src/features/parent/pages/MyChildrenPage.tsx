@@ -104,14 +104,14 @@ function ChildCard({ child }: { child: Child }) {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Link to="/attendance" className="rounded-xl bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-slate-800">
-          Attendance
+        <Link to="/my-children" className="rounded-xl bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-slate-800">
+          Child Overview
         </Link>
         <Link to="/fees" className="rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-200">
           Fees
         </Link>
-        <Link to="/marks" className="rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-200">
-          Results
+        <Link to="/profile" className="rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-medium text-slate-700 transition hover:bg-slate-200">
+          Profile
         </Link>
       </div>
     </div>
@@ -126,8 +126,8 @@ export function MyChildrenPage() {
   return (
     <section className="space-y-6">
       <PageHeader
-        title="Parent Dashboard"
-        subtitle="Students linked to your account, with fee alerts and daily attendance status in one place."
+        title="Parent Learning Center"
+        subtitle="Track linked students with daily attendance and fee alerts in one secure place."
       />
 
       {childrenQuery.isLoading ? (

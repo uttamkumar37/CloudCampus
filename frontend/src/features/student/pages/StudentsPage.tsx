@@ -22,6 +22,7 @@ export function StudentsPage() {
   const size = 20
 
   const { role } = useAuth()
+  const canCreate = role === 'SUPER_ADMIN' || role === 'SCHOOL_ADMIN'
   const canDelete = role === 'SUPER_ADMIN' || role === 'SCHOOL_ADMIN'
 
   const studentsQuery = useStudents({ page, size })
@@ -143,7 +144,7 @@ export function StudentsPage() {
     <section className="space-y-6">
       <PageHeader
         title="Students"
-        subtitle="Manage tenant students with secure list and create operations."
+        subtitle="View tenant students. Create and delete actions are limited to school administrators."
       />
 
       <ConfirmDialog
@@ -157,13 +158,21 @@ export function StudentsPage() {
         onCancel={() => { setPendingDeleteId(null); setDeletingStudentName('') }}
       />
 
-      <StudentForm onSubmit={handleCreateStudent} isSubmitting={createStudentMutation.isPending} />
+      {canCreate ? (
+        <>
+          <StudentForm onSubmit={handleCreateStudent} isSubmitting={createStudentMutation.isPending} />
 
-      {submitError ? (
-        <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {submitError}
+          {submitError ? (
+            <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {submitError}
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          You have read-only access to the student directory.
         </div>
-      ) : null}
+      )}
 
       <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">

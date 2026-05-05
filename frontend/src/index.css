@@ -26,3 +26,60 @@ body {
   min-height: 100vh;
   background: radial-gradient(circle at top right, #ecfeff 0%, #f8fafc 45%);
 }
+
+@keyframes ccFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ccShimmer {
+  0% {
+    background-position: -220% 0;
+  }
+  100% {
+    background-position: 220% 0;
+  }
+}
+
+.cc-fade-up {
+  opacity: 0;
+  animation: ccFadeUp 420ms ease-out forwards;
+}
+
+.cc-delay-1 {
+  animation-delay: 80ms;
+}
+
+.cc-delay-2 {
+  animation-delay: 140ms;
+}
+
+.cc-delay-3 {
+  animation-delay: 200ms;
+}
+
+.cc-delay-4 {
+  animation-delay: 260ms;
+}
+
+.cc-skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #e2e8f0 0%, #f8fafc 45%, #e2e8f0 100%);
+  background-size: 220% 100%;
+  animation: ccShimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-fade-up,
+  .cc-skeleton-shimmer {
+    animation: none;
+    opacity: 1;
+  }
+}

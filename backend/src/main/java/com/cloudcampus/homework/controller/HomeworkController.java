@@ -40,7 +40,7 @@ public class HomeworkController {
     }
 
     @GetMapping("/classes/{classId}")
-    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TEACHER','STUDENT','PARENT')")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TEACHER')")
     @Operation(summary = "List homework for a class", parameters = {
             @Parameter(name = "X-Tenant-Slug", description = "Tenant schema", required = true),
             @Parameter(name = "Authorization", description = "Bearer JWT", required = true)

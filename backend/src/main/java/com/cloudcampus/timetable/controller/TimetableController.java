@@ -40,7 +40,7 @@ public class TimetableController {
     }
 
     @GetMapping("/classes/{classId}/sections/{sectionId}")
-    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TEACHER','STUDENT','PARENT')")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TEACHER')")
     @Operation(summary = "List slots for class & section", parameters = {
             @Parameter(name = "X-Tenant-Slug", required = true),
             @Parameter(name = "Authorization", required = true)

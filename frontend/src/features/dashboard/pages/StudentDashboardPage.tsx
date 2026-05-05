@@ -84,9 +84,9 @@ export function StudentDashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         {[
-          { to: '/timetable', title: 'Open Timetable', description: 'See today and upcoming periods.' },
-          { to: '/homework', title: 'Review Homework', description: 'Check due work without extra navigation.' },
-          { to: '/attendance', title: 'View Attendance', description: 'Track daily status and trend.' },
+          { to: '/student/learning', title: 'Open Timetable', description: 'See today\'s classes in your personal dashboard.' },
+          { to: '/student/learning', title: 'Review Homework', description: 'Check recent assigned work for your account.' },
+          { to: '/student/learning', title: 'View Attendance', description: 'Track your attendance trend and status.' },
           { to: '/fees', title: 'Check Fees', description: 'See pending and paid items.' },
         ].map((item) => (
           <Link key={item.to} to={item.to} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">

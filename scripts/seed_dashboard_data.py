@@ -110,12 +110,16 @@ def ok(r):
     return r.get("success") or r.get("data") is not None
 
 def login(username, password, tenant=None):
-    headers = {"Content-Type": "application/json"}
+    # tenant is a slug/schemaName — backend expects it in the JSON body as "tenantSlug"
+    body = {"username": username, "password": password}
     if tenant:
-        headers["X-Tenant-ID"] = tenant
+        # strip the "school_" prefix if present to get the slug
+        slug = tenant.removeprefix("school_") if tenant.startswith("school_") else tenant
+        body["tenantSlug"] = slug
     r = requests.post(f"{BASE}/auth/login",
-                      json={"username": username, "password": password},
-                      headers=headers, timeout=15)
+                      json=body,
+                      headers={"Content-Type": "application/json"},
+                      timeout=15)
     d = r.json()
     if d.get("success"):
         return d["data"]["accessToken"], d["data"].get("userId")
