@@ -1,6 +1,6 @@
 # CloudCampus Setup Guide
 
-Version: 2026-05-01
+Version: 2026-05-06
 
 ## 1. Prerequisites
 
@@ -12,10 +12,14 @@ Version: 2026-05-01
 
 ## 2. Docker Setup (Recommended)
 
-1. Copy environment template:
+1. Prepare environment file:
 
 ```bash
+# If template exists
 cp .env.example .env
+
+# Or if .env is already present, just edit it
+# (current repository already includes a local .env)
 ```
 
 2. Set required values in .env:
@@ -67,9 +71,26 @@ npm run dev
 - Login UI requires school selection and role selection before credentials
 - Client sends X-Tenant-Slug for tenant-scoped APIs
 - Backend supports legacy X-Tenant-ID for compatibility
+- Super-admin API calls should not include tenant headers
 - Subdomain based tenant resolution is available
 
-## 5. Environment Variables
+## 5. Seed Demo Data
+
+Run these after backend is up:
+
+```bash
+# Minimal seed (single-school compact profile)
+python3 scripts/seed_demo.py
+
+# Full dashboard seed (Sunrise Academy, all modules)
+python3 scripts/seed_dashboard_data.py
+```
+
+Notes:
+- `seed_dashboard_data.py` now sends required school-admin fields during tenant creation.
+- Scripts are idempotent where API behavior allows (existing entities are reused).
+
+## 6. Environment Variables
 
 ### Backend
 
@@ -90,7 +111,7 @@ npm run dev
 
 - VITE_API_BASE_URL (default http://localhost:8080/api/v1)
 
-## 6. Test Commands
+## 7. Test Commands
 
 ```bash
 cd backend
@@ -101,9 +122,10 @@ npm run lint
 npm run build
 ```
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 - 401 loops: clear browser cookies/localStorage and login again
 - Tenant errors: verify X-Tenant-Slug is sent for tenant-scoped calls
 - Startup failures: verify BOOTSTRAP_ADMIN_USERNAME and BOOTSTRAP_ADMIN_PASSWORD are set
+- Placeholder errors (e.g., JWT_SECRET): export env vars or source `.env` before starting backend manually
 - Migration issues: check backend logs for Flyway errors

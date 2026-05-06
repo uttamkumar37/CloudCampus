@@ -1,7 +1,7 @@
 # CloudCampus — Postman Collection Guide
 
 
-> Last Updated: 2026-04-28
+> Last Updated: 2026-05-06
 
 This directory contains the Postman collection and environment files for testing the CloudCampus API.
 
@@ -13,7 +13,6 @@ This directory contains the Postman collection and environment files for testing
 |------|-------------|
 | `CloudCampus.postman_collection.json` | Full API collection — all endpoints organized by module |
 | `CloudCampus.local.postman_environment.json` | Environment for local development (localhost:8080) |
-| `EduTenant Local.postman_environment.json` | Pre-configured environment for the EduTenant demo school |
 
 ---
 
@@ -105,7 +104,11 @@ Dashboard → Tenant Summary         → KPI overview
 Students → List Students           → paginated student list
 Fees → Student Fee Assignments     → fee status per student
 Exams → Results for Exam           → all results for one exam
-Bulk Upload → Download Sample      → get Excel template
+Bulk Operations → List Operations  → get operation metadata
+Bulk Operations → Validate         → validate file rows
+Bulk Operations → Preview          → preview new/update/skip counts
+Bulk Operations → Execute          → execute validated session
+Bulk Operations → Jobs             → track status and retry failures
 ```
 
 ---
@@ -132,9 +135,12 @@ To test a different tenant:
 
 ---
 
-## Bulk Upload Testing
+## Bulk Operations Testing
 
-1. Run **Bulk Upload → Download Sample** — saves the Excel template
-2. Fill in the template (Students, Teachers, Classes, Sections sheets)
-3. Run **Bulk Upload → Upload File** — attach your filled file
-4. Review the response for `successCount` and any `errors`
+1. Run **Bulk Operations → List Operations**
+2. Run **Bulk Upload → Download Sample** with `operation` query param
+3. Fill the file for selected operation
+4. Run **Bulk Operations → Validate**
+5. Run **Bulk Operations → Preview** using returned `validationId`
+6. Run **Bulk Operations → Execute**
+7. Check **Bulk Operations → Jobs** and retry/download error report if needed
