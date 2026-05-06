@@ -37,19 +37,13 @@ class AuthTenantContractIT extends IntegrationTestBase {
             return;
         }
 
-        tenantService.createTenant(new TenantCreateRequest(
-                TENANT_ID,
-                TENANT_SLUG,
-                "Contract Test School",
-                TENANT_SCHEMA,
-                null,
-            "#10b981",
-            "Contract Admin",
-            "contract.admin",
-            "contract.admin@example.com",
-            "9000003001",
-            "Admin@Test123"
-        ));
+        try {
+            tenantService.createTenant(new TenantCreateRequest(
+                    TENANT_ID, TENANT_SLUG, "Contract Test School", TENANT_SCHEMA, null, "#10b981",
+                    "Contract Admin", "contract.admin", "contract.admin@example.com", "9000003001", "Admin@Test123"));
+        } catch (IllegalArgumentException e) {
+            if (!e.getMessage().contains("already exists")) throw e;
+        }
         tenantSeeded = true;
     }
 

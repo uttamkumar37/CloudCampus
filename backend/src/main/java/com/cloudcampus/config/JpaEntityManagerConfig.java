@@ -30,7 +30,6 @@ public class JpaEntityManagerConfig {
         hibernateProperties.put("hibernate.multiTenancy", "SCHEMA");
         hibernateProperties.put("hibernate.format_sql", true);
         hibernateProperties.put("hibernate.jdbc.time_zone", "UTC");
-        hibernateProperties.put("hibernate.default_schema", "public");
 
         return builder
                 .dataSource(dataSource)

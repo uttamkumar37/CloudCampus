@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate, useParams } from 'react-router-dom'
 
 import { DashboardLayout } from '../components/layout/DashboardLayout'
 import { DashboardPage } from '../components/layout/DashboardPage'
@@ -26,6 +26,8 @@ import { ParentLinksAdminPage } from '../features/parent/pages/ParentLinksAdminP
 import { AttendanceHubPage } from '../features/attendance/pages/AttendanceHubPage'
 import { FeesHubPage } from '../features/fees/pages/FeesHubPage'
 import { MarksHubPage } from '../features/marks/pages/MarksHubPage'
+import { WebsiteBuilderPage } from '../features/website-builder/pages/WebsiteBuilderPage'
+import { SchoolWebsitePage } from '../features/public-website/pages/SchoolWebsitePage'
 
 const StudentDashboardPage = lazy(() =>
   import('../features/dashboard/pages/StudentDashboardPage').then((module) => ({
@@ -243,6 +245,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: 'website-builder',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <WebsiteBuilderPage />
+          </PrivateRoute>
+        ),
+      },
+      {
         path: 'change-password',
         element: (
           <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
@@ -252,8 +262,18 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  // Public school website (no auth, accessible at /school/:slug)
+  {
+    path: '/school/:slug',
+    element: <SchoolSlugPage />,
+  },
   {
     path: '*',
     element: <Navigate to="/login" replace />,
   },
 ])
+
+function SchoolSlugPage() {
+  const { slug = '' } = useParams<{ slug: string }>()
+  return <SchoolWebsitePage slug={slug} />
+}

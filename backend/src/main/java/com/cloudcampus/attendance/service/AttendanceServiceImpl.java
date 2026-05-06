@@ -82,12 +82,12 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Transactional(readOnly = true)
     public List<AttendanceResponse> getAttendanceByDate(LocalDate date, @Nullable Set<UUID> allowedStudentIds) {
         validateTenantContext();
-        List<AttendanceRecord> records = attendanceRecordRepository.findAllByAttendanceDate(date);
-        if (allowedStudentIds != null) {
-            records = records.stream()
-                    .filter(r -> allowedStudentIds.contains(r.getStudentId()))
-                    .toList();
-        }
+        // FIXED: was findAllByAttendanceDate() (loads entire day) then filter in-memory.
+        // When the caller is a STUDENT or PARENT, push the filter into the DB query so
+        // only the relevant rows are fetched.
+        List<AttendanceRecord> records = (allowedStudentIds != null)
+                ? attendanceRecordRepository.findAllByAttendanceDateAndStudentIdIn(date, allowedStudentIds)
+                : attendanceRecordRepository.findAllByAttendanceDate(date);
         return records.stream().map(this::map).toList();
     }
 

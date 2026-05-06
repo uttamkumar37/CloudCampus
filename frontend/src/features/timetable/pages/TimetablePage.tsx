@@ -26,8 +26,8 @@ const DAY_OPTIONS = Object.entries(DAY_NAMES).map(([value, label]) => ({ value, 
 
 const emptyForm: CreateTimetableSlotRequest = {
   classId: '',
-  sectionId: null,
-  subjectId: null,
+  sectionId: '',
+  subjectId: '',
   teacherId: null,
   dayOfWeek: 1,
   startTime: '08:00',
@@ -69,7 +69,7 @@ export function TimetablePage() {
 
   useEffect(() => {
     if (form.sectionId && !directory.isSectionValidForClass(form.classId, form.sectionId)) {
-      setForm((current) => ({ ...current, sectionId: null }))
+      setForm((current) => ({ ...current, sectionId: '' }))
     }
   }, [directory, form.classId, form.sectionId])
 
@@ -90,8 +90,8 @@ export function TimetablePage() {
     try {
       const res = await createMutation.mutateAsync({
         ...form,
-        sectionId: form.sectionId?.trim() || null,
-        subjectId: form.subjectId?.trim() || null,
+        sectionId: form.sectionId.trim(),
+        subjectId: form.subjectId.trim(),
         teacherId: form.teacherId?.trim() || null,
         label: form.label?.trim() || null,
       })
@@ -129,7 +129,7 @@ export function TimetablePage() {
             <FormSelect
               label="Section"
               value={form.sectionId ?? ''}
-              onChange={(v) => setForm((f) => ({ ...f, sectionId: v || null }))}
+              onChange={(v) => setForm((f) => ({ ...f, sectionId: v }))}
               options={[
                 { value: '', label: form.classId ? 'Select a section' : 'Select a class first' },
                 ...formSectionOptions,
@@ -139,7 +139,7 @@ export function TimetablePage() {
             <SearchableSelect
               label="Subject"
               selectedValue={form.subjectId ?? ''}
-              onSelect={(value) => setForm((current) => ({ ...current, subjectId: value || null }))}
+              onSelect={(value) => setForm((current) => ({ ...current, subjectId: value }))}
               options={directory.subjectOptions}
               placeholder="Search subject"
               emptyMessage="No subject matched that search."

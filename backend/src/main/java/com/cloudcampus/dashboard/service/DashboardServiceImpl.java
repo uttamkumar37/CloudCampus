@@ -17,6 +17,7 @@ import com.cloudcampus.dashboard.dto.SuperAdminDashboardSummaryResponse;
 import com.cloudcampus.dashboard.dto.TeacherDashboardResponse;
 import com.cloudcampus.dashboard.dto.TenantBrandingResponse;
 import com.cloudcampus.dashboard.dto.TenantDashboardSummaryResponse;
+import com.cloudcampus.exam.entity.Exam;
 import com.cloudcampus.exam.entity.ExamResult;
 import com.cloudcampus.exam.repository.ExamRepository;
 import com.cloudcampus.exam.repository.ExamResultRepository;
@@ -42,6 +43,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -133,15 +136,14 @@ public class DashboardServiceImpl implements DashboardService {
                 .atStartOfDay()
                 .toInstant(ZoneOffset.UTC);
 
-        List<TenantResponse> newestTenants = tenantRepository.findAll().stream()
-                .sorted(Comparator.comparing(Tenant::getCreatedAt).reversed())
-                .limit(6)
+        // FIXED: was findAll() twice (loads every tenant into memory).
+        // Now uses paginated DB query + aggregate count — O(1) memory, O(log n) time.
+        List<TenantResponse> newestTenants = tenantRepository
+                .findAllByOrderByCreatedAtDesc(Pageable.ofSize(6)).stream()
                 .map(this::mapTenant)
                 .toList();
 
-        long tenantsCreatedThisMonth = tenantRepository.findAll().stream()
-                .filter(tenant -> tenant.getCreatedAt() != null && !tenant.getCreatedAt().isBefore(monthStart))
-                .count();
+        long tenantsCreatedThisMonth = tenantRepository.countByCreatedAtAfter(monthStart);
 
         return new SuperAdminDashboardSummaryResponse(
                 totalTenants,
@@ -344,14 +346,20 @@ public class DashboardServiceImpl implements DashboardService {
 
     private List<StudentDashboardResponse.ExamResultSummary> buildStudentExamResults(UUID studentId) {
         List<ExamResult> results = examResultRepository.findTop5ByStudentIdOrderByCreatedAtDesc(studentId);
-        List<StudentDashboardResponse.ExamResultSummary> summaries = new ArrayList<>();
-        for (ExamResult r : results) {
-            examRepository.findById(r.getExamId()).ifPresent(exam ->
-                    summaries.add(new StudentDashboardResponse.ExamResultSummary(
+        if (results.isEmpty()) return List.of();
+        // FIXED: was one findById() per result (N+1). Now batch-loads all exams in one query.
+        Set<UUID> examIds = results.stream().map(ExamResult::getExamId).collect(Collectors.toSet());
+        Map<UUID, Exam> examMap = examRepository.findAllById(examIds).stream()
+                .collect(Collectors.toMap(Exam::getId, e -> e));
+        return results.stream()
+                .filter(r -> examMap.containsKey(r.getExamId()))
+                .map(r -> {
+                    Exam exam = examMap.get(r.getExamId());
+                    return new StudentDashboardResponse.ExamResultSummary(
                             exam.getTitle(), exam.getExamDate(),
-                            r.getMarksObtained(), exam.getMaxMarks(), r.getGrade())));
-        }
-        return summaries;
+                            r.getMarksObtained(), exam.getMaxMarks(), r.getGrade());
+                })
+                .toList();
     }
 
     private List<StudentDashboardResponse.HomeworkSummary> buildStudentHomework(UUID classId, LocalDate today) {
@@ -367,16 +375,25 @@ public class DashboardServiceImpl implements DashboardService {
             UUID classId, UUID sectionId, LocalDate today) {
         if (classId == null || sectionId == null) return List.of();
         short todayDow = (short) today.getDayOfWeek().getValue(); // 1=MON..7=SUN
-        List<TimetableSlot> slots = timetableSlotRepository
+        List<TimetableSlot> allSlots = timetableSlotRepository
                 .findByClassIdAndSectionIdOrderByDayOfWeekAscStartTimeAsc(classId, sectionId);
-        return slots.stream()
+        List<TimetableSlot> todaySlots = allSlots.stream()
                 .filter(s -> s.getDayOfWeek() == todayDow)
-                .map(s -> {
-                    String subjectName = subjectRepository.findById(s.getSubjectId())
-                            .map(Subject::getName).orElse("Unknown");
-                    return new StudentDashboardResponse.TimetableSlotSummary(
-                            subjectName, s.getStartTime(), s.getEndTime(), s.getLabel());
-                })
+                .toList();
+        if (todaySlots.isEmpty()) return List.of();
+
+        // FIXED: was one subjectRepository.findById() per slot (N+1).
+        // Now batch-loads all referenced subjects in a single query.
+        Set<UUID> subjectIds = todaySlots.stream()
+                .map(TimetableSlot::getSubjectId)
+                .collect(Collectors.toSet());
+        Map<UUID, String> subjectNameMap = subjectRepository.findAllById(subjectIds).stream()
+                .collect(Collectors.toMap(Subject::getId, Subject::getName));
+
+        return todaySlots.stream()
+                .map(s -> new StudentDashboardResponse.TimetableSlotSummary(
+                        subjectNameMap.getOrDefault(s.getSubjectId(), "Unknown"),
+                        s.getStartTime(), s.getEndTime(), s.getLabel()))
                 .toList();
     }
 
@@ -397,59 +414,64 @@ public class DashboardServiceImpl implements DashboardService {
         List<TimetableSlot> allSlots = timetableSlotRepository
                 .findByTeacherIdOrderByDayOfWeekAscStartTimeAsc(teacherId);
 
-        // Unique class+section combos
+        // FIXED: was multiple findById() calls inside loops for class/section/subject (N+1).
+        // Batch-load all referenced entities upfront in three queries total.
+        Set<UUID> allClassIds   = allSlots.stream().map(TimetableSlot::getClassId).collect(Collectors.toSet());
+        Set<UUID> allSectionIds = allSlots.stream().map(TimetableSlot::getSectionId).collect(Collectors.toSet());
+        Set<UUID> allSubjectIds = allSlots.stream().map(TimetableSlot::getSubjectId).collect(Collectors.toSet());
+
+        Map<UUID, String> classNameMap   = schoolClassRepository.findAllById(allClassIds).stream()
+                .collect(Collectors.toMap(SchoolClass::getId, SchoolClass::getName));
+        Map<UUID, String> sectionNameMap = sectionRepository.findAllById(allSectionIds).stream()
+                .collect(Collectors.toMap(Section::getId, Section::getName));
+        Map<UUID, String> subjectNameMap = subjectRepository.findAllById(allSubjectIds).stream()
+                .collect(Collectors.toMap(Subject::getId, Subject::getName));
+
+        // Unique class+section combos — now uses pre-loaded maps, zero extra queries
         Set<String> seen = new LinkedHashSet<>();
         List<TeacherDashboardResponse.AssignedClassInfo> assignedClasses = new ArrayList<>();
         for (TimetableSlot slot : allSlots) {
             String key = slot.getClassId() + ":" + slot.getSectionId();
             if (seen.add(key)) {
-                String className = schoolClassRepository.findById(slot.getClassId())
-                        .map(SchoolClass::getName).orElse("Unknown");
-                String sectionName = sectionRepository.findById(slot.getSectionId())
-                        .map(Section::getName).orElse("Unknown");
                 assignedClasses.add(new TeacherDashboardResponse.AssignedClassInfo(
-                        slot.getClassId(), className, slot.getSectionId(), sectionName));
+                        slot.getClassId(),
+                        classNameMap.getOrDefault(slot.getClassId(), "Unknown"),
+                        slot.getSectionId(),
+                        sectionNameMap.getOrDefault(slot.getSectionId(), "Unknown")));
             }
         }
 
-        // Today's timetable
+        // Today's timetable — uses pre-loaded maps, zero extra queries
         List<TeacherDashboardResponse.TimetableSlotSummary> todayTimetable = allSlots.stream()
                 .filter(s -> s.getDayOfWeek() == todayDow)
-                .map(s -> {
-                    String subjectName = subjectRepository.findById(s.getSubjectId())
-                            .map(Subject::getName).orElse("Unknown");
-                    String className = schoolClassRepository.findById(s.getClassId())
-                            .map(SchoolClass::getName).orElse("Unknown");
-                    String sectionName = sectionRepository.findById(s.getSectionId())
-                            .map(Section::getName).orElse("Unknown");
-                    return new TeacherDashboardResponse.TimetableSlotSummary(
-                            subjectName, className, sectionName, s.getStartTime(), s.getEndTime(), s.getLabel());
-                })
+                .map(s -> new TeacherDashboardResponse.TimetableSlotSummary(
+                        subjectNameMap.getOrDefault(s.getSubjectId(), "Unknown"),
+                        classNameMap.getOrDefault(s.getClassId(), "Unknown"),
+                        sectionNameMap.getOrDefault(s.getSectionId(), "Unknown"),
+                        s.getStartTime(), s.getEndTime(), s.getLabel()))
                 .toList();
 
-        // Recent homework created by this user
-        List<TeacherDashboardResponse.HomeworkSummary> recentHomework =
-                homeworkAssignmentRepository.findTop5ByAssignedByUserIdOrderByCreatedAtDesc(userId).stream()
-                        .map(hw -> {
-                            String className = schoolClassRepository.findById(hw.getClassId())
-                                    .map(SchoolClass::getName).orElse("Unknown");
-                            return new TeacherDashboardResponse.HomeworkSummary(
-                                    hw.getId(), hw.getTitle(), hw.getDueDate(), className);
-                        })
-                        .toList();
+        // Recent homework — batch-load only the class IDs referenced by homework entries
+        var hwList = homeworkAssignmentRepository.findTop5ByAssignedByUserIdOrderByCreatedAtDesc(userId);
+        Set<UUID> hwClassIds = hwList.stream().map(hw -> hw.getClassId()).collect(Collectors.toSet());
+        Map<UUID, String> hwClassNameMap = hwClassIds.isEmpty() ? Map.of() :
+                schoolClassRepository.findAllById(hwClassIds).stream()
+                        .collect(Collectors.toMap(SchoolClass::getId, SchoolClass::getName));
+        List<TeacherDashboardResponse.HomeworkSummary> recentHomework = hwList.stream()
+                .map(hw -> new TeacherDashboardResponse.HomeworkSummary(
+                        hw.getId(), hw.getTitle(), hw.getDueDate(),
+                        hwClassNameMap.getOrDefault(hw.getClassId(), "Unknown")))
+                .toList();
 
-        // Recent exams for assigned classes
+        // Recent exams — classNameMap already covers all assigned-class IDs
         Set<UUID> classIds = assignedClasses.stream()
                 .map(TeacherDashboardResponse.AssignedClassInfo::classId)
                 .collect(Collectors.toSet());
         List<TeacherDashboardResponse.ExamSummary> recentExams = classIds.isEmpty() ? List.of() :
                 examRepository.findTop5ByClassIdInOrderByExamDateDesc(classIds).stream()
-                        .map(e -> {
-                            String className = schoolClassRepository.findById(e.getClassId())
-                                    .map(SchoolClass::getName).orElse("Unknown");
-                            return new TeacherDashboardResponse.ExamSummary(
-                                    e.getId(), e.getTitle(), e.getExamDate(), className);
-                        })
+                        .map(e -> new TeacherDashboardResponse.ExamSummary(
+                                e.getId(), e.getTitle(), e.getExamDate(),
+                                classNameMap.getOrDefault(e.getClassId(), "Unknown")))
                         .toList();
 
         return new TeacherDashboardResponse(

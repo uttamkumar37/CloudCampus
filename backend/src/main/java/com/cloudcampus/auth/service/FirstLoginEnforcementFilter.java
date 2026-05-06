@@ -8,17 +8,23 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * FIXED: switched from @Autowired field injection (required=false) to constructor
+ * injection via @RequiredArgsConstructor.  Previously, if beans were missing the
+ * filter would silently skip first-login enforcement — a security hole.
+ */
 @Component
+@RequiredArgsConstructor
 public class FirstLoginEnforcementFilter extends OncePerRequestFilter {
 
     private static final List<String> ALLOWED_PREFIXES = List.of(
@@ -28,10 +34,8 @@ public class FirstLoginEnforcementFilter extends OncePerRequestFilter {
             "/api/v1/auth/me"
     );
 
-    @Autowired(required = false)
-    private UserAccountRepository userAccountRepository;
-    @Autowired(required = false)
-    private ObjectMapper objectMapper;
+    private final UserAccountRepository userAccountRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(

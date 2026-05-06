@@ -16,6 +16,10 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
 
     List<AttendanceRecord> findAllByAttendanceDate(LocalDate attendanceDate);
 
+    // ADDED: DB-filtered variant used when caller has a restricted set of studentIds
+    // (STUDENT/PARENT roles). Avoids loading all records then filtering in memory.
+    List<AttendanceRecord> findAllByAttendanceDateAndStudentIdIn(LocalDate attendanceDate, Collection<UUID> studentIds);
+
     List<AttendanceRecord> findAllByAttendanceDateBetween(LocalDate startDate, LocalDate endDate);
 
     List<AttendanceRecord> findTop8ByOrderByCreatedAtDesc();

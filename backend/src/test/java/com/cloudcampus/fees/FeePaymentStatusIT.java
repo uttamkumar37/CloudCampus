@@ -48,9 +48,13 @@ class FeePaymentStatusIT extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         if (!tenantCreated) {
-            tenantService.createTenant(new TenantCreateRequest(
-                                        "fees-it", null, "Fees IT School", SCHEMA, null, "#10b981",
-                                        "Fees IT Admin", "fees.it.admin", "fees.it.admin@example.com", "9000005001", "Admin@Test123"));
+                        try {
+                                tenantService.createTenant(new TenantCreateRequest(
+                                                "fees-it", null, "Fees IT School", SCHEMA, null, "#10b981",
+                                                "Fees IT Admin", "fees.it.admin", "fees.it.admin@example.com", "9000005001", "Admin@Test123"));
+                        } catch (IllegalArgumentException e) {
+                                if (!e.getMessage().contains("already exists")) throw e;
+                        }
             tenantCreated = true;
         }
         TenantContext.setTenant(SCHEMA);

@@ -14,6 +14,7 @@ export const ENDPOINTS = {
     superAdminSummary: '/dashboard/super-admin-summary',
     student: '/dashboard/student',
     teacher: '/dashboard/teacher',
+    branding: (slug: string) => `/dashboard/branding/${slug}`,  // ADDED: tenant branding endpoint
   },
   bulk: {
     upload: '/bulk/upload',
@@ -39,6 +40,8 @@ export const ENDPOINTS = {
   students: {
     base: '/students',
     byId: (id: string) => `/students/${id}`,
+    me: '/students/me',                                    // ADDED: student self-profile endpoint
+    details: (id: string) => `/students/${id}/details`,   // ADDED: full student detail view
   },
   teachers: {
     base: '/teachers',
@@ -55,6 +58,19 @@ export const ENDPOINTS = {
     assignments: '/fees/assignments',
     payments: '/fees/payments',
     studentAssignments: (studentId: string) => `/fees/students/${studentId}/assignments`,
+  },
+  cms: {
+    config: '/cms/config',
+    sections: '/cms/sections',
+    section: (key: string) => `/cms/sections/${key}`,
+    gallery: '/cms/gallery',
+    galleryItem: (id: string) => `/cms/gallery/${id}`,
+    leads: '/cms/leads',
+    lead: (id: string) => `/cms/leads/${id}`,
+  },
+  website: {
+    bySlug: (slug: string) => `/website/${slug}`,
+    leads: (slug: string) => `/website/${slug}/leads`,
   },
   exams: {
     base: '/exams',

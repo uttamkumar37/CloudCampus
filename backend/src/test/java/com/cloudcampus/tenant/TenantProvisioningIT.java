@@ -5,6 +5,8 @@ import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.service.TenantService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -18,6 +20,28 @@ class TenantProvisioningIT extends IntegrationTestBase {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    private static final String[] IT_SCHEMAS   = {"school_itschool1","school_itschool2","school_itschool3","school_itschool4","school_itschool5"};
+    private static final String[] IT_TENANTIDS = {"itschool1","itschool2","itschool3","itschool4","itschool5"};
+
+    @BeforeEach
+    void cleanupBefore() {
+        deleteSchemasAndTenants();
+    }
+
+    @AfterEach
+    void cleanupAfter() {
+        deleteSchemasAndTenants();
+    }
+
+    private void deleteSchemasAndTenants() {
+        for (String schema : IT_SCHEMAS) {
+            jdbcTemplate.execute("DROP SCHEMA IF EXISTS \"" + schema + "\" CASCADE");
+        }
+        for (String tenantId : IT_TENANTIDS) {
+            jdbcTemplate.update("DELETE FROM public.tenants WHERE tenant_id = ?", tenantId);
+        }
+    }
 
     @Test
     void createTenant_persistsTenantRecord() {

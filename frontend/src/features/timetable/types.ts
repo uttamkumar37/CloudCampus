@@ -13,8 +13,8 @@ export interface TimetableSlot {
 
 export interface CreateTimetableSlotRequest {
   classId: string
-  sectionId: string | null
-  subjectId: string | null
+  sectionId: string    // FIXED: was `string | null` — backend @NotNull requires a value
+  subjectId: string    // FIXED: was `string | null` — backend @NotNull requires a value
   teacherId: string | null
   dayOfWeek: number
   startTime: string
