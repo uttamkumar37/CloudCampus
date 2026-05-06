@@ -1,14 +1,25 @@
 package com.cloudcampus.teacher.service;
 
 import com.cloudcampus.teacher.dto.TeacherCreateRequest;
+import com.cloudcampus.teacher.dto.TeacherDetailResponse;
 import com.cloudcampus.teacher.dto.TeacherResponse;
 import com.cloudcampus.teacher.dto.TeacherUpdateRequest;
+import com.cloudcampus.academic.entity.SchoolClass;
+import com.cloudcampus.academic.entity.Section;
+import com.cloudcampus.academic.entity.Subject;
+import com.cloudcampus.academic.repository.SchoolClassRepository;
+import com.cloudcampus.academic.repository.SectionRepository;
+import com.cloudcampus.academic.repository.SubjectRepository;
+import com.cloudcampus.homework.entity.HomeworkAssignment;
+import com.cloudcampus.homework.repository.HomeworkAssignmentRepository;
 import com.cloudcampus.teacher.entity.Teacher;
 import com.cloudcampus.teacher.repository.TeacherRepository;
 import com.cloudcampus.tenant.service.TenantContext;
 import com.cloudcampus.auth.security.CloudCampusUserDetails;
 import com.cloudcampus.user.entity.UserRole;
 import com.cloudcampus.user.service.UserAccountProvisioningService;
+import com.cloudcampus.timetable.entity.TimetableSlot;
+import com.cloudcampus.timetable.repository.TimetableSlotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -18,8 +29,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -29,6 +45,11 @@ public class TeacherServiceImpl implements TeacherService {
 
     private final TeacherRepository teacherRepository;
     private final UserAccountProvisioningService userAccountProvisioningService;
+    private final TimetableSlotRepository timetableSlotRepository;
+    private final SchoolClassRepository schoolClassRepository;
+    private final SectionRepository sectionRepository;
+    private final SubjectRepository subjectRepository;
+    private final HomeworkAssignmentRepository homeworkAssignmentRepository;
 
     @Override
     @Transactional
@@ -74,6 +95,83 @@ public class TeacherServiceImpl implements TeacherService {
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found: " + id));
         return map(teacher);
     }
+
+        @Override
+        @Transactional(readOnly = true)
+        public TeacherDetailResponse getTeacherDetails(UUID id) {
+        validateTenantContext();
+        Teacher teacher = teacherRepository.findByIdAndDeletedAtIsNull(id)
+            .orElseThrow(() -> new IllegalArgumentException("Teacher not found: " + id));
+
+        List<TimetableSlot> slots = timetableSlotRepository.findByTeacherIdOrderByDayOfWeekAscStartTimeAsc(teacher.getId());
+        Map<UUID, SchoolClass> classesById = schoolClassRepository.findAllById(
+                slots.stream().map(TimetableSlot::getClassId).distinct().toList())
+            .stream()
+            .collect(java.util.stream.Collectors.toMap(SchoolClass::getId, schoolClass -> schoolClass));
+        Map<UUID, Section> sectionsById = sectionRepository.findAllById(
+                slots.stream().map(TimetableSlot::getSectionId).distinct().toList())
+            .stream()
+            .collect(java.util.stream.Collectors.toMap(Section::getId, section -> section));
+        Map<UUID, Subject> subjectsById = subjectRepository.findAllById(
+                slots.stream().map(TimetableSlot::getSubjectId).distinct().toList())
+            .stream()
+            .collect(java.util.stream.Collectors.toMap(Subject::getId, subject -> subject));
+
+        List<TeacherDetailResponse.TimetableItem> timetable = slots.stream()
+            .map(slot -> {
+                SchoolClass schoolClass = classesById.get(slot.getClassId());
+                Section section = sectionsById.get(slot.getSectionId());
+                Subject subject = subjectsById.get(slot.getSubjectId());
+                return new TeacherDetailResponse.TimetableItem(
+                    slot.getId(),
+                    slot.getDayOfWeek(),
+                    slot.getStartTime(),
+                    slot.getEndTime(),
+                    schoolClass == null ? null : schoolClass.getName(),
+                    section == null ? null : section.getName(),
+                    subject == null ? null : subject.getName()
+                );
+            })
+            .toList();
+
+        Set<String> uniqueAssignments = new HashSet<>();
+        for (TimetableSlot slot : slots) {
+            uniqueAssignments.add(slot.getClassId() + "|" + slot.getSectionId());
+        }
+
+        List<TeacherDetailResponse.HomeworkItem> homework = List.of();
+        if (teacher.getLinkedUser() != null) {
+            homework = homeworkAssignmentRepository.findTop5ByAssignedByUserIdOrderByCreatedAtDesc(teacher.getLinkedUser().getId())
+                .stream()
+                .sorted(Comparator.comparing(HomeworkAssignment::getCreatedAt).reversed())
+                .map(assignment -> {
+                SchoolClass schoolClass = classesById.get(assignment.getClassId());
+                Section section = sectionsById.get(assignment.getSectionId());
+                if (schoolClass == null) {
+                    schoolClass = schoolClassRepository.findById(assignment.getClassId()).orElse(null);
+                }
+                if (section == null && assignment.getSectionId() != null) {
+                    section = sectionRepository.findById(assignment.getSectionId()).orElse(null);
+                }
+                return new TeacherDetailResponse.HomeworkItem(
+                    assignment.getId(),
+                    assignment.getTitle(),
+                    assignment.getDueDate(),
+                    schoolClass == null ? null : schoolClass.getName(),
+                    section == null ? null : section.getName(),
+                    assignment.getCreatedAt()
+                );
+                })
+                .toList();
+        }
+
+        return new TeacherDetailResponse(
+            map(teacher),
+            uniqueAssignments.size(),
+            timetable,
+            homework
+        );
+        }
 
     @Override
     @Transactional(readOnly = true)

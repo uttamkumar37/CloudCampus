@@ -1,7 +1,7 @@
 # CloudCampus — Pending Tasks
 
 
-> Last Updated: 2026-05-05 | See [13_PROJECT_TRACKER.md](./13_PROJECT_TRACKER.md) for completed work.
+> Last Updated: 2026-05-06 | See [13_PROJECT_TRACKER.md](./13_PROJECT_TRACKER.md) for completed work.
 
 ---
 
@@ -40,6 +40,11 @@
 | Task 51 — Auto User Credential Provisioning | Backend/User | Optional username/password mode; generated credentials + first-login-required flag |
 | Task 52 — Parent Links Admin Management | Backend + Frontend | `GET /parents/links` plus admin UI for linking/unlinking parent/student records |
 | Task 53 — Frontend Unit Test Foundation | Frontend/Testing | Vitest + Testing Library + jsdom setup with initial endpoint and parent-link tests |
+| Task 54 — Guided Bulk Operations Workflow | Backend + Frontend | Added validate/preview/execute/jobs/retry/error-report flow with operation metadata support |
+| Task 55 — Tenant School Admin Provisioning | Backend + Frontend | `POST /tenants` now provisions SCHOOL_ADMIN user in one request; super-admin create-tenant UI updated |
+| Task 56 — Tenant Status Management | Backend + Frontend | `PATCH /tenants/{tenantId}/status` + super-admin activate/deactivate UX with confirmation |
+| Task 57 — Student & Teacher Detail APIs | Backend | Added `/students/{id}/details` and `/teachers/{id}/details` for richer dashboard-linked data |
+| Task 58 — Seed Script Contract Alignment | Scripts | Updated `seed_dashboard_data.py` for required tenant school-admin fields |
 
 ---
 
@@ -52,4 +57,10 @@ _None_
 ## ❌ Pending (Not Started)
 
 _None — all planned tasks completed._
+
+## Future Improvements (Optional Backlog)
+
+- Increase backend integration coverage for new bulk workflow endpoints.
+- Add UI tests for tenant status update and bulk execution wizard states.
+- Add docs sync checks in CI to catch API contract drift early.
 

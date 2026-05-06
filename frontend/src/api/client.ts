@@ -14,6 +14,12 @@ export const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
+  const role = storage.getRole()
+  if (role === 'SUPER_ADMIN') {
+    delete config.headers['X-Tenant-Slug']
+    return config
+  }
+
   const tenantSlug = storage.getTenantSlug()
 
   if (tenantSlug) {

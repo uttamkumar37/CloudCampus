@@ -1,14 +1,337 @@
 # CloudCampus — Platform Blueprint
 
 
-> Version: 1.0 | Last Updated: 2026-04-28
+> Version: 1.1 | Last Updated: 2026-05-06
 
 This document explains how CloudCampus works from the perspective of each user role, covering workflows, access boundaries, and system capabilities.
 
 ---
 
+## 0. Website CMS + Builder Extension (Multi-Tenant, Dynamic)
+
+This extension adds a fully dynamic tenant website CMS/builder to CloudCampus.
+
+### 0.1 Goals
+
+- Every tenant can have a unique public website.
+- SUPER_ADMIN can configure content, branding, media, section visibility, and ordering per tenant.
+- No tenant-specific hardcoding in backend or frontend.
+- All read/write operations remain tenant-isolated via schema and `X-Tenant-Slug`.
+
+### 0.2 Dynamic Section Catalog
+
+Default section keys supported by builder:
+
+- `HOME`
+- `ABOUT_US`
+- `ACADEMICS`
+- `ADMISSIONS`
+- `FACILITIES`
+- `GALLERY`
+- `EVENTS_NEWS`
+- `CONTACT_US`
+
+Each section is:
+
+- enable/disable capable
+- display-order driven
+- content-key driven (text, image, json, video URL)
+
+### 0.3 SQL Schema (Tenant-Safe, Dynamic)
+
+```sql
+-- 1) Website-level branding/config
+create table if not exists tenant_website_config (
+      id uuid primary key default gen_random_uuid(),
+      tenant_id varchar(100) not null,
+      school_name varchar(200) not null,
+      logo_url text,
+      primary_color varchar(20),
+      tagline varchar(255),
+      meta_title varchar(255),
+      meta_description text,
+      og_image_url text,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now(),
+      unique (tenant_id)
+);
+
+-- 2) Section toggle + ordering
+create table if not exists website_sections (
+      id uuid primary key default gen_random_uuid(),
+      tenant_id varchar(100) not null,
+      section_name varchar(80) not null,
+      is_enabled boolean not null default true,
+      display_order integer not null,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now(),
+      unique (tenant_id, section_name)
+);
+
+-- 3) Key-value content (text/image/json)
+create table if not exists website_content (
+      id uuid primary key default gen_random_uuid(),
+      tenant_id varchar(100) not null,
+      section_name varchar(80) not null,
+      content_key varchar(120) not null,
+      content_value text not null,
+      type varchar(20) not null check (type in ('TEXT', 'IMAGE', 'JSON', 'VIDEO')),
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now(),
+      unique (tenant_id, section_name, content_key)
+);
+
+-- 4) Media repository
+create table if not exists website_media (
+      id uuid primary key default gen_random_uuid(),
+      tenant_id varchar(100) not null,
+      media_type varchar(30) not null check (media_type in ('BANNER', 'GALLERY', 'CAMPUS', 'EVENT')),
+      url text not null,
+      alt_text varchar(255),
+      display_order integer not null default 0,
+      created_at timestamptz not null default now()
+);
+
+-- 5) Dynamic admissions leads
+create table if not exists admission_leads (
+      id uuid primary key default gen_random_uuid(),
+      tenant_id varchar(100) not null,
+      student_name varchar(120) not null,
+      parent_name varchar(120) not null,
+      phone varchar(30) not null,
+      email varchar(160),
+      class_applied varchar(80) not null,
+      status varchar(20) not null default 'NEW' check (status in ('NEW', 'CONTACTED', 'CONVERTED')),
+      source varchar(40) default 'WEBSITE',
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+);
+
+-- 6) Multi-campus model
+create table if not exists tenant_campuses (
+      id uuid primary key default gen_random_uuid(),
+      tenant_id varchar(100) not null,
+      campus_name varchar(150) not null,
+      address_line_1 varchar(255) not null,
+      address_line_2 varchar(255),
+      city varchar(100),
+      state varchar(100),
+      postal_code varchar(20),
+      contact_phone varchar(30),
+      contact_email varchar(160),
+      map_embed_url text,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+);
+
+create table if not exists tenant_campus_media (
+      id uuid primary key default gen_random_uuid(),
+      tenant_id varchar(100) not null,
+      campus_id uuid not null references tenant_campuses(id) on delete cascade,
+      url text not null,
+      display_order integer not null default 0,
+      created_at timestamptz not null default now()
+);
+
+-- 7) Dynamic form field definition for admission builder
+create table if not exists admission_form_fields (
+      id uuid primary key default gen_random_uuid(),
+      tenant_id varchar(100) not null,
+      field_key varchar(80) not null,
+      label varchar(120) not null,
+      field_type varchar(20) not null check (field_type in ('TEXT', 'EMAIL', 'PHONE', 'SELECT', 'NUMBER', 'DATE')),
+      is_required boolean not null default true,
+      options_json text,
+      display_order integer not null default 0,
+      is_enabled boolean not null default true,
+      unique (tenant_id, field_key)
+);
+```
+
+### 0.4 Spring Boot API Design
+
+All write APIs: SUPER_ADMIN only. All reads for public site: unauthenticated, tenant-scoped.
+
+Admin APIs (managed by SUPER_ADMIN):
+
+- `PUT /api/v1/website/config`
+- `GET /api/v1/website/config`
+- `PUT /api/v1/website/sections` (bulk reorder/toggle payload)
+- `POST /api/v1/website/content`
+- `PUT /api/v1/website/content/{id}`
+- `DELETE /api/v1/website/content/{id}`
+- `POST /api/v1/website/media`
+- `DELETE /api/v1/website/media/{id}`
+- `POST /api/v1/website/campuses`
+- `PUT /api/v1/website/campuses/{id}`
+- `DELETE /api/v1/website/campuses/{id}`
+- `POST /api/v1/website/admission-form/fields`
+- `PUT /api/v1/website/admission-form/fields/{id}`
+- `DELETE /api/v1/website/admission-form/fields/{id}`
+- `GET /api/v1/website/admission-leads`
+- `PATCH /api/v1/website/admission-leads/{id}/status`
+
+Public tenant website APIs:
+
+- `GET /api/v1/public/website`
+- `GET /api/v1/public/website/admission-form`
+- `POST /api/v1/public/website/admission-leads`
+
+Multi-tenancy rule:
+
+- Internal/admin calls use `X-Tenant-Slug`.
+- Public site can resolve tenant by subdomain, then internally map to tenant slug/schema.
+- Never query data without tenant context set.
+
+### 0.5 React Component Structure (Dynamic Rendering)
+
+```text
+src/
+   features/website/
+      api/
+         websiteApi.ts
+      components/
+         TenantWebsitePage.tsx
+         DynamicSectionRenderer.tsx
+         sections/
+            HomeSection.tsx
+            AboutSection.tsx
+            AcademicsSection.tsx
+            AdmissionsSection.tsx
+            FacilitiesSection.tsx
+            GallerySection.tsx
+            EventsNewsSection.tsx
+            ContactSection.tsx
+         media/
+            BannerCarousel.tsx
+            GalleryGrid.tsx
+         admission/
+            DynamicAdmissionForm.tsx
+      hooks/
+         useTenantWebsite.ts
+         useAdmissionForm.ts
+         useSubmitAdmissionLead.ts
+
+   features/super-admin/website-builder/
+      pages/
+         WebsiteBuilderPage.tsx
+      components/
+         WebsiteConfigForm.tsx
+         SectionManager.tsx
+         SectionOrderDnD.tsx
+         ContentEditor.tsx
+         MediaManager.tsx
+         CampusManager.tsx
+         AdmissionFormBuilder.tsx
+         AdmissionLeadsTable.tsx
+```
+
+Rendering flow:
+
+1. Detect tenant via subdomain.
+2. Fetch `GET /api/v1/public/website`.
+3. Sort sections by `displayOrder`.
+4. Render enabled sections through `DynamicSectionRenderer`.
+5. Admission form fields loaded from dynamic form config.
+
+### 0.6 Sample Public Website Response (Frontend Contract)
+
+```json
+{
+   "success": true,
+   "message": "Website payload fetched",
+   "data": {
+      "tenant": {
+         "tenantId": "dps-bangalore",
+         "schoolName": "DPS Bangalore South",
+         "logoUrl": "https://cdn.cloudcampus.com/dps/logo.png",
+         "primaryColor": "#0B5ED7",
+         "tagline": "Excellence in Education",
+         "seo": {
+            "metaTitle": "DPS Bangalore South | CloudCampus",
+            "metaDescription": "Admissions open for 2026-27.",
+            "ogImageUrl": "https://cdn.cloudcampus.com/dps/og.jpg"
+         }
+      },
+      "sections": [
+         {
+            "sectionName": "HOME",
+            "enabled": true,
+            "displayOrder": 1,
+            "content": {
+               "heroTitle": "Welcome to DPS Bangalore South",
+               "heroSubtitle": "A future-ready campus for every learner"
+            },
+            "media": {
+               "banners": [
+                  "https://cdn.cloudcampus.com/dps/banner-1.jpg",
+                  "https://cdn.cloudcampus.com/dps/banner-2.jpg"
+               ]
+            }
+         },
+         {
+            "sectionName": "ABOUT_US",
+            "enabled": true,
+            "displayOrder": 2,
+            "content": {
+               "vision": "To shape responsible global citizens",
+               "mission": "Provide holistic and inclusive education"
+            }
+         }
+      ],
+      "campuses": [
+         {
+            "campusName": "Main Campus",
+            "address": "Kanakapura Road, Bangalore",
+            "contactPhone": "+91-9000000000",
+            "contactEmail": "info@dpsbengaluru.edu"
+         }
+      ],
+      "admissionForm": {
+         "fields": [
+            { "fieldKey": "student_name", "label": "Student Name", "fieldType": "TEXT", "required": true },
+            { "fieldKey": "parent_name", "label": "Parent Name", "fieldType": "TEXT", "required": true },
+            { "fieldKey": "class_applied", "label": "Class Applying For", "fieldType": "SELECT", "required": true },
+            { "fieldKey": "phone", "label": "Phone", "fieldType": "PHONE", "required": true },
+            { "fieldKey": "email", "label": "Email", "fieldType": "EMAIL", "required": true }
+         ]
+      }
+   }
+}
+```
+
+### 0.7 Backend + Frontend Folder Additions
+
+```text
+backend/src/main/java/com/cloudcampus/
+   website/
+      controller/
+      dto/
+      entity/
+      repository/
+      service/
+      mapper/
+
+backend/src/main/resources/db/migration/
+   V8__create_website_cms_tables.sql
+
+frontend/src/features/
+   website/
+   super-admin/website-builder/
+```
+
+### 0.8 Design/UX Requirements
+
+- Mobile-first responsive layouts.
+- Hero image heavy homepage with tenant-driven banner slider.
+- Clear typography scales and section spacing tokens.
+- Palette and CTA styles derived from tenant `primaryColor`.
+
+---
+
 ## Table of Contents
 
+0. [Website CMS + Builder Extension](#0-website-cms--builder-extension-multi-tenant-dynamic)
 1. [What is a Tenant?](#1-what-is-a-tenant)
 2. [Tenant Onboarding Flow](#2-tenant-onboarding-flow)
 3. [Role Definitions & Permissions](#3-role-definitions--permissions)
@@ -61,26 +384,18 @@ Body:
   "schoolName":  "Greenwood High School",
   "schemaName":  "greenwood",
   "logoUrl":     "https://example.com/logo.png",
-  "primaryColor": "#10b981"
+  "primaryColor": "#10b981",
+  "schoolAdminFullName": "Sarah Admin",
+  "schoolAdminUsername": "sarah.admin",
+  "schoolAdminEmail": "sarah@greenwood.edu",
+  "schoolAdminPhone": "9000000001",
+  "schoolAdminPassword": "SecurePass123!"
 }
 → Schema "greenwood" created
 → All 13 domain tables provisioned automatically
+→ School Admin account provisioned from tenant payload
 
-Step 3: Create the School Admin user
-────────────────────────────────
-POST /api/v1/users
-Authorization: Bearer <token>
-X-Tenant-Slug: greenwood
-Body:
-{
-  "fullName": "Sarah Admin",
-  "username": "sarah.admin",
-  "email":    "sarah@greenwood.edu",
-  "password": "SecurePass123!",
-  "role":     "SCHOOL_ADMIN"
-}
-
-Step 4: School Admin logs in
+Step 3: School Admin logs in
 ────────────────────────────────
 POST /api/v1/auth/login
 X-Tenant-Slug: greenwood

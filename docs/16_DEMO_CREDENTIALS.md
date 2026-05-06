@@ -1,11 +1,14 @@
 # CloudCampus - Demo Credentials
 
-> Last Updated: 2026-05-05
-> Seed command: python3 scripts/seed_demo.py
+> Last Updated: 2026-05-06
+> Seed commands: python3 scripts/seed_demo.py, python3 scripts/seed_dashboard_data.py
 
 ## Scope
 
-The current demo profile uses one school tenant with complete sample data for authentication, academics, attendance, fees, exams, homework, timetable, and parent linkage.
+Two seed profiles are available:
+
+- Minimal profile via `seed_demo.py`
+- Comprehensive profile via `seed_dashboard_data.py` (Sunrise Academy)
 
 ## Tenant
 
@@ -16,6 +19,24 @@ The current demo profile uses one school tenant with complete sample data for au
 | X-Tenant-ID (schema) | school_cloudcampus_demo_school |
 | Login URL (tenant users) | http://localhost:5173/login |
 | Login URL (super admin) | http://localhost:5173/super-admin/login |
+
+## Comprehensive Seed (Sunrise Academy)
+
+| Field | Value |
+|---|---|
+| Tenant ID | sunrise-academy |
+| X-Tenant-ID (schema) | school_sunrise-academy |
+| Login URL (tenant users) | http://localhost:5173/login |
+| Login URL (super admin) | http://localhost:5173/super-admin/login |
+
+### Sunrise Accounts
+
+| Role | Username | Password |
+|---|---|---|
+| SUPER_ADMIN | superadmin | SuperAdmin_Docker_2026! |
+| SCHOOL_ADMIN | priya.sharma | Sunrise@2026! |
+| TEACHER | sunita.aggarwal | Sunita@Teacher126! |
+| STUDENT | aarav.sharma1 | Aarav@Student126! |
 
 ## Accounts
 
@@ -46,3 +67,4 @@ The current demo profile uses one school tenant with complete sample data for au
 - The script is designed to be idempotent where supported by APIs.
 - Existing data is reused when duplicate creation is blocked by validation rules.
 - To start from a clean slate, use a fresh database volume before running the seed.
+- The comprehensive seed populates timetable, attendance, fees, payments, exams, exam results, and homework in bulk for dashboard demos.

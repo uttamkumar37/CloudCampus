@@ -20,6 +20,8 @@ public interface TenantService {
 
     TenantResponse getTenantBySlug(String tenantSlug);
 
+    TenantResponse updateTenantActiveStatus(String tenantId, boolean active);
+
     String resolveSchemaByTenantIdentifier(String identifier);
 
     TenantResponse getCurrentTenant();

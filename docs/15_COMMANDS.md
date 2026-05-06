@@ -1,6 +1,6 @@
 # CloudCampus — Commands Reference
 
-> Version: 1.1 | Last Updated: 2026-05-05
+> Version: 1.2 | Last Updated: 2026-05-06
 
 Complete reference for all commands used to develop, test, and deploy CloudCampus.
 
@@ -14,7 +14,8 @@ Complete reference for all commands used to develop, test, and deploy CloudCampu
 4. [Git Workflow](#4-git-workflow)
 5. [Database Commands](#5-database-commands)
 6. [CI/CD — GitHub Actions](#6-cicd--github-actions)
-7. [Useful One-Liners](#7-useful-one-liners)
+7. [Data Seeding Commands](#7-data-seeding-commands)
+8. [Useful One-Liners](#8-useful-one-liners)
 
 ---
 
@@ -290,6 +291,21 @@ docker compose up --build
 ---
 
 ## 6. CI/CD — GitHub Actions
+
+## 7. Data Seeding Commands
+
+```bash
+# Minimal demo seed
+python3 scripts/seed_demo.py
+
+# Comprehensive dashboard seed
+python3 scripts/seed_dashboard_data.py
+
+# Recommended local env export before seeding
+export $(cat .env | grep -v '#' | xargs)
+```
+
+## 8. Useful One-Liners
 
 ### Current status: DISABLED for local development
 

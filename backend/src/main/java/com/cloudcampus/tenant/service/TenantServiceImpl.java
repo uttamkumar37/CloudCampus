@@ -6,9 +6,11 @@ import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.entity.Tenant;
 import com.cloudcampus.tenant.mapper.TenantMapper;
 import com.cloudcampus.tenant.repository.TenantRepository;
+import com.cloudcampus.user.entity.UserRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,6 +27,7 @@ public class TenantServiceImpl implements TenantService {
     private final TenantRepository tenantRepository;
     private final JdbcTemplate jdbcTemplate;
     private final TenantMapper tenantMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -44,10 +47,11 @@ public class TenantServiceImpl implements TenantService {
         }
 
         createSchemaIfNotExists(schemaName);
+        createSchoolAdminUser(schemaName, tenantId, request);
 
         Tenant tenant = new Tenant();
         tenant.setTenantId(tenantId);
-    tenant.setSlug(slug);
+        tenant.setSlug(slug);
         tenant.setSchoolName(request.schoolName().trim());
         tenant.setSchemaName(schemaName);
         tenant.setLogoUrl(normalizeNullable(request.logoUrl()));
@@ -57,6 +61,38 @@ public class TenantServiceImpl implements TenantService {
         Tenant saved = tenantRepository.save(tenant);
         log.info("Tenant created: tenantId={}, slug={}, schema={}", saved.getTenantId(), saved.getSlug(), saved.getSchemaName());
         return map(saved);
+    }
+
+    private void createSchoolAdminUser(String schemaName, String tenantId, TenantCreateRequest request) {
+        String username = request.schoolAdminUsername().trim().toLowerCase(Locale.ROOT);
+        String email    = request.schoolAdminEmail().trim().toLowerCase(Locale.ROOT);
+        String phone    = normalizeNullable(request.schoolAdminPhone());
+        String table    = "\"" + schemaName + "\".users";
+
+        Integer countUser = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM " + table + " WHERE username = ?", Integer.class, username);
+        if (countUser != null && countUser > 0) {
+            throw new IllegalArgumentException("School admin username already exists in tenant schema");
+        }
+        Integer countEmail = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM " + table + " WHERE email = ?", Integer.class, email);
+        if (countEmail != null && countEmail > 0) {
+            throw new IllegalArgumentException("School admin email already exists in tenant schema");
+        }
+
+        jdbcTemplate.update(
+                "INSERT INTO " + table + " (id, full_name, username, email, phone, password_hash, role, " +
+                "tenant_id, active, first_login_required, created_at) VALUES (gen_random_uuid(), ?, ?, ?, ?, ?, ?, ?, TRUE, FALSE, NOW())",
+                request.schoolAdminFullName().trim(),
+                username,
+                email,
+                phone,
+                passwordEncoder.encode(request.schoolAdminPassword()),
+                UserRole.SCHOOL_ADMIN.name(),
+                tenantId
+        );
+
+        log.info("Provisioned school admin user: tenantId={}, schema={}, username={}", tenantId, schemaName, username);
     }
 
     @Override
@@ -105,6 +141,18 @@ public class TenantServiceImpl implements TenantService {
     }
 
     @Override
+    @Transactional
+    public TenantResponse updateTenantActiveStatus(String tenantId, boolean active) {
+        Tenant tenant = tenantRepository.findByTenantId(normalize(tenantId))
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantId));
+
+        tenant.setActive(active);
+        Tenant saved = tenantRepository.save(tenant);
+        log.info("Tenant status changed: tenantId={}, active={}", saved.getTenantId(), saved.isActive());
+        return map(saved);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public String resolveSchemaByTenantIdentifier(String identifier) {
         String normalized = normalize(identifier);
@@ -141,7 +189,7 @@ public class TenantServiceImpl implements TenantService {
                     id UUID PRIMARY KEY,
                     full_name VARCHAR(120) NOT NULL,
                     username VARCHAR(100) NOT NULL UNIQUE,
-                    email VARCHAR(160) NOT NULL UNIQUE,
+                    email VARCHAR(160) UNIQUE,
                     phone VARCHAR(30),
                     password_hash VARCHAR(200) NOT NULL,
                     role VARCHAR(40) NOT NULL,
@@ -428,6 +476,20 @@ public class TenantServiceImpl implements TenantService {
             jdbcTemplate.execute("ALTER TABLE \"" + schemaName + "\".\"" + table + "\" ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ");
         }
 
+        // Additional indexes for query patterns found in service layer
+        // (student/teacher linked-user resolution, timetable, homework, fee date range, parent lookup)
+        String idxStudentsUserId     = "CREATE INDEX IF NOT EXISTS idx_students_user_id ON \""         + schemaName + "\".students (user_id)";
+        String idxStudentsEmail      = "CREATE INDEX IF NOT EXISTS idx_students_email ON \""            + schemaName + "\".students (email)";
+        String idxTeachersUserId     = "CREATE INDEX IF NOT EXISTS idx_teachers_user_id ON \""          + schemaName + "\".teachers (user_id)";
+        String idxAttendanceDateStudent = "CREATE INDEX IF NOT EXISTS idx_attendance_date_student ON \"" + schemaName + "\".attendance_records (attendance_date, student_id)";
+        String idxFeePaymentsDate    = "CREATE INDEX IF NOT EXISTS idx_fee_payments_date ON \""         + schemaName + "\".fee_payments (payment_date)";
+        String idxTimetableClassSec  = "CREATE INDEX IF NOT EXISTS idx_timetable_class_section ON \""   + schemaName + "\".timetable_slots (class_id, section_id)";
+        String idxTimetableTeacher   = "CREATE INDEX IF NOT EXISTS idx_timetable_teacher ON \""         + schemaName + "\".timetable_slots (teacher_id)";
+        String idxHomeworkClass      = "CREATE INDEX IF NOT EXISTS idx_homework_class ON \""            + schemaName + "\".homework_assignments (class_id)";
+        String idxHomeworkAssignedBy = "CREATE INDEX IF NOT EXISTS idx_homework_assigned_by ON \""      + schemaName + "\".homework_assignments (assigned_by_user_id)";
+        String idxParentStudents     = "CREATE INDEX IF NOT EXISTS idx_parent_students_parent ON \""    + schemaName + "\".parent_students (parent_user_id)";
+        String idxParentStudentsStud = "CREATE INDEX IF NOT EXISTS idx_parent_students_student ON \""   + schemaName + "\".parent_students (student_id)";
+
         jdbcTemplate.execute(idxUsername);
         jdbcTemplate.execute(idxEmail);
         jdbcTemplate.execute(idxAdmissionNo);
@@ -444,6 +506,17 @@ public class TenantServiceImpl implements TenantService {
         jdbcTemplate.execute(idxExamsDate);
         jdbcTemplate.execute(idxExamResultsExam);
         jdbcTemplate.execute(idxExamResultsStudent);
+        jdbcTemplate.execute(idxStudentsUserId);
+        jdbcTemplate.execute(idxStudentsEmail);
+        jdbcTemplate.execute(idxTeachersUserId);
+        jdbcTemplate.execute(idxAttendanceDateStudent);
+        jdbcTemplate.execute(idxFeePaymentsDate);
+        jdbcTemplate.execute(idxTimetableClassSec);
+        jdbcTemplate.execute(idxTimetableTeacher);
+        jdbcTemplate.execute(idxHomeworkClass);
+        jdbcTemplate.execute(idxHomeworkAssignedBy);
+        jdbcTemplate.execute(idxParentStudents);
+        jdbcTemplate.execute(idxParentStudentsStud);
     }
 
     private String resolveSchemaName(String tenantId, String schemaName) {

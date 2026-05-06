@@ -196,7 +196,12 @@ Content-Type: application/json
   "schoolName": "Greenwood High School",
   "schemaName": "greenwood",
   "logoUrl": "https://example.com/logo.png",
-  "primaryColor": "#10b981"
+  "primaryColor": "#10b981",
+  "schoolAdminFullName": "Ananya Principal",
+  "schoolAdminUsername": "ananya.principal",
+  "schoolAdminEmail": "ananya.principal@greenwood.edu",
+  "schoolAdminPhone": "9000000001",
+  "schoolAdminPassword": "Admin@Test123"
 }
 ```
 
@@ -207,6 +212,11 @@ Content-Type: application/json
 | `schemaName` | string | Yes | PostgreSQL schema name (alphanumeric + underscore only) |
 | `logoUrl` | string | No | URL to school logo |
 | `primaryColor` | string | No | Brand color hex code (default: `#10b981`) |
+| `schoolAdminFullName` | string | Yes | School admin display name created during tenant provisioning |
+| `schoolAdminUsername` | string | Yes | Initial SCHOOL_ADMIN login username |
+| `schoolAdminEmail` | string | Yes | Initial SCHOOL_ADMIN email |
+| `schoolAdminPhone` | string | No | Initial SCHOOL_ADMIN phone |
+| `schoolAdminPassword` | string | Yes | Initial SCHOOL_ADMIN password |
 
 **Response (201 Created):**
 ```json
@@ -263,6 +273,23 @@ Authorization: Bearer <superadmin_token>
 **Path Parameter:** `tenantId` — the business tenant ID (e.g., `greenwood`)
 
 **Response (200 OK):** Same structure as single object in 3.2.
+
+---
+
+### 3.4 Update Tenant Active Status
+
+**Endpoint:** `PATCH /tenants/{tenantId}/status`
+
+**Path Parameter:** `tenantId` — business tenant ID.
+
+**Request Body:**
+```json
+{
+  "active": false
+}
+```
+
+**Response (200 OK):** Returns updated tenant object.
 
 ---
 
@@ -1178,70 +1205,75 @@ X-Tenant-Slug: greenwood
 
 ---
 
-## 15. Bulk Upload APIs
+## 15. Bulk Operations APIs
 
 > Requires: `X-Tenant-Slug` header. Role: SCHOOL_ADMIN.
 
-### 15.1 Upload Excel File
+The bulk module now supports a guided workflow:
 
-> Accepts an Excel workbook (`.xlsx`) with sheets for Students, Teachers, Classes, and Sections.
+1. Download operation-specific sample
+2. Validate file
+3. Preview change plan
+4. Execute
+5. Track jobs / retry failures / download error reports
+
+### 15.1 Download Sample Template
+
+**Endpoint:** `GET /bulk/sample?operation={operation}`
+
+`operation` examples: `students`, `teachers`, `academic`, `timetable`, `attendance`, `parents`, `master`.
+
+### 15.2 Legacy Upload (Direct)
 
 **Endpoint:** `POST /bulk/upload`
 
-**Headers:**
-```
-Authorization: Bearer <token>
-X-Tenant-Slug: greenwood
-Content-Type: multipart/form-data
-```
+Accepts `.xlsx` workbook and executes directly.
 
-**Form Data:**
+### 15.3 List Supported Operations
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `file` | file | `.xlsx` workbook |
+**Endpoint:** `GET /bulk/operations`
 
-**Response (200 OK):**
+Returns accepted file types and required columns for each operation.
+
+### 15.4 Validate Bulk File
+
+**Endpoint:** `POST /bulk/validate`
+
+`multipart/form-data` fields:
+- `operation`
+- `file`
+
+Returns:
+- `validationId`
+- row-level statuses (`ready`/`warning`/`error`)
+- auto-mapping metadata
+
+### 15.5 Preview Changes
+
+**Endpoint:** `GET /bulk/preview?validationId={id}`
+
+Returns new/updated/skipped counts and validation notes.
+
+### 15.6 Execute Validated Operation
+
+**Endpoint:** `POST /bulk/execute`
+
+**Request Body:**
 ```json
 {
-  "success": true,
-  "data": {
-    "totalRows": 50,
-    "successCount": 48,
-    "failedCount": 2,
-    "errors": [
-      {
-        "sheet": "Students",
-        "row": 5,
-        "message": "Duplicate admission number: ADM-2024-010"
-      },
-      {
-        "sheet": "Teachers",
-        "row": 3,
-        "message": "Email is required"
-      }
-    ]
-  }
+  "validationId": "uuid-or-session-id",
+  "autoCreateParentAccounts": true,
+  "sendCredentials": true,
+  "forcePasswordReset": true
 }
 ```
 
----
+### 15.7 Bulk Job Tracking
 
-### 15.2 Download Sample Template
-
-> Returns a downloadable Excel template with correct sheet structure.
-
-**Endpoint:** `GET /bulk/sample`
-
-**Headers:**
-```
-Authorization: Bearer <token>
-X-Tenant-Slug: greenwood
-```
-
-**Response:** Binary file download (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`)
-
----
+- `GET /bulk/jobs`
+- `GET /bulk/jobs/{jobId}`
+- `POST /bulk/jobs/{jobId}/retry`
+- `GET /bulk/jobs/{jobId}/error-report`
 
 ---
 

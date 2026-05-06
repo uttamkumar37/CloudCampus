@@ -1,6 +1,7 @@
 package com.cloudcampus.student.service;
 
 import com.cloudcampus.student.dto.StudentCreateRequest;
+import com.cloudcampus.student.dto.StudentDetailResponse;
 import com.cloudcampus.student.dto.StudentResponse;
 import com.cloudcampus.student.dto.StudentUpdateRequest;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,8 @@ public interface StudentService {
     StudentResponse createStudent(StudentCreateRequest request);
 
     StudentResponse getStudentById(UUID id);
+
+    StudentDetailResponse getStudentDetails(UUID id);
 
     StudentResponse getMyProfile();
 

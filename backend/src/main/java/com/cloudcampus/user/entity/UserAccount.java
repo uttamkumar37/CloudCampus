@@ -31,7 +31,7 @@ public class UserAccount extends Auditable {
     @Column(name = "username", nullable = false, unique = true, length = 100)
     private String username;
 
-    @Column(name = "email", nullable = false, unique = true, length = 160)
+    @Column(name = "email", nullable = true, unique = true, length = 160)
     private String email;
 
     @Column(name = "phone", length = 30)

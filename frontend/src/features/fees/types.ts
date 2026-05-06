@@ -31,6 +31,6 @@ export interface RecordPaymentRequest {
   feeAssignmentId: string
   amountPaid: number
   paymentDate: string
-  paymentMethod: string | null
+  paymentMethod: string  // FIXED: was `string | null` — backend @NotBlank requires a non-blank value
   referenceNo: string | null
 }

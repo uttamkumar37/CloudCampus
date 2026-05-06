@@ -18,6 +18,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * FIXED: switched from @Autowired field injection (required=false) to constructor
+ * injection via @RequiredArgsConstructor.  Previously, if beans were missing the
+ * filter would silently skip first-login enforcement — a security hole.
+ */
 @Component
 @RequiredArgsConstructor
 public class FirstLoginEnforcementFilter extends OncePerRequestFilter {
