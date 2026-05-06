@@ -161,9 +161,9 @@ How to import and use the Postman collection:
 **What is next**
 
 - Prioritized backlog (🔴 High / 🟡 Medium / 🟢 Low)
-- In-progress tasks
-- Technical debt items
-- Planned integration tests
+- Recently completed tasks snapshot
+- Remaining improvements and polish
+- Technical debt and hardening items
 
 ---
 
@@ -198,6 +198,13 @@ How to import and use the Postman collection:
 | Super Admin | `superadmin` (from env `BOOTSTRAP_ADMIN_USERNAME`) | No `X-Tenant-Slug` |
 | School Admin | Tenant-specific (created via API) | `X-Tenant-Slug: <schema>` |
 | Teacher / Student / Parent | Tenant-specific (created via API) | `X-Tenant-Slug: <schema>` |
+
+### Recent Platform Updates (2026-05-06)
+
+- Tenant creation now provisions School Admin credentials in a single request.
+- Super Admin can activate/deactivate tenants using tenant status APIs.
+- Bulk Upload evolved into Bulk Operations workflow: validate, preview, execute, jobs, retry, error-report download.
+- Student and Teacher detail endpoints now include richer dashboard-linked datasets.
 
 ### JWT Token Structure
 

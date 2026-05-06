@@ -1,6 +1,6 @@
 # CloudCampus API Reference
 
-Version: 2026-05-01
+Version: 2026-05-06
 Base URL: http://localhost:8080/api/v1
 
 ## Contract Envelope
@@ -48,8 +48,16 @@ Login request example:
 | POST | /tenants | SUPER_ADMIN |
 | GET | /tenants | SUPER_ADMIN |
 | GET | /tenants/{tenantId} | SUPER_ADMIN |
+| PATCH | /tenants/{tenantId}/status | SUPER_ADMIN |
 | GET | /tenants/schools/search?query=... | Public |
 | GET | /tenants/schools/{tenantSlug} | Public |
+
+Create tenant now requires school-admin fields:
+- schoolAdminFullName
+- schoolAdminUsername
+- schoolAdminEmail
+- schoolAdminPhone (optional)
+- schoolAdminPassword
 
 ## Domain APIs (Tenant Scoped)
 
@@ -64,6 +72,18 @@ Login request example:
 - Timetable: /timetable/*
 - Parent: /parents/*
 - Dashboard: /dashboard/tenant-summary, /dashboard/student, /dashboard/teacher
+- Student details: /students/{id}/details
+- Teacher details: /teachers/{id}/details
+
+Bulk operations endpoints:
+- /bulk/operations
+- /bulk/validate
+- /bulk/preview
+- /bulk/execute
+- /bulk/jobs
+- /bulk/jobs/{jobId}
+- /bulk/jobs/{jobId}/retry
+- /bulk/jobs/{jobId}/error-report
 
 All above require:
 
