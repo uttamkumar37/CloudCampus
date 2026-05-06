@@ -29,25 +29,40 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # FIXED: removed SPRING_JPA_HIBERNATE_DDL_AUTO override — application.yml now
+      # correctly uses "validate"; Flyway owns all schema changes.
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_TOKEN_EXPIRATION_MS: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:-3600000}
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
       BOOTSTRAP_ADMIN_ROLE: ${BOOTSTRAP_ADMIN_ROLE:-SUPER_ADMIN}
+      # FIXED: supply CORS origins so the frontend container is whitelisted
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost,http://frontend}
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USERNAME: ${EMAIL_USERNAME:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      APP_TENANT_SUBDOMAIN_ENABLED: ${APP_TENANT_SUBDOMAIN_ENABLED:-false}
+      APP_TENANT_ROOT_DOMAINS: ${APP_TENANT_ROOT_DOMAINS:-localhost}
+      APP_SEED_DEMO_ENABLED: "true"
     ports:
       - "${SERVER_PORT:-8080}:${SERVER_PORT:-8080}"
     restart: unless-stopped
 
   frontend:
-    image: node:22-alpine
+    # FIXED: was running `npm run dev` (Vite dev server) in production.
+    # Now uses a proper multi-stage Dockerfile: Node build → nginx static serving.
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080/api/v1}
     container_name: cloudcampus-frontend
-    working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
-    volumes:
-      - ./frontend:/app
     ports:
-      - "5173:5173"
+      - "5173:80"
     depends_on:
       - backend
     restart: unless-stopped

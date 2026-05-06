@@ -36,6 +36,15 @@ export interface CreateTenantRequest {
   schemaName: string
   logoUrl: string
   primaryColor: string
+  schoolAdminFullName: string
+  schoolAdminUsername: string
+  schoolAdminEmail: string
+  schoolAdminPhone?: string
+  schoolAdminPassword: string
+}
+
+export interface UpdateTenantStatusRequest {
+  active: boolean
 }
 
 export type PlanFeature =

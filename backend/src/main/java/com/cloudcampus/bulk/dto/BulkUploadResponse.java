@@ -6,6 +6,7 @@ public record BulkUploadResponse(
         int totalRows,
         int successCount,
         int failedCount,
-        List<BulkUploadErrorResponse> errors
+        List<BulkUploadErrorResponse> errors,
+        List<BulkCredentialResponse> credentials
 ) {
 }

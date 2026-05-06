@@ -15,4 +15,6 @@ public interface HomeworkAssignmentRepository extends JpaRepository<HomeworkAssi
 
     // Teacher dashboard
     List<HomeworkAssignment> findTop5ByAssignedByUserIdOrderByCreatedAtDesc(UUID assignedByUserId);
+
+    List<HomeworkAssignment> findTop10ByClassIdAndSectionIdOrderByCreatedAtDesc(UUID classId, UUID sectionId);
 }

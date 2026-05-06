@@ -29,7 +29,7 @@ const emptyPayForm: RecordPaymentRequest = {
   feeAssignmentId: '',
   amountPaid: 0,
   paymentDate: new Date().toISOString().slice(0, 10),
-  paymentMethod: null,
+  paymentMethod: '',
   referenceNo: null,
 }
 
@@ -105,7 +105,7 @@ export function FeesHubPage() {
       const res = await paymentMutation.mutateAsync({
         ...payForm,
         amountPaid: Number(payForm.amountPaid),
-        paymentMethod: payForm.paymentMethod?.trim() || null,
+        paymentMethod: payForm.paymentMethod.trim(),
         referenceNo: payForm.referenceNo?.trim() || null,
       })
       if (!res.success) {

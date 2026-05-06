@@ -1,7 +1,7 @@
 # CloudCampus — Project Tracker
 
 
-> Last Updated: 2026-05-05 | Reflects actual codebase state
+> Last Updated: 2026-05-06 | Reflects actual codebase state
 
 ---
 
@@ -9,13 +9,23 @@
 
 | Status | Count |
 |--------|-------|
-| ✅ Completed | 50 |
+| ✅ Completed | 54 |
 | ⚠️ In Progress | 0 |
 | ❌ Pending | 0 |
 
 ---
 
 ## Changelog
+
+### 2026-05-06
+
+- Commit: `3a62b61`
+	Message: add bulk operations workflow and tenant admin provisioning
+- Added guided bulk operations backend APIs: operations metadata, validate, preview, execute, jobs, retry, error report.
+- Added richer School Admin tenant provisioning contract and frontend form fields.
+- Added tenant activate/deactivate API and super-admin UI controls.
+- Added student/teacher details APIs for dashboard-linked rich data views.
+- Updated seeding script to pass required school-admin fields for tenant creation.
 
 ### 2026-05-05
 

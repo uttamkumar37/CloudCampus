@@ -201,11 +201,16 @@ def seed():
     # ── Step 3: Create / resolve tenant ───────────────────────────
     print("\n[3] Setting up Sunrise Academy …")
     tid = TENANT["tenantId"]
+    admin = TENANT["admin"]
     t_resp = api("POST", "/tenants", token=sa_token, json_body={
         "tenantId":    tid,
         "schoolName":  TENANT["schoolName"],
         "primaryColor": TENANT["primaryColor"],
         "logoUrl":     TENANT["logoUrl"],
+        "schoolAdminFullName": admin["fullName"],
+        "schoolAdminUsername": admin["username"],
+        "schoolAdminEmail":    admin["email"],
+        "schoolAdminPassword": admin["password"],
     })
     if ok(t_resp):
         schema = t_resp["data"]["schemaName"]

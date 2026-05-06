@@ -54,6 +54,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/tenants/schools/search").permitAll()
                 .requestMatchers("/api/v1/tenants/schools/*").permitAll()
                 .requestMatchers("/api/v1/payments/webhook").permitAll()
+                .requestMatchers("/api/v1/website/**").permitAll()
                 .requestMatchers(
                     "/swagger-ui.html",
                     "/swagger-ui/**",

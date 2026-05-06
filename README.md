@@ -8,6 +8,9 @@ CloudCampus is a multi-tenant school management SaaS platform built with Spring 
 - JWT authentication with role-based authorization
 - School-first login UX (school search + role selection)
 - Domain modules for academics, attendance, exams, fees, homework, timetable, parent portal, and dashboards
+- Enhanced bulk operations workflow (validate, preview, execute, jobs, retry, error report)
+- Tenant provisioning with automatic School Admin account creation
+- Tenant activation/deactivation controls for Super Admin
 - Dockerized local stack (Postgres + backend + frontend)
 
 ## Architecture Snapshot
@@ -61,6 +64,7 @@ docker compose up --build
 
 - Primary tenant header: X-Tenant-Slug
 - Legacy fallback header (temporary compatibility): X-Tenant-ID
+- Super Admin platform APIs should omit tenant headers
 - Subdomain resolution is supported and configurable
 - External contracts use school slug; internal schema mapping is resolved server-side
 
@@ -109,6 +113,16 @@ CloudCampus/
 ```bash
 cd backend
 mvn test
+```
+
+## Demo Data Seeding
+
+```bash
+# Minimal demo tenant seed
+python3 scripts/seed_demo.py
+
+# Comprehensive dashboard seed (Sunrise Academy)
+python3 scripts/seed_dashboard_data.py
 ```
 
 ## Documentation Index

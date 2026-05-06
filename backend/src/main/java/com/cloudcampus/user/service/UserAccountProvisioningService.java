@@ -30,6 +30,18 @@ public class UserAccountProvisioningService {
 
     @Transactional
     public UserAccount createDefaultUserAccount(String fullName, String firstName, String phone, String email, UserRole role) {
+        return createDefaultUserAccountWithCredentials(fullName, firstName, phone, email, role, true).user();
+        }
+
+        @Transactional
+        public UserProvisioningResult createDefaultUserAccountWithCredentials(
+            String fullName,
+            String firstName,
+            String phone,
+            String email,
+            UserRole role,
+            boolean sendNotification
+        ) {
         String normalizedEmail = normalizeNullableEmail(email);
         String normalizedPhone = normalizeNullablePhone(phone);
 
@@ -55,17 +67,27 @@ public class UserAccountProvisioningService {
         user.setFirstLoginRequired(true);
 
         UserAccount saved = userAccountRepository.save(user);
-        notifyDefaultCredentials(saved, credentials.rawPassword());
-        return saved;
+        if (sendNotification) {
+            notifyDefaultCredentials(saved, credentials.rawPassword());
+        }
+        return new UserProvisioningResult(saved, credentials);
     }
 
     @Transactional
     public void resetPasswordToDefault(UserAccount user) {
+        resetPasswordToDefaultWithCredentials(user, true);
+    }
+
+    @Transactional
+    public GeneratedCredentials resetPasswordToDefaultWithCredentials(UserAccount user, boolean sendNotification) {
         GeneratedCredentials credentials = generateCredentials(user.getRole(), user.getId(), user.getFullName(), user.getPhone());
         user.setPasswordHash(passwordEncoder.encode(credentials.rawPassword()));
         user.setFirstLoginRequired(true);
         userAccountRepository.save(user);
-        notifyDefaultCredentials(user, credentials.rawPassword());
+        if (sendNotification) {
+            notifyDefaultCredentials(user, credentials.rawPassword());
+        }
+        return credentials;
     }
 
     private void notifyDefaultCredentials(UserAccount user, String rawPassword) {

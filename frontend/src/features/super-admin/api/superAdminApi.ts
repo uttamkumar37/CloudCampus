@@ -6,6 +6,7 @@ import type {
   CreateTenantRequest,
   SuperAdminDashboardSummary,
   Tenant,
+  UpdateTenantStatusRequest,
 } from '../types'
 
 export async function getSuperAdminDashboardSummary() {
@@ -23,5 +24,10 @@ export async function getTenants() {
 
 export async function createTenant(payload: CreateTenantRequest) {
   const { data } = await apiClient.post<ApiResponse<Tenant>>(ENDPOINTS.tenants.base, payload)
+  return data
+}
+
+export async function updateTenantStatus(tenantId: string, payload: UpdateTenantStatusRequest) {
+  const { data } = await apiClient.patch<ApiResponse<Tenant>>(ENDPOINTS.tenants.status(tenantId), payload)
   return data
 }

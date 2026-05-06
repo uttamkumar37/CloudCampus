@@ -15,6 +15,11 @@ const initialState: CreateTenantRequest = {
   schemaName: '',
   logoUrl: '',
   primaryColor: '#10b981',
+  schoolAdminFullName: '',
+  schoolAdminUsername: '',
+  schoolAdminEmail: '',
+  schoolAdminPhone: '',
+  schoolAdminPassword: '',
 }
 
 export function TenantForm({ onSubmit, isSubmitting }: TenantFormProps) {
@@ -103,13 +108,86 @@ export function TenantForm({ onSubmit, isSubmitting }: TenantFormProps) {
           />
         </div>
       </label>
+
+      <div className="lg:col-span-2">
+        <h3 className="text-sm font-semibold text-slate-900">School Admin Account</h3>
+        <p className="mt-1 text-xs text-slate-500">This account is created instantly in the new tenant.</p>
+      </div>
+
+      <label className="space-y-2">
+        <span className="text-sm font-semibold text-slate-700">Admin Full Name</span>
+        <input
+          value={values.schoolAdminFullName}
+          onChange={(event) =>
+            setValues((current: CreateTenantRequest) => ({ ...current, schoolAdminFullName: event.target.value }))
+          }
+          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900"
+          placeholder="Ananya Principal"
+          required
+        />
+      </label>
+
+      <label className="space-y-2">
+        <span className="text-sm font-semibold text-slate-700">Admin Username</span>
+        <input
+          value={values.schoolAdminUsername}
+          onChange={(event) =>
+            setValues((current: CreateTenantRequest) => ({ ...current, schoolAdminUsername: event.target.value }))
+          }
+          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900"
+          placeholder="ananya.principal"
+          required
+        />
+      </label>
+
+      <label className="space-y-2">
+        <span className="text-sm font-semibold text-slate-700">Admin Email</span>
+        <input
+          type="email"
+          value={values.schoolAdminEmail}
+          onChange={(event) =>
+            setValues((current: CreateTenantRequest) => ({ ...current, schoolAdminEmail: event.target.value }))
+          }
+          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900"
+          placeholder="ananya@sunrise.edu"
+          required
+        />
+      </label>
+
+      <label className="space-y-2">
+        <span className="text-sm font-semibold text-slate-700">Admin Phone</span>
+        <input
+          value={values.schoolAdminPhone ?? ''}
+          onChange={(event) =>
+            setValues((current: CreateTenantRequest) => ({ ...current, schoolAdminPhone: event.target.value }))
+          }
+          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900"
+          placeholder="9000000001"
+        />
+      </label>
+
+      <label className="space-y-2 lg:col-span-2">
+        <span className="text-sm font-semibold text-slate-700">Admin Password</span>
+        <input
+          type="password"
+          value={values.schoolAdminPassword}
+          onChange={(event) =>
+            setValues((current: CreateTenantRequest) => ({ ...current, schoolAdminPassword: event.target.value }))
+          }
+          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-slate-900"
+          placeholder="Minimum 8 characters"
+          minLength={8}
+          required
+        />
+      </label>
+
       <div className="flex items-end">
         <button
           type="submit"
           disabled={isSubmitting}
           className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSubmitting ? 'Creating tenant...' : 'Create Tenant'}
+          {isSubmitting ? 'Creating tenant...' : 'Create Tenant + School Admin'}
         </button>
       </div>
     </form>

@@ -5,6 +5,8 @@ import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.service.TenantService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -19,10 +21,33 @@ class TenantProvisioningIT extends IntegrationTestBase {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    private static final String[] IT_SCHEMAS   = {"school_itschool1","school_itschool2","school_itschool3","school_itschool4","school_itschool5"};
+    private static final String[] IT_TENANTIDS = {"itschool1","itschool2","itschool3","itschool4","itschool5"};
+
+    @BeforeEach
+    void cleanupBefore() {
+        deleteSchemasAndTenants();
+    }
+
+    @AfterEach
+    void cleanupAfter() {
+        deleteSchemasAndTenants();
+    }
+
+    private void deleteSchemasAndTenants() {
+        for (String schema : IT_SCHEMAS) {
+            jdbcTemplate.execute("DROP SCHEMA IF EXISTS \"" + schema + "\" CASCADE");
+        }
+        for (String tenantId : IT_TENANTIDS) {
+            jdbcTemplate.update("DELETE FROM public.tenants WHERE tenant_id = ?", tenantId);
+        }
+    }
+
     @Test
     void createTenant_persistsTenantRecord() {
         TenantCreateRequest request = new TenantCreateRequest(
-                "itschool1", null, "Integration Test School 1", "school_itschool1", null, "#10b981");
+                                "itschool1", null, "Integration Test School 1", "school_itschool1", null, "#10b981",
+                                "IT School 1 Admin", "itschool1.admin", "itschool1.admin@example.com", "9000001001", "Admin@Test123");
 
         TenantResponse response = tenantService.createTenant(request);
 
@@ -35,7 +60,8 @@ class TenantProvisioningIT extends IntegrationTestBase {
     @Test
     void createTenant_createsSchemaAndUsersTable() {
         TenantCreateRequest request = new TenantCreateRequest(
-                "itschool2", null, "Integration Test School 2", "school_itschool2", null, "#10b981");
+                                "itschool2", null, "Integration Test School 2", "school_itschool2", null, "#10b981",
+                                "IT School 2 Admin", "itschool2.admin", "itschool2.admin@example.com", "9000001002", "Admin@Test123");
 
         tenantService.createTenant(request);
 
@@ -60,7 +86,8 @@ class TenantProvisioningIT extends IntegrationTestBase {
     @Test
     void createTenant_auditColumnsPresent() {
         TenantCreateRequest request = new TenantCreateRequest(
-                "itschool3", null, "Integration Test School 3", "school_itschool3", null, "#10b981");
+                                "itschool3", null, "Integration Test School 3", "school_itschool3", null, "#10b981",
+                                "IT School 3 Admin", "itschool3.admin", "itschool3.admin@example.com", "9000001003", "Admin@Test123");
 
         tenantService.createTenant(request);
 
@@ -77,7 +104,8 @@ class TenantProvisioningIT extends IntegrationTestBase {
     @Test
     void createTenant_softDeleteColumnPresent() {
         TenantCreateRequest request = new TenantCreateRequest(
-                "itschool4", null, "Integration Test School 4", "school_itschool4", null, "#10b981");
+                                "itschool4", null, "Integration Test School 4", "school_itschool4", null, "#10b981",
+                                "IT School 4 Admin", "itschool4.admin", "itschool4.admin@example.com", "9000001004", "Admin@Test123");
 
         tenantService.createTenant(request);
 
@@ -93,11 +121,13 @@ class TenantProvisioningIT extends IntegrationTestBase {
     @Test
     void createTenant_throwsOnDuplicateTenantId() {
         TenantCreateRequest first = new TenantCreateRequest(
-                "itschool5", null, "IT School 5", "school_itschool5", null, "#10b981");
+                "itschool5", null, "IT School 5", "school_itschool5", null, "#10b981",
+                "IT School 5 Admin", "itschool5.admin", "itschool5.admin@example.com", "9000001005", "Admin@Test123");
         tenantService.createTenant(first);
 
         TenantCreateRequest duplicate = new TenantCreateRequest(
-                "itschool5", null, "IT School 5 Duplicate", null, null, "#ffffff");
+                "itschool5", null, "IT School 5 Duplicate", null, null, "#ffffff",
+                "IT School 5 Admin Duplicate", "itschool5.duplicate", "itschool5.duplicate@example.com", "9000001099", "Admin@Test123");
 
         assertThatThrownBy(() -> tenantService.createTenant(duplicate))
                 .isInstanceOf(IllegalArgumentException.class)

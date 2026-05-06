@@ -4,6 +4,7 @@ import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.tenant.dto.SchoolSearchResponse;
 import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.TenantResponse;
+import com.cloudcampus.tenant.dto.TenantStatusUpdateRequest;
 import com.cloudcampus.tenant.service.TenantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PatchMapping;
 
 import java.util.List;
 
@@ -77,5 +79,19 @@ public class TenantController {
     public ResponseEntity<ApiResponse<TenantResponse>> getTenant(@PathVariable String tenantId) {
         TenantResponse tenant = tenantService.getTenantByTenantId(tenantId);
         return ResponseEntity.ok(ApiResponse.success("Tenant fetched successfully", tenant));
+    }
+
+    @PatchMapping("/{tenantId}/status")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @Operation(summary = "Activate or deactivate tenant", parameters = {
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
+    })
+    public ResponseEntity<ApiResponse<TenantResponse>> updateTenantStatus(
+            @PathVariable String tenantId,
+            @Valid @RequestBody TenantStatusUpdateRequest request) {
+        TenantResponse tenant = tenantService.updateTenantActiveStatus(tenantId, request.active());
+        String message = request.active() ? "Tenant activated successfully" : "Tenant deactivated successfully";
+        return ResponseEntity.ok(ApiResponse.success(message, tenant));
     }
 }
