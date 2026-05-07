@@ -1,5 +1,7 @@
 # Architecture
 
+This is the canonical product and system reference for CloudCampus. It combines system design, roles, major workflows, and billing behavior.
+
 ## 1. High-Level Topology
 
 ```text
@@ -226,6 +228,66 @@ All APIs follow:
   "message": "string",
   "data": {}
 }
+
+## 8. Roles and Access Model
+
+| Role | Scope | Primary responsibility |
+|---|---|---|
+| `SUPER_ADMIN` | Platform (`public` schema) | Tenant lifecycle, plans, payments, platform dashboards |
+| `SCHOOL_ADMIN` | Tenant schema | School-wide administration, staff, students, academics, website |
+| `TEACHER` | Tenant schema | Attendance, homework, timetable, exams, student read access |
+| `STUDENT` | Tenant schema | Read-only view of own academic data |
+| `PARENT` | Tenant schema | Read-only view of linked children |
+
+Practical access boundaries:
+
+- `SUPER_ADMIN` is the only role that manages tenants, plans, and SaaS payments
+- `SCHOOL_ADMIN` owns all school data mutation inside a tenant
+- `TEACHER` can operate instructional workflows but not user or tenant administration
+- `STUDENT` and `PARENT` are read-only roles
+
+Security enforcement uses Spring Security roles, route guards, and ownership-aware checks where needed.
+
+## 9. Core Workflows
+
+### Tenant onboarding
+
+1. Super Admin authenticates against the `public` schema.
+2. `POST /api/v1/tenants` provisions the tenant schema and seed tables.
+3. The same request provisions the initial `SCHOOL_ADMIN` user.
+4. Subsequent tenant-scoped requests resolve through `X-Tenant-Slug` or subdomain mapping.
+
+### School operations
+
+Typical school-admin sequence:
+
+1. Create classes, subjects, and sections.
+2. Add teachers and students, optionally through bulk upload.
+3. Configure timetable, fees, and exams.
+4. Use dashboards, parent links, and website builder as ongoing operational tools.
+
+### Teacher and family flows
+
+- Teachers manage attendance, homework, timetable slots, and exam results.
+- Students consume timetable, fees, and academic results.
+- Parents consume linked-child attendance, fees, and result views.
+
+## 10. Subscription and Billing Model
+
+Plan tiers: `FREE`, `BASIC`, `PRO`, `ENTERPRISE`.
+
+Feature gating principles:
+
+- Core school management is available across all plans.
+- Premium capabilities such as bulk operations and parent portal are plan-gated.
+- Feature access is enforced by `SubscriptionGuardService.requireFeature(...)`.
+
+Billing paths:
+
+- Manual flow: Super Admin assigns a plan, receives offline payment, then records it on the platform.
+- Razorpay flow: backend creates an order, frontend opens checkout, webhook verification marks the subscription as paid.
+
+Supported payment states: `PENDING`, `PAID`, `FAILED`, `REFUNDED`.
 ```
 
 Paginated responses use `PageResponse<T>`:

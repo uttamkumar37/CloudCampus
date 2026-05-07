@@ -126,11 +126,10 @@ CloudCampus/
 │       ├── website-builder/ school website CMS
 │       ├── public-website/  public school website
 │       └── profile/       user profile
-├── docs/                  documentation (see below)
+├── docs/                  consolidated documentation (see below)
 ├── scripts/               seed scripts (Python)
 ├── docker-compose.yml
-├── CHANGELOG.md
-└── CONTRIBUTING.md
+└── README.md
 ```
 
 ---
@@ -139,17 +138,12 @@ CloudCampus/
 
 | Doc | Description |
 |---|---|
-| [docs/SETUP.md](docs/SETUP.md) | Local setup — Docker, manual, env vars, troubleshooting |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Local setup, commands, testing, demo access, contribution workflow |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, module breakdown, DB schema, auth flow |
-| [docs/PLATFORM.md](docs/PLATFORM.md) | End-to-end workflows for every role and feature |
-| [docs/ROLES.md](docs/ROLES.md) | Permission matrix, `@PreAuthorize` patterns, JWT structure |
-| [docs/API.md](docs/API.md) | Full API reference with request/response schemas |
-| [docs/TESTING.md](docs/TESTING.md) | Unit tests, integration tests, manual API testing |
-| [docs/BILLING.md](docs/BILLING.md) | Subscription plans, Razorpay payment flow |
-| [docs/DEMO.md](docs/DEMO.md) | Demo credentials, Sunrise Academy seed data |
-| [docs/COMMANDS.md](docs/COMMANDS.md) | All CLI commands — Docker, Maven, Git, DB, seeding |
-| [CHANGELOG.md](CHANGELOG.md) | Version history |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Branch naming, commit format, PR process |
+| [docs/API.md](docs/API.md) | Concise API map and where to use Swagger or Postman |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Version history |
+| [docs/postman/10_README.md](docs/postman/10_README.md) | Postman collection usage |
+| `samples/CloudCampus_DummyData.xlsx` | Sample workbook generated for imports and demos |
 
 ---
 

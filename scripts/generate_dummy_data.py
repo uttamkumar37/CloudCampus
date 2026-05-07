@@ -794,6 +794,7 @@ def main():
 
     out_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "samples",
         "CloudCampus_DummyData.xlsx"
     )
     wb.save(out_path)

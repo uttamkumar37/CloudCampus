@@ -49,6 +49,6 @@ Thumbs.db
 *.tmp
 
 # Local data files
-*.xlsx
-*.xls
+samples/*.xlsx
+samples/*.xls
 scripts/generate_dummy_data.py

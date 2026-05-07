@@ -5,6 +5,8 @@
 
 This directory contains the Postman collection and environment files for testing the CloudCampus API.
 
+For a concise endpoint map, see [docs/API.md](docs/API.md). For the live request and response contract, use Swagger at `http://localhost:8080/swagger-ui.html`.
+
 ---
 
 ## Files
