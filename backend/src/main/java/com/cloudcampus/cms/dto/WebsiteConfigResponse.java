@@ -28,5 +28,16 @@ public class WebsiteConfigResponse {
     private boolean admissionsOpen;
     private String admissionInfo;
     private String themeColor;
+    private String logoUrl;
+    private Integer schoolEstablishedYear;
+    private String affiliationBoard;
+    private String mediumOfInstruction;
+    private String schoolType;
+    private Integer studentCount;
+    private Integer teacherCount;
+    private String heroCtaText;
+    private String heroCtaLink;
+    private String achievementBadge;
+    private String noticesText;
     private Instant updatedAt;
 }

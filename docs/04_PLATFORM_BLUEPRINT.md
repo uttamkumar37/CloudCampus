@@ -1,7 +1,7 @@
 # CloudCampus — Platform Blueprint
 
 
-> Version: 1.1 | Last Updated: 2026-05-06
+> Version: 1.2 | Last Updated: 2026-05-07
 
 This document explains how CloudCampus works from the perspective of each user role, covering workflows, access boundaries, and system capabilities.
 
@@ -150,7 +150,7 @@ create table if not exists admission_form_fields (
 
 ### 0.4 Spring Boot API Design
 
-All write APIs: SUPER_ADMIN only. All reads for public site: unauthenticated, tenant-scoped.
+Write APIs accessible by **SCHOOL_ADMIN** (for their own school) and SUPER_ADMIN (platform-wide). All reads for public site: unauthenticated, tenant-scoped.
 
 Admin APIs (managed by SUPER_ADMIN):
 
@@ -444,9 +444,10 @@ When a new tenant is provisioned, the following are created in the new schema:
 |---------|:-----------:|:------------:|:-------:|:-------:|:------:|
 | Create tenant | ✅ | — | — | — | — |
 | View all tenants | ✅ | — | — | — | — |
+| Activate / deactivate tenant | ✅ | — | — | — | — |
 | Create users | ✅ | ✅ | — | — | — |
 | View users | ✅ | ✅ | — | — | — |
-| Enroll students | ✅ | ✅ | ✅ | — | — |
+| Enroll students | ✅ | ✅ | — | — | — |
 | View students | ✅ | ✅ | ✅ | — | — |
 | Create teachers | ✅ | ✅ | — | — | — |
 | View teachers | ✅ | ✅ | ✅ | — | — |
@@ -456,7 +457,7 @@ When a new tenant is provisioned, the following are created in the new schema:
 | View attendance | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Assign fees | ✅ | ✅ | — | — | — |
 | Record payments | ✅ | ✅ | — | — | — |
-| View fee history | ✅ | ✅ | ✅ | ✅ | ✅ |
+| View fee history | ✅ | ✅ | — | ✅ | ✅ |
 | Schedule exams | ✅ | ✅ | ✅ | — | — |
 | Enter exam results | ✅ | ✅ | ✅ | — | — |
 | View exam results | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -464,8 +465,12 @@ When a new tenant is provisioned, the following are created in the new schema:
 | View homework | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Manage timetable | ✅ | ✅ | ✅ | — | — |
 | View timetable | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Manage parent links | — | ✅ | — | — | — |
 | View linked children | — | — | — | — | ✅ |
-| Bulk upload | ✅ | ✅ | — | — | — |
+| Bulk upload / operations | — | ✅ | — | — | — |
+| Manage school website (builder) | — | ✅ | — | — | — |
+| View public school website | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Manage admission leads | — | ✅ | — | — | — |
 | Super Admin dashboard | ✅ | — | — | — | — |
 | Tenant dashboard | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Manage subscription plans | ✅ | — | — | — | — |
@@ -575,7 +580,7 @@ The School Admin manages all operations within their school.
 
 ### 5.2 Day-to-Day Admin Operations
 
-| Task | Endpoint |
+| Task | Endpoint / Feature |
 |------|----------|
 | View dashboard KPIs | `GET /dashboard/tenant-summary` |
 | Add new student | `POST /students` |
@@ -583,7 +588,10 @@ The School Admin manages all operations within their school.
 | Record payment | `POST /fees/payments` |
 | Schedule exam | `POST /exams` |
 | Enter exam results | `POST /exams/results` |
-| Bulk import data | `POST /bulk/upload` |
+| Bulk import data | `POST /bulk/upload` (or guided bulk operations workflow) |
+| Manage school website | Website Builder — General Info, Sections, Gallery, Admission Leads |
+| Manage parent links | `GET/POST/DELETE /parents/links` |
+| Activate / deactivate tenant | `PATCH /tenants/{tenantId}/status` (Super Admin only) |
 
 ---
 

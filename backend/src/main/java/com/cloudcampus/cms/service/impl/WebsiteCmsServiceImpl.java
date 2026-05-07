@@ -71,6 +71,17 @@ public class WebsiteCmsServiceImpl implements WebsiteCmsService {
         config.setAdmissionsOpen(req.isAdmissionsOpen());
         config.setAdmissionInfo(req.getAdmissionInfo());
         config.setThemeColor(req.getThemeColor());
+        config.setLogoUrl(req.getLogoUrl());
+        config.setSchoolEstablishedYear(req.getSchoolEstablishedYear());
+        config.setAffiliationBoard(req.getAffiliationBoard());
+        config.setMediumOfInstruction(req.getMediumOfInstruction());
+        config.setSchoolType(req.getSchoolType());
+        config.setStudentCount(req.getStudentCount());
+        config.setTeacherCount(req.getTeacherCount());
+        config.setHeroCtaText(req.getHeroCtaText());
+        config.setHeroCtaLink(req.getHeroCtaLink());
+        config.setAchievementBadge(req.getAchievementBadge());
+        config.setNoticesText(req.getNoticesText());
         return toConfigResponse(configRepo.save(config));
     }
 
@@ -229,6 +240,17 @@ public class WebsiteCmsServiceImpl implements WebsiteCmsService {
         r.setAdmissionsOpen(c.isAdmissionsOpen());
         r.setAdmissionInfo(c.getAdmissionInfo());
         r.setThemeColor(c.getThemeColor());
+        r.setLogoUrl(c.getLogoUrl());
+        r.setSchoolEstablishedYear(c.getSchoolEstablishedYear());
+        r.setAffiliationBoard(c.getAffiliationBoard());
+        r.setMediumOfInstruction(c.getMediumOfInstruction());
+        r.setSchoolType(c.getSchoolType());
+        r.setStudentCount(c.getStudentCount());
+        r.setTeacherCount(c.getTeacherCount());
+        r.setHeroCtaText(c.getHeroCtaText());
+        r.setHeroCtaLink(c.getHeroCtaLink());
+        r.setAchievementBadge(c.getAchievementBadge());
+        r.setNoticesText(c.getNoticesText());
         r.setUpdatedAt(c.getUpdatedAt());
         return r;
     }
