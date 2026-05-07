@@ -84,6 +84,39 @@ public class WebsiteConfig {
     @Column(name = "theme_color", length = 20)
     private String themeColor = "#10b981";
 
+    @Column(name = "logo_url", length = 500)
+    private String logoUrl;
+
+    @Column(name = "school_established_year")
+    private Integer schoolEstablishedYear;
+
+    @Column(name = "affiliation_board", length = 50)
+    private String affiliationBoard;
+
+    @Column(name = "medium_of_instruction", length = 50)
+    private String mediumOfInstruction;
+
+    @Column(name = "school_type", length = 50)
+    private String schoolType;
+
+    @Column(name = "student_count")
+    private Integer studentCount;
+
+    @Column(name = "teacher_count")
+    private Integer teacherCount;
+
+    @Column(name = "hero_cta_text", length = 100)
+    private String heroCtaText;
+
+    @Column(name = "hero_cta_link", length = 500)
+    private String heroCtaLink;
+
+    @Column(name = "achievement_badge", length = 200)
+    private String achievementBadge;
+
+    @Column(name = "notices_text", columnDefinition = "TEXT")
+    private String noticesText;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
