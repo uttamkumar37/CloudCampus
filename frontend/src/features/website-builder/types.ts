@@ -22,6 +22,17 @@ export interface WebsiteConfig {
   admissionsOpen: boolean
   admissionInfo: string
   themeColor: string
+  logoUrl: string
+  schoolEstablishedYear: number | null
+  affiliationBoard: string
+  mediumOfInstruction: string
+  schoolType: string
+  studentCount: number | null
+  teacherCount: number | null
+  heroCtaText: string
+  heroCtaLink: string
+  achievementBadge: string
+  noticesText: string
   updatedAt?: string
 }
 

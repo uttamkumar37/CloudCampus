@@ -1,14 +1,15 @@
 # CloudCampus Setup Guide
 
-Version: 2026-05-06
+Version: 2026-05-07
 
 ## 1. Prerequisites
 
 - Java 17
 - Maven 3.8+
-- Node.js 22+
+- Node.js 20+ (22 recommended)
 - npm 10+
 - Docker Desktop
+- Internet access at runtime (Inter font loaded from Google Fonts)
 
 ## 2. Docker Setup (Recommended)
 
@@ -68,11 +69,13 @@ npm run dev
 
 ## 4. Tenant and Login Flow
 
-- Login UI requires school selection and role selection before credentials
-- Client sends X-Tenant-Slug for tenant-scoped APIs
-- Backend supports legacy X-Tenant-ID for compatibility
-- Super-admin API calls should not include tenant headers
-- Subdomain based tenant resolution is available
+- Login UI shows a single compact form — school name search, role dropdown, username, and password all on one screen
+- School search uses a live dropdown; selecting a school resolves the tenant slug automatically
+- Client sends `X-Tenant-Slug` header for all tenant-scoped API calls
+- Backend supports legacy `X-Tenant-ID` header for compatibility
+- Super Admin logs in at `/super-admin/login` — no school or role selection needed
+- Super-admin API calls must not include tenant headers
+- Subdomain-based tenant resolution is available when `APP_TENANT_SUBDOMAIN_ENABLED=true`
 
 ## 5. Seed Demo Data
 
