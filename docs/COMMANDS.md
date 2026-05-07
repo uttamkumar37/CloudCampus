@@ -1,6 +1,4 @@
-# CloudCampus — Commands Reference
-
-> Version: 1.2 | Last Updated: 2026-05-06
+# Commands Reference
 
 Complete reference for all commands used to develop, test, and deploy CloudCampus.
 
@@ -381,4 +379,3 @@ docker stats --no-stream
 
 ---
 
-> Back to [Index](./01_README.md)

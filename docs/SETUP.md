@@ -1,6 +1,4 @@
-# CloudCampus Setup Guide
-
-Version: 2026-05-07
+# Setup Guide
 
 ## 1. Prerequisites
 

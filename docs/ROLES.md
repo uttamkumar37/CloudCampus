@@ -1,7 +1,4 @@
-# CloudCampus — Role Matrix
-
-
-> Version: 1.1 | Last Updated: 2026-05-07
+# Roles & Permissions
 
 ---
 

@@ -1,204 +1,157 @@
 # CloudCampus
 
-CloudCampus is a multi-tenant school management SaaS platform built with Spring Boot, React, and PostgreSQL schema isolation.
+Multi-tenant school management SaaS platform — built with Spring Boot 3.4, React 19, and PostgreSQL schema-per-tenant isolation.
 
-## What Is Included
+---
 
-- Multi-tenant backend with schema-per-tenant isolation
-- JWT authentication with role-based authorization
-- School-first login UX (school search + role selection)
-- Domain modules for academics, attendance, exams, fees, homework, timetable, parent portal, and dashboards
-- Enhanced bulk operations workflow (validate, preview, execute, jobs, retry, error report)
-- Tenant provisioning with automatic School Admin account creation
-- Tenant activation/deactivation controls for Super Admin
-- Dockerized local stack (Postgres + backend + frontend)
+## What It Does
 
-## Architecture Snapshot
+CloudCampus gives each school its own isolated workspace with:
 
-```text
-Browser SPA (React)
-	-> /api/v1 via Axios (HttpOnly cookie + X-Tenant-Slug)
+- **Student & Teacher management** — records, profiles, auto-provisioned credentials
+- **Academics** — classes, sections, subjects, timetable
+- **Attendance** — daily marking, absence tracking
+- **Fees** — assignments, payments, partial/full status tracking
+- **Exams & Marks** — exam creation, result entry, per-student views
+- **Homework** — assignment publishing, overdue tracking
+- **Parent Portal** — linked children, attendance + fee + results view
+- **Bulk Operations** — Excel upload → validate → preview → execute → job tracking
+- **Website Builder** — each school gets a public website with CMS (gallery, admissions form, notices)
+- **Subscriptions** — plan tiers (FREE / BASIC / PRO / ENTERPRISE), Razorpay gateway
 
-Spring Boot API
-	-> TenantRequestFilter (header/subdomain to schema)
-	-> JwtAuthenticationFilter
-	-> Controller -> Service -> Repository
-	-> Hibernate multi-tenancy routing
+---
 
-PostgreSQL
-	-> public schema (tenant registry, platform tables)
-	-> school_<slug>/custom schemas (tenant domain data)
-```
+## Tech Stack
 
-## Core Tech
+| Layer | Technology |
+|---|---|
+| Backend | Java 17, Spring Boot 3.4, Spring Security, Spring Data JPA, Flyway |
+| Frontend | React 19, TypeScript, Vite, TanStack Query v5, Axios |
+| Database | PostgreSQL 16 — schema-per-tenant multi-tenancy |
+| Runtime | Docker Compose |
 
-- Backend: Java 17, Spring Boot 3.4.4, Spring Security, Spring Data JPA, Flyway
-- Frontend: React 19, TypeScript, Vite, TanStack Query, Axios
-- Data: PostgreSQL 16
-- Runtime: Docker Compose
+---
 
-## Quick Start (Docker)
+## Quick Start
 
 ```bash
-git clone https://github.com/your-org/CloudCampus.git
+git clone https://github.com/uttamkumar37/CloudCampus.git
 cd CloudCampus
+
+# Copy and configure environment
 cp .env.example .env
+# Set: DB_PASSWORD, JWT_SECRET, BOOTSTRAP_ADMIN_USERNAME, BOOTSTRAP_ADMIN_PASSWORD
 
-# Set required values in .env at minimum:
-# - DB_PASSWORD
-# - JWT_SECRET
-# - BOOTSTRAP_ADMIN_USERNAME
-# - BOOTSTRAP_ADMIN_PASSWORD
-
-docker compose down -v
+# Start everything
 docker compose up --build
 ```
 
-### Endpoints
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8080/api/v1 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
 
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8080/api/v1
-- Swagger UI: http://localhost:8080/swagger-ui.html
-
-## Tenant Handling
-
-- Primary tenant header: X-Tenant-Slug
-- Legacy fallback header (temporary compatibility): X-Tenant-ID
-- Super Admin platform APIs should omit tenant headers
-- Subdomain resolution is supported and configurable
-- External contracts use school slug; internal schema mapping is resolved server-side
-
-## API Envelope Standard
-
-All APIs return the standardized envelope:
-
-```json
-{
-	"success": true,
-	"message": "string",
-	"data": {}
-}
-```
-
-## Repository Layout
-
-```text
-CloudCampus/
-	backend/
-		src/main/java/com/cloudcampus/
-			auth/ config/ common/ tenant/ user/ student/ teacher/ academic/
-			attendance/ exam/ fees/ homework/ timetable/ parent/ dashboard/
-			subscription/
-		src/main/resources/
-			application.yml
-			db/migration/
-	frontend/
-		src/
-			app/ api/ components/ features/ hooks/ types/ utils/
-	docs/
-	scripts/
-	docker-compose.yml
-```
-
-## Roles
-
-- SUPER_ADMIN: platform-wide administration
-- SCHOOL_ADMIN: tenant administration
-- TEACHER: operational academic workflows
-- STUDENT: personal academic view
-- PARENT: linked-student view
-
-## Testing
+Then seed demo data:
 
 ```bash
-cd backend
-mvn test
-```
-
-## Demo Data Seeding
-
-```bash
-# Minimal demo tenant seed
-python3 scripts/seed_demo.py
-
-# Comprehensive dashboard seed (Sunrise Academy)
 python3 scripts/seed_dashboard_data.py
 ```
 
-## Documentation Index
+Login at http://localhost:5173/login — select **Sunrise Academy**, any role, password `Demo@2026!`
 
-- [docs/01_README.md](docs/01_README.md)
-- [docs/02_SETUP.md](docs/02_SETUP.md)
-- [docs/03_ARCHITECTURE.md](docs/03_ARCHITECTURE.md)
-- [docs/07_API_REFERENCE.md](docs/07_API_REFERENCE.md)
-- [docs/08_API.md](docs/08_API.md)
-- [docs/09_TESTING.md](docs/09_TESTING.md)
-- [docs/05_ROLE_MATRIX.md](docs/05_ROLE_MATRIX.md)
+Super Admin: http://localhost:5173/super-admin/login — `superadmin` / `SuperAdmin_Docker_2026!`
 
-## Git Branching Strategy
+---
 
-### Branch Naming Convention
+## Architecture
 
 ```
-<type>/<module>/<short-description>
+Browser (React SPA)
+  └─ /api/v1  →  TenantRequestFilter  →  JwtAuthenticationFilter
+                       │
+                       ▼
+               Spring Boot Controllers
+               └─ Service → Repository → PostgreSQL
+                                            ├─ public schema   (tenants, subscriptions, payments, CMS)
+                                            └─ <school> schema  (students, teachers, academic data, …)
 ```
 
-| Type | When to use |
+Each school's data lives in its own PostgreSQL schema. The `public` schema holds platform-level data.
+
+**Auth flow:** Login → JWT in HttpOnly cookie (`app_jwt`) → `TenantRequestFilter` resolves schema from `X-Tenant-Slug` header → `FirstLoginEnforcementFilter` enforces credential update on first login.
+
+**Roles:** `SUPER_ADMIN` · `SCHOOL_ADMIN` · `TEACHER` · `STUDENT` · `PARENT`
+
+---
+
+## Repository Structure
+
+```
+CloudCampus/
+├── backend/
+│   └── src/main/java/com/cloudcampus/
+│       ├── auth/          auth, JWT, OTP, first-login enforcement
+│       ├── tenant/        multi-tenant schema management
+│       ├── user/          user accounts, provisioning
+│       ├── student/       student CRUD + auto provisioning
+│       ├── teacher/       teacher CRUD + auto provisioning
+│       ├── academic/      classes, sections, subjects
+│       ├── attendance/    attendance marking
+│       ├── fees/          fee assignment + payments
+│       ├── exam/          exams + results
+│       ├── homework/      homework assignments
+│       ├── timetable/     timetable slots
+│       ├── parent/        parent–student links
+│       ├── dashboard/     role-based dashboard aggregation
+│       ├── bulk/          Excel bulk operations workflow
+│       ├── cms/           school website builder (CMS)
+│       ├── subscription/  plans, Razorpay payment gateway
+│       └── common/        ApiResponse, exceptions, audit base
+├── frontend/
+│   └── src/features/
+│       ├── auth/          login, session
+│       ├── student/       student management
+│       ├── teacher/       teacher management
+│       ├── academic/      classes, subjects, sections
+│       ├── attendance/    attendance marking
+│       ├── fees/          fee management
+│       ├── marks/         exams, results
+│       ├── homework/      homework
+│       ├── timetable/     timetable grid
+│       ├── parent/        parent portal
+│       ├── dashboard/     role dashboards
+│       ├── super-admin/   platform admin
+│       ├── bulk-upload/   bulk operations UI
+│       ├── website-builder/ school website CMS
+│       ├── public-website/  public school website
+│       └── profile/       user profile
+├── docs/                  documentation (see below)
+├── scripts/               seed scripts (Python)
+├── docker-compose.yml
+├── CHANGELOG.md
+└── CONTRIBUTING.md
+```
+
+---
+
+## Documentation
+
+| Doc | Description |
 |---|---|
-| `feature/` | New functionality |
-| `fix/` | Bug fix |
-| `hotfix/` | Urgent production fix |
-| `refactor/` | Code cleanup, no new feature |
-| `chore/` | Config, deps, tooling |
-| `test/` | Adding or fixing tests |
-| `docs/` | Documentation only |
+| [docs/SETUP.md](docs/SETUP.md) | Local setup — Docker, manual, env vars, troubleshooting |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, module breakdown, DB schema, auth flow |
+| [docs/PLATFORM.md](docs/PLATFORM.md) | End-to-end workflows for every role and feature |
+| [docs/ROLES.md](docs/ROLES.md) | Permission matrix, `@PreAuthorize` patterns, JWT structure |
+| [docs/API.md](docs/API.md) | Full API reference with request/response schemas |
+| [docs/TESTING.md](docs/TESTING.md) | Unit tests, integration tests, manual API testing |
+| [docs/BILLING.md](docs/BILLING.md) | Subscription plans, Razorpay payment flow |
+| [docs/DEMO.md](docs/DEMO.md) | Demo credentials, Sunrise Academy seed data |
+| [docs/COMMANDS.md](docs/COMMANDS.md) | All CLI commands — Docker, Maven, Git, DB, seeding |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Branch naming, commit format, PR process |
 
-### Examples
-
-```bash
-feature/academic/add-assignment-module
-feature/fees/payment-receipt-api
-fix/auth/jwt-expiry-not-refreshing
-refactor/academic/add-mapper-layer
-hotfix/tenant/schema-creation-failure
-chore/deps/upgrade-spring-boot-3.3
-```
-
-### Workflow
-
-```bash
-# Start new work — always branch from main
-git checkout main && git pull origin main
-git checkout -b feature/<module>/<what-you-are-building>
-
-# Commit using conventional commits
-git commit -m "feat(<module>): <what you did>"
-git commit -m "fix(<module>): <what you fixed>"
-git commit -m "refactor(<module>): <what you changed>"
-
-# Push and open Pull Request
-git push origin feature/<module>/<what-you-are-building>
-
-# After PR is merged — clean up
-git checkout main && git pull origin main
-git branch -d feature/<module>/<what-you-are-building>
-```
-
-### Commit Message Format
-
-```
-feat(fees): add payment receipt generation
-fix(auth): resolve jwt token expiry refresh issue
-refactor(academic): extract mapper layer for dto conversion
-test(exam): add unit tests for ExamServiceImpl
-chore(deps): upgrade spring-boot to 3.4.5
-```
-
-### Branch Protection (main)
-
-- No direct pushes to `main`
-- All changes go through Pull Requests
-- Force pushes and deletions are not allowed
+---
 
 ## License
 

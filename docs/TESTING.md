@@ -1,7 +1,4 @@
-# CloudCampus — Testing Guide
-
-
-> Version: 1.1 | Last Updated: 2026-05-05
+# Testing Guide
 
 ---
 

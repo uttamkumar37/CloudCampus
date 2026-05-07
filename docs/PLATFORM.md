@@ -1,7 +1,4 @@
-# CloudCampus — Platform Blueprint
-
-
-> Version: 1.2 | Last Updated: 2026-05-07
+# Platform Guide
 
 This document explains how CloudCampus works from the perspective of each user role, covering workflows, access boundaries, and system capabilities.
 

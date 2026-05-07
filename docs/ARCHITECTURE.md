@@ -1,6 +1,4 @@
-# CloudCampus Architecture
-
-Version: 2026-05-08
+# Architecture
 
 ## 1. High-Level Topology
 
