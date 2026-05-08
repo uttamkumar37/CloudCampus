@@ -7,8 +7,9 @@ export function useUpdateStudent() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateStudentRequest }) =>
       updateStudent(id, payload),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['students'] })
+      queryClient.invalidateQueries({ queryKey: ['students', 'details', variables.id] })
     },
   })
 }

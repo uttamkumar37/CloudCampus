@@ -7,6 +7,31 @@ All notable changes to CloudCampus are documented here.
 ## [Unreleased] — 2026-05-08
 
 ### Added
+- **Teacher management redesign** — full parity with Student management in the Admin portal
+  - `TeachersPage` — modal create/edit, status tabs (All / Active / Inactive / Resigned / On Leave), search by name/employee no/email, professional table with class-teacher column, hover actions (View / Edit / Delete)
+  - `TeacherAdminProfilePage` — 4-tab profile: Overview, Timetable, Recent Homework, Class Assignments
+  - Class Assignments tab — assign/unassign sections as class teacher directly from teacher profile
+- **Class Teacher feature**
+  - `sections.class_teacher_id UUID` — nullable FK to `teachers.id ON DELETE SET NULL` (V12 migration + new-tenant DDL)
+  - `teachers.status VARCHAR(20) DEFAULT 'ACTIVE'` — `TeacherStatus` enum: ACTIVE, INACTIVE, RESIGNED, ON_LEAVE (V12 migration + new-tenant DDL)
+  - `GET/POST /academics/sections` return `classTeacherId` and `classTeacherName`
+  - `PUT /academics/sections/{sectionId}/class-teacher` — assign a teacher
+  - `DELETE /academics/sections/{sectionId}/class-teacher` — remove assignment
+  - `TeacherResponse.classTeacherSections` — list of sections where teacher is class teacher
+- **Teacher search and status filter** — `GET /teachers?search=&status=` — 4-branch query routing (no Hibernate null-param JPQL bug); mirrors student pattern
+- **`GET /teachers/{id}/details`** response updated — `totalAssignedClasses`, `timetable`, `homework` fields
+
+### Changed
+- `TeacherController.getTeachers` — added `search` and `status` query params
+- `TeacherService.getTeachers` — new 3-arg signature
+- `TeacherUpdateRequest` — added `status` field
+- `TenantServiceImpl.initializeTenantTables` — teachers and sections DDL updated to include new columns
+
+---
+
+## [Unreleased] — 2026-05-08
+
+### Added
 - **Mobile — all-role access** — every role can now log in and use the mobile app
   - **Role picker on login** — 4-card selector (Admin / Teacher / Student / Parent) with icon, description, and demo-password hint
   - **Role-based tab navigator** — `_layout.tsx` reads `session.role` after login and renders a different tab set per role

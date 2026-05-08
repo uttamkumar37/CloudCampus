@@ -3,20 +3,24 @@ import { ENDPOINTS } from '../../../api/endpoints'
 import type { ApiResponse } from '../../../types/api'
 import type { PageResponse } from '../../../types/pagination'
 
-import type { CreateStudentRequest, Student, StudentFullDetail, UpdateStudentRequest } from '../types'
+import type { CreateStudentRequest, Student, StudentFullDetail, StudentStatus, UpdateStudentRequest } from '../types'
 
 interface GetStudentsParams {
   page?: number
   size?: number
+  search?: string
+  status?: StudentStatus
 }
 
 export async function getStudents(params: GetStudentsParams = {}) {
-  const { page = 0, size = 20 } = params
+  const { page = 0, size = 20, search, status } = params
 
   const { data } = await apiClient.get<ApiResponse<PageResponse<Student>>>(ENDPOINTS.students.base, {
     params: {
       page,
       size,
+      ...(search && search.trim() ? { search: search.trim() } : {}),
+      ...(status ? { status } : {}),
     },
   })
 
@@ -35,6 +39,11 @@ export async function updateStudent(id: string, payload: UpdateStudentRequest) {
 
 export async function deleteStudent(id: string) {
   await apiClient.delete(`${ENDPOINTS.students.base}/${id}`)
+}
+
+export async function getStudentDetails(id: string) {
+  const { data } = await apiClient.get<ApiResponse<StudentFullDetail>>(ENDPOINTS.students.details(id))
+  return data
 }
 
 export async function getMyStudentDetails() {

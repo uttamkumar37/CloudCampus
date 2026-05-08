@@ -9,6 +9,8 @@ public record SectionResponse(
         UUID classId,
         String className,
         boolean active,
-        Instant createdAt
+        Instant createdAt,
+        UUID classTeacherId,
+        String classTeacherName
 ) {
 }

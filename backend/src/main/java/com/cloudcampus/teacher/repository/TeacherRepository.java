@@ -1,9 +1,12 @@
 package com.cloudcampus.teacher.repository;
 
 import com.cloudcampus.teacher.entity.Teacher;
+import com.cloudcampus.teacher.entity.TeacherStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,6 +25,8 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID> {
 
     Page<Teacher> findAllByDeletedAtIsNull(Pageable pageable);
 
+    Page<Teacher> findAllByStatusAndDeletedAtIsNull(TeacherStatus status, Pageable pageable);
+
     long countByActiveTrue();
 
     List<Teacher> findTop5ByOrderByCreatedAtDesc();
@@ -33,4 +38,23 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID> {
     Optional<Teacher> findByEmailIgnoreCase(String email);
 
     Optional<Teacher> findFirstByFirstNameIgnoreCaseAndLastNameIgnoreCase(String firstName, String lastName);
+
+    @Query("SELECT t FROM Teacher t WHERE t.deletedAt IS NULL " +
+           "AND (LOWER(t.firstName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "     OR LOWER(t.lastName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "     OR LOWER(t.employeeNo) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "     OR LOWER(t.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Teacher> searchTeachers(@Param("search") String search, Pageable pageable);
+
+    @Query("SELECT t FROM Teacher t WHERE t.deletedAt IS NULL " +
+           "AND (LOWER(t.firstName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "     OR LOWER(t.lastName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "     OR LOWER(t.employeeNo) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "     OR LOWER(t.email) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND t.status = :status")
+    Page<Teacher> searchTeachersWithStatus(
+            @Param("search") String search,
+            @Param("status") TeacherStatus status,
+            Pageable pageable
+    );
 }

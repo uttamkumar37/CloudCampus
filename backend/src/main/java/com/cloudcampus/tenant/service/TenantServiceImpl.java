@@ -216,6 +216,7 @@ public class TenantServiceImpl implements TenantService {
                     phone VARCHAR(30),
                     user_id UUID REFERENCES "%s".users(id),
                     active BOOLEAN NOT NULL DEFAULT TRUE,
+                    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
                     created_at TIMESTAMPTZ NOT NULL,
                     updated_at TIMESTAMPTZ,
                     created_by UUID,
@@ -235,6 +236,7 @@ public class TenantServiceImpl implements TenantService {
                     hire_date DATE NOT NULL,
                     user_id UUID REFERENCES "%s".users(id),
                     active BOOLEAN NOT NULL DEFAULT TRUE,
+                    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
                     created_at TIMESTAMPTZ NOT NULL,
                     updated_at TIMESTAMPTZ,
                     created_by UUID,
@@ -267,10 +269,11 @@ public class TenantServiceImpl implements TenantService {
                     id UUID PRIMARY KEY,
                     name VARCHAR(80) NOT NULL,
                     class_id UUID NOT NULL REFERENCES "%s".classes(id),
+                    class_teacher_id UUID REFERENCES "%s".teachers(id) ON DELETE SET NULL,
                     active BOOLEAN NOT NULL DEFAULT TRUE,
                     created_at TIMESTAMPTZ NOT NULL
                 )
-                """.formatted(schemaName, schemaName);
+                """.formatted(schemaName, schemaName, schemaName);
 
         String createAttendanceTable = """
                 CREATE TABLE IF NOT EXISTS "%s".attendance_records (
@@ -475,6 +478,10 @@ public class TenantServiceImpl implements TenantService {
         for (String table : softDeleteTables) {
             jdbcTemplate.execute("ALTER TABLE \"" + schemaName + "\".\"" + table + "\" ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ");
         }
+
+        // Teacher status and class-teacher columns (V12 equivalent for new tenants)
+        jdbcTemplate.execute("ALTER TABLE \"" + schemaName + "\".teachers ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
+        jdbcTemplate.execute("ALTER TABLE \"" + schemaName + "\".sections ADD COLUMN IF NOT EXISTS class_teacher_id UUID REFERENCES \"" + schemaName + "\".teachers(id) ON DELETE SET NULL");
 
         // Additional indexes for query patterns found in service layer
         // (student/teacher linked-user resolution, timetable, homework, fee date range, parent lookup)

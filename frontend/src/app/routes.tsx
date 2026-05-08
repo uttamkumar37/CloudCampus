@@ -10,7 +10,9 @@ import { LoginPage } from '../features/auth/pages/LoginPage'
 import { ChangePasswordPage } from '../features/auth/pages/ChangePasswordPage'
 import { AcademicPage } from '../features/academic/pages/AcademicPage'
 import { StudentsPage } from '../features/student/pages/StudentsPage'
+import { StudentAdminProfilePage } from '../features/student/pages/StudentAdminProfilePage'
 import { TeachersPage } from '../features/teacher/pages/TeachersPage'
+import { TeacherAdminProfilePage } from '../features/teacher/pages/TeacherAdminProfilePage'
 import { BulkUploadPage } from '../features/bulk-upload/pages/BulkUploadPage'
 import { SuperAdminDashboardPage } from '../features/super-admin/pages/SuperAdminDashboardPage'
 import { SuperAdminLoginPage } from '../features/super-admin/pages/SuperAdminLoginPage'
@@ -170,10 +172,26 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: 'students/:id',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
+            <StudentAdminProfilePage />
+          </PrivateRoute>
+        ),
+      },
+      {
         path: 'teachers',
         element: (
           <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
             <TeachersPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'teachers/:id',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
+            <TeacherAdminProfilePage />
           </PrivateRoute>
         ),
       },

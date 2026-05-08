@@ -59,6 +59,10 @@ public class Student extends Auditable {
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private StudentStatus status = StudentStatus.ACTIVE;
+
     @Column(name = "deleted_at")
     private Instant deletedAt;
 

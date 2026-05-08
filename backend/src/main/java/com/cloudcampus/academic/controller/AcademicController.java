@@ -15,13 +15,18 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/academics")
@@ -95,5 +100,33 @@ public class AcademicController {
     public ResponseEntity<ApiResponse<List<SectionResponse>>> getSections() {
         List<SectionResponse> sections = academicService.getSections();
         return ResponseEntity.ok(ApiResponse.success("Sections fetched successfully", sections));
+    }
+
+    @PutMapping("/sections/{sectionId}/class-teacher")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
+    @Operation(summary = "Assign class teacher to a section", parameters = {
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
+    })
+    public ResponseEntity<ApiResponse<SectionResponse>> assignClassTeacher(
+            @PathVariable UUID sectionId,
+            @RequestBody Map<String, UUID> body) {
+        UUID teacherId = body.get("teacherId");
+        if (teacherId == null) {
+            throw new IllegalArgumentException("teacherId is required");
+        }
+        SectionResponse response = academicService.assignClassTeacher(sectionId, teacherId);
+        return ResponseEntity.ok(ApiResponse.success("Class teacher assigned successfully", response));
+    }
+
+    @DeleteMapping("/sections/{sectionId}/class-teacher")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
+    @Operation(summary = "Remove class teacher from a section", parameters = {
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
+    })
+    public ResponseEntity<ApiResponse<SectionResponse>> removeClassTeacher(@PathVariable UUID sectionId) {
+        SectionResponse response = academicService.removeClassTeacher(sectionId);
+        return ResponseEntity.ok(ApiResponse.success("Class teacher removed successfully", response));
     }
 }

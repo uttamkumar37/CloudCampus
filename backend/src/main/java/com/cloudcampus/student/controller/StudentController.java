@@ -24,7 +24,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.cloudcampus.student.entity.StudentStatus;
 
 import java.util.UUID;
 
@@ -98,8 +100,10 @@ public class StudentController {
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<PageResponse<StudentResponse>>> getStudents(
-            @PageableDefault(size = 20, sort = "lastName", direction = Sort.Direction.ASC) Pageable pageable) {
-        PageResponse<StudentResponse> page = PageResponse.from(studentService.getStudents(pageable));
+            @PageableDefault(size = 20, sort = "lastName", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) StudentStatus status) {
+        PageResponse<StudentResponse> page = PageResponse.from(studentService.getStudents(pageable, search, status));
         return ResponseEntity.ok(ApiResponse.success("Students fetched successfully", page));
     }
 

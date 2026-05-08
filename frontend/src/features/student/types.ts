@@ -9,9 +9,12 @@ export interface Student {
   phone: string | null
   active: boolean
   createdAt: string
+  status: StudentStatus
 }
 
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER'
+
+export type StudentStatus = 'ACTIVE' | 'INACTIVE' | 'ALUMNI' | 'DEBARRED' | 'TC_ISSUED'
 
 export interface CreateStudentRequest {
   admissionNo: string
@@ -28,6 +31,13 @@ export interface UpdateStudentRequest {
   lastName?: string
   email?: string | null
   phone?: string | null
+  status?: StudentStatus
+}
+
+export interface StudentFilters {
+  search: string
+  status: StudentStatus | ''
+  gender: Gender | ''
 }
 
 export interface StudentParentContact {

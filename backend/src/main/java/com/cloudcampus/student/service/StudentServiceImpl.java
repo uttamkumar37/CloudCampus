@@ -4,6 +4,7 @@ import com.cloudcampus.student.dto.StudentCreateRequest;
 import com.cloudcampus.student.dto.StudentDetailResponse;
 import com.cloudcampus.student.dto.StudentResponse;
 import com.cloudcampus.student.dto.StudentUpdateRequest;
+import com.cloudcampus.student.entity.StudentStatus;
 import com.cloudcampus.academic.entity.SchoolClass;
 import com.cloudcampus.academic.entity.Section;
 import com.cloudcampus.academic.entity.Subject;
@@ -256,9 +257,18 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<StudentResponse> getStudents(Pageable pageable) {
+    public Page<StudentResponse> getStudents(Pageable pageable, String search, StudentStatus status) {
         validateTenantContext();
-        return studentRepository.findAllByDeletedAtIsNull(pageable).map(this::map);
+        boolean hasSearch = search != null && !search.isBlank();
+        if (!hasSearch && status == null) {
+            return studentRepository.findAllByDeletedAtIsNull(pageable).map(this::map);
+        } else if (!hasSearch) {
+            return studentRepository.findAllByStatusAndDeletedAtIsNull(status, pageable).map(this::map);
+        } else if (status == null) {
+            return studentRepository.searchStudents(search.trim(), pageable).map(this::map);
+        } else {
+            return studentRepository.searchStudentsWithStatus(search.trim(), status, pageable).map(this::map);
+        }
     }
 
     @Override
@@ -275,6 +285,10 @@ public class StudentServiceImpl implements StudentService {
         }
         student.setEmail(normalizeNullable(request.email()));
         student.setPhone(normalizeNullable(request.phone()));
+        if (request.status() != null) {
+            student.setStatus(request.status());
+            student.setActive(request.status() == StudentStatus.ACTIVE);
+        }
         Student saved = studentRepository.save(student);
         log.info("Student updated: id={}, tenant={}", id, TenantContext.getTenant());
         return map(saved);
@@ -316,7 +330,8 @@ public class StudentServiceImpl implements StudentService {
                 student.getEmail(),
                 student.getPhone(),
                 student.isActive(),
-                student.getCreatedAt()
+                student.getCreatedAt(),
+                student.getStatus()
         );
     }
 }

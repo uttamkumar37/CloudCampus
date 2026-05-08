@@ -33,8 +33,8 @@ Current backend is a modular monolith under `com.cloudcampus` with domain packag
 - `tenant` — tenant CRUD, schema provisioning, status management
 - `user` — user management, role assignment, auto-credential provisioning
 - `student` — enrollment, soft delete, detail API
-- `teacher` — teacher records, soft delete, detail API
-- `academic` — classes, subjects, sections
+- `teacher` — teacher records, TeacherStatus (ACTIVE/INACTIVE/RESIGNED/ON_LEAVE), class-teacher section lookup, search/status filter, detail API
+- `academic` — classes, subjects, sections (with class-teacher assignment)
 - `attendance` — daily records, ownership checks
 - `fees` — fee assignments, payment recording, auto-status transitions
 - `exam` — scheduling, result entry, mark overflow guard
@@ -84,7 +84,8 @@ Tenant isolation flow:
 Tables provisioned automatically on `POST /tenants`:
 
 ```
-users, students, teachers, classes, subjects, sections,
+users, students, teachers (+ status column),
+classes, subjects, sections (+ class_teacher_id FK),
 attendance_records, fee_assignments, fee_payments,
 exams, exam_results, homework_assignments, timetable_slots,
 parent_students, tenant_website_config, website_sections,
@@ -334,8 +335,9 @@ Typical school-admin sequence:
 
 1. Create classes, subjects, and sections.
 2. Add teachers and students, optionally through bulk upload.
-3. Configure timetable, fees, and exams.
-4. Use dashboards, parent links, and website builder as ongoing operational tools.
+3. Assign class teachers to sections (`PUT /academics/sections/{id}/class-teacher`).
+4. Configure timetable, fees, and exams.
+5. Use dashboards, parent links, and website builder as ongoing operational tools.
 
 ### Teacher and family flows
 

@@ -1,5 +1,6 @@
 package com.cloudcampus.student.dto;
 
+import com.cloudcampus.student.entity.StudentStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
@@ -15,6 +16,8 @@ public record StudentUpdateRequest(
         String email,
 
         @Size(max = 30, message = "phone must be at most 30 characters")
-        String phone
+        String phone,
+
+        StudentStatus status
 ) {
 }
