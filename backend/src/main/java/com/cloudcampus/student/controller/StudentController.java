@@ -58,6 +58,17 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.success("Student profile fetched successfully", response));
     }
 
+    @GetMapping("/me/details")
+    @PreAuthorize("hasRole('STUDENT')")
+    @Operation(summary = "Get full details of own student profile (fees, exams, attendance, homework, parents)", parameters = {
+            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
+            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
+    })
+    public ResponseEntity<ApiResponse<StudentDetailResponse>> getMyDetails() {
+        StudentDetailResponse response = studentService.getMyDetails();
+        return ResponseEntity.ok(ApiResponse.success("Student details fetched successfully", response));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
     @Operation(summary = "Get student by id", parameters = {

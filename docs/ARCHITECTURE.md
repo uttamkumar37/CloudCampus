@@ -5,18 +5,20 @@ This is the canonical product and system reference for CloudCampus. It combines 
 ## 1. High-Level Topology
 
 ```text
-React SPA (frontend)
-  -> Inter font (Google Fonts), Tailwind CSS v4, cc-* design system
-  -> Axios + TanStack Query
-  -> HttpOnly auth cookie app_jwt + X-Tenant-Slug header
-  -> Spring Boot REST API (/api/v1)
-
-Spring Boot backend
-  -> TenantRequestFilter (slug/subdomain to schema)
-  -> JwtAuthenticationFilter
-  -> FirstLoginEnforcementFilter (credential gate on first login)
-  -> Controller -> Service -> Repository
-  -> Hibernate schema-based multi-tenancy routing
+React SPA (frontend)                    React Native App (mobile)
+  -> Tailwind CSS v4, cc-* design sys     -> Expo Router (file-based routing)
+  -> Axios + TanStack Query               -> Zustand auth store
+  -> HttpOnly auth cookie app_jwt         -> Axios + EXPO_PUBLIC_API_URL
+  -> X-Tenant-Slug header                 -> X-Tenant-Slug header (from session)
+          |                                         |
+          +------------------+----------------------+
+                             |
+                    Spring Boot REST API (/api/v1)
+                      -> TenantRequestFilter (slug/subdomain to schema)
+                      -> JwtAuthenticationFilter
+                      -> FirstLoginEnforcementFilter (credential gate on first login)
+                      -> Controller -> Service -> Repository
+                      -> Hibernate schema-based multi-tenancy routing
 
 PostgreSQL 16
   -> public schema: tenant registry + platform data + subscription plans
@@ -41,7 +43,7 @@ Current backend is a modular monolith under `com.cloudcampus` with domain packag
 - `parent` — parent-student links, my-children API
 - `dashboard` — tenant summary, super admin summary
 - `subscription` — plans, tenant subscriptions, SubscriptionGuardService
-- `website` — website CMS: config, sections, content, media, admission leads
+- `website` — website CMS: config, sections, content, media, admission leads; frontend-only features (blog, events, teachers, social proof, SEO, marketing, media embeds, courses, alumni, A/B testing, merchandise) use localStorage and are plan-gated client-side (FREE / GROWTH / PRO / ELITE)
 - `bulk` — bulk upload (Excel via Apache POI), guided bulk operations workflow
 - `common` — API envelope, exception handling, audit
 - `config` — security, OpenAPI, multi-tenant Hibernate wiring
@@ -113,7 +115,76 @@ OTP credential update flow:
 1. `POST /auth/credentials/send-otp` — OTP generated and stored
 2. `POST /auth/credentials/update` — OTP validated, new credentials set, `firstLoginRequired` cleared
 
-## 5. Frontend Architecture
+## 5. Mobile Architecture
+
+### Stack
+
+| Concern | Technology |
+|---|---|
+| Framework | React Native + Expo SDK (newArchEnabled) |
+| Routing | Expo Router (file-based, same model as Next.js App Router) |
+| State | Zustand (`useAuthStore`) — session + tenant slug persisted to SecureStore/AsyncStorage |
+| HTTP | Axios — `EXPO_PUBLIC_API_URL` base URL, `X-Tenant-Slug` injected per-request from session |
+| Builds | EAS Build — development (devClient/internal), preview (APK), production (AAB) |
+
+### Screen map
+
+```
+app/
+  _layout.tsx              — root: load session → redirect to (auth) or (app)
+  (auth)/
+    login.tsx              — slug + username + password + role picker (Admin/Teacher/Student/Parent)
+  (app)/
+    _layout.tsx            — role-aware tab navigator (different tab sets per role)
+    index.tsx              — Dashboard (SCHOOL_ADMIN + TEACHER): KPI cards, quick actions, activity
+    students/
+      index.tsx            — Student list with search (SCHOOL_ADMIN + TEACHER)
+      [id].tsx             — Student detail: profile, fees, exams, attendance, parents
+    fees/
+      index.tsx            — Fee lookup + Record Payment modal (SCHOOL_ADMIN only)
+    attendance/
+      index.tsx            — Attendance by date with navigator (SCHOOL_ADMIN + TEACHER)
+    student/
+      index.tsx            — My Profile: hero card, exam results, attendance summary (STUDENT)
+      fees.tsx             — My Fees: fee list with status + pending alert (STUDENT)
+      attendance.tsx       — My Attendance: ring %, record list (STUDENT)
+    parent/
+      index.tsx            — My Children: linked children list with class info (PARENT)
+      [childId].tsx        — Child Detail: fees, exams, attendance for one child (PARENT)
+```
+
+### Role-based tab sets
+
+| Role | Tabs |
+|---|---|
+| `SCHOOL_ADMIN` | Home · Students · Fees · Attendance |
+| `TEACHER` | Home · Students · Attendance *(Fees tab hidden)* |
+| `STUDENT` | My Profile · My Fees · My Attendance |
+| `PARENT` | My Children *(tap → child detail)* |
+
+### Auth and tenant flow
+
+1. Login screen presents a 4-option role picker (Admin / Teacher / Student / Parent)
+2. Login sends `{ tenantSlug, username, password, role }` to `POST /auth/login`
+3. JWT is returned; session `{ token, tenantSlug, username, role, schoolName }` stored in SecureStore via Zustand
+4. Root layout redirects unauthenticated users to `/(auth)/login`; authenticated users to `/(app)`
+5. `_layout.tsx` reads `session.role` and renders the matching tab set
+
+### APIs consumed by mobile
+
+| API | Roles | Screen |
+|---|---|---|
+| `POST /auth/login` | All | Login |
+| `GET /dashboard/tenant-summary` | Admin, Teacher | Dashboard |
+| `GET /students` (paginated) | Admin, Teacher | Students list |
+| `GET /students/{id}/details` | Admin, Teacher, Parent | Student / Child detail |
+| `GET /students/me/details` | Student | My Profile, My Fees, My Attendance |
+| `GET /fees/students/{studentId}/assignments` | Admin | Fees |
+| `POST /fees/payments` | Admin | Record Payment modal |
+| `GET /attendances?date={date}` | Admin, Teacher | Attendance |
+| `GET /parents/me/children` | Parent | My Children |
+
+## 6. Frontend Architecture
 
 ### Project structure
 
@@ -140,7 +211,7 @@ src/
     super-admin/  — tenant management, subscriptions, users
     teacher/      — teacher directory
     timetable/    — weekly schedule
-    website-builder/ — school website CMS (School Admin)
+    website-builder/ — school website CMS — 20 tabs, 100+ features, plan-gated (School Admin)
     public-website/  — public school website rendering
   utils/         — toast, storage, sanitize
   types/         — shared TypeScript interfaces
@@ -158,7 +229,7 @@ src/
 - Role selected via `<select>` dropdown (not a multi-step flow)
 - All login fields visible on one compact form
 
-## 6. Frontend Design System
+## 7. Frontend Design System
 
 ### Typography
 
@@ -218,7 +289,7 @@ Active state: white pill background with icon in emerald (`#059669`).
 | Slate-50 | `#f8fafc` | Main content background |
 | White | `#ffffff` | Card surfaces |
 
-## 7. API Contract Standard
+## 8. API Contract Standard
 
 All APIs follow:
 
@@ -229,7 +300,7 @@ All APIs follow:
   "data": {}
 }
 
-## 8. Roles and Access Model
+## 9. Roles and Access Model
 
 | Role | Scope | Primary responsibility |
 |---|---|---|
@@ -248,7 +319,7 @@ Practical access boundaries:
 
 Security enforcement uses Spring Security roles, route guards, and ownership-aware checks where needed.
 
-## 9. Core Workflows
+## 10. Core Workflows
 
 ### Tenant onboarding
 
@@ -272,7 +343,7 @@ Typical school-admin sequence:
 - Students consume timetable, fees, and academic results.
 - Parents consume linked-child attendance, fees, and result views.
 
-## 10. Subscription and Billing Model
+## 11. Subscription and Billing Model
 
 Plan tiers: `FREE`, `BASIC`, `PRO`, `ENTERPRISE`.
 
@@ -308,7 +379,7 @@ Paginated responses use `PageResponse<T>`:
 
 Error responses use `success: false` with consistent HTTP status codes and a `message` field.
 
-## 8. Docker and Runtime
+## 12. Docker and Runtime
 
 Compose services:
 
@@ -323,7 +394,7 @@ Operational recommendations:
 - Rotate `JWT_SECRET` and `BOOTSTRAP_ADMIN_PASSWORD` per environment
 - Keep Flyway enabled for deterministic schema changes
 
-## 9. Flyway Migration History
+## 13. Flyway Migration History
 
 | Version | Description |
 |---------|-------------|
@@ -334,7 +405,7 @@ Operational recommendations:
 | V5–V9 | Website CMS tables — website config, sections, content, media, admission leads |
 | V10 | `website_config` extension — 11 new columns: `logo_url`, `school_established_year`, `affiliation_board`, `medium_of_instruction`, `school_type`, `student_count`, `teacher_count`, `hero_cta_text`, `hero_cta_link`, `achievement_badge`, `notices_text` |
 
-## 10. Target Refactor Direction
+## 14. Target Refactor Direction
 
 Recommended package convergence over time:
 

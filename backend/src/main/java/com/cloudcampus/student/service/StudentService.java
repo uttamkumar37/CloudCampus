@@ -19,6 +19,8 @@ public interface StudentService {
 
     StudentResponse getMyProfile();
 
+    StudentDetailResponse getMyDetails();
+
     Page<StudentResponse> getStudents(Pageable pageable);
 
     StudentResponse updateStudent(UUID id, StudentUpdateRequest request);

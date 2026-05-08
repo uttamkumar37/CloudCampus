@@ -44,6 +44,11 @@ const StudentLearningPage = lazy(() =>
     default: module.StudentLearningPage,
   })),
 )
+const StudentFullProfilePage = lazy(() =>
+  import('../features/student/pages/StudentFullProfilePage').then((module) => ({
+    default: module.StudentFullProfilePage,
+  })),
+)
 const ParentLearningPage = lazy(() =>
   import('../features/parent/pages/ParentLearningPage').then((module) => ({
     default: module.ParentLearningPage,
@@ -129,6 +134,14 @@ export const router = createBrowserRouter([
         element: (
           <PrivateRoute allowedRoles={['STUDENT']}>
             {withSuspense(<StudentLearningPage />)}
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'student/profile',
+        element: (
+          <PrivateRoute allowedRoles={['STUDENT']}>
+            {withSuspense(<StudentFullProfilePage />)}
           </PrivateRoute>
         ),
       },

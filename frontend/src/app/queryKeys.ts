@@ -18,5 +18,6 @@ export const queryKeys = {
   timetable: (classId: string, sectionId: string) => ['timetable', classId, sectionId] as const,
   parentChildren: ['parent', 'children'] as const,
   studentDashboard: ['dashboard', 'student'] as const,
+  studentMyDetails: ['student', 'me', 'details'] as const,
   teacherDashboard: ['dashboard', 'teacher'] as const,
 } as const

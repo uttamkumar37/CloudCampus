@@ -38,11 +38,19 @@ Common statuses:
 - `404` resource not found
 - `409` duplicate or conflicting state
 
+## Clients
+
+Endpoints are consumed by three clients:
+
+- **Web** — React SPA (`frontend/`)
+- **Mobile** — React Native Expo app (`mobile/`) — all roles; marked **[M]** below
+- **Public** — unauthenticated browser or admission portal
+
 ## Authentication and Session
 
 | Area | Key endpoints | Notes |
 |---|---|---|
-| Auth | `POST /auth/login`, `GET /auth/me` | Super Admin omits `X-Tenant-Slug`; tenant users require it |
+| Auth | `POST /auth/login` **[M]**, `GET /auth/me` | Super Admin omits `X-Tenant-Slug`; tenant users require it |
 | Credential update | `POST /auth/credentials/send-otp`, `POST /auth/credentials/update` | Used for first-login enforcement |
 
 ## Platform Administration
@@ -60,17 +68,17 @@ Common statuses:
 | Area | Key endpoints | Typical roles |
 |---|---|---|
 | Users | `GET /users`, `POST /users` | `SUPER_ADMIN`, `SCHOOL_ADMIN` |
-| Students | `GET /students`, `POST /students`, `GET /students/{id}/details` | `SCHOOL_ADMIN`, read access for teachers |
+| Students | `GET /students` **[M]**, `POST /students`, `GET /students/{id}/details` **[M]**, `GET /students/me/details` **[M]** | `SCHOOL_ADMIN`, `TEACHER` (list/detail); `STUDENT` (me/details) |
 | Teachers | `GET /teachers`, `POST /teachers`, `GET /teachers/{id}/details` | `SCHOOL_ADMIN`, read access for teachers |
 | Academics | `GET/POST /academics/classes`, `subjects`, `sections` | `SCHOOL_ADMIN`, read access for teachers |
-| Attendance | `POST /attendances`, `GET /attendances` | `SCHOOL_ADMIN`, `TEACHER` |
-| Fees | `POST /fees/assignments`, `POST /fees/payments`, `GET /fees/students/{id}/assignments` | `SCHOOL_ADMIN`; read access for student and parent views |
+| Attendance | `POST /attendances`, `GET /attendances` **[M]** | `SCHOOL_ADMIN`, `TEACHER` |
+| Fees | `POST /fees/assignments`, `POST /fees/payments` **[M]**, `GET /fees/students/{id}/assignments` **[M]** | `SCHOOL_ADMIN`; read access for student and parent views |
 | Exams | `POST /exams`, `POST /exams/results`, `GET /exams/{examId}/results` | `SCHOOL_ADMIN`, `TEACHER` |
 | Homework | `POST /homework`, `GET /homework/classes/{classId}` | `SCHOOL_ADMIN`, `TEACHER` |
 | Timetable | `POST /timetable/slots`, `GET /timetable/classes/{classId}/sections/{sectionId}` | `SCHOOL_ADMIN`, `TEACHER` |
 | Parent links | `GET /parents/links`, `POST /parents/links`, `DELETE /parents/links/{id}` | `SCHOOL_ADMIN` |
-| Parent portal | `GET /parents/me/children` | `PARENT` |
-| Tenant dashboard | `GET /dashboard/tenant-summary` | Tenant-authenticated roles |
+| Parent portal | `GET /parents/me/children` **[M]** | `PARENT` |
+| Tenant dashboard | `GET /dashboard/tenant-summary` **[M]** | Tenant-authenticated roles |
 
 ## Website and Public Endpoints
 

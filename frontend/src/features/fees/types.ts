@@ -5,6 +5,8 @@ export interface FeeAssignment {
   studentId: string
   feeTitle: string
   amount: number
+  paidAmount: number
+  dueAmount: number
   dueDate: string
   status: FeeStatus
   createdAt: string
