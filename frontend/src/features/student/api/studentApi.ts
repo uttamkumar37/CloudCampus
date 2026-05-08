@@ -3,7 +3,7 @@ import { ENDPOINTS } from '../../../api/endpoints'
 import type { ApiResponse } from '../../../types/api'
 import type { PageResponse } from '../../../types/pagination'
 
-import type { CreateStudentRequest, Student, UpdateStudentRequest } from '../types'
+import type { CreateStudentRequest, Student, StudentFullDetail, UpdateStudentRequest } from '../types'
 
 interface GetStudentsParams {
   page?: number
@@ -35,4 +35,9 @@ export async function updateStudent(id: string, payload: UpdateStudentRequest) {
 
 export async function deleteStudent(id: string) {
   await apiClient.delete(`${ENDPOINTS.students.base}/${id}`)
+}
+
+export async function getMyStudentDetails() {
+  const { data } = await apiClient.get<ApiResponse<StudentFullDetail>>(ENDPOINTS.students.meDetails)
+  return data
 }

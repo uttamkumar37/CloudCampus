@@ -243,6 +243,19 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional(readOnly = true)
+    public StudentDetailResponse getMyDetails() {
+        validateTenantContext();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof CloudCampusUserDetails campus)) {
+            throw new IllegalStateException("Not authenticated");
+        }
+        Student student = studentRepository.findByLinkedUser_Id(campus.getUserId())
+                .orElseThrow(() -> new IllegalStateException("No student profile linked to this account"));
+        return getStudentDetails(student.getId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<StudentResponse> getStudents(Pageable pageable) {
         validateTenantContext();
         return studentRepository.findAllByDeletedAtIsNull(pageable).map(this::map);

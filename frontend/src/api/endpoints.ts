@@ -40,8 +40,9 @@ export const ENDPOINTS = {
   students: {
     base: '/students',
     byId: (id: string) => `/students/${id}`,
-    me: '/students/me',                                    // ADDED: student self-profile endpoint
-    details: (id: string) => `/students/${id}/details`,   // ADDED: full student detail view
+    me: '/students/me',
+    meDetails: '/students/me/details',
+    details: (id: string) => `/students/${id}/details`,
   },
   teachers: {
     base: '/teachers',

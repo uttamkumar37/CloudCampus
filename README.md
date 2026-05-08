@@ -16,8 +16,8 @@ CloudCampus gives each school its own isolated workspace with:
 - **Homework** — assignment publishing, overdue tracking
 - **Parent Portal** — linked children, attendance + fee + results view
 - **Bulk Operations** — Excel upload → validate → preview → execute → job tracking
-- **Website Builder** — each school gets a public website with CMS (gallery, admissions form, notices)
-- **Subscriptions** — plan tiers (FREE / BASIC / PRO / ENTERPRISE), Razorpay gateway
+- **Website Builder** — 100+ features across 20 tabs: blog, events, teacher profiles, social proof, SEO, communication tools, UTM campaigns, media embeds, course catalog, alumni portal, A/B testing, AI chatbot, merchandise store, payment gateways, multilingual, and more
+- **Subscriptions** — Website Builder plan tiers (FREE / GROWTH / PRO / ELITE) with monthly/annual billing; platform plan tiers (FREE / BASIC / PRO / ENTERPRISE) with Razorpay gateway
 
 ---
 
@@ -27,8 +27,9 @@ CloudCampus gives each school its own isolated workspace with:
 |---|---|
 | Backend | Java 17, Spring Boot 3.4, Spring Security, Spring Data JPA, Flyway |
 | Frontend | React 19, TypeScript, Vite, TanStack Query v5, Axios |
+| Mobile | React Native, Expo SDK, Expo Router, Zustand, Axios |
 | Database | PostgreSQL 16 — schema-per-tenant multi-tenancy |
-| Runtime | Docker Compose |
+| Runtime | Docker Compose, EAS Build (mobile) |
 
 ---
 
@@ -58,19 +59,51 @@ Then seed demo data:
 python3 scripts/seed_dashboard_data.py
 ```
 
-Login at http://localhost:5173/login — select **Sunrise Academy**, any role, password `Demo@2026!`
+Login at http://localhost:5173/login — select **JNV Palamau**, any role
+
+Demo credentials:
+
+| Account | Username | Password |
+|---|---|---|
+| School Admin (Principal) | `uttam.kumar` | `Uttam@2026!` |
+| School Admin (Vice Principal) | `priya.nirmal` | `Priya@2026!` |
+| All other users | see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | `Jnv@Demo2026` |
 
 Super Admin: http://localhost:5173/super-admin/login — `superadmin` / `SuperAdmin_Docker_2026!`
+
+---
+
+## Mobile App
+
+The `mobile/` directory contains a React Native + Expo app supporting **all roles** — admins, teachers, students, and parents.
+
+```bash
+cd mobile
+npm install
+echo "EXPO_PUBLIC_API_URL=http://<your-machine-ip>:8080/api/v1" > .env
+npx expo start
+```
+
+| Role | Screens |
+|---|---|
+| School Admin | Dashboard · Students · Fees · Attendance |
+| Teacher | Dashboard · Students · Attendance |
+| Student | My Profile · My Fees · My Attendance |
+| Parent | My Children → Child Detail (fees, exams, attendance) |
+
+Login with school slug `jnv-palamau`, select your role, enter credentials.
 
 ---
 
 ## Architecture
 
 ```
-Browser (React SPA)
-  └─ /api/v1  →  TenantRequestFilter  →  JwtAuthenticationFilter
+Browser (React SPA)           Mobile App (React Native / Expo)
+  └─ /api/v1                    └─ /api/v1
+       └─ X-Tenant-Slug header ─────┘
                        │
-                       ▼
+                 TenantRequestFilter → JwtAuthenticationFilter
+                       │
                Spring Boot Controllers
                └─ Service → Repository → PostgreSQL
                                             ├─ public schema   (tenants, subscriptions, payments, CMS)
@@ -126,6 +159,17 @@ CloudCampus/
 │       ├── website-builder/ school website CMS
 │       ├── public-website/  public school website
 │       └── profile/       user profile
+├── mobile/
+│   ├── app/
+│   │   ├── (auth)/        login screen
+│   │   └── (app)/         tab navigator: Dashboard, Students, Fees, Attendance
+│   ├── src/
+│   │   ├── api/           axios client + API modules (auth, dashboard, students, fees, attendance)
+│   │   ├── store/         Zustand auth store
+│   │   └── types/         TypeScript types
+│   ├── app.json           Expo config
+│   ├── eas.json           EAS build profiles
+│   └── .env               EXPO_PUBLIC_API_URL
 ├── docs/                  consolidated documentation (see below)
 ├── scripts/               seed scripts (Python)
 ├── docker-compose.yml

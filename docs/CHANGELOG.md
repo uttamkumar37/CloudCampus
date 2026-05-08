@@ -7,6 +7,51 @@ All notable changes to CloudCampus are documented here.
 ## [Unreleased] — 2026-05-08
 
 ### Added
+- **Mobile — all-role access** — every role can now log in and use the mobile app
+  - **Role picker on login** — 4-card selector (Admin / Teacher / Student / Parent) with icon, description, and demo-password hint
+  - **Role-based tab navigator** — `_layout.tsx` reads `session.role` after login and renders a different tab set per role
+  - **Teacher portal** — reuses Dashboard + Students + Attendance tabs; Fees tab is hidden
+  - **Student portal** (3 tabs): My Profile (hero card, exam results, attendance summary, sign-out), My Fees (fee status cards with pending alert), My Attendance (ring % + record list)
+  - **Parent portal**: My Children list (linked children with class/section) → tap → Child Detail (fee summary with pending amount, exam results, attendance %)
+  - New mobile API modules: `src/api/parent.ts` (`GET /parents/me/children`), `src/api/selfProfile.ts` (`GET /students/me/details`)
+  - New mobile types: `src/types/parent.ts`
+- **Mobile application** — React Native + Expo app (initial release)
+  - **Login screen** — school slug + username + password + role picker; JWT session in SecureStore via Zustand
+  - **Dashboard** — KPI cards (students, teachers, attendance %, fees), role badge, quick actions, activity feed
+  - **Students** — auto-load on mount, colored initials avatars, search, tap → full detail
+  - **Student detail** — profile hero, fee progress bars, attendance ring, exam grades, parent contacts
+  - **Fees** — fee summary card (navy), per-fee progress bars, Record Payment bottom-sheet modal
+  - **Attendance** — date navigator (← →), ring percentage, summary chips, record list
+  - **Design system** — `src/theme.ts`: Colors, Spacing, Radius, Shadow, Typography, `avatarColor()`
+  - **EAS build profiles** — development (devClient/internal), preview (APK), production (AAB)
+  - API base URL configurable via `EXPO_PUBLIC_API_URL` env var
+- **JNV Palamau demo seed** — replaces Sunrise Academy; idempotent on startup (`app.seed.demo-enabled=true`)
+  - Tenant slug `jnv-palamau`, school name "Jawahar Navodaya Vidyalaya, Palamau"
+  - Admin: `uttam.kumar` / `Uttam@2026!` (uttamkumar3797@gmail.com, 7905025730)
+  - Vice Principal: `priya.nirmal` / `Priya@2026!` (uttamgaurav2020@gmail.com, 8724099452)
+  - 11 teachers, 28 students (Classes 6–12, JNV admission numbers), 15 parents, default password `Jnv@Demo2026`
+  - 7 classes, 14 sections (A/B per class; Science/Arts for 11–12), 15 subjects
+  - 23 exams with results, 30 days attendance, fee assignments (Hostel/Lab/Board Registration), 20 homework assignments, 12 admission leads
+  - JNV public website config: tagline, Medininagar address, theme `#1E40AF`
+- **`GET /students/me/details`** — new endpoint (STUDENT role) returning full student detail including parents, fees, exams, attendance, and homework
+- **`StudentFullProfilePage`** — 6-tab student self-profile page (Overview, Parents, Exams, Attendance, Fees, Homework) linked from student dashboard
+
+### Added
+- **Website Builder v3 — 100+ features across 20 tabs in 5 groups**
+  - *Website group* — General Info, Design & Theme (fonts/animations/custom CSS), Page Sections, Photo Gallery
+  - *Content group* — Blog & News (CRUD + categories), Events Calendar (RSVP + 7 types), Teacher Profiles (directory + bios), Social Proof (testimonials/awards/FAQ)
+  - *Admissions group* — Admission Leads, Fee Structure (8 fee fields + calculator), Bookings & Services (PTM/open day/virtual tour), Admissions Tools (age calculator, eligibility quiz, waitlist, CSV export)
+  - *Marketing group* — SEO & Analytics (meta tags, GA4, Search Console, sitemap), Communication (WhatsApp/live chat/newsletter/push), Marketing Tools (UTM campaign builder, visitor counter, Google Business Profile sync, page speed optimizer, school comparison widget), Media Embeds (YouTube/Google Reviews/Instagram/map/video testimonials/news ticker)
+  - *Advanced group* — Courses & Timetable (subject catalog + interactive grid), Alumni & Portfolio (alumni network, student portfolio, board toppers, press & media), A/B Testing & AI (hero variant testing with CTR, version history snapshots, scheduled publishing, AI admissions chatbot), Store & Branding (merchandise store, canteen menu, Razorpay/Stripe/UPI payment gateway, favicon/app icon, custom 404 builder, multilingual support)
+- **PricingPlansSection** — 4 plan tiers (FREE / GROWTH / PRO / ELITE) with monthly/annual billing toggle (33% savings), feature comparison table, trust badges, FAQ; plan activation stored in localStorage
+- **Plan-gated tabs** — blur overlay + upgrade CTA for GROWTH/PRO/ELITE features; `isPlanAtLeast()` helper used across all 20 tabs
+- All new feature editors use `localStorage` (keys: `wb_blog_posts`, `wb_events`, `wb_teachers`, `wb_seo_settings`, `wb_communication`, `wb_design_settings`, `wb_media_embeds`, `wb_courses`, `wb_timetable`, `wb_alumni`, `wb_portfolio`, `wb_toppers`, `wb_press`, `wb_quiz`, `wb_waitlist`, `wb_marketing`, `wb_utm_campaigns`, `wb_ab_variants`, `wb_snapshots`, `wb_scheduled`, `wb_chatbot`, `wb_merch`, `wb_canteen`, `wb_payments`, `wb_branding`, `wb_language`)
+
+---
+
+## [1.0.0] — 2026-05-08
+
+### Added
 - **Role-wise login portal** on the public school website — 4 colour-coded role cards (School Admin, Teacher, Student, Parent) linking to `/login?school=<slug>&role=<ROLE>`
 - **Login deep-link support** — `LoginPage` now reads `?school=` and `?role=` query params to pre-fill school and role selections
 - **School Portal nav link** on public website sticky navbar
