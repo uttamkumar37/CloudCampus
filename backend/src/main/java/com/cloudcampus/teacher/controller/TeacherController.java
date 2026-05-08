@@ -6,6 +6,7 @@ import com.cloudcampus.teacher.dto.TeacherCreateRequest;
 import com.cloudcampus.teacher.dto.TeacherDetailResponse;
 import com.cloudcampus.teacher.dto.TeacherResponse;
 import com.cloudcampus.teacher.dto.TeacherUpdateRequest;
+import com.cloudcampus.teacher.entity.TeacherStatus;
 import com.cloudcampus.teacher.service.TeacherService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -87,8 +89,10 @@ public class TeacherController {
             @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
     })
     public ResponseEntity<ApiResponse<PageResponse<TeacherResponse>>> getTeachers(
-            @PageableDefault(size = 20, sort = "lastName", direction = Sort.Direction.ASC) Pageable pageable) {
-        PageResponse<TeacherResponse> page = PageResponse.from(teacherService.getTeachers(pageable));
+            @PageableDefault(size = 20, sort = "lastName", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) TeacherStatus status) {
+        PageResponse<TeacherResponse> page = PageResponse.from(teacherService.getTeachers(pageable, search, status));
         return ResponseEntity.ok(ApiResponse.success("Teachers fetched successfully", page));
     }
 

@@ -8,6 +8,7 @@ import com.cloudcampus.academic.dto.SubjectCreateRequest;
 import com.cloudcampus.academic.dto.SubjectResponse;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface AcademicService {
 
@@ -22,4 +23,8 @@ public interface AcademicService {
     SectionResponse createSection(SectionCreateRequest request);
 
     List<SectionResponse> getSections();
+
+    SectionResponse assignClassTeacher(UUID sectionId, UUID teacherId);
+
+    SectionResponse removeClassTeacher(UUID sectionId);
 }

@@ -69,8 +69,8 @@ Endpoints are consumed by three clients:
 |---|---|---|
 | Users | `GET /users`, `POST /users` | `SUPER_ADMIN`, `SCHOOL_ADMIN` |
 | Students | `GET /students` **[M]**, `POST /students`, `GET /students/{id}/details` **[M]**, `GET /students/me/details` **[M]** | `SCHOOL_ADMIN`, `TEACHER` (list/detail); `STUDENT` (me/details) |
-| Teachers | `GET /teachers`, `POST /teachers`, `GET /teachers/{id}/details` | `SCHOOL_ADMIN`, read access for teachers |
-| Academics | `GET/POST /academics/classes`, `subjects`, `sections` | `SCHOOL_ADMIN`, read access for teachers |
+| Teachers | `GET /teachers?search=&status=`, `POST /teachers`, `PATCH /teachers/{id}`, `DELETE /teachers/{id}`, `GET /teachers/{id}`, `GET /teachers/{id}/details`, `GET /teachers/me` | `SCHOOL_ADMIN` for writes; `TEACHER` for read/me |
+| Academics | `GET/POST /academics/classes`, `subjects`, `sections`; `PUT /academics/sections/{id}/class-teacher`, `DELETE /academics/sections/{id}/class-teacher` | `SCHOOL_ADMIN` for writes; `TEACHER` for reads |
 | Attendance | `POST /attendances`, `GET /attendances` **[M]** | `SCHOOL_ADMIN`, `TEACHER` |
 | Fees | `POST /fees/assignments`, `POST /fees/payments` **[M]**, `GET /fees/students/{id}/assignments` **[M]** | `SCHOOL_ADMIN`; read access for student and parent views |
 | Exams | `POST /exams`, `POST /exams/results`, `GET /exams/{examId}/results` | `SCHOOL_ADMIN`, `TEACHER` |

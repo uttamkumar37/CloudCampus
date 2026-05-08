@@ -13,6 +13,7 @@ import com.cloudcampus.academic.repository.SubjectRepository;
 import com.cloudcampus.homework.entity.HomeworkAssignment;
 import com.cloudcampus.homework.repository.HomeworkAssignmentRepository;
 import com.cloudcampus.teacher.entity.Teacher;
+import com.cloudcampus.teacher.entity.TeacherStatus;
 import com.cloudcampus.teacher.repository.TeacherRepository;
 import com.cloudcampus.tenant.service.TenantContext;
 import com.cloudcampus.auth.security.CloudCampusUserDetails;
@@ -81,6 +82,7 @@ public class TeacherServiceImpl implements TeacherService {
             UserRole.TEACHER
         ));
         teacher.setActive(true);
+        teacher.setStatus(TeacherStatus.ACTIVE);
 
         Teacher saved = teacherRepository.save(teacher);
         log.info("Teacher created: employeeNo={}, tenant={}", saved.getEmployeeNo(), TenantContext.getTenant());
@@ -96,9 +98,9 @@ public class TeacherServiceImpl implements TeacherService {
         return map(teacher);
     }
 
-        @Override
-        @Transactional(readOnly = true)
-        public TeacherDetailResponse getTeacherDetails(UUID id) {
+    @Override
+    @Transactional(readOnly = true)
+    public TeacherDetailResponse getTeacherDetails(UUID id) {
         validateTenantContext();
         Teacher teacher = teacherRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow(() -> new IllegalArgumentException("Teacher not found: " + id));
@@ -107,15 +109,15 @@ public class TeacherServiceImpl implements TeacherService {
         Map<UUID, SchoolClass> classesById = schoolClassRepository.findAllById(
                 slots.stream().map(TimetableSlot::getClassId).distinct().toList())
             .stream()
-            .collect(java.util.stream.Collectors.toMap(SchoolClass::getId, schoolClass -> schoolClass));
+            .collect(java.util.stream.Collectors.toMap(SchoolClass::getId, sc -> sc));
         Map<UUID, Section> sectionsById = sectionRepository.findAllById(
                 slots.stream().map(TimetableSlot::getSectionId).distinct().toList())
             .stream()
-            .collect(java.util.stream.Collectors.toMap(Section::getId, section -> section));
+            .collect(java.util.stream.Collectors.toMap(Section::getId, sec -> sec));
         Map<UUID, Subject> subjectsById = subjectRepository.findAllById(
                 slots.stream().map(TimetableSlot::getSubjectId).distinct().toList())
             .stream()
-            .collect(java.util.stream.Collectors.toMap(Subject::getId, subject -> subject));
+            .collect(java.util.stream.Collectors.toMap(Subject::getId, sub -> sub));
 
         List<TeacherDetailResponse.TimetableItem> timetable = slots.stream()
             .map(slot -> {
@@ -145,22 +147,22 @@ public class TeacherServiceImpl implements TeacherService {
                 .stream()
                 .sorted(Comparator.comparing(HomeworkAssignment::getCreatedAt).reversed())
                 .map(assignment -> {
-                SchoolClass schoolClass = classesById.get(assignment.getClassId());
-                Section section = sectionsById.get(assignment.getSectionId());
-                if (schoolClass == null) {
-                    schoolClass = schoolClassRepository.findById(assignment.getClassId()).orElse(null);
-                }
-                if (section == null && assignment.getSectionId() != null) {
-                    section = sectionRepository.findById(assignment.getSectionId()).orElse(null);
-                }
-                return new TeacherDetailResponse.HomeworkItem(
-                    assignment.getId(),
-                    assignment.getTitle(),
-                    assignment.getDueDate(),
-                    schoolClass == null ? null : schoolClass.getName(),
-                    section == null ? null : section.getName(),
-                    assignment.getCreatedAt()
-                );
+                    SchoolClass schoolClass = classesById.get(assignment.getClassId());
+                    Section section = sectionsById.get(assignment.getSectionId());
+                    if (schoolClass == null) {
+                        schoolClass = schoolClassRepository.findById(assignment.getClassId()).orElse(null);
+                    }
+                    if (section == null && assignment.getSectionId() != null) {
+                        section = sectionRepository.findById(assignment.getSectionId()).orElse(null);
+                    }
+                    return new TeacherDetailResponse.HomeworkItem(
+                        assignment.getId(),
+                        assignment.getTitle(),
+                        assignment.getDueDate(),
+                        schoolClass == null ? null : schoolClass.getName(),
+                        section == null ? null : section.getName(),
+                        assignment.getCreatedAt()
+                    );
                 })
                 .toList();
         }
@@ -171,7 +173,7 @@ public class TeacherServiceImpl implements TeacherService {
             timetable,
             homework
         );
-        }
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -188,9 +190,18 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<TeacherResponse> getTeachers(Pageable pageable) {
+    public Page<TeacherResponse> getTeachers(Pageable pageable, String search, TeacherStatus status) {
         validateTenantContext();
-        return teacherRepository.findAllByDeletedAtIsNull(pageable).map(this::map);
+        boolean hasSearch = search != null && !search.isBlank();
+        if (!hasSearch && status == null) {
+            return teacherRepository.findAllByDeletedAtIsNull(pageable).map(this::map);
+        } else if (!hasSearch) {
+            return teacherRepository.findAllByStatusAndDeletedAtIsNull(status, pageable).map(this::map);
+        } else if (status == null) {
+            return teacherRepository.searchTeachers(search.trim(), pageable).map(this::map);
+        } else {
+            return teacherRepository.searchTeachersWithStatus(search.trim(), status, pageable).map(this::map);
+        }
     }
 
     @Override
@@ -207,13 +218,16 @@ public class TeacherServiceImpl implements TeacherService {
         }
         if (request.email() != null && !request.email().isBlank()) {
             String email = request.email().trim().toLowerCase(Locale.ROOT);
-            // Only validate uniqueness if email is actually changing
             if (!email.equals(teacher.getEmail()) && teacherRepository.existsByEmail(email)) {
                 throw new IllegalArgumentException("Email already exists: " + email);
             }
             teacher.setEmail(email);
         }
         teacher.setPhone(normalizeNullable(request.phone()));
+        if (request.status() != null) {
+            teacher.setStatus(request.status());
+            teacher.setActive(request.status() == TeacherStatus.ACTIVE);
+        }
         Teacher saved = teacherRepository.save(teacher);
         log.info("Teacher updated: id={}, tenant={}", id, TenantContext.getTenant());
         return map(saved);
@@ -238,13 +252,26 @@ public class TeacherServiceImpl implements TeacherService {
     }
 
     private String normalizeNullable(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
+        if (value == null || value.isBlank()) return null;
         return value.trim();
     }
 
     private TeacherResponse map(Teacher teacher) {
+        // Load sections where this teacher is the class teacher
+        List<Section> sections = sectionRepository.findAllByClassTeacherId(teacher.getId());
+        List<UUID> classIds = sections.stream().map(s -> s.getSchoolClass().getId()).distinct().toList();
+        Map<UUID, SchoolClass> classesById = schoolClassRepository.findAllById(classIds)
+                .stream().collect(java.util.stream.Collectors.toMap(SchoolClass::getId, c -> c));
+
+        List<TeacherResponse.ClassTeacherSection> classSections = sections.stream()
+                .map(s -> new TeacherResponse.ClassTeacherSection(
+                        s.getId(),
+                        s.getName(),
+                        s.getSchoolClass().getId(),
+                        s.getSchoolClass().getName()
+                ))
+                .toList();
+
         return new TeacherResponse(
                 teacher.getId(),
                 teacher.getEmployeeNo(),
@@ -254,7 +281,9 @@ public class TeacherServiceImpl implements TeacherService {
                 teacher.getPhone(),
                 teacher.getHireDate(),
                 teacher.isActive(),
-                teacher.getCreatedAt()
+                teacher.getCreatedAt(),
+                teacher.getStatus(),
+                classSections
         );
     }
 }

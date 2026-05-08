@@ -4,6 +4,7 @@ import com.cloudcampus.teacher.dto.TeacherCreateRequest;
 import com.cloudcampus.teacher.dto.TeacherDetailResponse;
 import com.cloudcampus.teacher.dto.TeacherResponse;
 import com.cloudcampus.teacher.dto.TeacherUpdateRequest;
+import com.cloudcampus.teacher.entity.TeacherStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -19,7 +20,7 @@ public interface TeacherService {
 
     TeacherResponse getMyProfile();
 
-    Page<TeacherResponse> getTeachers(Pageable pageable);
+    Page<TeacherResponse> getTeachers(Pageable pageable, String search, TeacherStatus status);
 
     TeacherResponse updateTeacher(UUID id, TeacherUpdateRequest request);
 

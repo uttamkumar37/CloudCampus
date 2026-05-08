@@ -1,6 +1,10 @@
 export const queryKeys = {
-  students: (page: number, size: number) => ['students', page, size] as const,
-  teachers: (page: number, size: number) => ['teachers', page, size] as const,
+  students: (page: number, size: number, search?: string, status?: string) =>
+    ['students', page, size, search ?? '', status ?? ''] as const,
+  studentDetails: (id: string) => ['students', 'details', id] as const,
+  teachers: (page: number, size: number, search?: string, status?: string) =>
+    ['teachers', page, size, search ?? '', status ?? ''] as const,
+  teacherDetails: (id: string) => ['teachers', 'details', id] as const,
   academicClasses: ['academic', 'classes'] as const,
   academicSubjects: ['academic', 'subjects'] as const,
   academicSections: ['academic', 'sections'] as const,

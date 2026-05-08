@@ -1,6 +1,7 @@
 package com.cloudcampus.student.dto;
 
 import com.cloudcampus.student.entity.Gender;
+import com.cloudcampus.student.entity.StudentStatus;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ public record StudentResponse(
         String email,
         String phone,
         boolean active,
-        Instant createdAt
+        Instant createdAt,
+        StudentStatus status
 ) {
 }

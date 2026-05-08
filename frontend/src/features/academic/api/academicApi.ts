@@ -49,3 +49,18 @@ export async function createAcademicSection(payload: CreateAcademicSectionReques
   )
   return data
 }
+
+export async function assignClassTeacher(sectionId: string, teacherId: string) {
+  const { data } = await apiClient.put<ApiResponse<AcademicSection>>(
+    `${ENDPOINTS.academic.base}/sections/${sectionId}/class-teacher`,
+    { teacherId },
+  )
+  return data
+}
+
+export async function removeClassTeacher(sectionId: string) {
+  const { data } = await apiClient.delete<ApiResponse<AcademicSection>>(
+    `${ENDPOINTS.academic.base}/sections/${sectionId}/class-teacher`,
+  )
+  return data
+}

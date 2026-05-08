@@ -36,6 +36,9 @@ public class Section {
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
+    @Column(name = "class_teacher_id")
+    private java.util.UUID classTeacherId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

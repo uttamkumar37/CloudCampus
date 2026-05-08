@@ -4,6 +4,7 @@ import com.cloudcampus.student.dto.StudentCreateRequest;
 import com.cloudcampus.student.dto.StudentDetailResponse;
 import com.cloudcampus.student.dto.StudentResponse;
 import com.cloudcampus.student.dto.StudentUpdateRequest;
+import com.cloudcampus.student.entity.StudentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -21,7 +22,7 @@ public interface StudentService {
 
     StudentDetailResponse getMyDetails();
 
-    Page<StudentResponse> getStudents(Pageable pageable);
+    Page<StudentResponse> getStudents(Pageable pageable, String search, StudentStatus status);
 
     StudentResponse updateStudent(UUID id, StudentUpdateRequest request);
 

@@ -94,7 +94,7 @@ class StudentCrudIT extends IntegrationTestBase {
         // Soft-delete s2
         studentService.softDeleteStudent(s2.id());
 
-        Page<StudentResponse> page = studentService.getStudents(PageRequest.of(0, 50));
+        Page<StudentResponse> page = studentService.getStudents(PageRequest.of(0, 50), null, null);
         assertThat(page.getContent()).extracting(StudentResponse::id).contains(s1.id());
         assertThat(page.getContent()).extracting(StudentResponse::id).doesNotContain(s2.id());
     }

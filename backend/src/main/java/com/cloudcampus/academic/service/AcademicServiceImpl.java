@@ -12,6 +12,8 @@ import com.cloudcampus.academic.entity.Subject;
 import com.cloudcampus.academic.repository.SchoolClassRepository;
 import com.cloudcampus.academic.repository.SectionRepository;
 import com.cloudcampus.academic.repository.SubjectRepository;
+import com.cloudcampus.teacher.entity.Teacher;
+import com.cloudcampus.teacher.repository.TeacherRepository;
 import com.cloudcampus.tenant.service.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -29,6 +34,7 @@ public class AcademicServiceImpl implements AcademicService {
     private final SchoolClassRepository schoolClassRepository;
     private final SubjectRepository subjectRepository;
     private final SectionRepository sectionRepository;
+    private final TeacherRepository teacherRepository;
 
     @Override
     @Transactional
@@ -99,14 +105,54 @@ public class AcademicServiceImpl implements AcademicService {
 
         Section saved = sectionRepository.save(section);
         log.info("Section created: name={}, classCode={}, tenant={}", saved.getName(), schoolClass.getCode(), TenantContext.getTenant());
-        return mapSection(saved);
+        return mapSection(saved, null);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<SectionResponse> getSections() {
         validateTenantContext();
-        return sectionRepository.findAll().stream().map(this::mapSection).toList();
+        List<Section> sections = sectionRepository.findAll();
+
+        // Batch-load all class-teachers in one query
+        List<UUID> teacherIds = sections.stream()
+                .map(Section::getClassTeacherId)
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+        Map<UUID, Teacher> teachersById = teacherRepository.findAllById(teacherIds)
+                .stream()
+                .collect(Collectors.toMap(Teacher::getId, t -> t));
+
+        return sections.stream()
+                .map(s -> mapSection(s, teachersById.get(s.getClassTeacherId())))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public SectionResponse assignClassTeacher(UUID sectionId, UUID teacherId) {
+        validateTenantContext();
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new IllegalArgumentException("Section not found: " + sectionId));
+        Teacher teacher = teacherRepository.findByIdAndDeletedAtIsNull(teacherId)
+                .orElseThrow(() -> new IllegalArgumentException("Teacher not found: " + teacherId));
+        section.setClassTeacherId(teacherId);
+        sectionRepository.save(section);
+        log.info("Class teacher assigned: section={}, teacher={}, tenant={}", sectionId, teacherId, TenantContext.getTenant());
+        return mapSection(section, teacher);
+    }
+
+    @Override
+    @Transactional
+    public SectionResponse removeClassTeacher(UUID sectionId) {
+        validateTenantContext();
+        Section section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new IllegalArgumentException("Section not found: " + sectionId));
+        section.setClassTeacherId(null);
+        sectionRepository.save(section);
+        log.info("Class teacher removed: section={}, tenant={}", sectionId, TenantContext.getTenant());
+        return mapSection(section, null);
     }
 
     private void validateTenantContext() {
@@ -135,14 +181,19 @@ public class AcademicServiceImpl implements AcademicService {
         );
     }
 
-    private SectionResponse mapSection(Section section) {
+    private SectionResponse mapSection(Section section, Teacher classTeacher) {
+        String teacherName = classTeacher != null
+                ? classTeacher.getFirstName() + " " + classTeacher.getLastName()
+                : null;
         return new SectionResponse(
                 section.getId(),
                 section.getName(),
                 section.getSchoolClass().getId(),
                 section.getSchoolClass().getName(),
                 section.isActive(),
-                section.getCreatedAt()
+                section.getCreatedAt(),
+                section.getClassTeacherId(),
+                teacherName
         );
     }
 }

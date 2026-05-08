@@ -21,6 +21,8 @@ export interface AcademicSection {
   className: string
   active: boolean
   createdAt: string
+  classTeacherId: string | null
+  classTeacherName: string | null
 }
 
 export interface CreateAcademicClassRequest {
