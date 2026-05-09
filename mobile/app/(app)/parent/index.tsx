@@ -30,6 +30,8 @@ export default function ParentHomeScreen() {
   }
 
   useEffect(() => { load(); }, []);
+  const activeChildren = children.filter((child) => child.active).length;
+  const inactiveChildren = children.length - activeChildren;
 
   if (loading) {
     return (
@@ -72,6 +74,42 @@ export default function ParentHomeScreen() {
             <Text style={styles.countText}>
               {children.length} child{children.length !== 1 ? 'ren' : ''} linked
             </Text>
+          </View>
+          <View style={styles.snapshotRow}>
+            <View style={styles.snapshotItem}>
+              <Text style={styles.snapshotValue}>{children.length}</Text>
+              <Text style={styles.snapshotLabel}>Linked</Text>
+            </View>
+            <View style={styles.snapshotItem}>
+              <Text style={styles.snapshotValue}>{activeChildren}</Text>
+              <Text style={styles.snapshotLabel}>Active</Text>
+            </View>
+            <View style={styles.snapshotItem}>
+              <Text style={styles.snapshotValue}>{inactiveChildren}</Text>
+              <Text style={styles.snapshotLabel}>Inactive</Text>
+            </View>
+            <View style={styles.snapshotItem}>
+              <Text style={styles.snapshotValue}>{session?.schoolName ? 'Set' : 'N/A'}</Text>
+              <Text style={styles.snapshotLabel}>School</Text>
+            </View>
+          </View>
+          <View style={styles.snapshotRow}>
+            <View style={styles.snapshotItem}>
+              <Text style={styles.snapshotValue}>{children.length > 0 ? 'Ready' : 'Open'}</Text>
+              <Text style={styles.snapshotLabel}>Directory</Text>
+            </View>
+            <View style={styles.snapshotItem}>
+              <Text style={styles.snapshotValue}>{children.some((child) => !child.active) ? 'Watch' : 'Stable'}</Text>
+              <Text style={styles.snapshotLabel}>Status</Text>
+            </View>
+            <View style={styles.snapshotItem}>
+              <Text style={styles.snapshotValue}>{refreshing ? 'Sync' : 'Live'}</Text>
+              <Text style={styles.snapshotLabel}>Refresh</Text>
+            </View>
+            <View style={styles.snapshotItem}>
+              <Text style={styles.snapshotValue}>{session?.username ? 'Signed' : 'Guest'}</Text>
+              <Text style={styles.snapshotLabel}>Access</Text>
+            </View>
           </View>
         </View>
       }
@@ -142,6 +180,16 @@ const styles = StyleSheet.create({
   logoutBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   countBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: Spacing.xl },
   countText: { fontSize: 13, color: Colors.textOnPrimaryMuted, fontWeight: '500' },
+  snapshotRow: { flexDirection: 'row', marginTop: Spacing.md, gap: Spacing.xs },
+  snapshotItem: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderRadius: Radius.md,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  snapshotValue: { fontSize: 12, fontWeight: '800', color: '#fff' },
+  snapshotLabel: { marginTop: 1, fontSize: 10, color: Colors.textOnPrimaryMuted, fontWeight: '600' },
 
   card: { backgroundColor: Colors.surface, borderRadius: Radius.lg, marginHorizontal: Spacing.md, padding: Spacing.lg, flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   avatar: { width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center' },

@@ -25,6 +25,8 @@ export default function StudentsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [total, setTotal] = useState(0);
+  const activeCount = students.filter((student) => student.active).length;
+  const inactiveCount = students.length - activeCount;
 
   const fetchStudents = useCallback(async (query?: string) => {
     try {
@@ -129,6 +131,53 @@ export default function StudentsScreen() {
           renderItem={renderStudent}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <>
+              <View style={[styles.snapshotCard, Shadow.sm]}>
+                <Text style={styles.snapshotTitle}>Roster Snapshot</Text>
+                <View style={styles.snapshotMetrics}>
+                  <View style={styles.snapshotMetric}>
+                    <Text style={styles.snapshotValue}>{total || students.length}</Text>
+                    <Text style={styles.snapshotLabel}>Total</Text>
+                  </View>
+                  <View style={styles.snapshotMetric}>
+                    <Text style={styles.snapshotValue}>{activeCount}</Text>
+                    <Text style={styles.snapshotLabel}>Active</Text>
+                  </View>
+                  <View style={styles.snapshotMetric}>
+                    <Text style={styles.snapshotValue}>{inactiveCount}</Text>
+                    <Text style={styles.snapshotLabel}>Inactive</Text>
+                  </View>
+                  <View style={styles.snapshotMetric}>
+                    <Text style={styles.snapshotValue}>{search.trim() ? 'Filtered' : 'Full'}</Text>
+                    <Text style={styles.snapshotLabel}>View</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={[styles.snapshotCard, Shadow.sm]}>
+                <Text style={styles.snapshotTitle}>Roster Pulse</Text>
+                <View style={styles.snapshotMetrics}>
+                  <View style={styles.snapshotMetric}>
+                    <Text style={styles.snapshotValue}>{search.trim() ? 'Applied' : 'Open'}</Text>
+                    <Text style={styles.snapshotLabel}>Search</Text>
+                  </View>
+                  <View style={styles.snapshotMetric}>
+                    <Text style={styles.snapshotValue}>{loading ? 'Busy' : 'Ready'}</Text>
+                    <Text style={styles.snapshotLabel}>State</Text>
+                  </View>
+                  <View style={styles.snapshotMetric}>
+                    <Text style={styles.snapshotValue}>{refreshing ? 'Sync' : 'Idle'}</Text>
+                    <Text style={styles.snapshotLabel}>Refresh</Text>
+                  </View>
+                  <View style={styles.snapshotMetric}>
+                    <Text style={styles.snapshotValue}>{students.length > 0 ? 'Live' : 'Empty'}</Text>
+                    <Text style={styles.snapshotLabel}>Roster</Text>
+                  </View>
+                </View>
+              </View>
+            </>
+          }
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -190,7 +239,13 @@ const styles = StyleSheet.create({
   searchBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   countText: { fontSize: 12, color: Colors.textTertiary, marginTop: 6, marginLeft: 2 },
 
-  list: { padding: Spacing.md, paddingBottom: Spacing.xxxl },
+  list: { padding: Spacing.md, gap: Spacing.sm, paddingBottom: Spacing.xxxl },
+  snapshotCard: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md },
+  snapshotTitle: { fontSize: 11, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  snapshotMetrics: { flexDirection: 'row', marginTop: Spacing.sm, gap: Spacing.xs },
+  snapshotMetric: { flex: 1, backgroundColor: Colors.background, borderRadius: Radius.md, paddingVertical: 8, alignItems: 'center' },
+  snapshotValue: { fontSize: 12, fontWeight: '800', color: Colors.text },
+  snapshotLabel: { marginTop: 2, fontSize: 9, color: Colors.textTertiary, fontWeight: '600' },
   separator: { height: Spacing.sm },
   cardFirst: {},
   card: {

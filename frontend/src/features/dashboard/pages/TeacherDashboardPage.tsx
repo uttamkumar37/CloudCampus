@@ -22,6 +22,10 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function getNextTeachingSlot(slots: TimetableSlotSummaryTeacher[]) {
+  return [...slots].sort((left, right) => left.startTime.localeCompare(right.startTime))[0] ?? null
+}
+
 export function TeacherDashboardPage() {
   const { data, isLoading, isError } = useTeacherDashboard()
 
@@ -43,6 +47,8 @@ export function TeacherDashboardPage() {
 
   const d = data.data
   const { profile, assignedClasses, recentHomework, recentExams, todayTimetable } = d
+  const nextTeachingSlot = getNextTeachingSlot(todayTimetable)
+  const timetableCoverage = assignedClasses.length > 0 ? Math.round((todayTimetable.length / assignedClasses.length) * 100) : 0
 
   return (
     <div className="space-y-6">
@@ -50,6 +56,47 @@ export function TeacherDashboardPage() {
         title={`Welcome, ${profile.firstName} ${profile.lastName}`}
         subtitle={`Employee No: ${profile.employeeNo} · ${profile.email}`}
       />
+
+      <Card className="overflow-hidden border-slate-200 bg-gradient-to-br from-indigo-50 via-white to-sky-50">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-600">Teacher Workspace</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">Teaching Snapshot</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {nextTeachingSlot ? (
+                <>
+                  Next period: {nextTeachingSlot.subjectName} · {nextTeachingSlot.className} – {nextTeachingSlot.sectionName}
+                  {nextTeachingSlot.label ? ` · ${nextTeachingSlot.label}` : ''} · {formatTime(nextTeachingSlot.startTime)} – {formatTime(nextTeachingSlot.endTime)}
+                </>
+              ) : (
+                'No periods are scheduled for today. You can still review homework and exam updates from this dashboard.'
+              )}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Classes Today" value={String(todayTimetable.length)} tone="text-indigo-700" />
+            <SnapshotStat label="Assigned Sections" value={String(assignedClasses.length)} tone="text-sky-700" />
+            <SnapshotStat label="Homework" value={String(recentHomework.length)} tone="text-amber-700" />
+            <SnapshotStat label="Exams" value={String(recentExams.length)} tone="text-emerald-700" />
+          </div>
+        </div>
+      </Card>
+
+      <Card className="border-slate-200 bg-white">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Teaching Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Keep daily execution visible with quick indicators for section coverage and delivery momentum.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Coverage" value={`${timetableCoverage}%`} tone="text-indigo-700" />
+            <SnapshotStat label="Sections" value={String(assignedClasses.length)} tone="text-sky-700" />
+            <SnapshotStat label="Homeworks" value={String(recentHomework.length)} tone="text-amber-700" />
+            <SnapshotStat label="Exams" value={String(recentExams.length)} tone="text-emerald-700" />
+          </div>
+        </div>
+      </Card>
 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -187,5 +234,22 @@ function KpiCard({
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
       <p className="text-xs text-slate-500">{sub}</p>
     </Card>
+  )
+}
+
+function SnapshotStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone: string
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
   )
 }

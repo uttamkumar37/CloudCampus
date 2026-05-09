@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { getPublicWebsite, submitAdmissionLead } from '../api/publicWebsiteApi'
 import type { AdmissionLeadRequest, PublicWebsiteData, WebsiteConfig, WebsiteSection } from '../types'
+import type { CommunicationSettings } from '../../website-builder/types'
 
 interface Props {
   slug: string
@@ -34,12 +35,17 @@ export function SchoolWebsitePage({ slug }: Props) {
   const site = data.data
   const { config, sections, gallery } = site
   const theme = config.themeColor ?? '#10b981'
+  const communication = loadCommunicationSettings()
 
   const sectionMap = Object.fromEntries(sections.map((s) => [s.sectionKey, s]))
   const logoUrl = config.logoUrl || site.logoUrl
 
   return (
     <div className="font-sans text-slate-800 antialiased">
+      {communication?.announcementBarEnabled && communication.announcementBarText ? (
+        <AnnouncementBanner settings={communication} />
+      ) : null}
+
       {/* Navigation */}
       <nav className="sticky top-0 z-50 shadow-md" style={{ backgroundColor: theme }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
@@ -65,6 +71,8 @@ export function SchoolWebsitePage({ slug }: Props) {
           </div>
           <div className="hidden md:flex items-center gap-6 text-white/90 text-sm font-medium">
             <a href="#about" className="hover:text-white transition-colors">About</a>
+            <a href="/roadmap" className="hover:text-white transition-colors">Roadmap</a>
+            <a href="#certificate-verification" className="hover:text-white transition-colors">Verify Certificate</a>
             {config.noticesText && <a href="#notices" className="hover:text-white transition-colors">Notices</a>}
             {gallery.length > 0 && <a href="#gallery" className="hover:text-white transition-colors">Gallery</a>}
             {config.admissionsOpen && (
@@ -83,9 +91,17 @@ export function SchoolWebsitePage({ slug }: Props) {
           {/* Mobile menu placeholder — minimal for now */}
           <div className="md:hidden">
             {config.admissionsOpen && (
-              <a href="#admissions" className="text-white text-xs font-semibold border border-white/40 px-3 py-1 rounded-full">
-                Admissions
-              </a>
+              <div className="flex items-center gap-2">
+                <a href="/roadmap" className="text-white text-xs font-semibold border border-white/40 px-3 py-1 rounded-full">
+                  Roadmap
+                </a>
+                <a href="#certificate-verification" className="text-white text-xs font-semibold border border-white/40 px-3 py-1 rounded-full">
+                  Verify
+                </a>
+                <a href="#admissions" className="text-white text-xs font-semibold border border-white/40 px-3 py-1 rounded-full">
+                  Admissions
+                </a>
+              </div>
             )}
           </div>
         </div>
@@ -117,6 +133,9 @@ export function SchoolWebsitePage({ slug }: Props) {
         <AdmissionsSection slug={slug} config={config} section={sectionMap['admissions']} theme={theme} />
       )}
 
+      {/* Certificate verification */}
+      <CertificateVerificationSection section={sectionMap['certificate-verification']} theme={theme} schoolName={site.schoolName} />
+
       {/* Contact */}
       <ContactSection config={config} section={sectionMap['contact']} theme={theme} />
 
@@ -131,6 +150,38 @@ export function SchoolWebsitePage({ slug }: Props) {
         )}
         <p className="text-white/50 text-xs mt-3">© {new Date().getFullYear()} {site.schoolName}. Powered by CloudCampus.</p>
       </footer>
+    </div>
+  )
+}
+
+function loadCommunicationSettings(): CommunicationSettings | null {
+  try {
+    const raw = localStorage.getItem('wb_communication')
+    if (!raw) return null
+    return JSON.parse(raw) as CommunicationSettings
+  } catch {
+    return null
+  }
+}
+
+function AnnouncementBanner({ settings }: { settings: CommunicationSettings }) {
+  const content = (
+    <div className="w-full px-4 py-2 text-center text-sm font-semibold text-white">
+      {settings.announcementBarText}
+    </div>
+  )
+
+  return settings.announcementBarLink ? (
+    <a
+      href={settings.announcementBarLink}
+      className="block w-full transition-opacity hover:opacity-95"
+      style={{ backgroundColor: settings.announcementBarColor }}
+    >
+      {content}
+    </a>
+  ) : (
+    <div style={{ backgroundColor: settings.announcementBarColor }}>
+      {content}
     </div>
   )
 }
@@ -360,11 +411,30 @@ function AdmissionsSection({
     parentName: '', parentEmail: '', parentPhone: '', studentName: '', applyingClass: '', message: '',
   })
   const [submitted, setSubmitted] = useState(false)
-
+  const requiredDocuments = [
+    'Birth certificate / DOB proof',
+    'Previous school transfer certificate',
+    'Latest mark sheet or progress card',
+    'Passport-size photograph',
+    'Parent / guardian ID proof',
+  ]
+  const admissionsSnapshot = [
+    { label: 'Classes available', value: '18 options' },
+    { label: 'Lead status flow', value: 'NEW → CONTACTED → CONVERTED' },
+    { label: 'Response channel', value: 'Public enquiry form' },
+    { label: 'Priority handling', value: 'Admissions team review' },
+  ]
   const mutation = useMutation({
     mutationFn: (payload: AdmissionLeadRequest) => submitAdmissionLead(slug, payload),
     onSuccess: () => setSubmitted(true),
   })
+
+  const admissionsPulse = [
+    { label: 'Form state', value: submitted ? 'Submitted' : 'Open' },
+    { label: 'Pipeline', value: 'Lead intake live' },
+    { label: 'Verification', value: 'Manual review' },
+    { label: 'Routing', value: mutation.isPending ? 'Sending' : 'Ready' },
+  ]
 
   const classOptions = ['Nursery', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11 - Science', '11 - Commerce', '11 - Arts', '12 - Science', '12 - Commerce', '12 - Arts']
 
@@ -378,6 +448,46 @@ function AdmissionsSection({
             {config.admissionInfo}
           </div>
         )}
+
+        <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Documents to keep ready</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {requiredDocuments.map((item) => (
+                <div key={item} className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
+                  <span className="mt-1 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: theme }} />
+                  <p className="text-sm text-slate-700 leading-6">{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/60">Admission snapshot</p>
+            <div className="mt-4 space-y-3">
+              {admissionsSnapshot.map((item) => (
+                <div key={item.label} className="flex items-start justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-white/45">{item.label}</p>
+                    <p className="mt-1 text-sm font-semibold text-white">{item.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-xl border border-white/10 bg-black/20 p-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-white/60">Admission pulse</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {admissionsPulse.map((item) => (
+                  <div key={item.label} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-white/50">{item.label}</p>
+                    <p className="mt-1 text-sm font-semibold text-white">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-8">
           {submitted ? (
@@ -441,6 +551,105 @@ function AdmissionsSection({
               </div>
             </form>
           )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── Certificate verification ────────────────────────────────────────────────
+
+function CertificateVerificationSection({
+  section, theme, schoolName,
+}: {
+  section?: WebsiteSection
+  theme: string
+  schoolName: string
+}) {
+  const [form, setForm] = useState({
+    studentName: '',
+    admissionNo: '',
+    certificateNo: '',
+    issueYear: '',
+  })
+  const [submitted, setSubmitted] = useState(false)
+
+  const verificationChecklist = [
+    'Match admission number with the school record',
+    'Confirm the certificate serial number',
+    'Check the published result and attendance summary',
+    'Stamp and log the request in the office register',
+  ]
+
+  return (
+    <section id="certificate-verification" className="py-20 bg-slate-50 border-y border-slate-100">
+      <div className="max-w-5xl mx-auto px-6">
+        <SectionHeading
+          title={section?.title ?? 'Certificate Verification'}
+          subtitle={section?.subtitle ?? 'Request office confirmation for report cards, transfer certificates, and student documents'}
+          theme={theme}
+        />
+
+        <div className="mt-8 grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">What the office verifies</p>
+            <div className="mt-4 space-y-3">
+              {verificationChecklist.map((item) => (
+                <div key={item} className="flex items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
+                  <span className="mt-1 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: theme }} />
+                  <p className="text-sm text-slate-700 leading-6">{item}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+              Public requests are routed to {schoolName} office staff for manual confirmation.
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            {submitted ? (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
+                <p className="text-lg font-bold text-emerald-700">Verification request prepared</p>
+                <p className="mt-2 text-sm text-emerald-700/80">
+                  {form.studentName || 'The student'} · {form.admissionNo || 'Admission number pending'}
+                </p>
+                <div className="mt-4 grid gap-2 text-sm text-slate-700">
+                  <p><span className="font-semibold">Certificate No:</span> {form.certificateNo || '—'}</p>
+                  <p><span className="font-semibold">Issue Year:</span> {form.issueYear || '—'}</p>
+                  <p><span className="font-semibold">Next step:</span> office review and manual confirmation.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSubmitted(false)}
+                  className="mt-5 rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+                >
+                  Prepare another request
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => { e.preventDefault(); setSubmitted(true) }}
+                className="space-y-4"
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <AField label="Student Name" value={form.studentName} onChange={(v) => setForm((p) => ({ ...p, studentName: v }))} required />
+                  <AField label="Admission No." value={form.admissionNo} onChange={(v) => setForm((p) => ({ ...p, admissionNo: v }))} required />
+                  <AField label="Certificate No." value={form.certificateNo} onChange={(v) => setForm((p) => ({ ...p, certificateNo: v }))} required />
+                  <AField label="Issue Year" value={form.issueYear} onChange={(v) => setForm((p) => ({ ...p, issueYear: v }))} required />
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  This public form does not expose student records. It prepares a verification request for the school office.
+                </div>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-95"
+                  style={{ backgroundColor: theme }}
+                >
+                  Generate Verification Request
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </section>

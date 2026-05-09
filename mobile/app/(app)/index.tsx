@@ -78,6 +78,9 @@ export default function DashboardScreen() {
   const attColor = attendancePct >= 85 ? Colors.success : attendancePct >= 70 ? Colors.warning : Colors.danger;
   const isAdmin = session?.role === 'SCHOOL_ADMIN';
   const roleLabel = session?.role === 'SCHOOL_ADMIN' ? 'Admin' : session?.role === 'TEACHER' ? 'Teacher' : session?.role ?? '';
+  const insightCount = summary?.quickInsights.length ?? 0;
+  const activityCount = summary?.recentActivity.length ?? 0;
+  const feeKpi = summary?.feesCollected ?? 0;
 
   if (loading) {
     return (
@@ -148,6 +151,54 @@ export default function DashboardScreen() {
       </View>
 
       {/* KPI Grid */}
+      {summary && (
+        <View style={[styles.snapshotCard, Shadow.sm]}>
+          <Text style={styles.snapshotTitle}>Campus Snapshot</Text>
+          <View style={styles.snapshotMetrics}>
+            <View style={styles.snapshotMetric}>
+              <Text style={styles.snapshotValue}>{summary.totalStudents}</Text>
+              <Text style={styles.snapshotLabel}>Students</Text>
+            </View>
+            <View style={styles.snapshotMetric}>
+              <Text style={styles.snapshotValue}>{summary.totalTeachers}</Text>
+              <Text style={styles.snapshotLabel}>Teachers</Text>
+            </View>
+            <View style={styles.snapshotMetric}>
+              <Text style={styles.snapshotValue}>{insightCount}</Text>
+              <Text style={styles.snapshotLabel}>Insights</Text>
+            </View>
+            <View style={styles.snapshotMetric}>
+              <Text style={styles.snapshotValue}>{activityCount}</Text>
+              <Text style={styles.snapshotLabel}>Recent</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {summary && (
+        <View style={[styles.snapshotCard, Shadow.sm]}>
+          <Text style={styles.snapshotTitle}>Operations Pulse</Text>
+          <View style={styles.snapshotMetrics}>
+            <View style={styles.snapshotMetric}>
+              <Text style={styles.snapshotValue}>{attendancePct.toFixed(1)}%</Text>
+              <Text style={styles.snapshotLabel}>Attendance</Text>
+            </View>
+            <View style={styles.snapshotMetric}>
+              <Text style={styles.snapshotValue}>{feeKpi >= 1000 ? `${(feeKpi / 1000).toFixed(1)}k` : String(feeKpi)}</Text>
+              <Text style={styles.snapshotLabel}>Fees (₹)</Text>
+            </View>
+            <View style={styles.snapshotMetric}>
+              <Text style={styles.snapshotValue}>{roleLabel || 'User'}</Text>
+              <Text style={styles.snapshotLabel}>Profile</Text>
+            </View>
+            <View style={styles.snapshotMetric}>
+              <Text style={styles.snapshotValue}>{isAdmin ? 'Admin' : 'Academic'}</Text>
+              <Text style={styles.snapshotLabel}>Mode</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
       {summary && (
         <View style={styles.kpiGrid}>
           <KpiCard
@@ -330,6 +381,25 @@ const styles = StyleSheet.create({
   attBarPct: { fontSize: 12, fontWeight: '700' },
   attTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: Radius.full, overflow: 'hidden' },
   attFill: { height: 6, borderRadius: Radius.full },
+
+  snapshotCard: {
+    backgroundColor: Colors.surface,
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.md,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+  },
+  snapshotTitle: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 },
+  snapshotMetrics: { flexDirection: 'row', marginTop: Spacing.sm, gap: Spacing.sm },
+  snapshotMetric: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  snapshotValue: { fontSize: 16, fontWeight: '800', color: Colors.text },
+  snapshotLabel: { marginTop: 2, fontSize: 10, color: Colors.textTertiary, fontWeight: '600' },
 
   kpiGrid: {
     flexDirection: 'row', flexWrap: 'wrap',

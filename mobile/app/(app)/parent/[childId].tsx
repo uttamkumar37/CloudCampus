@@ -79,6 +79,50 @@ export default function ParentChildDetailScreen() {
         )}
       </View>
 
+      <View style={[styles.snapshotCard, Shadow.sm]}>
+        <Text style={styles.snapshotTitle}>Family Snapshot</Text>
+        <View style={styles.snapshotMetrics}>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{fees.length}</Text>
+            <Text style={styles.snapshotLabel}>Fee Items</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{pendingFees > 0 ? 'Due' : 'Clear'}</Text>
+            <Text style={styles.snapshotLabel}>Payment</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{attendance.length}</Text>
+            <Text style={styles.snapshotLabel}>Attendance</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{exams.length}</Text>
+            <Text style={styles.snapshotLabel}>Exams</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={[styles.snapshotCard, Shadow.sm]}>
+        <Text style={styles.snapshotTitle}>Family Pulse</Text>
+        <View style={styles.snapshotMetrics}>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{student.active ? 'Active' : 'Inactive'}</Text>
+            <Text style={styles.snapshotLabel}>Student</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{attPct >= 85 ? 'Good' : attPct >= 70 ? 'Watch' : 'Alert'}</Text>
+            <Text style={styles.snapshotLabel}>Trend</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{pendingFees > 0 ? 'Pending' : 'Clear'}</Text>
+            <Text style={styles.snapshotLabel}>Dues</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{parentsLabel(student.email, student.phone)}</Text>
+            <Text style={styles.snapshotLabel}>Contact</Text>
+          </View>
+        </View>
+      </View>
+
       {/* Quick stats */}
       <View style={styles.statsRow}>
         <StatCard icon="card-outline"     label="Total Fees"  value={`₹${totalFees.toLocaleString()}`} color="#7C3AED" bg="#EDE9FE" />
@@ -191,6 +235,10 @@ function StatCard({ icon, label, value, color, bg }: { icon: IoniconsName; label
   );
 }
 
+function parentsLabel(email?: string | null, phone?: string | null) {
+  return email || phone ? 'Set' : 'Open'
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
@@ -207,6 +255,19 @@ const styles = StyleSheet.create({
   fullName: { ...Typography.h1, color: Colors.text, textAlign: 'center' },
   admNo: { fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
   contact: { fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
+
+  snapshotCard: {
+    backgroundColor: Colors.surface,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+  },
+  snapshotTitle: { fontSize: 11, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  snapshotMetrics: { flexDirection: 'row', marginTop: Spacing.sm, gap: Spacing.xs },
+  snapshotMetric: { flex: 1, backgroundColor: Colors.background, borderRadius: Radius.md, paddingVertical: 8, alignItems: 'center' },
+  snapshotValue: { fontSize: 12, fontWeight: '800', color: Colors.text, textAlign: 'center' },
+  snapshotLabel: { marginTop: 2, fontSize: 9, color: Colors.textTertiary, fontWeight: '600' },
 
   statsRow: { flexDirection: 'row', marginHorizontal: Spacing.md, marginBottom: Spacing.md, gap: Spacing.sm },
   statCard: { flex: 1, backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', gap: 3 },

@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { Button } from '../../../components/ui/Button'
@@ -26,15 +26,51 @@ const emptyForm: CreateHomeworkRequest = {
   dueDate: null,
 }
 
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+function getNextDue(items: Array<{ dueDate: string | null; classId: string; sectionId: string | null }>) {
+  return [...items]
+    .filter((item) => item.dueDate !== null)
+    .sort((left, right) => String(left.dueDate).localeCompare(String(right.dueDate)))[0] ?? null
+}
+
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
+interface DiaryEntry {
+  id: string
+  date: string
+  className: string
+  subject: string
+  topicCovered: string
+}
+
 export function HomeworkPage() {
   const [form, setForm] = useState<CreateHomeworkRequest>(emptyForm)
   const [searchClassId, setSearchClassId] = useState('')
+  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([])
+  const [diaryForm, setDiaryForm] = useState({ date: today, className: '', subject: '', topicCovered: '' })
+  const diaryRef = useRef<HTMLDivElement>(null)
 
   const directory = useSchoolDirectory()
   const createMutation = useCreateHomework()
   const homeworkQuery = useHomeworkByClass(searchClassId)
 
   const items = homeworkQuery.data?.data ?? []
+  const overdueCount = items.filter((item) => item.dueDate !== null && item.dueDate < today).length
+  const nextDue = getNextDue(items)
   const sectionOptions = directory.getSectionsForClass(form.classId)
   const classLabelById = useMemo(
     () => Object.fromEntries(directory.classes.map((item) => [item.id, item.name])),
@@ -84,6 +120,45 @@ export function HomeworkPage() {
   return (
     <section className="space-y-6">
       <PageHeader title="Homework" subtitle="Assign homework per class and view pending tasks." />
+
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-amber-50 via-white to-sky-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">Homework Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">{items.length} active assignment(s)</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              {nextDue ? (
+                <>
+                  Next due: {classLabelById[nextDue.classId] ?? 'Unknown class'}{nextDue.sectionId ? ` · ${sectionLabelById[nextDue.sectionId] ?? 'Unknown section'}` : ''} · {formatDate(nextDue.dueDate as string)}
+                </>
+              ) : (
+                'Create a homework task to populate the active assignment summary.'
+              )}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Assignments" value={String(items.length)} tone="text-amber-700" />
+            <SnapshotStat label="Overdue" value={String(overdueCount)} tone="text-rose-700" />
+            <SnapshotStat label="Class Filter" value={searchClassId ? 'Set' : 'Open'} tone="text-sky-700" />
+            <SnapshotStat label="Due Date" value={nextDue?.dueDate ? 'Set' : 'Open'} tone="text-emerald-700" />
+          </div>
+        </div>
+      </div>
+
+      <Card>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Assignment Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Operational status for form completion and class lookup state in the homework desk.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Class" value={form.classId ? 'Set' : 'Open'} tone="text-sky-700" />
+            <SnapshotStat label="Section" value={form.sectionId ? 'Specific' : 'All'} tone="text-emerald-700" />
+            <SnapshotStat label="Create" value={createMutation.isPending ? 'Saving' : 'Ready'} tone="text-amber-700" />
+            <SnapshotStat label="Browse" value={searchClassId ? 'Filtered' : 'Open'} tone="text-slate-700" />
+          </div>
+        </div>
+      </Card>
 
       {/* Create homework form */}
       <Card className="p-0">
@@ -138,6 +213,96 @@ export function HomeworkPage() {
           </div>
         </form>
       </Card>
+
+      {/* Daily class diary */}
+      <div ref={diaryRef} className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-950">Daily Class Diary</h2>
+          <p className="mt-1 text-sm text-slate-500">Log what was taught in each session so there is a permanent record of syllabus coverage.</p>
+        </div>
+
+        <Card>
+          <form
+            className="grid gap-3 sm:grid-cols-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (!diaryForm.className.trim() || !diaryForm.subject.trim() || !diaryForm.topicCovered.trim()) return
+              setDiaryEntries((prev) => [
+                { id: crypto.randomUUID(), ...diaryForm },
+                ...prev,
+              ])
+              setDiaryForm({ date: today, className: '', subject: '', topicCovered: '' })
+            }}
+          >
+            <input
+              type="date"
+              value={diaryForm.date}
+              onChange={(e) => setDiaryForm((p) => ({ ...p, date: e.target.value }))}
+              required
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+            />
+            <input
+              type="text"
+              placeholder="Class (e.g. Class 8)"
+              value={diaryForm.className}
+              onChange={(e) => setDiaryForm((p) => ({ ...p, className: e.target.value }))}
+              required
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+            />
+            <input
+              type="text"
+              placeholder="Subject"
+              value={diaryForm.subject}
+              onChange={(e) => setDiaryForm((p) => ({ ...p, subject: e.target.value }))}
+              required
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+            />
+            <input
+              type="text"
+              placeholder="Topic / chapter covered"
+              value={diaryForm.topicCovered}
+              onChange={(e) => setDiaryForm((p) => ({ ...p, topicCovered: e.target.value }))}
+              required
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+            />
+            <div className="sm:col-span-2">
+              <Button type="submit">Log Session</Button>
+            </div>
+          </form>
+        </Card>
+
+        {diaryEntries.length > 0 && (
+          <div className="space-y-2">
+            {diaryEntries.map((entry) => (
+              <div key={entry.id} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                <div className="flex items-start gap-4">
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-center">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{new Date(entry.date).toLocaleDateString('en', { month: 'short' })}</p>
+                    <p className="text-lg font-bold text-slate-900">{new Date(entry.date).getDate()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{entry.topicCovered}</p>
+                    <p className="text-xs text-slate-500">{entry.className} · {entry.subject}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDiaryEntries((prev) => prev.filter((d) => d.id !== entry.id))}
+                  className="text-xs text-slate-400 hover:text-rose-500 transition"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {diaryEntries.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+            <p className="text-sm text-slate-500">No diary entries yet. Log the first session above.</p>
+          </div>
+        )}
+      </div>
 
       {/* Homework list by class */}
       <div className="space-y-4">

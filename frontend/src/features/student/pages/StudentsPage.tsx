@@ -76,6 +76,15 @@ const STATUS_OPTIONS: Array<{ value: StudentStatus | ''; label: string }> = [
   { value: 'TC_ISSUED', label: 'TC Issued' },
 ]
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 // ─── create modal ────────────────────────────────────────────────────────────
 
 function CreateStudentModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -276,6 +285,8 @@ export function StudentsPage() {
   const studentsQuery = useStudents({ page, size: 20, search: search || undefined, status: statusParam })
   const allStudents = studentsQuery.data?.data.content ?? []
   const pageInfo = studentsQuery.data?.data
+  const activeCount = allStudents.filter((s) => s.status === 'ACTIVE').length
+  const alumniCount = allStudents.filter((s) => s.status === 'ALUMNI').length
 
   // Client-side gender filter on loaded page
   const students = genderFilter ? allStudents.filter((s) => s.gender === genderFilter) : allStudents
@@ -296,6 +307,39 @@ export function StudentsPage() {
   return (
     <section className="space-y-5">
       <PageHeader title="Students" subtitle="Manage student enrolments, profiles, and academic status." />
+
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-sky-50 via-white to-emerald-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Student Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">{pageInfo?.totalElements ?? 0} student record(s)</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Enrollment, profile updates, and lifecycle status are managed from this central student workspace.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Visible" value={String(allStudents.length)} tone="text-sky-700" />
+            <SnapshotStat label="Active" value={String(activeCount)} tone="text-emerald-700" />
+            <SnapshotStat label="Alumni" value={String(alumniCount)} tone="text-violet-700" />
+            <SnapshotStat label="Filter" value={activeTab} tone="text-amber-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Student Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Operational status for filters, pagination, and student profile lifecycle activity.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Gender" value={genderFilter || 'All'} tone="text-sky-700" />
+            <SnapshotStat label="Page" value={String(page + 1)} tone="text-violet-700" />
+            <SnapshotStat label="Search" value={search ? 'Applied' : 'Open'} tone="text-emerald-700" />
+            <SnapshotStat label="Create" value={showCreate ? 'Open' : 'Ready'} tone="text-amber-700" />
+          </div>
+        </div>
+      </div>
 
       {/* Create modal */}
       <CreateStudentModal isOpen={showCreate} onClose={() => setShowCreate(false)} />

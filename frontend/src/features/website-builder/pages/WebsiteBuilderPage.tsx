@@ -116,6 +116,15 @@ const GROUP_COLORS: Record<string, { active: string; inactive: string; dot: stri
   rose: { active: 'bg-rose-600 border-rose-600 text-white shadow-rose-100', inactive: 'bg-white border-slate-200 text-slate-600 hover:border-rose-200 hover:bg-rose-50', dot: 'bg-rose-500' },
 }
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 function PlanLock({ plan, onUpgrade }: { plan: PlanTier; onUpgrade: () => void }) {
   return (
     <div className="absolute inset-0 bg-white/85 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-10 border border-slate-200">
@@ -149,6 +158,7 @@ export function WebsiteBuilderPage() {
   const allTabs = GROUPS.flatMap((g) => g.tabs)
   const activeTabDef = allTabs.find((t) => t.key === activeTab)
   const isLocked = activeTabDef?.plan ? !isPlanAtLeast(activeTabDef.plan) : false
+  const lockedFeatures = allTabs.filter((tab) => tab.plan && !isPlanAtLeast(tab.plan)).length
 
   function getGridClass(count: number) {
     if (count <= 2) return 'grid-cols-2'
@@ -205,6 +215,39 @@ export function WebsiteBuilderPage() {
       </div>
 
       {/* Feature stats bar */}
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">Builder Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">{allTabs.length} configurable module(s)</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Configure content, design, admissions, and marketing workflows from a unified website control center.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Plan" value={currentPlan} tone="text-emerald-700" />
+            <SnapshotStat label="Groups" value={String(GROUPS.length)} tone="text-sky-700" />
+            <SnapshotStat label="Locked" value={String(lockedFeatures)} tone="text-amber-700" />
+            <SnapshotStat label="Active Tab" value={activeTabDef?.label ?? 'General Info'} tone="text-violet-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Builder Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Plan gating and editing workflow telemetry for active module configuration.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Locked" value={isLocked ? 'Yes' : 'No'} tone="text-amber-700" />
+            <SnapshotStat label="Tab" value={activeTabDef?.label ?? 'General Info'} tone="text-sky-700" />
+            <SnapshotStat label="Plan" value={currentPlan} tone="text-emerald-700" />
+            <SnapshotStat label="Mode" value={activeTab === 'pricing' ? 'Plans' : 'Builder'} tone="text-violet-700" />
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Total Features', value: '100+', icon: '🚀', color: 'emerald' },

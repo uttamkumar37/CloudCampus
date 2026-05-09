@@ -8,6 +8,15 @@ import { showToast } from '../../../utils/toast'
 import type { CreateUserRequest } from '../types'
 import { useCreateUser } from '../hooks/useCreateUser'
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 export function UsersPage() {
   const createUserMutation = useCreateUser()
   const [form, setForm] = useState<CreateUserRequest>({
@@ -18,6 +27,7 @@ export function UsersPage() {
     role: 'STUDENT',
   })
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const completedCoreFields = [form.fullName, form.email, form.role].filter((v) => v.trim().length > 0).length
 
   const handleChange = (k: keyof CreateUserRequest, v: string) => setForm((s) => ({ ...s, [k]: v }))
 
@@ -47,6 +57,39 @@ export function UsersPage() {
   return (
     <section className="space-y-8">
       <PageHeader title="User Management" subtitle="Create and manage platform users across tenants." />
+
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-emerald-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-700">User Provisioning Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">{form.role} account setup</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Configure role, identity, and optional tenant mappings before creating a new platform user.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Role" value={form.role} tone="text-slate-900" />
+            <SnapshotStat label="Core Fields" value={`${completedCoreFields}/3`} tone="text-emerald-700" />
+            <SnapshotStat label="Tenant ID" value={form.tenantId ? 'Set' : 'Open'} tone="text-sky-700" />
+            <SnapshotStat label="Submit" value={createUserMutation.isPending ? 'Running' : 'Ready'} tone="text-violet-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Provisioning Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Readiness checks for identity fields, role scope, and user creation workflow state.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Username" value={form.username ? 'Set' : 'Auto'} tone="text-slate-700" />
+            <SnapshotStat label="Password" value={form.password ? 'Manual' : 'Auto'} tone="text-violet-700" />
+            <SnapshotStat label="Tenant" value={form.tenantId ? 'Mapped' : 'Global'} tone="text-sky-700" />
+            <SnapshotStat label="Errors" value={submitError ? 'Present' : 'Clear'} tone="text-emerald-700" />
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="rounded-[20px] border border-slate-200 bg-white p-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -37,6 +37,7 @@ export default function StudentFeesScreen() {
   const totalAmount  = fees.reduce((s, f) => s + f.amount, 0);
   const paidCount    = fees.filter((f) => f.status === 'PAID').length;
   const pendingCount = fees.filter((f) => f.status !== 'PAID').length;
+  const paidRate = fees.length > 0 ? Math.round((paidCount / fees.length) * 100) : 0;
 
   if (loading) {
     return (
@@ -55,6 +56,50 @@ export default function StudentFeesScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.primary} />}
     >
       {/* Summary */}
+      <View style={[styles.snapshotCard, Shadow.sm]}>
+        <Text style={styles.snapshotTitle}>Payment Snapshot</Text>
+        <View style={styles.snapshotMetrics}>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{fees.length}</Text>
+            <Text style={styles.snapshotLabel}>Assignments</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{paidCount}</Text>
+            <Text style={styles.snapshotLabel}>Paid</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{pendingCount}</Text>
+            <Text style={styles.snapshotLabel}>Pending</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{paidRate}%</Text>
+            <Text style={styles.snapshotLabel}>Clearance</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={[styles.snapshotCard, Shadow.sm]}>
+        <Text style={styles.snapshotTitle}>Payment Pulse</Text>
+        <View style={styles.snapshotMetrics}>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{fees.length > 0 ? 'Live' : 'Empty'}</Text>
+            <Text style={styles.snapshotLabel}>Ledger</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{pendingCount > 0 ? 'Due' : 'Clear'}</Text>
+            <Text style={styles.snapshotLabel}>State</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{refreshing ? 'Sync' : 'Idle'}</Text>
+            <Text style={styles.snapshotLabel}>Refresh</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{paidRate >= 80 ? 'Good' : paidRate >= 50 ? 'Watch' : 'Alert'}</Text>
+            <Text style={styles.snapshotLabel}>Recovery</Text>
+          </View>
+        </View>
+      </View>
+
       <View style={[styles.summaryCard, Shadow.md]}>
         <Text style={styles.summaryHeading}>Fee Summary</Text>
         <View style={styles.summaryRow}>
@@ -126,6 +171,13 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.md, paddingBottom: 40, gap: Spacing.md },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
   loadingText: { color: Colors.textSecondary, fontSize: 14 },
+
+  snapshotCard: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md },
+  snapshotTitle: { fontSize: 11, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  snapshotMetrics: { flexDirection: 'row', marginTop: Spacing.sm, gap: Spacing.xs },
+  snapshotMetric: { flex: 1, backgroundColor: Colors.background, borderRadius: Radius.md, paddingVertical: 8, alignItems: 'center' },
+  snapshotValue: { fontSize: 12, fontWeight: '800', color: Colors.text },
+  snapshotLabel: { marginTop: 2, fontSize: 9, color: Colors.textTertiary, fontWeight: '600' },
 
   summaryCard: { backgroundColor: Colors.primary, borderRadius: Radius.xl, padding: Spacing.xl },
   summaryHeading: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: Spacing.md },

@@ -89,6 +89,50 @@ export default function StudentProfileScreen() {
       </View>
 
       {/* Stat row */}
+      <View style={[styles.snapshotCard, Shadow.sm]}>
+        <Text style={styles.snapshotTitle}>Learning Snapshot</Text>
+        <View style={styles.snapshotMetrics}>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{attPct}%</Text>
+            <Text style={styles.snapshotLabel}>Attendance</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{exams.length}</Text>
+            <Text style={styles.snapshotLabel}>Exams</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{parents.length}</Text>
+            <Text style={styles.snapshotLabel}>Parents</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{student.active ? 'Active' : 'Inactive'}</Text>
+            <Text style={styles.snapshotLabel}>Status</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={[styles.snapshotCard, Shadow.sm]}>
+        <Text style={styles.snapshotTitle}>Profile Pulse</Text>
+        <View style={styles.snapshotMetrics}>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{student.email ? 'Email' : 'Basic'}</Text>
+            <Text style={styles.snapshotLabel}>Contact</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{attendance.length}</Text>
+            <Text style={styles.snapshotLabel}>Attendance</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{attPct >= 85 ? 'Good' : attPct >= 70 ? 'Watch' : 'Alert'}</Text>
+            <Text style={styles.snapshotLabel}>Trend</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{parents.length > 0 ? 'Linked' : 'Open'}</Text>
+            <Text style={styles.snapshotLabel}>Family</Text>
+          </View>
+        </View>
+      </View>
+
       <View style={styles.statsRow}>
         <StatCard icon="calendar-outline" label="Attendance" value={`${attPct}%`} color={attColor} bg={attPct >= 85 ? Colors.successBg : attPct >= 70 ? Colors.warningBg : Colors.dangerBg} />
         <StatCard icon="document-text-outline" label="Exams" value={exams.length} color={Colors.primaryLight} bg={Colors.accentLight} />
@@ -220,6 +264,26 @@ const styles = StyleSheet.create({
   contactText: { fontSize: 12, color: Colors.textSecondary },
   logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: Spacing.lg, borderWidth: 1, borderColor: Colors.dangerBg, borderRadius: Radius.full, paddingHorizontal: 12, paddingVertical: 6 },
   logoutText: { fontSize: 12, color: Colors.danger, fontWeight: '600' },
+
+  snapshotCard: {
+    backgroundColor: Colors.surface,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+  },
+  snapshotTitle: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 },
+  snapshotMetrics: { flexDirection: 'row', marginTop: Spacing.sm, gap: Spacing.sm },
+  snapshotMetric: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    paddingVertical: 10,
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  snapshotValue: { fontSize: 12, fontWeight: '800', color: Colors.text, textAlign: 'center' },
+  snapshotLabel: { marginTop: 2, fontSize: 10, color: Colors.textTertiary, fontWeight: '600' },
 
   statsRow: { flexDirection: 'row', marginHorizontal: Spacing.md, marginBottom: Spacing.md, gap: Spacing.md },
   statCard: { flex: 1, backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', gap: 4 },

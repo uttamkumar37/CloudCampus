@@ -66,6 +66,10 @@ function OverviewTab({ detail }: { detail: StudentFullDetail }) {
   const pct = attendance.length > 0 ? Math.round((presentDays / attendance.length) * 100) : 0
   const totalFees = detail.fees.reduce((s, f) => s + f.amount, 0)
   const overdueFees = detail.fees.filter((f) => f.status === 'OVERDUE').length
+  const publishedExams = detail.exams.filter((exam) => exam.published)
+  const averageMarks = publishedExams.length > 0 ? Math.round(publishedExams.reduce((sum, exam) => sum + exam.marksObtained, 0) / publishedExams.length) : 0
+  const highestMarks = publishedExams.length > 0 ? Math.max(...publishedExams.map((exam) => exam.marksObtained)) : 0
+  const certificateReady = student.active && pct >= 75 && publishedExams.length > 0
 
   return (
     <div className="space-y-5">
@@ -95,6 +99,43 @@ function OverviewTab({ detail }: { detail: StudentFullDetail }) {
         <StatCard label="Attendance" value={`${pct}%`} color={pct >= 75 ? 'text-emerald-600' : 'text-red-600'} />
         <StatCard label="Total Fees" value={fmtCurrency(totalFees)} color="text-slate-700" />
         <StatCard label="Overdue" value={String(overdueFees)} color={overdueFees > 0 ? 'text-red-600' : 'text-emerald-600'} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <StatCard label="Published Exams" value={String(publishedExams.length)} color="text-sky-600" />
+        <StatCard label="Average Marks" value={publishedExams.length > 0 ? `${averageMarks}%` : '—'} color="text-slate-700" />
+        <StatCard label="Highest Marks" value={publishedExams.length > 0 ? `${highestMarks}%` : '—'} color="text-slate-700" />
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Student Pulse</p>
+            <p className="mt-1 text-sm text-slate-600">Cross-check guardianship, academics, and financial readiness from one compact status lane.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Parents" value={String(detail.parents.length)} color="text-violet-700" />
+          <StatCard label="Homework" value={String(detail.homework.length)} color="text-emerald-700" />
+          <StatCard label="Overdue Fees" value={String(overdueFees)} color={overdueFees > 0 ? 'text-red-600' : 'text-slate-700'} />
+          <StatCard label="Certificate" value={certificateReady ? 'Ready' : 'Watch'} color={certificateReady ? 'text-emerald-700' : 'text-amber-700'} />
+        </div>
+      </div>
+
+      <div className={`rounded-xl border p-4 ${certificateReady ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className={`text-sm font-semibold ${certificateReady ? 'text-emerald-700' : 'text-amber-700'}`}>Certificate Snapshot</p>
+            <p className="mt-1 text-sm text-slate-600">
+              {certificateReady
+                ? 'This student meets the basic readiness checks for a report card or certificate download.'
+                : 'Add published exam results and maintain attendance to unlock certificate-ready status.'}
+            </p>
+          </div>
+          <div className={`rounded-full px-3 py-1 text-xs font-semibold ${certificateReady ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+            {certificateReady ? 'Ready for issue' : 'Not ready yet'}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -150,32 +191,58 @@ function ParentsTab({ parents }: { parents: StudentParentContact[] }) {
 
 function ExamsTab({ exams }: { exams: StudentExamItem[] }) {
   if (exams.length === 0) return <EmptyState text="No exam results published yet." />
+  const publishedExams = exams.filter((exam) => exam.published)
+  const averageMarks = publishedExams.length > 0 ? Math.round(publishedExams.reduce((sum, exam) => sum + exam.marksObtained, 0) / publishedExams.length) : 0
+  const highestMarks = publishedExams.length > 0 ? Math.max(...publishedExams.map((exam) => exam.marksObtained)) : 0
+  const passCount = publishedExams.filter((exam) => exam.marksObtained >= 35).length
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
-      <table className="min-w-full text-sm">
-        <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-          <tr>
-            <th className="px-4 py-3 text-left">Exam</th>
-            <th className="px-4 py-3 text-left">Subject</th>
-            <th className="px-4 py-3 text-left">Date</th>
-            <th className="px-4 py-3 text-right">Marks</th>
-            <th className="px-4 py-3 text-center">Grade</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 bg-white">
-          {exams.map((e) => (
-            <tr key={e.resultId} className="hover:bg-slate-50">
-              <td className="px-4 py-3 font-medium text-slate-800">{e.examTitle ?? '—'}</td>
-              <td className="px-4 py-3 text-slate-600">{e.subject ?? '—'}</td>
-              <td className="px-4 py-3 text-slate-500">{fmtDate(e.examDate)}</td>
-              <td className="px-4 py-3 text-right font-semibold text-slate-800">{e.marksObtained}</td>
-              <td className="px-4 py-3 text-center">
-                {e.grade ? <Badge label={e.grade} color="bg-emerald-100 text-emerald-700" /> : '—'}
-              </td>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Published" value={String(publishedExams.length)} color="text-sky-600" />
+        <StatCard label="Average" value={publishedExams.length > 0 ? `${averageMarks}%` : '—'} color="text-slate-700" />
+        <StatCard label="Highest" value={publishedExams.length > 0 ? `${highestMarks}%` : '—'} color="text-slate-700" />
+        <StatCard label="Pass Count" value={String(passCount)} color={passCount > 0 ? 'text-emerald-600' : 'text-red-600'} />
+      </div>
+
+      <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-sky-700">Report Card Preview</p>
+            <p className="mt-1 text-sm text-slate-600">A compact summary of the latest published results for this student.</p>
+          </div>
+          <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-700 shadow-sm">
+            {publishedExams.length > 0 ? `${passCount}/${publishedExams.length} subjects passed` : 'Waiting for results'}
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="min-w-full text-sm">
+          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <tr>
+              <th className="px-4 py-3 text-left">Exam</th>
+              <th className="px-4 py-3 text-left">Subject</th>
+              <th className="px-4 py-3 text-left">Date</th>
+              <th className="px-4 py-3 text-right">Marks</th>
+              <th className="px-4 py-3 text-center">Grade</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-slate-100 bg-white">
+            {exams.map((e) => (
+              <tr key={e.resultId} className="hover:bg-slate-50">
+                <td className="px-4 py-3 font-medium text-slate-800">{e.examTitle ?? '—'}</td>
+                <td className="px-4 py-3 text-slate-600">{e.subject ?? '—'}</td>
+                <td className="px-4 py-3 text-slate-500">{fmtDate(e.examDate)}</td>
+                <td className="px-4 py-3 text-right font-semibold text-slate-800">{e.marksObtained}</td>
+                <td className="px-4 py-3 text-center">
+                  {e.grade ? <Badge label={e.grade} color="bg-emerald-100 text-emerald-700" /> : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

@@ -16,6 +16,8 @@ const KPI_CONFIG: Array<{ key: KpiKey; label: string; icon: string; bg: string; 
 export function SuperAdminDashboardPage() {
   const summaryQuery = useSuperAdminDashboardSummary()
   const summary = summaryQuery.data?.data
+  const activeRate = summary && summary.totalTenants > 0 ? Math.round((summary.activeTenants / summary.totalTenants) * 100) : 0
+  const newestSchool = summary?.newestTenants[0] ?? null
 
   const columns: DataTableColumn<Tenant>[] = [
     {
@@ -74,6 +76,51 @@ export function SuperAdminDashboardPage() {
         subtitle="Live tenant portfolio health, provisioning activity, and operating posture."
         badge={{ label: 'Super Admin', tone: 'blue' }}
       />
+
+      {summary ? (
+        <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-700">Portfolio Snapshot</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">{activeRate}% of schools are active</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {newestSchool ? (
+                  <>
+                    Latest provisioned school: <span className="font-semibold text-slate-900">{newestSchool.schoolName}</span> on schema{' '}
+                    <span className="font-mono text-slate-700">{newestSchool.schemaName}</span>.
+                  </>
+                ) : (
+                  'No schools have been provisioned yet.'
+                )}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <SnapshotStat label="Active Rate" value={`${activeRate}%`} tone="text-violet-700" />
+              <SnapshotStat label="Newest Schools" value={String(summary.newestTenants.length)} tone="text-sky-700" />
+              <SnapshotStat label="Active" value={String(summary.activeTenants)} tone="text-emerald-700" />
+              <SnapshotStat label="Inactive" value={String(summary.inactiveTenants)} tone="text-slate-700" />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {summary ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Platform Pulse</p>
+              <p className="mt-2 text-sm text-slate-600">Operational watchpoints for growth speed and tenant lifecycle posture.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <SnapshotStat label="Total" value={String(summary.totalTenants)} tone="text-violet-700" />
+              <SnapshotStat label="New Month" value={String(summary.tenantsCreatedThisMonth)} tone="text-sky-700" />
+              <SnapshotStat label="Inactive" value={String(summary.inactiveTenants)} tone="text-slate-700" />
+              <SnapshotStat label="Posture" value={summary.inactiveTenants > 0 ? 'Watch' : 'Stable'} tone="text-emerald-700" />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* KPI Cards */}
       {summary ? (
@@ -135,5 +182,22 @@ export function SuperAdminDashboardPage() {
         </div>
       </div>
     </section>
+  )
+}
+
+function SnapshotStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone: string
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
   )
 }

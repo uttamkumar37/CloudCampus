@@ -127,6 +127,50 @@ export default function StudentDetailScreen() {
         )}
       </View>
 
+      <View style={[styles.snapshotCard, Shadow.sm]}>
+        <Text style={styles.snapshotTitle}>Student Snapshot</Text>
+        <View style={styles.snapshotMetrics}>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{fees.length}</Text>
+            <Text style={styles.snapshotLabel}>Fee Items</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{paidFees}</Text>
+            <Text style={styles.snapshotLabel}>Paid</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{attendance.length}</Text>
+            <Text style={styles.snapshotLabel}>Attendance</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{exams.length}</Text>
+            <Text style={styles.snapshotLabel}>Exams</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={[styles.snapshotCard, Shadow.sm]}>
+        <Text style={styles.snapshotTitle}>Student Pulse</Text>
+        <View style={styles.snapshotMetrics}>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{student.active ? 'Active' : 'Inactive'}</Text>
+            <Text style={styles.snapshotLabel}>Status</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{attPct >= 85 ? 'Good' : attPct >= 70 ? 'Watch' : 'Alert'}</Text>
+            <Text style={styles.snapshotLabel}>Attendance</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{fees.some((fee) => fee.status !== 'PAID') ? 'Due' : 'Clear'}</Text>
+            <Text style={styles.snapshotLabel}>Fees</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{parents.length > 0 ? 'Linked' : 'Open'}</Text>
+            <Text style={styles.snapshotLabel}>Parents</Text>
+          </View>
+        </View>
+      </View>
+
       {/* Stats row */}
       <View style={styles.statsRow}>
         <StatCard icon="card-outline" label="Fee Items" value={fees.length} color="#7C3AED" bg="#EDE9FE" />
@@ -332,6 +376,19 @@ const styles = StyleSheet.create({
   contactRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.md, justifyContent: 'center' },
   contactChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   contactText: { fontSize: 12, color: Colors.textSecondary },
+
+  snapshotCard: {
+    backgroundColor: Colors.surface,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+  },
+  snapshotTitle: { fontSize: 11, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  snapshotMetrics: { flexDirection: 'row', marginTop: Spacing.sm, gap: Spacing.xs },
+  snapshotMetric: { flex: 1, backgroundColor: Colors.background, borderRadius: Radius.md, paddingVertical: 8, alignItems: 'center' },
+  snapshotValue: { fontSize: 12, fontWeight: '800', color: Colors.text },
+  snapshotLabel: { marginTop: 2, fontSize: 9, color: Colors.textTertiary, fontWeight: '600' },
 
   statsRow: {
     flexDirection: 'row', marginHorizontal: Spacing.md,

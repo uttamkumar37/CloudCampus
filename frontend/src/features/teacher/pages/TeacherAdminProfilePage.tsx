@@ -8,7 +8,7 @@ import { assignClassTeacher, removeClassTeacher } from '../../academic/api/acade
 import { useAcademicSections } from '../../academic/hooks/useAcademicData'
 
 import { useTeacherDetails } from '../hooks/useTeacherDetails'
-import type { TeacherStatus } from '../types'
+import type { HomeworkItem, TeacherStatus, TimetableItem } from '../types'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -49,6 +49,37 @@ const TABS: Array<{ key: ProfileTab; label: string }> = [
   { key: 'homework', label: 'Recent Homework' },
   { key: 'assignments', label: 'Class Assignments' },
 ]
+
+function formatTime(time: string) {
+  const [hours, minutes] = time.split(':')
+  const hour = Number(hours)
+  const period = hour >= 12 ? 'PM' : 'AM'
+  return `${hour % 12 || 12}:${minutes} ${period}`
+}
+
+function getNextSlot(slots: TimetableItem[]) {
+  return [...slots].sort((left, right) => {
+    const dayDifference = left.dayOfWeek - right.dayOfWeek
+    return dayDifference !== 0 ? dayDifference : left.startTime.localeCompare(right.startTime)
+  })[0] ?? null
+}
+
+function LoadStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone: string
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
 
 // ─── Class Assignments tab ────────────────────────────────────────────────────
 
@@ -188,6 +219,8 @@ export function TeacherAdminProfilePage() {
   const fullName = `${teacher.firstName} ${teacher.lastName}`
   const initials = `${teacher.firstName[0] ?? ''}${teacher.lastName[0] ?? ''}`.toUpperCase()
   const bg = avatarColor(fullName)
+  const nextSlot = getNextSlot(timetable)
+  const openHomeworkCount = homework.filter((item: HomeworkItem) => !item.dueDate || new Date(item.dueDate) >= new Date()).length
 
   return (
     <div className="space-y-6">
@@ -244,6 +277,45 @@ export function TeacherAdminProfilePage() {
               <p className="text-2xl font-bold text-slate-900">{timetable.length}</p>
               <p className="text-xs text-slate-500">Slots</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-sky-50 via-white to-emerald-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Teacher Load Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">{totalAssignedClasses} assigned section(s)</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              {nextSlot ? (
+                <>
+                  Next class: {nextSlot.subject ?? 'Subject'} · {nextSlot.className ?? 'Class'}{nextSlot.sectionName ? ` — ${nextSlot.sectionName}` : ''} · {formatTime(nextSlot.startTime)} – {formatTime(nextSlot.endTime)}
+                </>
+              ) : (
+                'No timetable slots are assigned yet.'
+              )}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <LoadStat label="Sections" value={String(totalAssignedClasses)} tone="text-sky-700" />
+            <LoadStat label="Slots" value={String(timetable.length)} tone="text-emerald-700" />
+            <LoadStat label="Homework" value={String(homework.length)} tone="text-amber-700" />
+            <LoadStat label="Open" value={String(openHomeworkCount)} tone="text-violet-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Teacher Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Monitor assignment load, timetable readiness, and open classroom obligations.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <LoadStat label="Class Teacher" value={teacher.classTeacherSections.length > 0 ? 'Assigned' : 'Open'} tone="text-sky-700" />
+            <LoadStat label="Next Slot" value={nextSlot ? 'Scheduled' : 'None'} tone="text-emerald-700" />
+            <LoadStat label="Homework" value={homework.length > 0 ? 'Live' : 'Quiet'} tone="text-violet-700" />
+            <LoadStat label="Open Tasks" value={String(openHomeworkCount)} tone="text-amber-700" />
           </div>
         </div>
       </div>

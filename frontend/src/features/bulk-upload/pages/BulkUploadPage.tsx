@@ -40,6 +40,15 @@ const iconMap: Record<string, string> = {
   master: 'MS',
 }
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 export function BulkUploadPage() {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const operationsQuery = useBulkOperationsMetadata()
@@ -81,6 +90,8 @@ export function BulkUploadPage() {
   const previewData = previewQuery.data?.data
   const totalRecords =
     (previewData?.newRecords ?? 0) + (previewData?.updatedRecords ?? 0) + (previewData?.skippedRecords ?? 0)
+  const jobsCount = jobsQuery.data?.data.jobs.length ?? 0
+  const validationReady = validationResult ? `${validationResult.readyCount} ready` : 'Awaiting upload'
 
   useEffect(() => {
     if (operations.length > 0 && !operations.some((item) => item.id === selectedOperation)) {
@@ -222,6 +233,39 @@ export function BulkUploadPage() {
         subtitle="Enterprise control center for guided, no-code bulk updates across your entire school data."
       />
 
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-900 p-5 text-white shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">Bulk Upload Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">{selectedOperationCard?.title ?? 'Students'} workflow ready</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200">
+              Validate spreadsheets, preview changes, and execute bulk updates with a guided no-code workflow.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Operations" value={String(operations.length)} tone="text-cyan-200" />
+            <SnapshotStat label="Jobs" value={String(jobsCount)} tone="text-white" />
+            <SnapshotStat label="Step" value={`0${activeStep}`} tone="text-emerald-200" />
+            <SnapshotStat label="Validation" value={validationReady} tone="text-violet-200" />
+          </div>
+        </div>
+      </div>
+
+      <Card>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Bulk Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Track execution readiness, selection state, and upload lifecycle health in one view.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Operation" value={selectedOperationCard ? 'Selected' : 'Open'} tone="text-cyan-700" />
+            <SnapshotStat label="Upload" value={validateMutation.isPending ? 'Preparing' : 'Ready'} tone="text-sky-700" />
+            <SnapshotStat label="Execute" value={executeMutation.isPending ? 'Running' : 'Ready'} tone="text-emerald-700" />
+            <SnapshotStat label="Retry" value={retryMutation.isPending ? 'Running' : 'Idle'} tone="text-violet-700" />
+          </div>
+        </div>
+      </Card>
+
       <Card className="overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-900 text-white">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -257,15 +301,26 @@ export function BulkUploadPage() {
           {operations.map((item) => {
             const isSelected = selectedOperation === item.id
             return (
-              <button
+              <div
                 key={item.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   setSelectedOperation(item.id)
                   setActiveStep(1)
                   setSelectedFile(null)
                   setResult(null)
                   setProgress(0)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    setSelectedOperation(item.id)
+                    setActiveStep(1)
+                    setSelectedFile(null)
+                    setResult(null)
+                    setProgress(0)
+                  }
                 }}
                 className={`rounded-3xl border p-4 text-left transition ${
                   isSelected
@@ -301,7 +356,7 @@ export function BulkUploadPage() {
                     Download Sample Template
                   </Button>
                 </div>
-              </button>
+              </div>
             )
           })}
           {operationsQuery.isLoading ? (
