@@ -106,8 +106,13 @@ describe('ParentLinksAdminPage', () => {
     })
 
     expect(screen.getByText('Parent Links')).toBeInTheDocument()
+    expect(screen.getByText('Parent Links Snapshot')).toBeInTheDocument()
+    expect(screen.getByText('1 linked family record(s)')).toBeInTheDocument()
     expect(screen.getByText('Sanjay Patel')).toBeInTheDocument()
     expect(screen.getByText('Mira Patel')).toBeInTheDocument()
+    expect(screen.getAllByText('Links').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Parents').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Students').length).toBeGreaterThan(0)
 
     fireEvent.click(screen.getByRole('button', { name: 'Unlink' }))
 

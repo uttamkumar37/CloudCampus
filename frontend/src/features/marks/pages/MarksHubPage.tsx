@@ -38,6 +38,23 @@ const emptyResultForm: CreateExamResultRequest = {
 
 type ActiveTab = 'exams' | 'results'
 
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString('en', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 export function MarksHubPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('exams')
   const [examForm, setExamForm] = useState<CreateExamRequest>(emptyExamForm)
@@ -53,6 +70,8 @@ export function MarksHubPage() {
 
   const exams = examsQuery.data?.data ?? []
   const results = resultsQuery.data?.data ?? []
+  const publishedResults = results.filter((result) => result.published).length
+  const nextExam = [...exams].sort((left, right) => left.examDate.localeCompare(right.examDate))[0] ?? null
   const examSectionOptions = directory.getSectionsForClass(examForm.classId)
   const lookupExamOptions = useMemo(
     () => exams.map((exam) => ({ value: exam.id, label: `${exam.title} - ${exam.examDate}` })),
@@ -166,6 +185,43 @@ export function MarksHubPage() {
   return (
     <section className="space-y-6">
       <PageHeader title="Marks & Exams" subtitle="Schedule exams and record student results." />
+
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-violet-700">Exam Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">{exams.length} scheduled exam(s)</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              {nextExam ? (
+                <>Next exam: {nextExam.title} · {formatDate(nextExam.examDate)} · Max marks {nextExam.maxMarks}</>
+              ) : (
+                'Create an exam to populate the marks workspace with schedule and publishing controls.'
+              )}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Exams" value={String(exams.length)} tone="text-violet-700" />
+            <SnapshotStat label="Results" value={String(results.length)} tone="text-sky-700" />
+            <SnapshotStat label="Published" value={String(publishedResults)} tone="text-emerald-700" />
+            <SnapshotStat label="Class Filter" value={searchClassId ? 'Set' : 'Open'} tone="text-amber-700" />
+          </div>
+        </div>
+      </div>
+
+      <Card>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Exam Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Keep scheduling and publication flow visible while moving between exam and result tabs.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Tab" value={activeTab === 'exams' ? 'Exams' : 'Results'} tone="text-slate-700" />
+            <SnapshotStat label="Exam Save" value={createExamMutation.isPending ? 'Saving' : 'Ready'} tone="text-violet-700" />
+            <SnapshotStat label="Result Save" value={createResultMutation.isPending ? 'Saving' : 'Ready'} tone="text-emerald-700" />
+            <SnapshotStat label="Exam Filter" value={searchExamId ? 'Set' : 'Open'} tone="text-amber-700" />
+          </div>
+        </div>
+      </Card>
 
       {/* Tab switcher */}
       <div className="flex gap-1 rounded-2xl bg-slate-100 p-1 w-fit">

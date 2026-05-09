@@ -20,6 +20,15 @@ function formatTime(value: string) {
   return `${hour % 12 || 12}:${m} ${ampm}`
 }
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 export function StudentLearningPage() {
   const dashboardQuery = useStudentDashboard()
 
@@ -50,6 +59,8 @@ export function StudentLearningPage() {
   }
 
   const d = dashboardQuery.data.data
+  const nextClass = d.todayTimetable[0] ?? null
+  const overdueHomework = d.recentHomework.filter((homework) => homework.overdue).length
 
   return (
     <section className="space-y-5 sm:space-y-6">
@@ -59,11 +70,40 @@ export function StudentLearningPage() {
       />
 
       <div className="cc-fade-up overflow-hidden rounded-[24px] sm:rounded-[28px] border border-slate-200 bg-gradient-to-br from-sky-50 via-white to-emerald-50 p-4 sm:p-6 shadow-[0_20px_50px_-35px_rgba(15,23,42,0.45)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Student Workspace</p>
-        <h2 className="mt-3 text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">Focused, personal, and private</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          This page shows only your own learning data, including attendance, homework, timetable, results, and fee status.
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Learning Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">{d.todayTimetable.length} class(es) today</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {nextClass ? (
+                <>Next class: {nextClass.subjectName}{nextClass.label ? ` · ${nextClass.label}` : ''} · {formatTime(nextClass.startTime)} – {formatTime(nextClass.endTime)}</>
+              ) : (
+                'No classes are scheduled for today. Use this space to review recent marks and homework.'
+              )}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Attendance" value={`${d.attendance.presentPercent.toFixed(1)}%`} tone="text-emerald-700" />
+            <SnapshotStat label="Homework" value={String(d.recentHomework.length)} tone="text-amber-700" />
+            <SnapshotStat label="Overdue" value={String(overdueHomework)} tone="text-rose-700" />
+            <SnapshotStat label="Fees" value={d.fees.pendingAmount > 0 ? 'Pending' : 'Clear'} tone="text-sky-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="cc-fade-up rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Learning Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Real-time readiness checks for classes, homework risk, and fee posture.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Class Day" value={d.todayTimetable.length > 0 ? 'Scheduled' : 'Free'} tone="text-sky-700" />
+            <SnapshotStat label="Homework Risk" value={overdueHomework > 0 ? 'Watch' : 'Low'} tone="text-rose-700" />
+            <SnapshotStat label="Results" value={String(d.recentResults.length)} tone="text-violet-700" />
+            <SnapshotStat label="Fees" value={d.fees.pendingAmount > 0 ? 'Pending' : 'Clear'} tone="text-emerald-700" />
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">

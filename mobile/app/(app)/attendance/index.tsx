@@ -122,6 +122,50 @@ export default function AttendanceScreen() {
         </TouchableOpacity>
       </View>
 
+      <View style={[styles.snapshotCard, Shadow.sm]}>
+        <Text style={styles.snapshotTitle}>Attendance Snapshot</Text>
+        <View style={styles.snapshotMetrics}>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{presentPct}%</Text>
+            <Text style={styles.snapshotLabel}>Present Rate</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{summary.absent}</Text>
+            <Text style={styles.snapshotLabel}>Absent</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{summary.late}</Text>
+            <Text style={styles.snapshotLabel}>Late</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{total}</Text>
+            <Text style={styles.snapshotLabel}>Records</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={[styles.snapshotCard, Shadow.sm]}>
+        <Text style={styles.snapshotTitle}>Attendance Pulse</Text>
+        <View style={styles.snapshotMetrics}>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{isToday(selectedDate) ? 'Today' : 'Past'}</Text>
+            <Text style={styles.snapshotLabel}>Date Scope</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{summary.excused}</Text>
+            <Text style={styles.snapshotLabel}>Excused</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{records.length > 0 ? 'Loaded' : 'Empty'}</Text>
+            <Text style={styles.snapshotLabel}>Register</Text>
+          </View>
+          <View style={styles.snapshotMetric}>
+            <Text style={styles.snapshotValue}>{presentPct >= 85 ? 'Good' : presentPct >= 70 ? 'Watch' : 'Alert'}</Text>
+            <Text style={styles.snapshotLabel}>Health</Text>
+          </View>
+        </View>
+      </View>
+
       {loading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
@@ -214,6 +258,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 2,
   },
   todayText: { fontSize: 10, color: '#fff', fontWeight: '700' },
+
+  snapshotCard: {
+    backgroundColor: Colors.surface,
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.md,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+  },
+  snapshotTitle: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 },
+  snapshotMetrics: { flexDirection: 'row', marginTop: Spacing.sm, gap: Spacing.sm },
+  snapshotMetric: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  snapshotValue: { fontSize: 16, fontWeight: '800', color: Colors.text },
+  snapshotLabel: { marginTop: 2, fontSize: 10, color: Colors.textTertiary, fontWeight: '600' },
 
   list: { padding: Spacing.md, gap: Spacing.sm, paddingBottom: 40 },
 

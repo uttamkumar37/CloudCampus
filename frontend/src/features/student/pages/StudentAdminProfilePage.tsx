@@ -178,6 +178,12 @@ export function StudentAdminProfilePage() {
   const totalFees = fees.reduce((sum, f) => sum + f.amount, 0)
   const paidFees = fees.filter((f) => f.status === 'PAID').reduce((sum, f) => sum + f.amount, 0)
   const pendingFees = fees.filter((f) => f.status === 'PENDING' || f.status === 'PARTIALLY_PAID').reduce((sum, f) => sum + f.amount, 0)
+  const publishedExams = exams.filter((exam) => exam.published)
+  const averageMarks = publishedExams.length > 0 ? Math.round(publishedExams.reduce((sum, exam) => sum + exam.marksObtained, 0) / publishedExams.length) : 0
+  const topMark = publishedExams.length > 0 ? Math.max(...publishedExams.map((exam) => exam.marksObtained)) : 0
+  const attendanceReady = attendancePct !== null && attendancePct >= 75
+  const feeReady = pendingFees === 0
+  const certificateReady = student.status === 'ACTIVE' && attendanceReady && feeReady && publishedExams.length > 0
 
   return (
     <section className="space-y-5">
@@ -260,6 +266,33 @@ export function StudentAdminProfilePage() {
               {tab.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Student Admin Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Operational overview for profile editing, tab context, and certificate readiness checks.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Active Tab</p>
+              <p className="mt-1 text-xl font-bold text-sky-700">{TABS.find((tab) => tab.key === activeTab)?.label ?? 'Overview'}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Attendance</p>
+              <p className="mt-1 text-xl font-bold text-emerald-700">{attendancePct !== null ? `${attendancePct}%` : '—'}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Fees</p>
+              <p className="mt-1 text-xl font-bold text-amber-700">{pendingFees > 0 ? 'Pending' : 'Clear'}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Certificate</p>
+              <p className="mt-1 text-xl font-bold text-violet-700">{certificateReady ? 'Ready' : 'Watch'}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -471,12 +504,81 @@ export function StudentAdminProfilePage() {
 
       {activeTab === 'documents' && (
         <SectionCard title="Documents">
-          <div className="py-8 text-center">
-            <svg className="mx-auto mb-2 h-10 w-10 text-slate-300" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-            </svg>
-            <p className="text-sm font-medium text-slate-500">Document management coming soon</p>
-            <p className="mt-1 text-xs text-slate-400">Upload ID proof, birth certificate, transfer certificate, and more.</p>
+          <div className={`rounded-xl border p-4 ${certificateReady ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className={`text-sm font-semibold ${certificateReady ? 'text-emerald-700' : 'text-amber-700'}`}>Certificate Issuance Snapshot</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {certificateReady
+                    ? 'The student is ready for a report card or transfer certificate handoff.'
+                    : 'Complete attendance, fee, and published result checks before issuing documents.'}
+                </p>
+              </div>
+              <div className={`rounded-full px-3 py-1 text-xs font-semibold ${certificateReady ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                {certificateReady ? 'Ready to issue' : 'Needs review'}
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Attendance</p>
+                <p className="mt-1 text-lg font-bold text-slate-900">{attendancePct !== null ? `${attendancePct}%` : '—'}</p>
+              </div>
+              <div className="rounded-lg border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Published Exams</p>
+                <p className="mt-1 text-lg font-bold text-slate-900">{publishedExams.length}</p>
+              </div>
+              <div className="rounded-lg border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Average Marks</p>
+                <p className="mt-1 text-lg font-bold text-slate-900">{publishedExams.length > 0 ? `${averageMarks}%` : '—'}</p>
+              </div>
+              <div className="rounded-lg border border-white bg-white px-4 py-3 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Highest Mark</p>
+                <p className="mt-1 text-lg font-bold text-slate-900">{publishedExams.length > 0 ? `${topMark}%` : '—'}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <ChecklistItem label="Attendance above 75%" done={attendanceReady} />
+              <ChecklistItem label="No outstanding fees" done={feeReady} />
+              <ChecklistItem label="Published exam results available" done={publishedExams.length > 0} />
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <p className="text-sm font-semibold text-slate-700">Generate Certificates</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                { label: 'Report Card', desc: 'Academic results summary with grades', enabled: certificateReady },
+                { label: 'Transfer Certificate', desc: 'Official TC for school exit', enabled: certificateReady },
+                { label: 'Bonafide Certificate', desc: 'Proof of active enrollment', enabled: true },
+                { label: 'Leaving Certificate', desc: 'Final exit certificate with remarks', enabled: certificateReady },
+              ].map(({ label, desc, enabled }) => (
+                <div key={label} className={`flex items-center justify-between rounded-xl border p-4 ${enabled ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 opacity-60'}`}>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{label}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{desc}</p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!enabled}
+                    onClick={() => {
+                      if (!enabled) return
+                      const win = window.open('', '_blank')
+                      if (!win) return
+                      win.document.write(`<html><head><title>${label}</title><style>body{font-family:serif;padding:48px;max-width:700px;margin:auto}h1{font-size:22px;text-align:center}p{line-height:1.8}hr{margin:24px 0}.label{color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:.08em}.value{font-weight:600;font-size:15px}</style></head><body><h1>${label}</h1><hr/><p>This is to certify that the student records have been verified and this document is issued by the school administration.</p><hr/><p class="label">Issued by</p><p class="value">School Administration · CloudCampus</p><p class="label" style="margin-top:16px">Date</p><p class="value">${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p><br/><br/><p style="margin-top:48px;border-top:1px solid #e2e8f0;padding-top:16px;font-size:12px;color:#94a3b8">This is a system-generated document. Verify authenticity at the school portal.</p><script>window.print()</script></body></html>`)
+                      win.document.close()
+                    }}
+                    className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${enabled ? 'bg-slate-900 text-white hover:bg-slate-700' : 'cursor-not-allowed bg-slate-100 text-slate-400'}`}
+                  >
+                    {enabled ? 'Generate' : 'Locked'}
+                  </button>
+                </div>
+              ))}
+            </div>
+            {!certificateReady && (
+              <p className="text-xs text-amber-700">Complete attendance, fee clearance, and published exam result checks above to unlock all certificates.</p>
+            )}
           </div>
         </SectionCard>
       )}
@@ -543,5 +645,16 @@ export function StudentAdminProfilePage() {
         </SectionCard>
       )}
     </section>
+  )
+}
+
+function ChecklistItem({ label, done }: { label: string; done: boolean }) {
+  return (
+    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${done ? 'border-emerald-200 bg-white text-emerald-700' : 'border-amber-200 bg-white text-amber-700'}`}>
+      <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${done ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+        {done ? '✓' : '•'}
+      </span>
+      <span>{label}</span>
+    </div>
   )
 }

@@ -20,6 +20,7 @@ import { TenantsPage } from '../features/super-admin/pages/TenantsPage'
 import { UsersPage } from '../features/super-admin/pages/UsersPage'
 import SubscriptionPlansPage from '../features/super-admin/pages/SubscriptionPlansPage'
 import TenantSubscriptionPage from '../features/super-admin/pages/TenantSubscriptionPage'
+import { FeatureRoadmapPage } from '../features/super-admin/pages/FeatureRoadmapPage'
 import { ProfilePage } from '../features/profile/pages/ProfilePage'
 import { HomeworkPage } from '../features/homework/pages/HomeworkPage'
 import { TimetablePage } from '../features/timetable/pages/TimetablePage'
@@ -30,6 +31,23 @@ import { FeesHubPage } from '../features/fees/pages/FeesHubPage'
 import { MarksHubPage } from '../features/marks/pages/MarksHubPage'
 import { WebsiteBuilderPage } from '../features/website-builder/pages/WebsiteBuilderPage'
 import { SchoolWebsitePage } from '../features/public-website/pages/SchoolWebsitePage'
+import { NoticeBoardPage } from '../features/notice-board/pages/NoticeBoardPage'
+import { SupportPage } from '../features/support/pages/SupportPage'
+import { LetterTemplatesPage } from '../features/letter-templates/pages/LetterTemplatesPage'
+import { StudentBehaviorPage } from '../features/student-behavior/pages/StudentBehaviorPage'
+import { PayrollPage } from '../features/payroll/pages/PayrollPage'
+import { ExpensesPage } from '../features/expenses/pages/ExpensesPage'
+import { TaskBoardPage } from '../features/tasks/pages/TaskBoardPage'
+import { LibraryPage } from '../features/library/pages/LibraryPage'
+import { AdmissionsPage } from '../features/admissions/pages/AdmissionsPage'
+import { CommunicationPage } from '../features/communication/pages/CommunicationPage'
+import { TransportPage } from '../features/transport/pages/TransportPage'
+import { ProcurementPage } from '../features/procurement/pages/ProcurementPage'
+import { AuditLogPage } from '../features/audit-log/pages/AuditLogPage'
+import { QuestionBankPage } from '../features/question-bank/pages/QuestionBankPage'
+import { HostelPage } from '../features/hostel/pages/HostelPage'
+import { InventoryPage } from '../features/inventory/pages/InventoryPage'
+import { ApprovalsPage } from '../features/approvals/pages/ApprovalsPage'
 
 const StudentDashboardPage = lazy(() =>
   import('../features/dashboard/pages/StudentDashboardPage').then((module) => ({
@@ -90,6 +108,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/super-admin/dashboard" replace /> },
       { path: 'dashboard', element: <SuperAdminDashboardPage /> },
+      { path: 'roadmap', element: <FeatureRoadmapPage /> },
       { path: 'tenants', element: <TenantsPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'plans', element: <SubscriptionPlansPage /> },
@@ -103,6 +122,10 @@ export const router = createBrowserRouter([
         <LoginPage />
       </PublicRoute>
     ),
+  },
+  {
+    path: '/roadmap',
+    element: <FeatureRoadmapPage />,
   },
   {
     path: '/',
@@ -288,6 +311,142 @@ export const router = createBrowserRouter([
         element: (
           <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
             <ChangePasswordPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'notice-board',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+            <NoticeBoardPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'support',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER', 'STUDENT', 'PARENT']}>
+            <SupportPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'letter-templates',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <LetterTemplatesPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'student-behavior',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
+            <StudentBehaviorPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'payroll',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <PayrollPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'expenses',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <ExpensesPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'tasks',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
+            <TaskBoardPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'library',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
+            <LibraryPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'admissions',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <AdmissionsPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'communication',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
+            <CommunicationPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'transport',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <TransportPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'procurement',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <ProcurementPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'audit-log',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <AuditLogPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'question-bank',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN', 'TEACHER']}>
+            <QuestionBankPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'hostel',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <HostelPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'inventory',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <InventoryPage />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'approvals',
+        element: (
+          <PrivateRoute allowedRoles={['SCHOOL_ADMIN']}>
+            <ApprovalsPage />
           </PrivateRoute>
         ),
       },

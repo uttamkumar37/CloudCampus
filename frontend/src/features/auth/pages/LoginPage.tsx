@@ -127,6 +127,7 @@ export function LoginPage() {
   }, [])
 
   const schoolResults = schoolsQuery.data?.data ?? []
+  const selectedCount = [selectedSchool, selectedRole, username.trim()].filter(Boolean).length
 
   const handleSelectSchool = (school: SchoolSearchResult) => {
     setSelectedSchool(school)
@@ -256,6 +257,50 @@ export function LoginPage() {
               <div className="cc-fade-up">
                 <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Welcome back</h2>
                 <p className="mt-1.5 text-sm text-slate-500">Sign in to your school workspace.</p>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-700">Portal Snapshot</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">School</p>
+                    <p className="mt-1 text-sm font-bold text-emerald-700">{selectedSchool ? 'Selected' : 'Search'}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Role</p>
+                    <p className="mt-1 text-sm font-bold text-sky-700">{selectedRole || 'Choose'}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Inputs Ready</p>
+                    <p className="mt-1 text-sm font-bold text-violet-700">{selectedCount}/3</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Status</p>
+                    <p className="mt-1 text-sm font-bold text-amber-700">{loginMutation.isPending ? 'Signing In' : 'Idle'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-600">Auth Pulse</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">School Lock</p>
+                    <p className="mt-1 text-sm font-bold text-slate-700">{lockedSchoolSlug ? 'Locked' : 'Open'}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Directory</p>
+                    <p className="mt-1 text-sm font-bold text-sky-700">{schoolsQuery.isLoading ? 'Loading' : 'Ready'}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Password</p>
+                    <p className="mt-1 text-sm font-bold text-violet-700">{showPassword ? 'Visible' : 'Hidden'}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Error State</p>
+                    <p className="mt-1 text-sm font-bold text-amber-700">{formError ? 'Present' : 'Clear'}</p>
+                  </div>
+                </div>
               </div>
 
               <form onSubmit={handleSubmit} className="mt-8 space-y-5 cc-fade-up cc-delay-1">

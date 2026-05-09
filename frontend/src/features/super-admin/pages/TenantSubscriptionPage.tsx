@@ -14,6 +14,15 @@ import type { RecordPaymentRequest, InitiatePaymentResponse } from '../types'
 // Razorpay checkout.js is loaded via index.html — declare the global
 declare const Razorpay: new (options: Record<string, unknown>) => { open(): void }
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 function openRazorpayCheckout(
   data: InitiatePaymentResponse,
   onSuccess: () => void,
@@ -66,6 +75,8 @@ export default function TenantSubscriptionPage() {
     referenceNo: '',
     notes: '',
   })
+  const paymentCount = payments?.length ?? 0
+  const paidCount = (payments ?? []).filter((payment) => payment.status === 'PAID').length
 
   function handleSubscribe(e: React.FormEvent) {
     e.preventDefault()
@@ -92,6 +103,39 @@ export default function TenantSubscriptionPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-violet-700">Billing Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">Tenant {id || 'N/A'} billing workspace</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Assign plans, track payment state, and manage manual or online collection for this tenant.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Plan" value={subscription?.plan.name ?? 'None'} tone="text-violet-700" />
+            <SnapshotStat label="Status" value={subscription?.status ?? 'Open'} tone="text-sky-700" />
+            <SnapshotStat label="Payments" value={String(paymentCount)} tone="text-emerald-700" />
+            <SnapshotStat label="Settled" value={String(paidCount)} tone="text-amber-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Billing Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Monitor checkout readiness, manual recording flow, and subscription lifecycle controls.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Subscribe" value={subscribeMutation.isPending ? 'Saving' : 'Ready'} tone="text-violet-700" />
+            <SnapshotStat label="Manual Pay" value={recordPaymentMutation.isPending ? 'Saving' : 'Ready'} tone="text-sky-700" />
+            <SnapshotStat label="Online" value={initiatePaymentMutation.isPending ? 'Opening' : 'Ready'} tone="text-emerald-700" />
+            <SnapshotStat label="Confirm" value={awaitingPaymentConfirmation ? 'Open' : 'Idle'} tone="text-amber-700" />
+          </div>
+        </div>
+      </div>
+
       <h1 className="text-2xl font-bold">Subscription Management — {id}</h1>
 
       {/* Active Subscription */}

@@ -66,6 +66,13 @@ export function StudentDashboardPage() {
 
   const d = data.data
   const { profile, attendance, fees, recentResults, recentHomework, todayTimetable } = d
+  const nextClass = todayTimetable[0] ?? null
+  const latestResult = recentResults[0] ?? null
+  const averageResult = recentResults.length
+    ? Math.round(recentResults.reduce((sum, result) => sum + (result.maxMarks > 0 ? (result.marksObtained / result.maxMarks) * 100 : 0), 0) / recentResults.length)
+    : null
+  const homeworkWithDeadline = recentHomework.filter((work) => Boolean(work.dueDate)).length
+  const classStatus = todayTimetable.length > 0 ? 'Scheduled' : 'Free'
 
   return (
     <div className="space-y-6">
@@ -73,6 +80,44 @@ export function StudentDashboardPage() {
         title={`Welcome back, ${profile.firstName}!`}
         subtitle={`Admission No: ${profile.admissionNo} · ${profile.email}`}
       />
+
+      <Card className="overflow-hidden border-slate-200 bg-gradient-to-br from-sky-50 via-white to-emerald-50">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">Student Workspace</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">Study Snapshot</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {nextClass ? (
+                <>Next class: {nextClass.subjectName}{nextClass.label ? ` · ${nextClass.label}` : ''} · {formatTime(nextClass.startTime)} – {formatTime(nextClass.endTime)}</>
+              ) : (
+                'No classes are scheduled for today. Use this space to review recent marks and homework.'
+              )}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Attendance" value={`${attendance.presentPercent}%`} tone="text-emerald-700" />
+            <SnapshotStat label="Homework" value={String(recentHomework.length)} tone="text-amber-700" />
+            <SnapshotStat label="Classes" value={String(todayTimetable.length)} tone="text-sky-700" />
+            <SnapshotStat label="Average" value={averageResult === null ? '—' : `${averageResult}%`} tone="text-indigo-700" />
+          </div>
+        </div>
+      </Card>
+
+      <Card className="border-slate-200 bg-white">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Learning Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Track your immediate study position before moving into timetable, homework, and results.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Class Day" value={classStatus} tone="text-slate-700" />
+            <SnapshotStat label="Due Dated" value={String(homeworkWithDeadline)} tone="text-amber-700" />
+            <SnapshotStat label="Results" value={String(recentResults.length)} tone="text-emerald-700" />
+            <SnapshotStat label="Latest Exam" value={latestResult ? formatDate(latestResult.examDate) : '—'} tone="text-sky-700" />
+          </div>
+        </div>
+      </Card>
 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -89,7 +134,7 @@ export function StudentDashboardPage() {
           { to: '/student/learning', title: 'Review Homework', description: 'Check recent assigned work for your account.' },
           { to: '/fees', title: 'Check Fees', description: 'See pending and paid items.' },
         ].map((item) => (
-          <Link key={item.to} to={item.to} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <Link key={`${item.to}-${item.title}`} to={item.to} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
             <p className="text-sm font-semibold text-slate-900">{item.title}</p>
             <p className="mt-1 text-sm text-slate-500">{item.description}</p>
           </Link>
@@ -175,6 +220,12 @@ export function StudentDashboardPage() {
               })}
             </ul>
           )}
+          {latestResult ? (
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              Latest result: <span className="font-semibold text-slate-800">{latestResult.examTitle}</span>
+              {latestResult.grade ? <span className="ml-1 text-emerald-600">· Grade {latestResult.grade}</span> : null}
+            </div>
+          ) : null}
         </Card>
 
         {/* Recent homework */}
@@ -223,5 +274,22 @@ function KpiCard({
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
       <p className="text-xs text-slate-500">{sub}</p>
     </Card>
+  )
+}
+
+function SnapshotStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: string
+  tone: string
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
   )
 }

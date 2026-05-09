@@ -36,6 +36,15 @@ function avatarColor(name: string) {
   return colors[Math.abs(h) % colors.length]
 }
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 export function ProfilePage() {
   const q = useCurrentProfile()
 
@@ -67,6 +76,7 @@ export function ProfilePage() {
   const initials = avatarInitials(p.fullName)
   const roleLabel = ROLE_LABELS[p.role] ?? p.role
   const roleBadge = ROLE_COLORS[p.role] ?? 'bg-slate-100 text-slate-700'
+  const accountReady = Boolean(p.email && p.username)
 
   const fields: Array<{ label: string; value: string }> = [
     { label: 'Full name',  value: p.fullName },
@@ -82,6 +92,39 @@ export function ProfilePage() {
         title="My Profile"
         subtitle="Your CloudCampus account details for this school workspace."
       />
+
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-sky-50 via-white to-violet-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Account Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">{roleLabel}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              {accountReady ? 'Your account is active and ready for the current school workspace.' : 'Your account details need attention from the school administrator.'}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Role" value={roleLabel} tone="text-sky-700" />
+            <SnapshotStat label="Workspace" value={p.tenantSlug ? `/${p.tenantSlug}` : 'Platform'} tone="text-violet-700" />
+            <SnapshotStat label="Email" value={p.email ? 'Set' : 'Missing'} tone="text-emerald-700" />
+            <SnapshotStat label="Username" value={p.username ? 'Set' : 'Missing'} tone="text-amber-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Account Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Quick checks for identity completeness, workspace binding, and role context.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="School" value={p.schoolName ? 'Assigned' : 'Platform'} tone="text-slate-700" />
+            <SnapshotStat label="Tenant" value={p.tenantSlug ? 'Bound' : 'Open'} tone="text-violet-700" />
+            <SnapshotStat label="Account" value={accountReady ? 'Ready' : 'Needs Fix'} tone="text-emerald-700" />
+            <SnapshotStat label="Role" value={roleLabel} tone="text-sky-700" />
+          </div>
+        </div>
+      </div>
 
       {/* Avatar + role card */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-5">

@@ -6,6 +6,15 @@ import { useUpdateCredentials } from '../hooks/useUpdateCredentials'
 import { showToast } from '../../../utils/toast'
 import type { NotificationChannel } from '../types'
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 export function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -18,6 +27,8 @@ export function ChangePasswordPage() {
   const changePasswordMutation = useChangePassword()
   const sendOtpMutation = useSendCredentialsOtp()
   const updateCredentialsMutation = useUpdateCredentials()
+  const passwordMatch = newPassword.length > 0 && newPassword === confirmPassword
+  const credentialMatch = credentialPassword.length > 0 && credentialPassword === confirmCredentialPassword
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -84,6 +95,39 @@ export function ChangePasswordPage() {
   return (
     <section className="space-y-6 max-w-2xl">
       <PageHeader title="Change Password" subtitle="Update your account password." />
+
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">Security Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">Credential update center</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Keep account access secure with direct password updates and OTP-protected credential resets.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="OTP Channel" value={channel} tone="text-amber-700" />
+            <SnapshotStat label="Password Match" value={passwordMatch ? 'Yes' : 'No'} tone="text-emerald-700" />
+            <SnapshotStat label="Credential Match" value={credentialMatch ? 'Yes' : 'No'} tone="text-sky-700" />
+            <SnapshotStat label="Pending" value={updateCredentialsMutation.isPending ? 'Updating' : 'Idle'} tone="text-violet-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Security Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Readiness checks for password reset and OTP credential workflows.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="OTP" value={otp ? 'Entered' : 'Pending'} tone="text-amber-700" />
+            <SnapshotStat label="Send OTP" value={sendOtpMutation.isPending ? 'Sending' : 'Ready'} tone="text-sky-700" />
+            <SnapshotStat label="Change Pass" value={changePasswordMutation.isPending ? 'Saving' : 'Ready'} tone="text-emerald-700" />
+            <SnapshotStat label="Update Creds" value={updateCredentialsMutation.isPending ? 'Saving' : 'Ready'} tone="text-violet-700" />
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 bg-white rounded-2xl border border-slate-200 p-6">
         <div className="space-y-1">

@@ -13,6 +13,15 @@ import { useTenants } from '../hooks/useTenants'
 import { useUpdateTenantStatus } from '../hooks/useUpdateTenantStatus'
 import type { CreateTenantRequest, Tenant } from '../types'
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 export function TenantsPage() {
   const tenantsQuery = useTenants()
   const createTenantMutation = useCreateTenant()
@@ -20,6 +29,9 @@ export function TenantsPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [tenantPendingDeactivation, setTenantPendingDeactivation] = useState<Tenant | null>(null)
   const [deactivationSlugInput, setDeactivationSlugInput] = useState('')
+  const tenants = tenantsQuery.data?.data ?? []
+  const activeTenants = tenants.filter((tenant) => tenant.active).length
+  const inactiveTenants = tenants.length - activeTenants
 
   const columns: DataTableColumn<Tenant>[] = [
     {
@@ -186,6 +198,39 @@ export function TenantsPage() {
         title="Tenant Management"
         subtitle="Provision new schools, define slugs, set branding defaults, and monitor the tenant list."
       />
+
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-violet-700">Tenant Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">{tenants.length} provisioned tenant(s)</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Track activation state, branding, and schema readiness for all onboarded schools.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Total" value={String(tenants.length)} tone="text-violet-700" />
+            <SnapshotStat label="Active" value={String(activeTenants)} tone="text-emerald-700" />
+            <SnapshotStat label="Inactive" value={String(inactiveTenants)} tone="text-slate-700" />
+            <SnapshotStat label="Create" value={createTenantMutation.isPending ? 'Running' : 'Ready'} tone="text-sky-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Tenant Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Watch lifecycle controls for activation, provisioning, and deactivation confirmation.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Registry" value={tenants.length > 0 ? 'Live' : 'Empty'} tone="text-violet-700" />
+            <SnapshotStat label="Create" value={createTenantMutation.isPending ? 'Running' : 'Ready'} tone="text-sky-700" />
+            <SnapshotStat label="Status Ops" value={updateTenantStatusMutation.isPending ? 'Running' : 'Ready'} tone="text-emerald-700" />
+            <SnapshotStat label="Confirm" value={tenantPendingDeactivation ? 'Open' : 'Idle'} tone="text-amber-700" />
+          </div>
+        </div>
+      </div>
 
       <TenantForm onSubmit={handleCreateTenant} isSubmitting={createTenantMutation.isPending} />
 

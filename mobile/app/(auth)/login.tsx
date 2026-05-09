@@ -63,6 +63,7 @@ export default function LoginScreen() {
   }
 
   const selectedRoleMeta = ROLES.find((r) => r.value === role)!;
+  const readyFields = [tenantSlug.trim(), username.trim(), password.trim()].filter((v) => v.length > 0).length;
 
   return (
     <KeyboardAvoidingView
@@ -92,6 +93,50 @@ export default function LoginScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Welcome back</Text>
           <Text style={styles.cardSubtitle}>Sign in to your portal</Text>
+
+          <View style={[styles.snapshotCard, Shadow.sm]}>
+            <Text style={styles.snapshotTitle}>Portal Snapshot</Text>
+            <View style={styles.snapshotMetrics}>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{selectedRoleMeta.label}</Text>
+                <Text style={styles.snapshotLabel}>Role</Text>
+              </View>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{readyFields}/3</Text>
+                <Text style={styles.snapshotLabel}>Inputs</Text>
+              </View>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{showPassword ? 'Visible' : 'Hidden'}</Text>
+                <Text style={styles.snapshotLabel}>Password</Text>
+              </View>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{loading ? 'Checking' : 'Ready'}</Text>
+                <Text style={styles.snapshotLabel}>Auth</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.snapshotCard, Shadow.sm]}>
+            <Text style={styles.snapshotTitle}>Portal Pulse</Text>
+            <View style={styles.snapshotMetrics}>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{tenantSlug.trim() ? 'Set' : 'Open'}</Text>
+                <Text style={styles.snapshotLabel}>School</Text>
+              </View>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{username.trim() ? 'Set' : 'Open'}</Text>
+                <Text style={styles.snapshotLabel}>Username</Text>
+              </View>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{password.trim() ? 'Set' : 'Open'}</Text>
+                <Text style={styles.snapshotLabel}>Password</Text>
+              </View>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{loading ? 'Signing' : 'Idle'}</Text>
+                <Text style={styles.snapshotLabel}>Session</Text>
+              </View>
+            </View>
+          </View>
 
           {/* Role selector */}
           <Text style={styles.fieldLabel}>I AM A</Text>
@@ -243,6 +288,13 @@ const styles = StyleSheet.create({
   card: { backgroundColor: Colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, flex: 1, padding: Spacing.xxl, paddingTop: 28 },
   cardTitle: { ...Typography.h1, color: Colors.text, marginBottom: 4 },
   cardSubtitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: Spacing.xl },
+
+  snapshotCard: { backgroundColor: Colors.background, borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.lg },
+  snapshotTitle: { fontSize: 11, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  snapshotMetrics: { flexDirection: 'row', gap: Spacing.xs, marginTop: Spacing.sm },
+  snapshotMetric: { flex: 1, backgroundColor: Colors.surface, borderRadius: Radius.md, paddingVertical: 8, alignItems: 'center' },
+  snapshotValue: { fontSize: 11, fontWeight: '800', color: Colors.text, textAlign: 'center' },
+  snapshotLabel: { marginTop: 2, fontSize: 9, color: Colors.textTertiary, fontWeight: '600' },
 
   fieldLabel: { fontSize: 11, fontWeight: '700', color: Colors.textTertiary, letterSpacing: 0.5, marginBottom: Spacing.xs },
 

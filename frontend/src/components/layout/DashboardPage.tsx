@@ -11,11 +11,57 @@ import { MonthlyBarChart } from '../../features/dashboard/components/MonthlyBarC
 import { QuickActionCard } from '../../features/dashboard/components/QuickActionCard'
 import { useTenantDashboardSummary } from '../../features/dashboard/hooks/useTenantDashboardSummary'
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 export function DashboardPage() {
   const summaryQuery = useTenantDashboardSummary()
   const summary = summaryQuery.data?.data
   const { role, username } = useAuth()
   const primaryColor = sanitizeCssColor(summary?.branding?.primaryColor)
+
+  const workspaceSnapshot = summary ? (
+    <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-900 p-5 text-white shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">Workspace Snapshot</p>
+      <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">{summary.branding.schoolName}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200">
+            Live tenant intelligence for {role ? role.toLowerCase() : 'your'} workspace, with school health, activity, and quick insights.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <SnapshotStat label="Students" value={summary.totalStudents.toLocaleString()} tone="text-cyan-200" />
+          <SnapshotStat label="Teachers" value={summary.totalTeachers.toLocaleString()} tone="text-white" />
+          <SnapshotStat label="Attendance" value={`${summary.attendancePercentage.toFixed(1)}%`} tone="text-emerald-200" />
+          <SnapshotStat label="Insights" value={String(summary.quickInsights.length)} tone="text-violet-200" />
+        </div>
+      </div>
+    </div>
+  ) : null
+
+  const workspacePulse = summary ? (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Workspace Pulse</p>
+          <p className="mt-2 text-sm text-slate-600">Live readiness indicators for attendance, activity flow, and role-specific workspace momentum.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <SnapshotStat label="Role" value={role ?? 'USER'} tone="text-slate-700" />
+          <SnapshotStat label="Activity" value={summary.recentActivity.length > 0 ? 'Live' : 'Quiet'} tone="text-sky-700" />
+          <SnapshotStat label="Fees" value={summary.feesCollected > 0 ? 'Flowing' : 'Idle'} tone="text-emerald-700" />
+          <SnapshotStat label="Insights" value={summary.quickInsights.length > 0 ? 'Ready' : 'Pending'} tone="text-violet-700" />
+        </div>
+      </div>
+    </div>
+  ) : null
 
   if (summaryQuery.isLoading) {
     return (
@@ -47,6 +93,8 @@ export function DashboardPage() {
   if (role === 'TEACHER') {
     return (
       <section className="space-y-8">
+        {workspaceSnapshot}
+        {workspacePulse}
         <PageHeader
           title={`${summary.branding.schoolName} — Teacher Dashboard`}
           subtitle={`Welcome, ${username ?? 'Teacher'}. Manage your classes, homework, attendance, and marks.`}
@@ -103,6 +151,8 @@ export function DashboardPage() {
   if (role === 'STUDENT') {
     return (
       <section className="space-y-8">
+        {workspaceSnapshot}
+        {workspacePulse}
         <PageHeader
           title={`${summary.branding.schoolName} — Student Dashboard`}
           subtitle={`Welcome back, ${username ?? 'Student'}. Here's everything in one place.`}
@@ -132,6 +182,8 @@ export function DashboardPage() {
   if (role === 'PARENT') {
     return (
       <section className="space-y-8">
+        {workspaceSnapshot}
+        {workspacePulse}
         <PageHeader
           title={`${summary.branding.schoolName} — Parent Dashboard`}
           subtitle={`Welcome, ${username ?? 'Parent'}. Stay connected with your children's school life.`}
@@ -161,6 +213,8 @@ export function DashboardPage() {
 
   return (
     <section className="space-y-8">
+      {workspaceSnapshot}
+      {workspacePulse}
       <PageHeader
         title={`${summary.branding.schoolName} Dashboard`}
         subtitle="Premium operating view for your school with live KPIs, trends, and recent activity."

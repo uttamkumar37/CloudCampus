@@ -18,6 +18,15 @@ const ALL_FEATURES: PlanFeature[] = [
   'CUSTOM_BRANDING',
 ]
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 export default function SubscriptionPlansPage() {
   const { data: plans, isLoading } = useSubscriptionPlans()
   const createPlan = useCreatePlan()
@@ -31,6 +40,8 @@ export default function SubscriptionPlansPage() {
     description: '',
     features: [] as PlanFeature[],
   })
+  const activePlans = (plans ?? []).filter((plan) => plan.active).length
+  const selectedFeatures = form.features.length
 
   function toggleFeature(f: PlanFeature) {
     setForm((prev) => ({
@@ -53,6 +64,39 @@ export default function SubscriptionPlansPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
+      <div className="mb-6 rounded-[24px] border border-slate-200 bg-gradient-to-br from-sky-50 via-white to-violet-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Plan Catalog Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">{plans?.length ?? 0} pricing plan(s)</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Manage entitlement tiers, usage caps, and bundled feature sets for tenant subscriptions.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Total" value={String(plans?.length ?? 0)} tone="text-sky-700" />
+            <SnapshotStat label="Active" value={String(activePlans)} tone="text-emerald-700" />
+            <SnapshotStat label="Features" value={String(ALL_FEATURES.length)} tone="text-violet-700" />
+            <SnapshotStat label="Draft Picked" value={String(selectedFeatures)} tone="text-amber-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Catalog Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Observe draft readiness, feature selection depth, and plan creation state.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Form" value={showForm ? 'Open' : 'Closed'} tone="text-sky-700" />
+            <SnapshotStat label="Draft Name" value={form.name ? 'Set' : 'Open'} tone="text-violet-700" />
+            <SnapshotStat label="Create" value={createPlan.isPending ? 'Running' : 'Ready'} tone="text-emerald-700" />
+            <SnapshotStat label="Status" value={activePlans > 0 ? 'Live' : 'Draft'} tone="text-amber-700" />
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Subscription Plans</h1>
         <button

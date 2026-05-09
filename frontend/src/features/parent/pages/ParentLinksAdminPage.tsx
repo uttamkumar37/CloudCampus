@@ -15,6 +15,15 @@ import { getUsers } from '../../super-admin/api/usersApi'
 import { useLinkParent, useParentLinks, useUnlinkParent } from '../hooks/useParentLinks'
 import type { ParentStudentLink } from '../types'
 
+function SnapshotStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+    </div>
+  )
+}
+
 export function ParentLinksAdminPage() {
   const [parentUserId, setParentUserId] = useState('')
   const [studentId, setStudentId] = useState('')
@@ -36,6 +45,7 @@ export function ParentLinksAdminPage() {
 
   const students = studentsQuery.data?.data.content ?? []
   const links = linksQuery.data?.data ?? []
+  const selectedCount = Number(Boolean(parentUserId)) + Number(Boolean(studentId))
 
   const columns: DataTableColumn<ParentStudentLink>[] = [
     {
@@ -123,6 +133,39 @@ export function ParentLinksAdminPage() {
         title="Parent Links"
         subtitle="School admin tools to link or unlink parent accounts with students."
       />
+
+      <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-sky-50 via-white to-emerald-50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-700">Parent Links Snapshot</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">{links.length} linked family record(s)</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Keep parent-to-student access tidy by linking existing parent accounts to the correct learner record.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Links" value={String(links.length)} tone="text-sky-700" />
+            <SnapshotStat label="Parents" value={String(parentUsers.length)} tone="text-emerald-700" />
+            <SnapshotStat label="Students" value={String(students.length)} tone="text-amber-700" />
+            <SnapshotStat label="Selected" value={selectedCount > 0 ? String(selectedCount) : 'None'} tone="text-violet-700" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Linking Pulse</p>
+            <p className="mt-2 text-sm text-slate-600">Readiness checks for parent-student assignment and unlink lifecycle operations.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <SnapshotStat label="Parent Pick" value={parentUserId ? 'Set' : 'Open'} tone="text-sky-700" />
+            <SnapshotStat label="Student Pick" value={studentId ? 'Set' : 'Open'} tone="text-emerald-700" />
+            <SnapshotStat label="Create Link" value={linkParentMutation.isPending ? 'Saving' : 'Ready'} tone="text-violet-700" />
+            <SnapshotStat label="Unlink" value={unlinkParentMutation.isPending ? 'Running' : 'Idle'} tone="text-amber-700" />
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
         <h2 className="text-base font-semibold text-slate-900">Create Link</h2>

@@ -13,6 +13,7 @@ export function SuperAdminLoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const completion = [username.trim(), password.trim()].filter((value) => value.length > 0).length
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -68,6 +69,50 @@ export function SuperAdminLoginPage() {
 
         {/* Form card */}
         <div className="rounded-2xl border border-white/10 bg-white/4 backdrop-blur-xl p-8 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.6)]">
+          <div className="mb-5 rounded-xl border border-white/10 bg-white/5 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-300">Control Snapshot</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-white/10 bg-black/15 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Role</p>
+                <p className="mt-1 text-sm font-bold text-emerald-300">SUPER_ADMIN</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-black/15 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Inputs</p>
+                <p className="mt-1 text-sm font-bold text-sky-300">{completion}/2</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-black/15 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Password</p>
+                <p className="mt-1 text-sm font-bold text-violet-300">{showPassword ? 'Visible' : 'Hidden'}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-black/15 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Auth State</p>
+                <p className="mt-1 text-sm font-bold text-amber-300">{loginMutation.isPending ? 'Checking' : 'Ready'}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-5 rounded-xl border border-white/10 bg-black/10 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-300">Control Pulse</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Username</p>
+                <p className="mt-1 text-sm font-bold text-emerald-300">{username.trim() ? 'Entered' : 'Missing'}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Password</p>
+                <p className="mt-1 text-sm font-bold text-sky-300">{password.trim() ? 'Entered' : 'Missing'}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Error State</p>
+                <p className="mt-1 text-sm font-bold text-violet-300">{error ? 'Present' : 'Clear'}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Auth Gate</p>
+                <p className="mt-1 text-sm font-bold text-amber-300">{completion === 2 ? 'Ready' : 'Waiting'}</p>
+              </div>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
 
             {/* Username */}

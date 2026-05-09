@@ -60,28 +60,74 @@ export default function StudentAttendanceScreen() {
       contentContainerStyle={styles.list}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.primary} />}
       ListHeaderComponent={
-        total > 0 ? (
-          <View style={[styles.summaryCard, Shadow.md]}>
-            {/* Ring display */}
-            <View style={styles.ringWrap}>
-              <View style={[styles.ringOuter, { borderColor: attColor + '30' }]}>
-                <View style={[styles.ringInner, { borderColor: attColor }]}>
-                  <Text style={[styles.ringPct, { color: attColor }]}>{pct}%</Text>
-                  <Text style={styles.ringLabel}>Present</Text>
-                </View>
+        <>
+          <View style={[styles.snapshotCard, Shadow.sm]}>
+            <Text style={styles.snapshotTitle}>Attendance Snapshot</Text>
+            <View style={styles.snapshotMetrics}>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{pct}%</Text>
+                <Text style={styles.snapshotLabel}>Present</Text>
               </View>
-              <View style={styles.chipGrid}>
-                <SummaryChip label="Present" count={present} color={Colors.success} bg={Colors.successBg} />
-                <SummaryChip label="Absent"  count={absent}  color={Colors.danger}  bg={Colors.dangerBg}  />
-                <SummaryChip label="Late"    count={late}    color={Colors.warning} bg={Colors.warningBg} />
-                <SummaryChip label="Excused" count={excused} color={Colors.info}    bg={Colors.infoBg}    />
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{absent}</Text>
+                <Text style={styles.snapshotLabel}>Absent</Text>
               </View>
-            </View>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${pct}%` as any, backgroundColor: attColor }]} />
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{late}</Text>
+                <Text style={styles.snapshotLabel}>Late</Text>
+              </View>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{total}</Text>
+                <Text style={styles.snapshotLabel}>Total</Text>
+              </View>
             </View>
           </View>
-        ) : null
+
+          <View style={[styles.snapshotCard, Shadow.sm]}>
+            <Text style={styles.snapshotTitle}>Attendance Pulse</Text>
+            <View style={styles.snapshotMetrics}>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{records.length > 0 ? 'Loaded' : 'Empty'}</Text>
+                <Text style={styles.snapshotLabel}>Register</Text>
+              </View>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{excused}</Text>
+                <Text style={styles.snapshotLabel}>Excused</Text>
+              </View>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{refreshing ? 'Sync' : 'Idle'}</Text>
+                <Text style={styles.snapshotLabel}>Refresh</Text>
+              </View>
+              <View style={styles.snapshotMetric}>
+                <Text style={styles.snapshotValue}>{pct >= 85 ? 'Good' : pct >= 70 ? 'Watch' : 'Alert'}</Text>
+                <Text style={styles.snapshotLabel}>Health</Text>
+              </View>
+            </View>
+          </View>
+
+          {total > 0 ? (
+            <View style={[styles.summaryCard, Shadow.md]}>
+              {/* Ring display */}
+              <View style={styles.ringWrap}>
+                <View style={[styles.ringOuter, { borderColor: attColor + '30' }] }>
+                  <View style={[styles.ringInner, { borderColor: attColor }] }>
+                    <Text style={[styles.ringPct, { color: attColor }]}>{pct}%</Text>
+                    <Text style={styles.ringLabel}>Present</Text>
+                  </View>
+                </View>
+                <View style={styles.chipGrid}>
+                  <SummaryChip label="Present" count={present} color={Colors.success} bg={Colors.successBg} />
+                  <SummaryChip label="Absent"  count={absent}  color={Colors.danger}  bg={Colors.dangerBg}  />
+                  <SummaryChip label="Late"    count={late}    color={Colors.warning} bg={Colors.warningBg} />
+                  <SummaryChip label="Excused" count={excused} color={Colors.info}    bg={Colors.infoBg}    />
+                </View>
+              </View>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${pct}%` as any, backgroundColor: attColor }]} />
+              </View>
+            </View>
+          ) : null}
+        </>
       }
       renderItem={({ item }) => {
         const meta = STATUS_META[item.status] ?? { color: Colors.textSecondary, bg: Colors.background, icon: 'ellipse-outline' as const };
@@ -128,6 +174,13 @@ const styles = StyleSheet.create({
   list: { padding: Spacing.md, gap: Spacing.sm, paddingBottom: 40 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.md },
   loadingText: { color: Colors.textSecondary, fontSize: 14 },
+
+  snapshotCard: { backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: Spacing.md, marginBottom: Spacing.sm },
+  snapshotTitle: { fontSize: 11, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+  snapshotMetrics: { flexDirection: 'row', marginTop: Spacing.sm, gap: Spacing.xs },
+  snapshotMetric: { flex: 1, backgroundColor: Colors.background, borderRadius: Radius.md, paddingVertical: 8, alignItems: 'center' },
+  snapshotValue: { fontSize: 12, fontWeight: '800', color: Colors.text },
+  snapshotLabel: { marginTop: 2, fontSize: 9, color: Colors.textTertiary, fontWeight: '600' },
 
   summaryCard: { backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.xl, marginBottom: Spacing.md },
   ringWrap: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xl, marginBottom: Spacing.lg },

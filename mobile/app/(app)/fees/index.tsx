@@ -124,6 +124,54 @@ export default function FeesScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+          {searched && (
+            <View style={[styles.snapshotCard, Shadow.sm]}>
+              <Text style={styles.snapshotTitle}>Collection Snapshot</Text>
+              <View style={styles.snapshotMetrics}>
+                <View style={styles.snapshotMetric}>
+                  <Text style={styles.snapshotValue}>{assignments.length}</Text>
+                  <Text style={styles.snapshotLabel}>Items</Text>
+                </View>
+                <View style={styles.snapshotMetric}>
+                  <Text style={styles.snapshotValue}>₹{Math.round(totalPaid).toLocaleString()}</Text>
+                  <Text style={styles.snapshotLabel}>Collected</Text>
+                </View>
+                <View style={styles.snapshotMetric}>
+                  <Text style={styles.snapshotValue}>₹{Math.round(totalDue).toLocaleString()}</Text>
+                  <Text style={styles.snapshotLabel}>Due</Text>
+                </View>
+                <View style={styles.snapshotMetric}>
+                  <Text style={styles.snapshotValue}>{pctCollected.toFixed(0)}%</Text>
+                  <Text style={styles.snapshotLabel}>Recovery</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {searched && (
+            <View style={[styles.snapshotCard, Shadow.sm]}>
+              <Text style={styles.snapshotTitle}>Collection Pulse</Text>
+              <View style={styles.snapshotMetrics}>
+                <View style={styles.snapshotMetric}>
+                  <Text style={styles.snapshotValue}>{studentId.trim() ? 'Bound' : 'Open'}</Text>
+                  <Text style={styles.snapshotLabel}>Student</Text>
+                </View>
+                <View style={styles.snapshotMetric}>
+                  <Text style={styles.snapshotValue}>{pendingCount(assignments)}</Text>
+                  <Text style={styles.snapshotLabel}>Pending</Text>
+                </View>
+                <View style={styles.snapshotMetric}>
+                  <Text style={styles.snapshotValue}>{overdueCount(assignments)}</Text>
+                  <Text style={styles.snapshotLabel}>Overdue</Text>
+                </View>
+                <View style={styles.snapshotMetric}>
+                  <Text style={styles.snapshotValue}>{selectedFee ? 'Open' : 'Idle'}</Text>
+                  <Text style={styles.snapshotLabel}>Payment UI</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           {!searched ? (
             <View style={styles.emptyWrap}>
               <View style={styles.emptyIconWrap}>
@@ -309,6 +357,14 @@ function AmountItem({ label, value, color }: { label: string; value: number; col
   );
 }
 
+function pendingCount(items: FeeAssignment[]) {
+  return items.filter((item) => item.status === 'PENDING' || item.status === 'PARTIALLY_PAID').length;
+}
+
+function overdueCount(items: FeeAssignment[]) {
+  return items.filter((item) => item.status === 'OVERDUE').length;
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
@@ -337,6 +393,24 @@ const styles = StyleSheet.create({
   loadingText: { color: Colors.textSecondary, fontSize: 14 },
 
   list: { padding: Spacing.md, gap: Spacing.md, paddingBottom: 40 },
+
+  snapshotCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+  },
+  snapshotTitle: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 },
+  snapshotMetrics: { flexDirection: 'row', marginTop: Spacing.sm, gap: Spacing.xs },
+  snapshotMetric: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    paddingVertical: 10,
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  snapshotValue: { fontSize: 12, fontWeight: '800', color: Colors.text },
+  snapshotLabel: { marginTop: 2, fontSize: 10, color: Colors.textTertiary, fontWeight: '600' },
 
   emptyWrap: { alignItems: 'center', paddingTop: 80, gap: Spacing.sm },
   emptyIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', ...Shadow.sm },
