@@ -1,6 +1,5 @@
 
 CLOUDCAMPUS ENTERPRISE MULTI-TENANT SAAS ERP MASTER PLAN
-
 VISION
 Build CloudCampus as a world-class, enterprise-grade, AI-ready, multi-tenant SaaS education operating system capable of powering:
 - 1000+ schools
@@ -10,7 +9,6 @@ Build CloudCampus as a world-class, enterprise-grade, AI-ready, multi-tenant Saa
 - Fully digital school operations
 - Complete UI-driven management
 - Zero code customization for tenant operations
-
 CORE PRODUCT PHILOSOPHY
 The platform must be:
 - Multi-tenant first
@@ -23,7 +21,6 @@ The platform must be:
 - Secure by default
 - UI controlled
 - Future ready
-
 No tenant customization should require:
 - Backend code changes
 - Frontend code changes
@@ -31,16 +28,12 @@ No tenant customization should require:
 - SQL modifications
 - Environment variable edits
 - Hardcoded configurations
-
 Everything should be manageable from UI.
-
 ==================================================
 LAYER 1 — SUPER ADMIN PLATFORM GOVERNANCE
 ==================================================
-
 PURPOSE
 Manage and govern the entire CloudCampus ecosystem.
-
 SUPER ADMIN CONTROLS
 - Tenant lifecycle
 - Feature governance
@@ -53,9 +46,7 @@ SUPER ADMIN CONTROLS
 - AI feature rollout
 - System health
 - Marketplace/templates
-
 SUPER ADMIN MODULES
-
 1. GLOBAL OVERVIEW DASHBOARD
 Show:
 - Total schools
@@ -74,7 +65,6 @@ Show:
 - Active sessions
 - Feature adoption
 - Subscription analytics
-
 2. TENANT MANAGEMENT SYSTEM
 Super Admin can:
 - Create school tenant
@@ -90,26 +80,19 @@ Super Admin can:
 - Configure subscriptions
 - Configure workflows
 - Configure integrations
-
 3. FEATURE CATALOG ENGINE
 Purpose:
 Control all platform capabilities centrally.
-
 FEATURE TYPES
-
 CORE
 Always enabled.
 Cannot disable.
-
 OPTIONAL
 Tenant configurable.
-
 PREMIUM
 Subscription based.
-
 BETA
 Controlled rollout.
-
 FEATURE GOVERNANCE RULES
 - Enable features
 - Disable features
@@ -118,7 +101,6 @@ FEATURE GOVERNANCE RULES
 - Rollout beta modules
 - Manage feature dependencies
 - Configure access rules
-
 4. SUBSCRIPTION MANAGEMENT
 Manage:
 - Plans
@@ -129,7 +111,6 @@ Manage:
 - Enterprise contracts
 - Renewal workflows
 - Add-on modules
-
 5. TEMPLATE MARKETPLACE
 Examples:
 - CBSE School
@@ -137,7 +118,6 @@ Examples:
 - Coaching Institute
 - College
 - Small School Lite
-
 Templates configure:
 - Features
 - Menus
@@ -145,7 +125,6 @@ Templates configure:
 - Branding
 - Workflows
 - Reports
-
 6. INFRASTRUCTURE MONITORING
 Monitor:
 - Queue systems
@@ -157,7 +136,6 @@ Monitor:
 - Failed jobs
 - Security alerts
 - Background workers
-
 7. GLOBAL ANALYTICS ENGINE
 Analytics:
 - Tenant growth
@@ -169,7 +147,6 @@ Analytics:
 - Geographic analytics
 - Storage analytics
 - Subscription conversion
-
 8. ENTERPRISE AUDIT SYSTEM
 Track:
 - Feature changes
@@ -179,44 +156,35 @@ Track:
 - Configuration updates
 - User activity
 - Security events
-
 ==================================================
 LAYER 2 — TENANT / SCHOOL ADMIN ERP
 ==================================================
-
 PURPOSE
 Each school gets a fully independent UI-driven ERP management system.
-
 ==================================================
 IMPORTANT: TENANT vs SCHOOL (FUTURE-PROOFING)
 ==================================================
-
 To support future scenarios like:
 - One owner managing multiple schools
 - Comparing two schools (benchmarking)
 - Merging/acquiring schools
-
 Define terminology explicitly:
-
 TENANT
 - The billing and isolation boundary for a customer account.
 - A tenant can represent:
   A) One school (most common for SMB pricing), OR
   B) A school group/organization that contains multiple schools/campuses (enterprise)
-
 SCHOOL / CAMPUS (INSIDE TENANT)
 - A functional unit inside a tenant (campus/branch/school unit).
 - Recommended to model as a first-class entity so:
   - One tenant can contain multiple schools
   - Cross-school comparison is possible within the same tenant safely
-
 CROSS-SCHOOL (CROSS-TENANT) ACCESS
 - Regular school users must NEVER access other tenants’ data.
 - Any cross-tenant comparison must be:
   - Super Admin only, or
   - Explicitly granted via a governance-controlled relationship model
   - Audited and revocable
-
 SCHOOL MERGE APPROACH (PREFERRED)
 - Prefer “Group multiple schools under one tenant” over merging tenants.
 - If tenant merge is required, it must be treated as an admin-only data migration workflow with:
@@ -224,7 +192,6 @@ SCHOOL MERGE APPROACH (PREFERRED)
   - Conflict resolution
   - Full audit logging
   - Background job execution + rollback checkpoints
-
 SCHOOL ADMIN CONTROLS
 - Students
 - Teachers
@@ -239,9 +206,7 @@ SCHOOL ADMIN CONTROLS
 - Workflows
 - Branding
 - Security
-
 SCHOOL ADMIN MODULES
-
 1. DASHBOARD
 Show:
 - Student count
@@ -256,7 +221,6 @@ Show:
 - Transport activity
 - Hostel activity
 - Staff attendance
-
 2. STUDENT LIFECYCLE MANAGEMENT
 Manage:
 - Admissions
@@ -271,7 +235,6 @@ Manage:
 - Medical records
 - Fee records
 - Parent mapping
-
 3. TEACHER & STAFF MANAGEMENT
 Manage:
 - Teacher profiles
@@ -283,7 +246,6 @@ Manage:
 - Performance reviews
 - Permissions
 - Documents
-
 4. PARENT MANAGEMENT
 Parents can:
 - View attendance
@@ -293,7 +255,6 @@ Parents can:
 - Communicate with school
 - Track transport
 - Receive notifications
-
 5. ACADEMIC MANAGEMENT
 Manage:
 - Classes
@@ -306,7 +267,6 @@ Manage:
 - Assignments
 - Projects
 - Academic calendar
-
 6. ATTENDANCE MANAGEMENT
 Support:
 - Manual attendance
@@ -315,7 +275,6 @@ Support:
 - Biometric attendance
 - RFID attendance
 - Face recognition attendance
-
 7. EXAMINATION SYSTEM
 Support:
 - Exam scheduling
@@ -327,7 +286,6 @@ Support:
 - Analytics
 - Online exams
 - AI insights
-
 8. FINANCE & FEE MANAGEMENT
 Support:
 - Fee structures
@@ -340,7 +298,6 @@ Support:
 - Hostel fees
 - Payroll
 - Accounting
-
 9. COMMUNICATION SYSTEM
 Support:
 - SMS
@@ -351,7 +308,6 @@ Support:
 - Parent chat
 - Teacher announcements
 - Emergency alerts
-
 10. ONLINE LEARNING SYSTEM
 Support:
 - Online classes
@@ -362,7 +318,6 @@ Support:
 - Digital library
 - Live chat
 - AI tutoring
-
 11. TRANSPORT MANAGEMENT
 Support:
 - Routes
@@ -371,7 +326,6 @@ Support:
 - GPS tracking
 - Pickup/drop alerts
 - Route optimization
-
 12. HOSTEL MANAGEMENT
 Support:
 - Room allocation
@@ -379,7 +333,6 @@ Support:
 - Visitor tracking
 - Hostel fees
 - Discipline
-
 13. HRMS SYSTEM
 Support:
 - Recruitment
@@ -388,7 +341,6 @@ Support:
 - Payroll
 - Employee lifecycle
 - Performance management
-
 14. INVENTORY & ASSET MANAGEMENT
 Track:
 - Lab assets
@@ -397,7 +349,6 @@ Track:
 - Books
 - Uniform inventory
 - Maintenance logs
-
 15. WORKFLOW ENGINE
 UI-driven workflows:
 - Admission approvals
@@ -405,14 +356,12 @@ UI-driven workflows:
 - Fee approvals
 - Exam publishing
 - Document verification
-
 16. DYNAMIC FORM BUILDER
 Create forms from UI:
 - Admission forms
 - Feedback forms
 - Staff forms
 - Survey forms
-
 17. ROLE & PERMISSION ENGINE
 Dynamic RBAC:
 - Principal
@@ -423,7 +372,6 @@ Dynamic RBAC:
 - Hostel Warden
 - Parent
 - Student
-
 18. BRANDING ENGINE
 Per school support:
 - Logos
@@ -432,7 +380,6 @@ Per school support:
 - Email branding
 - Mobile branding
 - Custom domain
-
 19. ANALYTICS & REPORTING
 Reports:
 - Attendance
@@ -443,7 +390,6 @@ Reports:
 - Student performance
 - Financial analytics
 - Operational analytics
-
 20. MOBILE APP ECOSYSTEM
 Apps:
 - Student app
@@ -451,23 +397,18 @@ Apps:
 - Teacher app
 - Admin app
 - Transport app
-
 ==================================================
 TECHNICAL ARCHITECTURE
 ==================================================
-
 BACKEND
 - Java Spring Boot
 - Modular architecture
 - Microservice-ready design
 - Event-driven architecture
-
 ==================================================
 MULTI-TENANCY ARCHITECTURE (MUST DECIDE & DOCUMENT)
 ==================================================
-
 Choose ONE primary tenancy strategy and implement consistently across the platform:
-
 OPTION A (RECOMMENDED EARLY) — SINGLE DB + SHARED SCHEMA (ROW-LEVEL TENANCY)
 - Every tenant-owned table contains tenant_id
 - Tenant isolation enforced at:
@@ -478,30 +419,24 @@ OPTION A (RECOMMENDED EARLY) — SINGLE DB + SHARED SCHEMA (ROW-LEVEL TENANCY)
   - Composite indexes starting with tenant_id for high-cardinality queries
 - Automated tenant isolation test suite:
   - Cross-tenant read/write attempts must be blocked deterministically
-
 OPTION B — SCHEMA PER TENANT
 - Requires schema orchestration for migrations, backups, and reporting
-
 OPTION C — DATABASE PER TENANT
 - Provides the strongest isolation with automated provisioning, upgrades, and monitoring
-
 RECOMMENDATION
 - Default for CloudCampus: OPTION A (single DB + shared schema + tenant_id) for most schools to keep onboarding and operations cost-effective at 1000+ tenants.
 - Offer OPTION C only as an Enterprise / Dedicated tier when a tenant pays for dedicated isolation, custom backup/restore expectations, or special compliance.
 - Use OPTION B only if you want stronger isolation than OPTION A but still want to avoid the per-tenant infrastructure overhead of OPTION C.
-
 Minimum required documentation regardless of option:
 - Tenant resolution precedence rules (custom domain > subdomain > header > token claim, or defined order)
 - Data migration strategy (how schema changes roll out safely)
 - Backup/restore strategy (including tenant-level restore expectations)
-
 DATABASE STRATEGY
 - PostgreSQL/MySQL
 - Tenant-aware indexing
 - Read replicas
 - Query optimization
 - Partitioning
-
 CACHE LAYER
 Use Redis for:
 - Session cache
@@ -509,13 +444,11 @@ Use Redis for:
 - Permission cache
 - Dashboard cache
 - OTP cache
-
 QUEUE ARCHITECTURE
 Use:
 - RabbitMQ
 - Kafka
 - Redis Queue
-
 Async operations:
 - Notifications
 - Reports
@@ -523,7 +456,6 @@ Async operations:
 - Email jobs
 - SMS jobs
 - Bulk imports
-
 FILE STORAGE
 Use scalable object storage with:
 - CDN
@@ -531,7 +463,6 @@ Use scalable object storage with:
 - Compression
 - Lazy loading
 - Media optimization
-
 SECURITY ARCHITECTURE
 Mandatory:
 - JWT authentication
@@ -543,11 +474,9 @@ Mandatory:
 - Session control
 - API authorization
 - Encryption
-
 ==================================================
 PLATFORM CONTRACTS (DEFINE ONCE, USED EVERYWHERE)
 ==================================================
-
 API CONTRACTS
 - API versioning strategy (URI or header based, and deprecation policy)
 - Pagination standard (cursor vs offset) and response envelope
@@ -556,7 +485,6 @@ API CONTRACTS
   - Online payments
   - Bulk imports
   - Notifications dispatch
-
 AUTHORIZATION CONTRACT
 - RBAC model + dynamic permission engine
 - Permission evaluation rules (where checks happen and how caching/invalidation works)
@@ -564,15 +492,12 @@ AUTHORIZATION CONTRACT
   - UI visibility
   - API authorization layer
   - Service layer business rules (source of truth)
-
 AUDIT LOGGING CONTRACT
 - What events must be logged (auth, permissions, finance, configuration changes)
 - Tenant-scoped access to audit logs and retention policy
-
 ==================================================
 OBSERVABILITY & RELIABILITY BASELINE (ENTERPRISE READINESS)
 ==================================================
-
 MANDATORY FROM DAY 1
 - Structured logs with correlation/request IDs
 - Metrics for:
@@ -582,63 +507,51 @@ MANDATORY FROM DAY 1
   - Cache hit/miss rates
 - Tracing for key flows (login, tenant onboarding, payment, notifications)
 - Health/readiness endpoints for all services/modules
-
 DISASTER RECOVERY (DEFINE TARGETS)
 - Initial RPO/RTO targets (even if conservative)
 - Backup automation + restore drills
-
 ==================================================
 BACKGROUND JOBS & MESSAGING (DETERMINISTIC)
 ==================================================
-
 DECISIONS TO DOCUMENT
 - Delivery semantics (at-least-once vs exactly-once expectations)
 - Retry policy + exponential backoff + dead-letter handling
 - Idempotency requirements for all job handlers
 - Event publishing consistency pattern (Outbox recommended if using DB + event bus)
-
 ==================================================
 FILE / MEDIA PIPELINE (ENTERPRISE SAFE)
 ==================================================
-
 DOCUMENT
 - Allowed file types and maximum sizes per module
 - Signed URL strategy and tenant-scoped storage paths
 - Retention policy (documents, media, logs)
 - Optional: malware/virus scanning requirements (if needed for enterprise clients)
-
 ==================================================
 AI TECHNOLOGY LAYER (ENTERPRISE AI PLATFORM)
 ==================================================
-
 AI GOAL
 Deliver safe, configurable, tenant-scoped AI capabilities across:
 - Super Admin governance
 - School Admin ERP
 - Teacher / Parent / Student experiences
 - Website Builder & Digital Experience Platform
-
 AI MUST BE
 - Feature-flagged and subscription-controlled per tenant
 - Fully configuration-driven (no tenant-specific code forks)
 - Tenant-scoped for data, prompts, and knowledge bases
 - Audited (who asked what, which data sources were used, which actions were taken)
 - Cost-controlled (per-tenant budgets, rate limits, and usage metering)
-
 AI PLATFORM BUILDING BLOCKS
-
 1) AI GATEWAY SERVICE (MODEL PROVIDER ABSTRACTION)
 - One internal service for all AI calls (chat, embeddings, reranking, and future multimodal)
 - Provider-agnostic routing (support multiple LLM providers behind one interface)
 - Per-tenant routing policies (latency/cost tiers, allowed models)
 - Per-tenant usage tracking (tokens, requests, latency)
-
 2) PROMPT & POLICY REGISTRY (VERSIONED + UI CONTROLLED)
 - Prompts stored as versioned configuration (draft → publish → rollback)
 - Role-aware instructions (Super Admin vs School Admin vs Teacher vs Parent vs Student)
 - Structured outputs for automation flows (JSON schemas for actions and data extraction)
 - Rollout controls (beta/canary by tenant, with feature flags)
-
 3) TENANT KNOWLEDGE BASE (RAG)
 - Default approach: retrieval-augmented generation (RAG) for tenant documents and platform knowledge
 - Pipeline:
@@ -650,7 +563,6 @@ AI PLATFORM BUILDING BLOCKS
   - Support permission-aware retrieval (role-based visibility at chunk level)
 - Response rules:
   - Provide citations to source documents/sections wherever possible
-
 4) AI TOOLS / ACTIONS (ERP + WEBSITE AUTOMATION)
 - AI can call internal APIs through a controlled tool layer:
   - Create leads, draft notifications, generate reports, summarize logs, assist admins
@@ -658,19 +570,16 @@ AI PLATFORM BUILDING BLOCKS
   - Permission-checked (RBAC)
   - Logged (audit trail)
   - Optionally approval-gated for sensitive operations (workflow engine integration)
-
 5) AI QUALITY + CONTINUOUS IMPROVEMENT
 - Maintain an evaluation dataset per module (questions + expected behavior)
 - Track quality signals:
   - user feedback (thumbs up/down), citation coverage, response latency, cost per request
 - Prompt and retrieval configuration changes should be tested before wide rollout
-
 6) AI COST & SAFETY CONTROLS (TENANT LEVEL)
 - Meter AI usage per tenant (tokens, tool calls, storage for embeddings)
 - Enforce plan-based limits (daily/monthly budgets, rate limits, concurrency)
 - Provide Super Admin visibility:
   - top tenants by usage, cost, and adoption, with ability to pause AI per tenant
-
 AI IMPLEMENTATION SEQUENCE (RECOMMENDED)
 1. Build AI gateway service + tenant-scoped routing
 2. Add prompt/policy registry with versioning + rollout control
@@ -678,11 +587,9 @@ AI IMPLEMENTATION SEQUENCE (RECOMMENDED)
 4. Release internal copilots first (Super Admin + School Admin) for controlled adoption
 5. Expand to Teacher/Parent/Student assistants + Website AI modules
 6. Add AI analytics insights + automation workflows (approval-gated where needed)
-
 ==================================================
 PERFORMANCE GOALS
 ==================================================
-
 Target support:
 - 1M+ students
 - 100K+ concurrent users
@@ -690,21 +597,16 @@ Target support:
 - Heavy report generation
 - Large imports
 - Massive notification traffic
-
 Goals:
 - Fast API response
 - Fast dashboard load
 - Stable queues
 - Efficient queries
-
 ==================================================
 ULTIMATE PRODUCT GOAL
 ==================================================
-
 CloudCampus should become:
-
 “The Complete Digital Operating System for Educational Institutions”
-
 Where:
 - Super Admin controls the SaaS ecosystem
 - School Admin controls institution operations
@@ -714,18 +616,12 @@ Where:
 - Everything works from UI
 - Everything scales centrally
 - Everything remains configurable
-
 without rewriting the platform architecture in future.
-
-
-
 ==================================================
 NEW MAJOR SYSTEM — WEBSITE BUILDER & DIGITAL EXPERIENCE PLATFORM
 ==================================================
-
 VISION
 Build a complete School Digital Experience Platform inside CloudCampus.
-
 Each school should manage:
 - Public website
 - Admissions pages
@@ -738,31 +634,25 @@ Each school should manage:
 - AI-generated content
 - Inquiry systems
 - Communication funnels
-
 completely from UI without developers.
-
 ==================================================
 WEBSITE BUILDER FEATURE TYPES
 ==================================================
-
 FREE
 - General information
 - Contact page
 - Basic gallery
-
 GROWTH
 - Blog system
 - Events calendar
 - SEO tools
 - Analytics
 - Social proof
-
 PRO
 - Teacher profiles
 - Booking systems
 - Admissions tools
 - Communication widgets
-
 ELITE
 - AI website builder
 - AI SEO
@@ -771,11 +661,9 @@ ELITE
 - Store/eCommerce
 - AI chatbot
 - Marketing automation
-
 ==================================================
 SUPER ADMIN WEBSITE GOVERNANCE
 ==================================================
-
 Super Admin controls:
 - Website templates
 - Subscription mapping
@@ -784,11 +672,9 @@ Super Admin controls:
 - AI feature rollout
 - Marketplace sections
 - Website feature access
-
 ==================================================
 SCHOOL ADMIN WEBSITE CONTROL
 ==================================================
-
 School admins manage:
 - Home page
 - About page
@@ -803,27 +689,22 @@ School admins manage:
 - Marketing integrations
 - Social embeds
 - Custom sections
-
 Everything configurable from UI.
-
 ==================================================
 WEBSITE BUILDER MODULES
 ==================================================
-
 WEBSITE CORE
 - Dynamic page engine
 - Dynamic section engine
 - Navigation builder
 - Theme engine
 - Layout engine
-
 CONTENT MODULES
 - Blog system
 - Events calendar
 - Gallery engine
 - Teacher showcase
 - Student achievements
-
 MARKETING MODULES
 - SEO management
 - Meta tags
@@ -831,46 +712,37 @@ MARKETING MODULES
 - Inquiry forms
 - Lead tracking
 - CTA engine
-
 AI MODULES
 - AI content writer
 - AI design generator
 - AI SEO optimizer
 - AI admissions campaigns
-
 INFRASTRUCTURE
 - CDN support
 - Image optimization
 - Cache layer
 - Static optimization
 - Lazy loading
-
 ==================================================
 WEBSITE BUILDER — CORE ARCHITECTURAL DECISION (MUST CHOOSE)
 ==================================================
-
 Pick the delivery model (this drives SEO, caching, cost, and performance):
-
 OPTION A — Dynamic render (DB-driven pages) + aggressive caching
 OPTION B — Static export to object storage + CDN
 OPTION C — Hybrid (static public pages + dynamic widgets/forms)
-
 Also document:
 - Custom domain mapping flow (verification + SSL strategy + tenant binding)
 - Cache invalidation strategy when pages change
 - SEO essentials (sitemap, meta tags, structured data)
-
 ==================================================
 WEBSITE TEMPLATE MARKETPLACE
 ==================================================
-
 Templates:
 - Modern School
 - Traditional School
 - International School
 - College
 - Coaching Institute
-
 Templates auto-configure:
 - Sections
 - Colors
@@ -879,11 +751,9 @@ Templates auto-configure:
 - Pages
 - Layouts
 - Animations
-
 ==================================================
 WEBSITE ANALYTICS
 ==================================================
-
 Track:
 - Visitors
 - Leads
@@ -892,14 +762,11 @@ Track:
 - Campaign performance
 - SEO performance
 - Engagement metrics
-
 ==================================================
 ENTERPRISE POSITIONING
 ==================================================
-
 CloudCampus Website Builder should become:
 “A standalone SaaS-grade website and marketing platform integrated with ERP.”
-
 This becomes:
 - Revenue engine
 - Marketing engine
