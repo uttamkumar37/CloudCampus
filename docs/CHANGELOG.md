@@ -50,10 +50,10 @@ All notable changes to CloudCampus are documented here.
   - **Design system** — `src/theme.ts`: Colors, Spacing, Radius, Shadow, Typography, `avatarColor()`
   - **EAS build profiles** — development (devClient/internal), preview (APK), production (AAB)
   - API base URL configurable via `EXPO_PUBLIC_API_URL` env var
-- **JNV Palamau demo seed** — replaces Sunrise Academy; idempotent on startup (`app.seed.demo-enabled=true`)
-  - Tenant slug `jnv-palamau`, school name "Jawahar Navodaya Vidyalaya, Palamau"
+- **JNV Lucknow demo seed** — replaces Sunrise Academy; idempotent on startup (`app.seed.demo-enabled=true`)
+  - Tenant slug `jnv-lucknow`, school name "Jawahar Navodaya Vidyalaya, Lucknow"
   - Admin: `uttam.kumar` / `Uttam@2026!` (uttamkumar3797@gmail.com, 7905025730)
-  - Vice Principal: `priya.nirmal` / `Priya@2026!` (uttamgaurav2020@gmail.com, 8724099452)
+  - Vice Principal: `priya.nehra` / `Priya@2026!` (uttamgaurav2020@gmail.com, 8724099452)
   - 11 teachers, 28 students (Classes 6–12, JNV admission numbers), 15 parents, default password `Jnv@Demo2026`
   - 7 classes, 14 sections (A/B per class; Science/Arts for 11–12), 15 subjects
   - 23 exams with results, 30 days attendance, fee assignments (Hostel/Lab/Board Registration), 20 homework assignments, 12 admission leads

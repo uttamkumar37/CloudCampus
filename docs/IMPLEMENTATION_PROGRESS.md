@@ -84,10 +84,64 @@
 - Mobile students roster pulse strip
 - Mobile login portal pulse strip
 
+### Final Completion Batch (Roadmap planned → shipped)
+
+- Read-receipt tracking for notices
+- Late fine automation
+- Mess fee management
+- Bank deposit tracking
+- Archive and version history (documents)
+- Digital signature support (documents)
+- Role and permission builder
+- Department-level access control
+- Bulk update with preview and rollback
+- AI-generated school performance summaries (MVP)
+- AI attendance insights (MVP)
+- AI fee collection forecasts (MVP)
+- AI exam performance analysis (MVP)
+- AI parent message drafting (MVP)
+- AI website content suggestions (MVP)
+- Alumni directory
+- Alumni donation campaign tools
+- School survey and feedback forms
+- Integration marketplace for third-party APIs
+
+## How to Verify (Web + Backend)
+
+### Web entrypoint
+
+- Open `Dashboard → Enhancements` (route: `/enhancements`) as `SCHOOL_ADMIN`
+- Use this page to create and list:
+  - Facilities: late fine policies, mess plans
+  - Finance: bank accounts
+  - Integrations catalog
+  - Alumni directory and donation campaigns
+  - Surveys
+  - Document templates
+  - Insights snapshots (MVP)
+
+### Feature endpoints (backend)
+
+- Notices (read receipts): `GET/POST /api/v1/notices`, `POST /api/v1/notices/{id}/read`, `GET /api/v1/notices/{id}/read-receipts`
+- Facilities: `GET/POST /api/v1/facilities/late-fine-policies`, `GET/POST /api/v1/facilities/mess-plans`, `POST /api/v1/facilities/mess-subscriptions`
+- Finance: `GET/POST /api/v1/finance/bank-accounts`, `GET/POST /api/v1/finance/bank-deposits`
+- Documents: `GET/POST /api/v1/documents/templates`, `POST /api/v1/documents`, `PUT /api/v1/documents/{id}`, `GET /api/v1/documents/{id}/versions`, `POST /api/v1/documents/{id}/sign`
+- Admin controls: `GET/POST /api/v1/admin-controls/departments`, `GET/POST /api/v1/admin-controls/roles`, `POST /api/v1/admin-controls/permissions`
+- Bulk updates: `POST /api/v1/bulk-updates/preview`, `POST /api/v1/bulk-updates/{id}/apply`, `POST /api/v1/bulk-updates/{id}/rollback`
+- Insights (MVP): `GET /api/v1/insights/school-summary`, `GET /api/v1/insights/attendance`, `GET /api/v1/insights/fees-forecast`, `GET /api/v1/insights/exam-performance`, `GET /api/v1/insights/history`
+- AI assist (MVP): `GET /api/v1/ai-assist/parent-message`, `GET /api/v1/ai-assist/website-copy`
+- Alumni: `GET/POST /api/v1/alumni`, `GET/POST /api/v1/alumni/campaigns`, `GET/POST /api/v1/alumni/donations`
+- Surveys: `GET/POST /api/v1/surveys`, `POST /api/v1/surveys/{id}/responses`, `GET /api/v1/surveys/{id}/responses`
+- Integrations: `GET/POST /api/v1/integrations`
+
+### Multi-tenant note
+
+- Tenant-scoped endpoints require the `X-Tenant-Slug` header (the web client sets this automatically after login).
+
 ## Current Slice
 
 - Snapshot-to-pulse rollout status: COMPLETE across current frontend and mobile pages
-- Final completed batch: dashboard workspace, public website admissions, mobile parent child, mobile student attendance, mobile student fees, mobile student detail, mobile students roster, and mobile login pulse strips
+- Roadmap completion status: COMPLETE (100/100 implemented in web + backend)
 
 ## Next Targets
 
