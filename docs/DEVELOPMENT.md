@@ -78,12 +78,12 @@ Frontend:
 
 ## 4. Demo Data
 
-The JNV Palamau demo tenant seeds automatically at startup when `app.seed.demo-enabled=true` (set in the Docker Compose environment). The seeder is idempotent — safe to restart.
+The JNV Lucknow demo tenant seeds automatically at startup when `app.seed.demo-enabled=true` (set in the Docker Compose environment). The seeder is idempotent — safe to restart.
 
 Primary demo tenant:
 
-- Tenant slug: `jnv-palamau`
-- School name: **Jawahar Navodaya Vidyalaya, Palamau**
+- Tenant slug: `jnv-lucknow`
+- School name: **Jawahar Navodaya Vidyalaya, Lucknow**
 - Login URL: http://localhost:5173/login
 
 Credentials:
@@ -91,7 +91,7 @@ Credentials:
 | Role | Username | Password | Notes |
 |---|---|---|---|
 | School Admin (Principal) | `uttam.kumar` | `Uttam@2026!` | uttamkumar3797@gmail.com |
-| School Admin (Vice Principal) | `priya.nirmal` | `Priya@2026!` | uttamgaurav2020@gmail.com |
+| School Admin (Vice Principal) | `priya.nehra` | `Priya@2026!` | uttamgaurav2020@gmail.com |
 | All teachers | see below | `Jnv@Demo2026` | |
 | All students | see below | `Jnv@Demo2026` | |
 | All parents | `par.001`–`par.015` | `Jnv@Demo2026` | |
@@ -157,12 +157,12 @@ npx eas build --profile production --platform android
 
 ### Mobile login (demo)
 
-School slug for all roles: `jnv-palamau`
+School slug for all roles: `jnv-lucknow`
 
 | Role | Example username | Password |
 |---|---|---|
 | School Admin | `uttam.kumar` | `Uttam@2026!` |
-| School Admin (VP) | `priya.nirmal` | `Priya@2026!` |
+| School Admin (VP) | `priya.nehra` | `Priya@2026!` |
 | Teacher | `anand.mishra` | `Jnv@Demo2026` |
 | Student | `s24001` | `Jnv@Demo2026` |
 | Parent | `par.001` | `Jnv@Demo2026` |
@@ -291,5 +291,5 @@ Rules:
 - Frontend API issues: verify `VITE_API_BASE_URL` matches the running backend
 - Mobile — network unreachable on emulator: use `10.0.2.2` (Android) or `localhost` (iOS) as the API host, not `localhost`
 - Mobile — network unreachable on real device: set `EXPO_PUBLIC_API_URL` to your machine's LAN IP, ensure device and machine are on the same Wi-Fi
-- Mobile — login fails with 401: confirm tenant slug `jnv-palamau` is entered exactly (case-sensitive)
+- Mobile — login fails with 401: confirm tenant slug `jnv-lucknow` is entered exactly (case-sensitive)
 - Mobile — Metro bundler cache: `npx expo start --clear`
