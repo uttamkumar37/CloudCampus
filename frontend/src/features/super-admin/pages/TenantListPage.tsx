@@ -76,6 +76,7 @@ export function TenantListPage() {
                   <th className="px-4 py-3">Code</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Created</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -91,6 +92,14 @@ export function TenantListPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-500">{formatDate(tenant.createdAt)}</td>
+                    <td className="px-4 py-3">
+                      <Link
+                        to={`/super-admin/tenants/${tenant.id}`}
+                        className="rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                      >
+                        View
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

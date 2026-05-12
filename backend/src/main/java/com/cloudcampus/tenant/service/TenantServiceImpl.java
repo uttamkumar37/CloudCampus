@@ -1,5 +1,6 @@
 package com.cloudcampus.tenant.service;
 
+import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.PageResponse;
@@ -7,6 +8,7 @@ import com.cloudcampus.common.web.Pagination;
 import com.cloudcampus.school.entity.School;
 import com.cloudcampus.school.entity.SchoolStatus;
 import com.cloudcampus.school.repository.SchoolRepository;
+import com.cloudcampus.tenant.dto.SuperAdminStatsResponse;
 import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.entity.Tenant;
@@ -19,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Service
@@ -94,6 +98,41 @@ public class TenantServiceImpl implements TenantService {
         ));
         var items = page.getContent().stream().map(this::toResponse).toList();
         return new PageResponse<>(items, pagination.offset(), pagination.limit(), page.getTotalElements());
+    }
+
+    @Override
+    @Transactional
+    public TenantResponse suspend(UUID id) {
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tenant not found"));
+        if (tenant.getStatus() == TenantStatus.SUSPENDED) {
+            throw new BadRequestException("Tenant is already suspended");
+        }
+        tenant.setStatus(TenantStatus.SUSPENDED);
+        return toResponse(tenantRepository.save(tenant));
+    }
+
+    @Override
+    @Transactional
+    public TenantResponse activate(UUID id) {
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tenant not found"));
+        if (tenant.getStatus() == TenantStatus.ACTIVE) {
+            throw new BadRequestException("Tenant is already active");
+        }
+        tenant.setStatus(TenantStatus.ACTIVE);
+        return toResponse(tenantRepository.save(tenant));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SuperAdminStatsResponse getStats() {
+        long total     = tenantRepository.count();
+        long active    = tenantRepository.countByStatus(TenantStatus.ACTIVE);
+        long suspended = tenantRepository.countByStatus(TenantStatus.SUSPENDED);
+        Instant startOfMonth = YearMonth.now().atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        long newThisMonth = tenantRepository.countByCreatedAtAfter(startOfMonth);
+        return new SuperAdminStatsResponse(total, active, suspended, newThisMonth);
     }
 
     private TenantResponse toResponse(Tenant tenant) {

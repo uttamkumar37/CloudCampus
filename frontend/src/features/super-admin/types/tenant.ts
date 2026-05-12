@@ -1,7 +1,5 @@
-/** Mirrors com.cloudcampus.tenant.entity.TenantStatus */
 export type TenantStatus = 'ACTIVE' | 'SUSPENDED' | 'ARCHIVED';
 
-/** Mirrors com.cloudcampus.tenant.dto.TenantResponse */
 export interface TenantResponse {
   id: string;
   code: string;
@@ -11,10 +9,32 @@ export interface TenantResponse {
   updatedAt: string;
 }
 
-/** Mirrors com.cloudcampus.tenant.dto.TenantCreateRequest */
 export interface TenantCreateRequest {
-  /** Lowercase alphanumeric + hyphens, 2–64 chars, cannot start/end with hyphen. */
   code: string;
-  /** 2–200 chars. */
   name: string;
+}
+
+export interface SuperAdminStatsResponse {
+  totalTenants: number;
+  activeTenants: number;
+  suspendedTenants: number;
+  newThisMonth: number;
+}
+
+export type FeatureType = 'CORE' | 'OPTIONAL' | 'PREMIUM' | 'BETA';
+
+export interface FeatureResponse {
+  key: string;
+  name: string;
+  type: FeatureType;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TenantFeatureResponse {
+  tenantId: string;
+  featureKey: string;
+  enabled: boolean;
+  updatedAt: string;
 }
