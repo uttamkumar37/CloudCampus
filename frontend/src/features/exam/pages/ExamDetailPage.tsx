@@ -307,15 +307,23 @@ export default function ExamDetailPage() {
                   </td>
                   <td className="px-4 py-3 text-gray-500">{s.roomNumber ?? '—'}</td>
                   <td className="px-4 py-3">
-                    {exam.status !== 'COMPLETED' && exam.status !== 'CANCELLED' && (
-                      <button
-                        disabled={removeMutation.isPending}
-                        onClick={() => removeMutation.mutate(s.id)}
-                        className="text-xs text-red-500 hover:underline disabled:opacity-40"
+                    <div className="flex items-center gap-3">
+                      <Link
+                        to={`/school-admin/exams/${examId}/subjects/${s.id}/marks`}
+                        className="text-xs text-indigo-600 hover:underline"
                       >
-                        Remove
-                      </button>
-                    )}
+                        Enter Marks
+                      </Link>
+                      {exam.status !== 'COMPLETED' && exam.status !== 'CANCELLED' && (
+                        <button
+                          disabled={removeMutation.isPending}
+                          onClick={() => removeMutation.mutate(s.id)}
+                          className="text-xs text-red-500 hover:underline disabled:opacity-40"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -4,14 +4,20 @@
 
 ---
 
-## Progress Summary (as of 2026-05-12 — E15 Exam creation complete)
+## Progress Summary (as of 2026-05-12 — E16 Marks entry complete)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | 58 (30.1%) |
+| **Completed** | 59 (30.6%) |
 | **In Progress** | 0 |
-| **Not Started** | 135 |
+| **Not Started** | 134 |
+
+### E16 Completions — Marks Entry System (CC-1102)
+
+| Task | What was built |
+|------|---------------|
+| CC-1102 ✅ | Marks entry — `V29` migration (`student_marks` table: tenant/exam/paper/student FKs, nullable `marks_obtained`, `is_absent`, `remarks`, `entered_by`, UNIQUE per paper+student, 4 indexes); `StudentMark` entity (tenant-filtered @FilterDef/@Filter, factory, `update()` method); `StudentMarkRepository` (by-paper, by-exam+student, upsert lookup, cascading deletes); `BulkMarksEntryRequest`/`MarksEntryRequest`/`StudentMarkResponse` DTOs; `MarksService`/`MarksServiceImpl` (bulk upsert, list, update, delete; validates marks ≤ total; absent=0); `MarksController` (POST /bulk, GET, PUT /:markId, DELETE /:markId); frontend: `marks.ts` types, `marksApi.ts`, `MarksEntryPage` (spreadsheet grid — absent checkbox, pass/fail color coding, live stats bar, Save All); "Enter Marks" link per paper in ExamDetailPage; route wired; **259 modules, 0 errors** |
 
 ### E15 Completions — Examination System (CC-1101)
 
@@ -370,7 +376,7 @@ Notes/Risks:
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
 | CC-1101 | Exam creation | P1 | ✅ COMPLETED | V27+V28 migrations; Exam+ExamSubject entities; service; controller; 3 frontend pages |
-| CC-1102 | Marks entry system | P1 | NOT_STARTED | — |
+| CC-1102 | Marks entry system | P1 | ✅ COMPLETED | V29 migration; StudentMark entity; bulk upsert service; 4 endpoints; MarksEntryPage grid |
 | CC-1103 | Result generation | P1 | NOT_STARTED | — |
 | CC-1104 | Report card generation | P1 | NOT_STARTED | — |
 
@@ -646,6 +652,7 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 | E13 | Push notifications | Firebase Admin SDK 9.3.0, `PushService`/`PushServiceImpl`, device token fan-out, send-push endpoint | ✅ DONE |
 | E14 | WhatsApp integration | `WhatsAppMessageLog` + V26 migration, async stub service, send + log APIs, `NotificationLogPage` (3 tabs) + `WhatsAppPage` (2 tabs); 253 modules 0 errors | ✅ DONE |
 | E15 | Exam system | `Exam`+`ExamSubject` entities + V27+V28 migrations; service; 6 endpoints; `ExamListPage`+`ExamCreatePage`+`ExamDetailPage`; 257 modules 0 errors | ✅ DONE |
+| E16 | Marks entry | `StudentMark` entity + V29 migration; `MarksService`; 4 endpoints; `MarksEntryPage` spreadsheet grid; 259 modules 0 errors | ✅ DONE |
 
 ### 🔵 Phase D — Communication & Notifications ✅ COMPLETE
 
@@ -660,8 +667,8 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 | Session | Task ID | What to build | Status |
 |---------|---------|---------------|--------|
 | E15 | CC-1101 | Exam creation — `Exam` entity, scheduling, subjects assignment | ✅ DONE |
-| E16 | CC-1102 | Marks entry system — marks recording per student per subject | 🔵 NEXT |
-| E17 | CC-1103/CC-1104 | Result generation + report card generation | NOT_STARTED |
+| E16 | CC-1102 | Marks entry system — marks recording per student per subject | ✅ DONE |
+| E17 | CC-1103/CC-1104 | Result generation + report card generation | 🔵 NEXT |
 
 ### ⚪ Phase F — Remaining Foundations (Parallel with E12+)
 
@@ -674,4 +681,4 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 
 ---
 
-*End of Roadmap — updated 2026-05-12 E15 Exam creation complete (58/193 tasks — 30.1%) — Next: E16 Marks entry (CC-1102)*
+*End of Roadmap — updated 2026-05-12 E16 Marks entry complete (59/193 tasks — 30.6%) — Next: E17 Result generation (CC-1103/CC-1104)*

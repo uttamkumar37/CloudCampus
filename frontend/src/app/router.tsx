@@ -29,6 +29,7 @@ import WhatsAppPage from '@/features/whatsapp/pages/WhatsAppPage';
 import ExamListPage from '@/features/exam/pages/ExamListPage';
 import ExamCreatePage from '@/features/exam/pages/ExamCreatePage';
 import ExamDetailPage from '@/features/exam/pages/ExamDetailPage';
+import MarksEntryPage from '@/features/exam/pages/MarksEntryPage';
 
 /**
  * Application router.
@@ -98,6 +99,7 @@ export function AppRouter() {
           <Route path="exams" element={<ExamListPage />} />
           <Route path="exams/create" element={<ExamCreatePage />} />
           <Route path="exams/:examId" element={<ExamDetailPage />} />
+          <Route path="exams/:examId/subjects/:subjectEntryId/marks" element={<MarksEntryPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}
