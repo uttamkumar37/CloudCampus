@@ -26,6 +26,9 @@ import FeeCollectionPage from '@/features/finance/pages/FeeCollectionPage';
 import StudentFeeDetailPage from '@/features/finance/pages/StudentFeeDetailPage';
 import NotificationLogPage from '@/features/notification/pages/NotificationLogPage';
 import WhatsAppPage from '@/features/whatsapp/pages/WhatsAppPage';
+import ExamListPage from '@/features/exam/pages/ExamListPage';
+import ExamCreatePage from '@/features/exam/pages/ExamCreatePage';
+import ExamDetailPage from '@/features/exam/pages/ExamDetailPage';
 
 /**
  * Application router.
@@ -92,6 +95,9 @@ export function AppRouter() {
           <Route path="fees/records/:recordId" element={<StudentFeeDetailPage />} />
           <Route path="notifications" element={<NotificationLogPage />} />
           <Route path="whatsapp" element={<WhatsAppPage />} />
+          <Route path="exams" element={<ExamListPage />} />
+          <Route path="exams/create" element={<ExamCreatePage />} />
+          <Route path="exams/:examId" element={<ExamDetailPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}

@@ -4,14 +4,20 @@
 
 ---
 
-## Progress Summary (as of 2026-05-12 — E14 WhatsApp complete)
+## Progress Summary (as of 2026-05-12 — E15 Exam creation complete)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | 57 (29.5%) |
+| **Completed** | 58 (30.1%) |
 | **In Progress** | 0 |
-| **Not Started** | 136 |
+| **Not Started** | 135 |
+
+### E15 Completions — Examination System (CC-1101)
+
+| Task | What was built |
+|------|---------------|
+| CC-1101 ✅ | Exam creation — `V27` migration (exams table + 5 indexes); `V28` migration (exam_subjects table + 4 indexes); `ExamType` enum (UNIT_TEST/TERM/HALF_YEARLY/ANNUAL/MOCK/PRACTICAL); `ExamStatus` enum (DRAFT/SCHEDULED/ONGOING/COMPLETED/CANCELLED); `Exam` entity (tenant-isolated `@FilterDef`/`@Filter`, factory, status-transition methods); `ExamSubject` entity (paper per class/subject/date, room, invigilator); `ExamRepository` + `ExamSubjectRepository`; `ExamService`/`ExamServiceImpl` (create with optional inline subjects, list with filter by academicYear/status, getById with subjects, updateStatus lifecycle guard, addSubject, removeSubject); `ExamController` (POST/GET/GET:id/PATCH:status/POST:subjects/DELETE:subjects); frontend: `ExamListPage` (status step-advance inline), `ExamCreatePage` (dynamic subject papers array), `ExamDetailPage` (stepper, inline add/remove papers); nav item + 3 routes wired; **257 modules, 0 errors** |
 
 ### E12–E14 Completions — Communication System (CC-1001–CC-1004)
 
@@ -363,7 +369,7 @@ Notes/Risks:
 
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
-| CC-1101 | Exam creation | P1 | NOT_STARTED | — |
+| CC-1101 | Exam creation | P1 | ✅ COMPLETED | V27+V28 migrations; Exam+ExamSubject entities; service; controller; 3 frontend pages |
 | CC-1102 | Marks entry system | P1 | NOT_STARTED | — |
 | CC-1103 | Result generation | P1 | NOT_STARTED | — |
 | CC-1104 | Report card generation | P1 | NOT_STARTED | — |
@@ -639,6 +645,7 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 | E12 | Communication backend | `NotificationService`, SMS stub, email (JavaMailSender), `NotificationLog` entity + V25 migration | ✅ DONE |
 | E13 | Push notifications | Firebase Admin SDK 9.3.0, `PushService`/`PushServiceImpl`, device token fan-out, send-push endpoint | ✅ DONE |
 | E14 | WhatsApp integration | `WhatsAppMessageLog` + V26 migration, async stub service, send + log APIs, `NotificationLogPage` (3 tabs) + `WhatsAppPage` (2 tabs); 253 modules 0 errors | ✅ DONE |
+| E15 | Exam system | `Exam`+`ExamSubject` entities + V27+V28 migrations; service; 6 endpoints; `ExamListPage`+`ExamCreatePage`+`ExamDetailPage`; 257 modules 0 errors | ✅ DONE |
 
 ### 🔵 Phase D — Communication & Notifications ✅ COMPLETE
 
@@ -648,13 +655,13 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 | E13 | CC-1003 | Push notification system — device token management, FCM/APNs dispatch | ✅ DONE |
 | E14 | CC-1004 | WhatsApp integration | ✅ DONE |
 
-### 🟣 Phase E — Examination System (After E12–E14)
+### 🟣 Phase E — Examination System (E15 ✅ DONE)
 
-| Session | Task ID | What to build |
-|---------|---------|---------------|
-| E15 | CC-1101 | Exam creation — `Exam` entity, scheduling, subjects assignment |
-| E16 | CC-1102 | Marks entry system — marks recording per student per subject |
-| E17 | CC-1103/CC-1104 | Result generation + report card generation |
+| Session | Task ID | What to build | Status |
+|---------|---------|---------------|--------|
+| E15 | CC-1101 | Exam creation — `Exam` entity, scheduling, subjects assignment | ✅ DONE |
+| E16 | CC-1102 | Marks entry system — marks recording per student per subject | 🔵 NEXT |
+| E17 | CC-1103/CC-1104 | Result generation + report card generation | NOT_STARTED |
 
 ### ⚪ Phase F — Remaining Foundations (Parallel with E12+)
 
@@ -667,4 +674,4 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 
 ---
 
-*End of Roadmap — updated 2026-05-12 E14 WhatsApp complete (57/193 tasks — 29.5%) — Next: E15 Exam creation (CC-1101)*
+*End of Roadmap — updated 2026-05-12 E15 Exam creation complete (58/193 tasks — 30.1%) — Next: E16 Marks entry (CC-1102)*

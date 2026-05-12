@@ -24,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Fees', to: '/school-admin/fees', feature: 'FINANCE' },
   { label: 'Fee Collection', to: '/school-admin/fees/collection', feature: 'FINANCE' },
   { label: 'Departments', to: '/school-admin/departments', feature: 'DEPT_MGMT' },
+  { label: 'Exams', to: '/school-admin/exams', feature: 'EXAM_MANAGEMENT' },
   { label: 'Notifications', to: '/school-admin/notifications', feature: 'NOTIFICATIONS' },
   { label: 'WhatsApp', to: '/school-admin/whatsapp', feature: 'WHATSAPP' },
   { label: 'Settings', to: '/school-admin/settings' },
