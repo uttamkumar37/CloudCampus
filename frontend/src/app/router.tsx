@@ -30,6 +30,8 @@ import ExamListPage from '@/features/exam/pages/ExamListPage';
 import ExamCreatePage from '@/features/exam/pages/ExamCreatePage';
 import ExamDetailPage from '@/features/exam/pages/ExamDetailPage';
 import MarksEntryPage from '@/features/exam/pages/MarksEntryPage';
+import ResultsPage from '@/features/exam/pages/ResultsPage';
+import ReportCardPage from '@/features/exam/pages/ReportCardPage';
 
 /**
  * Application router.
@@ -100,6 +102,8 @@ export function AppRouter() {
           <Route path="exams/create" element={<ExamCreatePage />} />
           <Route path="exams/:examId" element={<ExamDetailPage />} />
           <Route path="exams/:examId/subjects/:subjectEntryId/marks" element={<MarksEntryPage />} />
+          <Route path="exams/:examId/results" element={<ResultsPage />} />
+          <Route path="exams/:examId/results/students/:studentId" element={<ReportCardPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}

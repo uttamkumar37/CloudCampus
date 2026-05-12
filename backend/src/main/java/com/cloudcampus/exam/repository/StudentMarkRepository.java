@@ -15,6 +15,9 @@ public interface StudentMarkRepository extends JpaRepository<StudentMark, UUID> 
     /** All marks for a specific exam paper, ordered by student UUID for stable display. */
     List<StudentMark> findByExamSubjectIdOrderByStudentId(UUID examSubjectId);
 
+    /** All marks for a whole exam — used during result generation. */
+    List<StudentMark> findByExamId(UUID examId);
+
     /** All marks a student has across all papers in one exam (used in result generation). */
     List<StudentMark> findByExamIdAndStudentId(UUID examId, UUID studentId);
 

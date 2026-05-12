@@ -9,7 +9,7 @@
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | 59 (30.6%) |
+| **Completed** | 61 (31.6%) |
 | **In Progress** | 0 |
 | **Not Started** | 134 |
 
@@ -377,8 +377,8 @@ Notes/Risks:
 |---------|-------|----------|--------|-------|
 | CC-1101 | Exam creation | P1 | ✅ COMPLETED | V27+V28 migrations; Exam+ExamSubject entities; service; controller; 3 frontend pages |
 | CC-1102 | Marks entry system | P1 | ✅ COMPLETED | V29 migration; StudentMark entity; bulk upsert service; 4 endpoints; MarksEntryPage grid |
-| CC-1103 | Result generation | P1 | NOT_STARTED | — |
-| CC-1104 | Report card generation | P1 | NOT_STARTED | — |
+| CC-1103 | Result generation | P1 | DONE | V30 migration, ExamResult entity, ResultService, ResultController (generate/list/detail) |
+| CC-1104 | Report card generation | P1 | DONE | ReportCardPage (per-subject breakdown, print support), ResultsPage ranked table, resultApi |
 
 ---
 
@@ -668,7 +668,7 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 |---------|---------|---------------|--------|
 | E15 | CC-1101 | Exam creation — `Exam` entity, scheduling, subjects assignment | ✅ DONE |
 | E16 | CC-1102 | Marks entry system — marks recording per student per subject | ✅ DONE |
-| E17 | CC-1103/CC-1104 | Result generation + report card generation | 🔵 NEXT |
+| E17 | CC-1103/CC-1104 | Result generation + report card generation | ✅ DONE |
 
 ### ⚪ Phase F — Remaining Foundations (Parallel with E12+)
 
@@ -681,4 +681,4 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 
 ---
 
-*End of Roadmap — updated 2026-05-12 E16 Marks entry complete (59/193 tasks — 30.6%) — Next: E17 Result generation (CC-1103/CC-1104)*
+*End of Roadmap — updated 2026-05-12 E17 Result generation + report card complete (61/193 tasks — 31.6%) — Next: E18*

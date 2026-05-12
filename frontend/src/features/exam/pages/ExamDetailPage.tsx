@@ -147,6 +147,12 @@ export default function ExamDetailPage() {
               Cancel
             </button>
           )}
+          <Link
+            to={`/school-admin/exams/${examId}/results`}
+            className="rounded-lg border border-green-300 px-3 py-1.5 text-sm text-green-700 hover:bg-green-50"
+          >
+            View Results
+          </Link>
         </div>
       </div>
 
