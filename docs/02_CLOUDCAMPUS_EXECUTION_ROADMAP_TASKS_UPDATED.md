@@ -4,14 +4,20 @@
 
 ---
 
-## Progress Summary (as of 2026-05-12 — E19 Homework Management complete)
+## Progress Summary (as of 2026-05-12 — E20 Assignment Engine complete)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | 63 (32.6%) |
+| **Completed** | 64 (33.2%) |
 | **In Progress** | 0 |
-| **Not Started** | 132 |
+| **Not Started** | 131 |
+
+### E20 Completions — Assignment Engine (CC-0703)
+
+| Task | What was built |
+|------|---------------|
+| CC-0703 ✅ | Assignment engine — `V33` migration (two tables: `assignments` + `assignment_submissions` — UNIQUE submission per student, PENDING/SUBMITTED/LATE/GRADED status, marks_obtained, feedback, graded_by/graded_at); `AssignmentStatus`/`SubmissionStatus` enums; `Assignment` entity + `AssignmentSubmission` entity (both tenant-filtered, factory methods, `publish()`/`close()`/`submit()`/`grade()` methods); `AssignmentRepository` (filtered paginated JPQL) + `SubmissionRepository`; `AssignmentCreateRequest`/`AssignmentStatusUpdateRequest`/`GradeSubmissionRequest`/`AssignmentResponse`/`SubmissionResponse` DTOs; `AssignmentService`/`AssignmentServiceImpl` (create + optional publish, paginated list, getById, updateStatus lifecycle guards, delete DRAFT-only, listSubmissions, gradeSubmission with max-marks validation); `AssignmentController` (7 endpoints: POST/GET list/GET:id/PATCH:status/DELETE/GET:submissions/PATCH:submission/grade); frontend: `assignment.ts` types, `assignmentApi.ts` (7 fns), `AssignmentListPage` (filterable table, status advance, draft delete), `AssignmentCreatePage` (max marks field, publish toggle), `AssignmentDetailPage` (stats bar, submissions table, inline grade modal with max-marks enforcement); 3 routes + "Assignments" nav item; **272 modules, 0 errors** |
 
 ### E19 Completions — Homework Management (CC-0702)
 
@@ -343,7 +349,7 @@ Notes/Risks:
 |---------|-------|----------|--------|-------|
 | CC-0701 | Timetable management | P1 | ✅ COMPLETED | V31 migration; TimetableSlot entity; conflict detection; weekly grid frontend |
 | CC-0702 | Homework management | P1 | ✅ COMPLETED | V32 migration; HomeworkAssignment entity; DRAFT→PUBLISHED→CLOSED lifecycle; list + create pages |
-| CC-0703 | Assignment engine | P1 | NOT_STARTED | — |
+| CC-0703 | Assignment engine | P1 | ✅ COMPLETED | V33 migration (2 tables); Assignment+Submission entities; PENDING→SUBMITTED/LATE→GRADED; grade modal |
 | CC-0704 | Lesson planning | P2 | NOT_STARTED | — |
 
 ---
@@ -683,6 +689,7 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 | E17 | CC-1103/CC-1104 | Result generation + report card generation | ✅ DONE |
 | E18 | CC-0701 | Timetable management — weekly grid, conflict detection, backend + frontend | ✅ DONE |
 | E19 | CC-0702 | Homework management — DRAFT→PUBLISHED→CLOSED lifecycle, list + create pages | ✅ DONE |
+| E20 | CC-0703 | Assignment engine — submissions + grading, 2-table schema, grade modal | ✅ DONE |
 
 ### ⚪ Phase F — Remaining Foundations (Parallel with E12+)
 
@@ -695,4 +702,4 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 
 ---
 
-*End of Roadmap — updated 2026-05-12 E19 Homework Management complete (63/193 tasks — 32.6%) — Next: E20*
+*End of Roadmap — updated 2026-05-12 E20 Assignment Engine complete (64/193 tasks — 33.2%) — Next: E21*

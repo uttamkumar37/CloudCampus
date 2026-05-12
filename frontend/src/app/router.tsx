@@ -35,6 +35,9 @@ import ReportCardPage from '@/features/exam/pages/ReportCardPage';
 import TimetablePage from '@/features/timetable/pages/TimetablePage';
 import HomeworkListPage from '@/features/homework/pages/HomeworkListPage';
 import HomeworkCreatePage from '@/features/homework/pages/HomeworkCreatePage';
+import AssignmentListPage from '@/features/assignments/pages/AssignmentListPage';
+import AssignmentCreatePage from '@/features/assignments/pages/AssignmentCreatePage';
+import AssignmentDetailPage from '@/features/assignments/pages/AssignmentDetailPage';
 
 /**
  * Application router.
@@ -110,6 +113,9 @@ export function AppRouter() {
           <Route path="timetable" element={<TimetablePage />} />
           <Route path="homework" element={<HomeworkListPage />} />
           <Route path="homework/new" element={<HomeworkCreatePage />} />
+          <Route path="assignments" element={<AssignmentListPage />} />
+          <Route path="assignments/new" element={<AssignmentCreatePage />} />
+          <Route path="assignments/:assignmentId" element={<AssignmentDetailPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}
