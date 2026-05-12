@@ -43,6 +43,9 @@ import AssignmentDetailPage from '@/features/assignments/pages/AssignmentDetailP
 import ReportsPage from '@/features/reports/pages/ReportsPage';
 import NoticeBoardPage from '@/features/notice-board/pages/NoticeBoardPage';
 import StudentBulkImportPage from '@/features/student/pages/StudentBulkImportPage';
+import { SuperAdminLayout } from '@/features/super-admin/layouts/SuperAdminLayout';
+import { SuperAdminDashboardPage } from '@/features/super-admin/pages/SuperAdminDashboardPage';
+import { TenantDetailPage } from '@/features/super-admin/pages/TenantDetailPage';
 
 /**
  * Application router.
@@ -64,22 +67,19 @@ export function AppRouter() {
 
         {/* Super Admin portal — SUPER_ADMIN role required */}
         <Route
-          path="/super-admin/tenants/new"
+          path="/super-admin"
           element={
             <ProtectedRoute roles={['SUPER_ADMIN']}>
-              <TenantCreatePage />
+              <SuperAdminLayout />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/super-admin/tenants"
-          element={
-            <ProtectedRoute roles={['SUPER_ADMIN']}>
-              <TenantListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/super-admin" element={<Navigate to="/super-admin/tenants" replace />} />
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<SuperAdminDashboardPage />} />
+          <Route path="tenants" element={<TenantListPage />} />
+          <Route path="tenants/new" element={<TenantCreatePage />} />
+          <Route path="tenants/:id" element={<TenantDetailPage />} />
+        </Route>
 
         {/* School Admin portal — SCHOOL_ADMIN role required */}
         <Route

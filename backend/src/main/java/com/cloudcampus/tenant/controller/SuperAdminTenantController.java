@@ -4,6 +4,7 @@ import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.common.web.Pagination;
+import com.cloudcampus.tenant.dto.SuperAdminStatsResponse;
 import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.service.TenantService;
@@ -15,6 +16,7 @@ import jakarta.validation.constraints.Min;
 import org.slf4j.MDC;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -54,6 +56,24 @@ public class SuperAdminTenantController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(200) int limit
     ) {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), tenantService.list(new Pagination(offset, limit)));
+    }
+
+    @Operation(summary = "Platform stats", description = "Total, active, suspended, and new-this-month tenant counts.")
+    @GetMapping("/stats")
+    public ApiResponse<SuperAdminStatsResponse> stats() {
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), tenantService.getStats());
+    }
+
+    @Operation(summary = "Suspend tenant", description = "Sets status to SUSPENDED. Tenant users will receive 403 on login.")
+    @PatchMapping("/{id}/suspend")
+    public ApiResponse<TenantResponse> suspend(@PathVariable UUID id) {
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), tenantService.suspend(id));
+    }
+
+    @Operation(summary = "Activate tenant", description = "Restores a SUSPENDED tenant to ACTIVE status.")
+    @PatchMapping("/{id}/activate")
+    public ApiResponse<TenantResponse> activate(@PathVariable UUID id) {
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), tenantService.activate(id));
     }
 }
 
