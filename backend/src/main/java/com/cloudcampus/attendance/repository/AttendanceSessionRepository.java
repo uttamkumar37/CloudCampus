@@ -2,6 +2,8 @@ package com.cloudcampus.attendance.repository;
 
 import com.cloudcampus.attendance.entity.AttendanceSession;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -40,4 +42,9 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     /** Check for an existing whole-class (no section) session. */
     Optional<AttendanceSession> findBySchoolIdAndClassIdAndSectionIdIsNullAndSessionDateAndPeriodNumber(
             UUID schoolId, UUID classId, LocalDate sessionDate, int periodNumber);
+
+    /** All session IDs for a school + academic year (used for attendance reports). */
+    @Query("SELECT s.id FROM AttendanceSession s WHERE s.schoolId = :schoolId AND s.academicYearId = :academicYearId")
+    List<UUID> findSessionIdsBySchoolAndYear(@Param("schoolId") UUID schoolId,
+                                             @Param("academicYearId") UUID academicYearId);
 }

@@ -20,4 +20,7 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, UUID> {
 
     /** Result for a specific student across all exams. */
     List<ExamResult> findByExamIdAndStudentIdIn(UUID examId, List<UUID> studentIds);
+
+    /** All results for an exam scoped to a school, ranked ascending (performance report). */
+    List<ExamResult> findBySchoolIdAndExamIdOrderByRankAsc(UUID schoolId, UUID examId);
 }

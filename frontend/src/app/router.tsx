@@ -38,6 +38,7 @@ import HomeworkCreatePage from '@/features/homework/pages/HomeworkCreatePage';
 import AssignmentListPage from '@/features/assignments/pages/AssignmentListPage';
 import AssignmentCreatePage from '@/features/assignments/pages/AssignmentCreatePage';
 import AssignmentDetailPage from '@/features/assignments/pages/AssignmentDetailPage';
+import ReportsPage from '@/features/reports/pages/ReportsPage';
 
 /**
  * Application router.
@@ -116,6 +117,7 @@ export function AppRouter() {
           <Route path="assignments" element={<AssignmentListPage />} />
           <Route path="assignments/new" element={<AssignmentCreatePage />} />
           <Route path="assignments/:assignmentId" element={<AssignmentDetailPage />} />
+          <Route path="reports" element={<ReportsPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}
