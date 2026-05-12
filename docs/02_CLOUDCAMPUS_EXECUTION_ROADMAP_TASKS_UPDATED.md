@@ -4,14 +4,20 @@
 
 ---
 
-## Progress Summary (as of 2026-05-12 — E16 Marks entry complete)
+## Progress Summary (as of 2026-05-12 — E18 Timetable Management complete)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | 61 (31.6%) |
+| **Completed** | 62 (32.1%) |
 | **In Progress** | 0 |
-| **Not Started** | 134 |
+| **Not Started** | 133 |
+
+### E18 Completions — Timetable Management (CC-0701)
+
+| Task | What was built |
+|------|---------------|
+| CC-0701 ✅ | Timetable management — `V31` migration (`timetable_slots` table: tenant/school/academic-year/class/section/subject/staff FKs, `day_of_week` CHECK constraint MON–SAT, `period_number` 1–12, optional start/end times, UNIQUE per section+day+period, 4 indexes); `DayOfWeek` enum; `TimetableSlot` entity (tenant-filtered @FilterDef/@Filter, factory, @PrePersist/@PreUpdate); `TimetableRepository` (by-class+section, section conflict lookup, teacher conflict JPQL, by-school+id); `TimetableSlotCreateRequest`/`TimetableSlotResponse` DTOs; `TimetableService`/`TimetableServiceImpl` (addSlot with dual conflict detection — section double-booking + teacher double-booking, listSlots, deleteSlot); `TimetableController` (POST/GET/DELETE:/slotId); frontend: `timetable.ts` types, `timetableApi.ts`, `TimetablePage` (academic-year→class→section cascading filters, weekly Mon–Sat × Period 1–8 grid, inline Add Slot form with conflict error display, slot delete); "Timetable" nav item; route wired; **265 modules, 0 errors** |
 
 ### E16 Completions — Marks Entry System (CC-1102)
 
@@ -329,7 +335,7 @@ Notes/Risks:
 
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
-| CC-0701 | Timetable management | P1 | NOT_STARTED | — |
+| CC-0701 | Timetable management | P1 | ✅ COMPLETED | V31 migration; TimetableSlot entity; conflict detection; weekly grid frontend |
 | CC-0702 | Homework management | P1 | NOT_STARTED | — |
 | CC-0703 | Assignment engine | P1 | NOT_STARTED | — |
 | CC-0704 | Lesson planning | P2 | NOT_STARTED | — |
@@ -669,6 +675,7 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 | E15 | CC-1101 | Exam creation — `Exam` entity, scheduling, subjects assignment | ✅ DONE |
 | E16 | CC-1102 | Marks entry system — marks recording per student per subject | ✅ DONE |
 | E17 | CC-1103/CC-1104 | Result generation + report card generation | ✅ DONE |
+| E18 | CC-0701 | Timetable management — weekly grid, conflict detection, backend + frontend | ✅ DONE |
 
 ### ⚪ Phase F — Remaining Foundations (Parallel with E12+)
 
@@ -681,4 +688,4 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 
 ---
 
-*End of Roadmap — updated 2026-05-12 E17 Result generation + report card complete (61/193 tasks — 31.6%) — Next: E18*
+*End of Roadmap — updated 2026-05-12 E18 Timetable Management complete (62/193 tasks — 32.1%) — Next: E19*
