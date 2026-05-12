@@ -30,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Exams', to: '/school-admin/exams', feature: 'EXAM_MANAGEMENT' },
   { label: 'Notifications', to: '/school-admin/notifications', feature: 'NOTIFICATIONS' },
   { label: 'WhatsApp', to: '/school-admin/whatsapp', feature: 'WHATSAPP' },
+  { label: 'Notice Board', to: '/school-admin/notices', feature: 'NOTICE_BOARD' },
   { label: 'Reports', to: '/school-admin/reports', feature: 'REPORTS' },
   { label: 'Settings', to: '/school-admin/settings' },
 ];
