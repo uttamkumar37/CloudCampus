@@ -4,26 +4,135 @@ spring:
   profiles:
     active: dev
 
+  # C-09: Reject requests larger than 10 MB to prevent payload-bomb attacks.
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # ── JPA ──────────────────────────────────────────────────────────────────
+  jpa:
+    open-in-view: false          # Never keep a DB connection open for the HTTP render phase.
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 50         # Batch inserts for bulk operations (attendance, imports).
+        order_inserts: true
+        order_updates: true
+        # C-20: Log queries slower than 200 ms in all environments to surface N+1 early.
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 200
+
+  # ── REDIS ────────────────────────────────────────────────────────────────
+  # C-20: App starts even if Redis is temporarily unavailable (lazy-connect).
+  # Feature flags and permission cache fall back to DB until Redis reconnects.
+  data:
+    redis:
+      connect-timeout: 2s
+      timeout: 1s
+      repositories:
+        enabled: false           # We use RedisTemplate directly, not Spring Data Redis repos.
+
+  # ── MAIL ─────────────────────────────────────────────────────────────────
+  # Production: set MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD env vars.
+  # Dev: overridden in application-dev.yml to point at MailHog (localhost:1025).
+  mail:
+    host: ${MAIL_HOST:smtp.example.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
 server:
   port: 8080
+
+  # C-12: Enable gzip compression — critical for mobile clients on slow connections.
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 1024     # Only compress responses larger than 1 KB.
+
+  # C-09: Tomcat-level payload size limit (safety net after servlet layer).
+  tomcat:
+    max-http-form-post-size: 10MB
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        # C-19: prometheus endpoint for Grafana scraping.
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       probes:
         enabled: true
-      show-details: never
+      show-details: never        # Never expose DB/Redis details publicly.
   health:
     livenessstate:
       enabled: true
     readinessstate:
       enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
-logging:
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg [cid=%X{correlationId}]%n"
+# ── JWT configuration ─────────────────────────────────────────────────────
+# Secret loaded from JWT_SECRET env var. Minimum 32 characters required.
+# Production: pull from HashiCorp Vault or AWS Secrets Manager.
+app:
+  jwt:
+    secret: ${JWT_SECRET:changeme-dev-secret-minimum-32-chars!!}
+    access-token-expiry-seconds: 900        # 15 minutes
+    refresh-token-expiry-seconds: 2592000   # 30 days
+
+# ── OpenAPI / Swagger UI ─────────────────────────────────────────────────────
+# SECURITY: Disabled in production. Enabled per-profile in application-dev.yml.
+# Docs available at: http://localhost:8080/swagger-ui.html (dev only)
+springdoc:
+  api-docs:
+    enabled: false
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: false
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+  show-actuator: false
+
+  # ── Bootstrap Super Admin ─────────────────────────────────────────────
+  # Runs ONCE on first boot. Idempotent — skips if user already exists.
+  # Set via environment variables; never hardcode in this file.
+  bootstrap:
+    admin:
+      username: ${BOOTSTRAP_ADMIN_USERNAME:superadmin}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:}  # Empty = skip bootstrap (safe default)
+
+  # ── Login rate limiting (CC-1801 / EUP-030) ──────────────────────────
+  # Two independent sliding windows tracked in Redis.
+  # Tighten in production — loosen in dev if needed (see application-dev.yml).
+  rate-limit:
+    login:
+      max-attempts-per-ip: 20          # 20 failures per IP in 5 minutes
+      window-seconds-per-ip: 300       # 5 minutes
+      max-attempts-per-username: 10    # 10 failures per username in 15 minutes
+      window-seconds-per-username: 900 # 15 minutes
+
+  # ── OTP (password reset) ───────────────────────────────────────────────────────
+  # Redis key: cc:otp:{userId}  TTL: 5 min (CC-0108)
+  otp:
+    ttl-seconds: 300        # 5 minutes
+    length: 6
+    from-email: ${MAIL_FROM:noreply@cloudcampus.io}
 

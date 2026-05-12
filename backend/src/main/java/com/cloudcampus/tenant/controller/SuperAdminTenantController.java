@@ -7,6 +7,8 @@ import com.cloudcampus.common.web.Pagination;
 import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.service.TenantService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -25,6 +27,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1/super-admin/tenants")
 @Validated
+@Tag(name = "Super Admin — Tenants", description = "Tenant lifecycle management (Super Admin only)")
 public class SuperAdminTenantController {
     private final TenantService tenantService;
 
@@ -32,16 +35,19 @@ public class SuperAdminTenantController {
         this.tenantService = tenantService;
     }
 
+    @Operation(summary = "Create tenant", description = "Provision a new tenant. Auto-creates the default MAIN school.")
     @PostMapping
     public ApiResponse<TenantResponse> create(@Valid @RequestBody TenantCreateRequest request) {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), tenantService.create(request));
     }
 
+    @Operation(summary = "Get tenant", description = "Fetch a single tenant by ID.")
     @GetMapping("/{id}")
     public ApiResponse<TenantResponse> get(@PathVariable UUID id) {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), tenantService.get(id));
     }
 
+    @Operation(summary = "List tenants", description = "Paginated list of all tenants. Supports offset/limit.")
     @GetMapping
     public ApiResponse<PageResponse<TenantResponse>> list(
             @RequestParam(defaultValue = "0") @Min(0) int offset,

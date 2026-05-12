@@ -1,0 +1,37 @@
+# Test profile — uses Testcontainers PostgreSQL (real DB, not H2).
+# Spring Boot 3.1+ with @ServiceConnection auto-wires the DataSource URL from the container.
+# Redis is provided by a Testcontainers Redis container (also @ServiceConnection).
+# Flyway runs all migrations so schema is always up to date.
+
+spring:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: false
+
+  flyway:
+    enabled: true
+
+  # Async executor — keep it small for tests
+  task:
+    execution:
+      pool:
+        core-size: 1
+        max-size: 2
+        queue-capacity: 10
+
+app:
+  jwt:
+    secret: "test-secret-key-for-integration-tests-only-do-not-use-in-production-must-be-long-enough"
+    expiration-ms: 3600000
+
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    com.cloudcampus: INFO

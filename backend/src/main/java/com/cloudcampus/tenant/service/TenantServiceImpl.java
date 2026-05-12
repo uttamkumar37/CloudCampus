@@ -1,14 +1,18 @@
 package com.cloudcampus.tenant.service;
 
-import com.cloudcampus.common.exception.BadRequestException;
+import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.common.web.Pagination;
+import com.cloudcampus.school.entity.School;
+import com.cloudcampus.school.entity.SchoolStatus;
+import com.cloudcampus.school.repository.SchoolRepository;
 import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.entity.Tenant;
 import com.cloudcampus.tenant.entity.TenantStatus;
 import com.cloudcampus.tenant.repository.TenantRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -19,18 +23,24 @@ import java.util.UUID;
 
 @Service
 public class TenantServiceImpl implements TenantService {
-    private final TenantRepository tenantRepository;
 
-    public TenantServiceImpl(TenantRepository tenantRepository) {
+    private final TenantRepository tenantRepository;
+    private final SchoolRepository schoolRepository;
+
+    public TenantServiceImpl(TenantRepository tenantRepository, SchoolRepository schoolRepository) {
         this.tenantRepository = tenantRepository;
+        this.schoolRepository = schoolRepository;
     }
 
     @Override
     @Transactional
     public TenantResponse create(TenantCreateRequest request) {
         String code = request.code().trim().toLowerCase();
+
+        // Fast pre-check (common case — avoids pointless DB write on obvious duplicates).
+        // The DataIntegrityViolationException catch below handles the concurrent-create race.
         if (tenantRepository.findByCode(code).isPresent()) {
-            throw new BadRequestException("Tenant code already exists");
+            throw new ConflictException("Tenant code '" + code + "' already exists");
         }
 
         Tenant tenant = new Tenant(
@@ -40,14 +50,37 @@ public class TenantServiceImpl implements TenantService {
                 TenantStatus.ACTIVE,
                 Instant.now()
         );
-        tenantRepository.save(tenant);
+
+        try {
+            tenantRepository.save(tenant);
+        } catch (DataIntegrityViolationException ex) {
+            // C-02: Race condition safety net — two concurrent creates with the same code
+            // both pass the pre-check above and then race to insert. The DB unique constraint
+            // wins; we convert the constraint violation to a clean 409 Conflict.
+            throw new ConflictException("Tenant code '" + code + "' already exists");
+        }
+
+        // Auto-create the default school for this tenant.
+        // Every tenant starts with one school (code = "MAIN"). Additional schools
+        // can be added later via the School management API.
+        School defaultSchool = new School(
+                UUID.randomUUID(),
+                tenant.getId(),
+                tenant.getName(),   // school name defaults to tenant name
+                "MAIN",
+                SchoolStatus.ACTIVE,
+                tenant.getCreatedAt()
+        );
+        schoolRepository.save(defaultSchool);
+
         return toResponse(tenant);
     }
 
     @Override
     @Transactional(readOnly = true)
     public TenantResponse get(UUID id) {
-        Tenant tenant = tenantRepository.findById(id).orElseThrow(() -> new NotFoundException("Tenant not found"));
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tenant not found"));
         return toResponse(tenant);
     }
 
@@ -64,7 +97,14 @@ public class TenantServiceImpl implements TenantService {
     }
 
     private TenantResponse toResponse(Tenant tenant) {
-        return new TenantResponse(tenant.getId(), tenant.getCode(), tenant.getName(), tenant.getStatus(), tenant.getCreatedAt());
+        return new TenantResponse(
+                tenant.getId(),
+                tenant.getCode(),
+                tenant.getName(),
+                tenant.getStatus(),
+                tenant.getCreatedAt(),
+                tenant.getUpdatedAt()
+        );
     }
 }
 

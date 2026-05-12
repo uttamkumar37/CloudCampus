@@ -1,0 +1,94 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────────────────
+# CloudCampus — Local Development Infrastructure
+# ──────────────────────────────────────────────────────────────────────────
+# Usage:
+#   docker compose up -d          # start all services in the background
+#   docker compose down           # stop and remove containers (data persists in volumes)
+#   docker compose down -v        # stop and DELETE all data (full reset)
+#
+# Then run the backend with dev profile:
+#   JWT_SECRET='...' BOOTSTRAP_ADMIN_PASSWORD='...' mvn spring-boot:run
+#
+# Services:
+#   postgres  → localhost:5432   (cloudcampus / cloudcampus_dev)
+#   redis     → localhost:6379
+#   minio     → localhost:9000 (API) + localhost:9001 (Console)
+#   mailhog   → localhost:8025 (Web UI) — captures all outbound emails in dev
+
+services:
+
+  # ── PostgreSQL 16 ──────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: cloudcampus-postgres
+    environment:
+      POSTGRES_DB: cloudcampus
+      POSTGRES_USER: cloudcampus
+      POSTGRES_PASSWORD: cloudcampus_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudcampus -d cloudcampus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Redis 7 ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: cloudcampus-redis
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── MinIO (S3-compatible object storage) ───────────────────────────────
+  # Simulates AWS S3 for local file upload / presigned URL development.
+  # Console: http://localhost:9001  login: minioadmin / minioadmin
+  minio:
+    image: minio/minio:latest
+    container_name: cloudcampus-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── MailHog (SMTP catcher) ─────────────────────────────────────────────
+  # Captures all outgoing emails in dev so you can inspect them.
+  # Web UI: http://localhost:8025
+  # SMTP:   localhost:1025 (configure spring.mail.host=localhost port=1025 in dev)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: cloudcampus-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

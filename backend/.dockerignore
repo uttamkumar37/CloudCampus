@@ -1,0 +1,27 @@
+# Maven build output (except the final JAR)
+target/classes
+target/generated-sources
+target/generated-test-sources
+target/maven-archiver
+target/maven-status
+target/test-classes
+
+# Source code — not needed in Docker context
+src/
+
+# IDE / OS artefacts
+.idea/
+*.iml
+.DS_Store
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# Docs
+docs/
+
+# Local env overrides
+*.env
+.env*

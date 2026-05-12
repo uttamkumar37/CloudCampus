@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- ===================================================================
+         CloudCampus Logback Configuration
+         Dev profile  : human-readable console output
+         All others   : JSON output to stdout (captured by Docker / K8s)
+    =================================================================== -->
+
+    <!-- ── HUMAN-READABLE (dev profile only) ───────────────────────── -->
+    <springProfile name="dev">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) %cyan([%thread]) %yellow(%logger{36}) - %msg [cid=%X{correlationId}]%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <logger name="com.cloudcampus" level="DEBUG"/>
+        <logger name="org.springframework.security" level="DEBUG"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <!-- Uncomment to log query parameter bindings: -->
+        <!-- <logger name="org.hibernate.orm.jdbc.bind" level="TRACE"/> -->
+    </springProfile>
+
+    <!-- ── JSON (staging / prod / all non-dev profiles) ───────────── -->
+    <springProfile name="!dev">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <!-- Include MDC fields (correlationId, tenantId added by filters) -->
+                <includeMdcKeyName>correlationId</includeMdcKeyName>
+                <includeMdcKeyName>tenantId</includeMdcKeyName>
+                <includeMdcKeyName>userId</includeMdcKeyName>
+                <!-- Structured app metadata for Grafana/Loki label selectors -->
+                <customFields>{"app":"cloudcampus-backend"}</customFields>
+                <!-- Shorten stack traces to the first 10 frames to keep log volume manageable -->
+                <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                    <maxDepthPerCause>10</maxDepthPerCause>
+                    <rootCauseFirst>true</rootCauseFirst>
+                </throwableConverter>
+            </encoder>
+        </appender>
+
+        <!-- Async wrapper reduces I/O latency on hot logging paths -->
+        <appender name="ASYNC_JSON" class="ch.qos.logback.classic.AsyncAppender">
+            <queueSize>1024</queueSize>
+            <discardingThreshold>0</discardingThreshold>
+            <appender-ref ref="JSON_CONSOLE"/>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="ASYNC_JSON"/>
+        </root>
+
+        <logger name="com.cloudcampus" level="INFO"/>
+        <!-- Log all Hibernate SQL in staging to catch N+1 queries early -->
+        <springProfile name="staging">
+            <logger name="org.hibernate.SQL" level="DEBUG"/>
+        </springProfile>
+    </springProfile>
+
+</configuration>
