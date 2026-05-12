@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { loginApi } from '../api/authApi';
 import { useAuthStore } from '../store/useAuthStore';
 import type { AuthUser } from '../types/auth';
@@ -16,9 +16,11 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();
   const setTokens = useAuthStore((s) => s.setTokens);
   const [showPassword, setShowPassword] = useState(false);
+  const passwordReset = (location.state as { passwordReset?: boolean })?.passwordReset ?? false;
 
   const {
     register,
@@ -55,6 +57,12 @@ export function LoginPage() {
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
         <h1 className="mb-2 text-2xl font-semibold text-gray-900">Sign in</h1>
         <p className="mb-6 text-sm text-gray-500">Welcome back to CloudCampus</p>
+
+        {passwordReset && (
+          <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
+            Password updated successfully. Sign in with your new password.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
           {/* Username */}
