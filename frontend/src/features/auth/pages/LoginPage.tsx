@@ -31,10 +31,11 @@ export function LoginPage() {
     onSuccess: (data) => {
       const user: AuthUser = {
         userId: data.userId,
-        role: data.role,
+        role: data.role as AuthUser['role'],
         tenantId: data.tenantId,
         requiresPasswordChange: data.requiresPasswordChange,
         expiresIn: data.expiresIn,
+        features: data.features ?? [],
       };
       setTokens(data.accessToken, data.refreshToken, user);
 

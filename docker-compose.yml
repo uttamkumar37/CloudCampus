@@ -12,10 +12,12 @@ version: "3.9"
 #   JWT_SECRET='...' BOOTSTRAP_ADMIN_PASSWORD='...' mvn spring-boot:run
 #
 # Services:
-#   postgres  → localhost:5432   (cloudcampus / cloudcampus_dev)
-#   redis     → localhost:6379
-#   minio     → localhost:9000 (API) + localhost:9001 (Console)
-#   mailhog   → localhost:8025 (Web UI) — captures all outbound emails in dev
+#   postgres    → localhost:5432   (cloudcampus / cloudcampus_dev)
+#   redis       → localhost:6379
+#   minio       → localhost:9000 (API) + localhost:9001 (Console)
+#   mailhog     → localhost:8025 (Web UI) — captures all outbound emails in dev
+#   prometheus  → localhost:9090 — scrapes /actuator/prometheus
+#   grafana     → localhost:3100 — pre-provisioned dashboard (admin/admin)
 
 services:
 
@@ -88,7 +90,52 @@ services:
       - "8025:8025"
     restart: unless-stopped
 
+  # ── Prometheus ─────────────────────────────────────────────────────────
+  # Scrapes /actuator/prometheus from the Spring Boot backend.
+  # UI: http://localhost:9090
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: cloudcampus-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"         # allows POST /-/reload to hot-reload config
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # resolve backend on Linux hosts
+    restart: unless-stopped
+
+  # ── Grafana ────────────────────────────────────────────────────────────
+  # Pre-provisioned with Prometheus datasource and CloudCampus dashboard.
+  # UI: http://localhost:3100  login: admin / admin  (change on first login)
+  grafana:
+    image: grafana/grafana:10.4.3
+    container_name: cloudcampus-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "admin"          # change in staging/prod
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_HTTP_PORT: "3000"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: "/var/lib/grafana/dashboards/cloudcampus-backend.json"
+    ports:
+      - "3100:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
   minio_data:
+  prometheus_data:
+  grafana_data:

@@ -5,13 +5,26 @@ export interface LoginCredentials {
 }
 
 /**
+ * All defined backend roles. Keep in sync with UserRole.java.
+ */
+export type UserRole =
+  | 'SUPER_ADMIN'
+  | 'SCHOOL_ADMIN'
+  | 'TEACHER'
+  | 'PARENT'
+  | 'STUDENT';
+
+/**
  * Subset of LoginResponse fields kept in memory.
  * Mirrors com.cloudcampus.auth.dto.LoginResponse.
+ * features: enabled feature-flag codes for the tenant (EUP-043).
  */
 export interface AuthUser {
   userId: string;
-  role: string;
+  role: UserRole;
   tenantId: string | null;
   requiresPasswordChange: boolean;
   expiresIn: number;
+  /** Feature-flag codes enabled for this tenant. Empty array = no features. */
+  features: string[];
 }

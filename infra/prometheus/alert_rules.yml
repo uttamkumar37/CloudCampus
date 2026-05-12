@@ -1,0 +1,75 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Alert rules for CloudCampus backend (EUP-062 Phase 1)
+# ──────────────────────────────────────────────────────────────────────────────
+groups:
+  - name: cloudcampus_backend
+    interval: 30s
+    rules:
+
+      # HTTP 5xx error rate > 1 % over 5-minute window
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+            /
+            sum(rate(http_server_requests_seconds_count[5m]))
+          ) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP 5xx error rate ({{ $value | humanizePercentage }})"
+          description: "More than 1% of requests are returning 5xx responses over the last 5 minutes."
+
+      # p95 latency > 2 seconds
+      - alert: HighP95Latency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_server_requests_seconds_bucket[5m])) by (le, uri)
+          ) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 latency > 2s on {{ $labels.uri }}"
+          description: "The 95th percentile response time has exceeded 2 seconds for the last 2 minutes."
+
+      # HikariCP connection pool near exhaustion (> 90 % of max)
+      - alert: ConnectionPoolNearExhaustion
+        expr: |
+          (
+            hikaricp_connections_active
+            /
+            hikaricp_connections_max
+          ) > 0.9
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HikariCP connection pool > 90 % ({{ $value | humanizePercentage }})"
+          description: "The database connection pool is almost full. Investigate slow queries or connection leaks."
+
+      # Backend unreachable (up == 0)
+      - alert: BackendDown
+        expr: up{job="cloudcampus-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CloudCampus backend is down"
+          description: "Prometheus cannot scrape /actuator/prometheus — the backend may be crashed."
+
+      # JVM heap usage > 85 %
+      - alert: JvmHeapHigh
+        expr: |
+          (
+            jvm_memory_used_bytes{area="heap"}
+            /
+            jvm_memory_max_bytes{area="heap"}
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM heap usage > 85 % ({{ $value | humanizePercentage }})"
+          description: "JVM heap is high. Consider increasing -Xmx or investigating a memory leak."

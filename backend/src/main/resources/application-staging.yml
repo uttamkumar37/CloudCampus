@@ -1,0 +1,104 @@
+# ── STAGING profile ───────────────────────────────────────────────────────────
+#
+# Purpose: pre-production validation. Mirrors production configuration as closely
+# as possible. Uses a dedicated PostgreSQL instance (not H2). Real Flyway
+# migrations run against this DB before they are applied to production.
+#
+# Required environment variables (set in your CI/CD secret store):
+#   DATABASE_URL          e.g. jdbc:postgresql://staging-db.internal:5432/cloudcampus
+#   DATABASE_USERNAME     staging DB user
+#   DATABASE_PASSWORD     staging DB password
+#   REDIS_HOST            Redis host for staging
+#   REDIS_PORT            6379
+#   JWT_SECRET            minimum 32 chars, rotate per environment
+#   MAIL_HOST / MAIL_PORT / MAIL_USERNAME / MAIL_PASSWORD
+#   BOOTSTRAP_ADMIN_PASSWORD   staging super-admin password (keep separate from prod)
+
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/cloudcampus_staging}
+    username: ${DATABASE_USERNAME:cloudcampus}
+    password: ${DATABASE_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: cloudcampus-staging-pool
+      maximum-pool-size: 15
+      minimum-idle: 3
+      connection-timeout: 5000     # 5 s — slightly more lenient than prod
+      idle-timeout: 300000         # 5 min
+      max-lifetime: 1200000        # 20 min
+      leak-detection-threshold: 30000   # warn if a connection is held > 30 s
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate           # Flyway owns schema — Hibernate must not alter it
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        # Log slow queries — same threshold as dev so staging catches N+1 early
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 200
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true      # fail fast if checksums drift between envs
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: 2s
+      timeout: 1s
+
+  mail:
+    host: ${MAIL_HOST:smtp.example.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+# ── OpenAPI — enabled in staging so QA can explore the API ───────────────────
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+# ── Logging — structured JSON, INFO level, same as production ─────────────────
+logging:
+  level:
+    root: INFO
+    com.cloudcampus: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN            # disable SQL logging (use slow-query log instead)
+
+# ── Actuator — expose health + prometheus for Grafana scraping ────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+
+# ── App-level staging flags ───────────────────────────────────────────────────
+app:
+  jwt:
+    secret: ${JWT_SECRET:changeme-staging-secret-minimum-32-chars!!}
+    access-token-expiry-seconds: 900         # 15 min — same as prod
+    refresh-token-expiry-seconds: 2592000    # 30 days
+  bootstrap:
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:staging-admin-changeme}
+    admin-email: ${BOOTSTRAP_ADMIN_EMAIL:admin@staging.cloudcampus.io}

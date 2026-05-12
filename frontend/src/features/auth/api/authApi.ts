@@ -16,6 +16,8 @@ export interface LoginResponseData {
   userId: string;
   tenantId: string | null;
   requiresPasswordChange: boolean;
+  /** Feature-flag codes enabled for the tenant. Backend populates in future. */
+  features?: string[];
 }
 
 // ── API functions ─────────────────────────────────────────────────────────────

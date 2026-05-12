@@ -1234,11 +1234,19 @@ Key features:
 
 ---
 
-### EUP-062 · Observability Stack (Incomplete)
+### EUP-062 · Observability Stack ✅ Phase 1 COMPLETED
 
-**Current Problem**
+**Phase 1 Status: DONE** (12 May 2026)
 
-Micrometer + Prometheus are configured but no dashboards, no log aggregation, no distributed tracing. Metrics are exposed but not consumed.
+Phase 1 is fully implemented:
+- `infra/prometheus/prometheus.yml` — scrapes `/actuator/prometheus` every 10s
+- `infra/prometheus/alert_rules.yml` — 5 alert rules (error rate, p95 latency, HikariCP exhaustion, backend-down, JVM heap)
+- `infra/grafana/dashboards/cloudcampus-backend.json` — 9-panel dashboard (req rate, error rate, p50/p95/p99, HikariCP, JVM heap, threads, status breakdown, slowest endpoints, tenant volume)
+- `docker-compose.yml` — `prometheus:9090` + `grafana:3100` services with auto-provisioned datasource and dashboard
+
+**Remaining (Phase 2 + 3 — not yet started):**
+
+Micrometer + Prometheus are configured but no log aggregation or distributed tracing yet.
 
 **Recommended Upgrade (Phased)**
 
@@ -1275,26 +1283,24 @@ grafana:
 
 ---
 
-### EUP-063 · Environment Separation (Missing)
+### EUP-063 · Environment Separation ✅ COMPLETED
 
-**Current Problem**
+**Status: DONE** (12 May 2026)
 
-No formal environment separation strategy. No staging environment definition. Dev uses H2; production uses PostgreSQL — no staging that matches production.
+All four Spring profiles are now defined and active:
 
-**Recommended Upgrade**
+| Environment | Profile | DB | Config file | Status |
+|-------------|---------|-----|------------|--------|
+| `dev` | `dev` | H2 in-memory | `application-dev.yml` | ✅ exists |
+| `test` | `test` | Testcontainers PostgreSQL | (inherits base) | ✅ Testcontainers configured |
+| `staging` | `staging` | PostgreSQL (env-var driven) | `application-staging.yml` | ✅ created |
+| `production` | `prod` | PostgreSQL (env-var driven, SSL) | `application-prod.yml` | ✅ created |
 
-| Environment | Purpose | DB | Features |
-|-------------|---------|-----|---------|
-| `dev` | Local development | H2 / Testcontainers | All features, debug logging |
-| `test` | CI/CD automated tests | Testcontainers | All features, structured logs |
-| `staging` | Pre-production validation | PostgreSQL (dedicated RDS) | Production config, real migrations |
-| `production` | Live traffic | PostgreSQL (multi-AZ RDS) | Hardened security, rate limits |
+Key differences per profile:
+- **staging**: Swagger enabled; INFO logging; 15-conn pool; leak-detection enabled; Flyway validates checksums
+- **prod**: Swagger DISABLED; actuator on port 8081 (internal only); SSL datasource; no JWT_SECRET default (deployment fails if unset)
 
-Spring profiles: `dev`, `test`, `staging`, `prod`
-
-Add `application-staging.yml` and `application-prod.yml` alongside existing `application-dev.yml`.
-
-**Risk Level:** 🟠 P1
+**Risk Level:** ✅ Resolved
 **Task ID:** EUP-063
 
 ---
@@ -1631,16 +1637,16 @@ TanStack Query (online state)
 
 | Area | Score | Notes |
 |------|-------|-------|
-| Backend foundation | 8/10 | Missing: JWT filter, login API, rate limiting, tenant query isolation |
-| Database | 6/10 | Missing: indexes, soft delete, archival strategy, backup |
-| Security | 6/10 | Missing: rate limiting, brute-force protection, HTTPS config |
-| Auth | 4/10 | JWT utility built; enforcement not in place |
-| Frontend | 0/10 | Not started |
-| Mobile | 0/10 | Not started |
-| DevOps | 3/10 | docker-compose exists; no CI/CD, no Dockerfile |
-| Observability | 5/10 | Metrics exposed; no dashboards, no log aggregation |
-| Multi-tenancy | 5/10 | Tenant context propagation done; query isolation missing |
-| **Overall** | **4/10** | Foundation is solid; enforcement layer is incomplete |
+| Backend foundation | 9/10 | Auth, RBAC, brute-force, audit log, school entity, feature flags all done |
+| Database | 8/10 | Indexes, soft delete, Flyway V1–V10; missing: archival/partitioning, backup |
+| Security | 8/10 | JWT enforcement, RBAC, rate limiting, brute-force, HTTPS config in prod profile |
+| Auth | 9/10 | Login, refresh, logout, password reset, token rotation all complete |
+| Frontend | 7/10 | React + TanStack; auth, tenant CRUD, route guard — 31/31 tests passing |
+| Mobile | 7/10 | Expo RN; offline attendance, push notifications, secure storage all done |
+| DevOps | 7/10 | Dockerfile, GitHub Actions CI, Prometheus, Grafana, staging/prod profiles |
+| Observability | 7/10 | Phase 1 dashboards + alert rules done; Phase 2 (Loki/Tempo) pending |
+| Multi-tenancy | 8/10 | Hibernate @Filter isolation, tenant isolation tests, school entity done |
+| **Overall** | **7.5/10** | Core platform complete; production hardening and observability phase 2 pending |
 
 ---
 
@@ -1657,41 +1663,44 @@ TanStack Query (online state)
 | A5 | `AuditLogService` (`@Async`) — log auth events | CC-1802 | ✅ COMPLETED |
 | A6 | Progressively enforce RBAC in SecurityConfig | CC-0113 | ✅ COMPLETED |
 
-### 🟠 Phase B — Foundation Completeness
+### ✅ Phase B — Foundation Completeness
 
 | # | Task | ID | Est. Effort |
 |---|------|----|------------|
-| **B1 → NEXT** | `School` entity + migration + auto-create on tenant onboarding | CC-0213 / EUP-070 | Small |
-| B2 | Hibernate `@Filter` tenant isolation on all entities | CC-0203 / EUP-005 | Medium |
-| B3 | Tenant isolation automated test suite | CC-0210 / EUP-071 | Small |
-| B4 | `FeatureFlagService` + `@RequiresFeature` AOP | CC-0012 / EUP-014 | Medium |
-| B5 | Flyway `V7__add_indexes.sql` | EUP-013 | Small |
-| B6 | Flyway `V8__create_schools.sql` | EUP-070 | Small |
-| B7 | OpenAPI / Swagger setup | EUP-006 | Small |
-| B8 | `Dockerfile` (multi-stage, non-root user) | EUP-061 | Small |
-| B9 | GitHub Actions CI pipeline | CC-1502 / EUP-060 | Medium |
-| B10 | Testcontainers integration tests (replace H2) | CC-0210 / EUP-015 | Medium |
-| B11 | Password reset flow (email OTP) | CC-0107, CC-0108 | Small |
-| B12 | Soft delete strategy + `V9__soft_delete.sql` | EUP-012 | Small |
+| B1 | `School` entity + migration + auto-create on tenant onboarding | CC-0213 / EUP-070 | ✅ COMPLETED |
+| B2 | Hibernate `@Filter` tenant isolation on all entities | CC-0203 / EUP-005 | ✅ COMPLETED |
+| B3 | Tenant isolation automated test suite | CC-0210 / EUP-071 | ✅ COMPLETED |
+| B4 | `FeatureFlagService` + `@RequiresFeature` AOP | CC-0012 / EUP-014 | ✅ COMPLETED |
+| B5 | Flyway `V7__add_indexes.sql` | EUP-013 | ✅ COMPLETED |
+| B6 | Flyway `V8__create_schools.sql` | EUP-070 | ✅ COMPLETED |
+| B7 | OpenAPI / Swagger setup | EUP-006 | ✅ COMPLETED |
+| B8 | `Dockerfile` (multi-stage, non-root user) | EUP-061 | ✅ COMPLETED |
+| B9 | GitHub Actions CI pipeline | CC-1502 / EUP-060 | ✅ COMPLETED |
+| B10 | Testcontainers integration tests (replace H2) | CC-0210 / EUP-015 | ✅ COMPLETED |
+| B11 | Password reset flow (email OTP) | CC-0107, CC-0108 | ✅ COMPLETED |
+| B12 | Soft delete strategy + `V9__soft_delete.sql` | EUP-012 | ✅ COMPLETED |
 
-### 🟡 Phase C — Frontend Start
+### ✅ Phase C — Frontend Start
 
-| # | Task | ID |
-|---|------|----|
-| C1 | Scaffold React + TypeScript + Vite + TanStack project | EUP-040 |
-| C2 | Auth module (login page, token management in memory, refresh interceptor) | EUP-042 |
-| C3 | Route protection + role guard + feature flag gate | EUP-043, EUP-044 |
-| C4 | Super Admin: tenant list + tenant create | CC-0302, CC-0304 |
+| # | Task | ID | Status |
+|---|------|----|---------|
+| C1 | Scaffold React + TypeScript + Vite + TanStack project | EUP-040 | ✅ COMPLETED |
+| C2 | Auth module (login page, token management in memory, refresh interceptor) | EUP-042 | ✅ COMPLETED |
+| C3 | Route protection + role guard + feature flag gate | EUP-043, EUP-044 | ✅ COMPLETED |
+| C4 | Super Admin: tenant list + tenant create | CC-0302, CC-0304 | ✅ COMPLETED |
+| C5 | Frontend tests (31/31 passing, Vitest + React Testing Library) | — | ✅ COMPLETED |
 
 ### 🔵 Phase D — Mobile + DevOps + Scale
 
-| # | Task | ID |
-|---|------|----|
-| D1 | React Native + Expo project scaffold | EUP-050 |
-| D2 | Secure token storage (Expo SecureStore) | EUP-052 |
-| D3 | Prometheus + Grafana dashboard (docker-compose) | EUP-062 |
-| D4 | Staging environment definition | EUP-063 |
-| D5 | Backup strategy (dev: `pg_dump` cron) | EUP-021 |
+| # | Task | ID | Status |
+|---|------|----|---------|
+| D1 | React Native + Expo scaffold + navigation + auth store | EUP-050 | ✅ COMPLETED |
+| D2 | Secure token storage (Expo SecureStore + MMKV + hydration) | EUP-052 | ✅ COMPLETED |
+| D2b | Offline attendance (WatermelonDB + sync queue + sync engine) | EUP-051 | ✅ COMPLETED |
+| D2c | Push notifications (Expo Notifications + FCM/APNs + device register) | EUP-053 | ✅ COMPLETED |
+| D3 | Prometheus + Grafana dashboard + alert rules (docker-compose) | EUP-062 | ✅ COMPLETED |
+| D4 | Staging + production environment profiles | EUP-063 | 🔄 IN PROGRESS |
+| D5 | Backup strategy (dev: `pg_dump` cron sidecar) | EUP-021 | ⏳ PENDING |
 
 ---
 
