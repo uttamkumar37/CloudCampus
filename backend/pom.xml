@@ -58,6 +58,15 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- Firebase Admin SDK — FCM / APNs push dispatch (CC-1003 / E13).
+             Conditionally activated via app.firebase.enabled=true.
+             App starts cleanly without it (FirebaseMessaging injected as Optional). -->
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>9.3.0</version>
+        </dependency>
+
         <!-- ===== SECURITY ===== -->
         <!-- Added in permit-all mode. Auth enforcement comes in Phase 2 (CC-0101). -->
         <dependency>

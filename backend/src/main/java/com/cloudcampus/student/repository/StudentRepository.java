@@ -1,0 +1,73 @@
+package com.cloudcampus.student.repository;
+
+import com.cloudcampus.student.entity.Student;
+import com.cloudcampus.student.entity.StudentStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Data access for {@link Student}.
+ *
+ * All methods operate within the active Hibernate tenant filter
+ * (enabled by {@code TenantFilterAspect}).
+ */
+public interface StudentRepository extends JpaRepository<Student, UUID> {
+
+    /** All students in a school, ordered by last name then first name. */
+    List<Student> findAllBySchoolIdOrderByLastNameAscFirstNameAsc(UUID schoolId);
+
+    /** Students in a school filtered by status. */
+    List<Student> findAllBySchoolIdAndStatusOrderByLastNameAscFirstNameAsc(
+            UUID schoolId, StudentStatus status);
+
+    /** Students assigned to a specific class. */
+    List<Student> findAllByClassIdOrderByLastNameAscFirstNameAsc(UUID classId);
+
+    /** Students assigned to a specific section. */
+    List<Student> findAllBySectionIdOrderByLastNameAscFirstNameAsc(UUID sectionId);
+
+    /** Students in a class filtered by status. */
+    List<Student> findAllByClassIdAndStatusOrderByLastNameAscFirstNameAsc(
+            UUID classId, StudentStatus status);
+
+    /** Students in a section filtered by status. */
+    List<Student> findAllBySectionIdAndStatusOrderByLastNameAscFirstNameAsc(
+            UUID sectionId, StudentStatus status);
+
+    /** Find by unique student number within a school. */
+    Optional<Student> findBySchoolIdAndStudentNumber(UUID schoolId, String studentNumber);
+
+    /** Check uniqueness of student number before admission. */
+    boolean existsBySchoolIdAndStudentNumber(UUID schoolId, String studentNumber);
+
+    /**
+     * Name search — case-insensitive prefix match on first or last name.
+     * Used for quick lookup in admission and roster views.
+     */
+    @Query("""
+           SELECT s FROM Student s
+           WHERE s.schoolId = :schoolId
+             AND (LOWER(s.firstName) LIKE LOWER(CONCAT(:q, '%'))
+               OR LOWER(s.lastName)  LIKE LOWER(CONCAT(:q, '%')))
+           ORDER BY s.lastName, s.firstName
+           """)
+    List<Student> searchByName(@Param("schoolId") UUID schoolId, @Param("q") String query);
+
+    /** Count active students per school (dashboard metric). */
+    long countBySchoolIdAndStatus(UUID schoolId, StudentStatus status);
+
+    /** Find next student number suffix for auto-generation. */
+    @Query("""
+           SELECT COUNT(s) FROM Student s
+           WHERE s.schoolId = :schoolId
+             AND s.studentNumber LIKE CONCAT(:prefix, '%')
+           """)
+    long countBySchoolIdAndStudentNumberPrefix(
+            @Param("schoolId") UUID schoolId,
+            @Param("prefix") String prefix);
+}

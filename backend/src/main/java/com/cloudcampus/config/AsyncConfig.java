@@ -47,4 +47,30 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    /**
+     * Dedicated thread pool for email / SMS dispatch (CC-1002 — E12 baseline).
+     *
+     * Sizing rationale:
+     *   corePoolSize  2  — most schools send a moderate volume; 2 threads handle bursts well.
+     *   maxPoolSize   6  — allow burst capacity for fee payment notifications.
+     *   queueCapacity 100 — buffer before rejection; email sends are slower than audit writes.
+     *
+     * CallerRunsPolicy: if the queue fills (unlikely under normal load), the HTTP thread
+     * sends the email synchronously. This ensures no notifications are silently dropped.
+     */
+    @Bean(name = "notificationExecutor")
+    public Executor notificationExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(6);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("notification-");
+        executor.setRejectedExecutionHandler((r, exec) -> {
+            log.warn("Notification executor queue full — running task on caller thread");
+            r.run();
+        });
+        executor.initialize();
+        return executor;
+    }
 }

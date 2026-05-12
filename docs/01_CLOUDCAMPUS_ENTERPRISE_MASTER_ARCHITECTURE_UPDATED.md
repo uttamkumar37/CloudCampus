@@ -1,31 +1,66 @@
 # CloudCampus — Enterprise Master Architecture
 
-**Version:** v2 (Post-audit implementation baseline)
-**Date:** 2026-05-12
+**Version:** v3 (E11 Finance complete — ongoing implementation)
+**Date:** 2026-05-12 (last updated: 2026-05-12 — E11 complete)
 **Status:** Living document — update on every architecture or stack decision
 
 ---
 
-## Implementation Status (as of 2026-05-12)
+## Implementation Status (as of 2026-05-12 — E11 Finance complete)
+
+### Platform & Infrastructure
 
 | Layer | Component | Status |
 |-------|-----------|--------|
 | Runtime | Java 21 LTS | ✅ Active |
 | Framework | Spring Boot 3.4.5 | ✅ Active |
 | Security | Spring Security 6.x (permit-all Phase 1) | ✅ Active |
-| Auth | JJWT 0.12.6 — `JwtUtil` + `JwtProperties` | ✅ Built; filter pending CC-0102 |
+| Auth | JJWT 0.12.6 — `JwtUtil` + `JwtProperties` + `JwtAuthenticationFilter` | ✅ Active |
 | Password | `BCryptPasswordEncoder(12)` | ✅ Active |
 | Logging | logstash-logback-encoder 8.0 | ✅ Active |
 | Metrics | Micrometer + Prometheus | ✅ Active |
-| Migrations | Flyway 10 (V1–V5) | ✅ Active |
-| Cache | Spring Data Redis (lazy-connect) | ✅ Configured; usage pending CC-0012 |
+| Migrations | Flyway 10 (V1–V24) | ✅ Active |
+| Cache | Spring Data Redis (lazy-connect) | ✅ Configured; active for auth/rate-limit |
 | Local dev infra | docker-compose.yml (PG16, Redis7, MinIO, MailHog) | ✅ Active |
-| Tenant resolution | Header-based (`X-Tenant-Id`) | ✅ Active; JWT claims in CC-0102 |
+| Tenant resolution | Header-based (`X-Tenant-Id`) + JWT claim | ✅ Active |
 | Security headers | `SecurityHeadersFilter` (7 OWASP headers) | ✅ Active |
-| User entity | `User.java` + `UserRole` + `UserStatus` + `UserRepository` | ✅ Active |
-| Super admin bootstrap | `SuperAdminBootstrap` (idempotent `ApplicationRunner`) | ✅ Active |
-| Feature catalog | V3 schema + 13 seed features | ✅ Schema done; service layer in CC-0012 |
-| Audit log | V4 schema — append-only, 8 event categories | ✅ Schema done; writer in CC-1802 |
+| Rate limiting | `LoginRateLimiterService` — Redis sliding window | ✅ Active |
+| RBAC enforcement | `SecurityConfig` path matchers per role | ✅ Active |
+
+### Backend Domain Packages (`com.cloudcampus.*`)
+
+| Package | Domain | Entities / Key Classes | Status |
+|---------|--------|----------------------|--------|
+| `tenant` | Tenant lifecycle | `Tenant`, `TenantService`, `SuperAdminTenantController` | ✅ Active |
+| `auth` | Authentication | `AuthController`, `AuthServiceImpl`, `JwtAuthenticationFilter`, `LoginRateLimiterService` | ✅ Active |
+| `audit` | Audit logging | `AuditLog`, `AuditLogService` (`@Async`), `AuditAction` enum | ✅ Active |
+| `feature` | Feature flags | `FeatureFlag`, `TenantFeature`, `FeatureFlagService`, `@RequiresFeature` AOP | ✅ Active |
+| `school` | School/Campus | `School`, `SchoolSettings`, `SchoolRepository` | ✅ Active |
+| `student` | Student lifecycle | `Student`, `StudentParentLink`, `StudentService`, `StudentController` | ✅ Active |
+| `staff` | Staff & HR | `Staff`, `StaffService`, `StaffController` | ✅ Active |
+| `attendance` | Attendance | `AttendanceSession`, `AttendanceRecord`, `AttendanceService`, `AttendanceController` | ✅ Active |
+| `finance` | Fees & Payments | `FeeCategory`, `FeeStructure`, `StudentFeeRecord`, `FeePayment`, `FeeService`, `FeeController` | ✅ Active |
+| `notification` | Notifications | Stub — communication channels pending (CC-1001–1003) | 🔴 Stub |
+| `config` | App configuration | `JwtProperties`, `AsyncConfig`, `SecurityConfig` | ✅ Active |
+| `common` | Shared utilities | `ApiResponse`, `ApiError`, `PageResponse`, `RequestContext`, `RestExceptionHandler` | ✅ Active |
+
+### Frontend (`React 19 + TypeScript + Vite`)
+
+| Feature | Pages / Components | Status |
+|---------|-------------------|--------|
+| `auth` | Login, token store, Axios interceptor, refresh flow | ✅ Active |
+| `school-admin` | Dashboard, layout/nav with feature-flag menu | ✅ Active |
+| `school-admin` | Academic year, class, section, subject management | ✅ Active |
+| `student` | Student list, admit, profile (with parent links) | ✅ Active |
+| `staff` | Staff list, create, profile | ✅ Active |
+| `attendance` | Session list, create session, mark attendance | ✅ Active |
+| `finance` | Fee structure list/create, fee collection, student fee detail + receipt | ✅ Active |
+| `super-admin` | Tenant list, tenant create | ✅ Active |
+| `reports` | Stub pages | 🔴 Stub |
+| `exams` | Stub pages | 🔴 Stub |
+| `communication` | Stub pages | 🔴 Stub |
+
+**Build:** `npm run build` → **249 modules, 0 errors** (as of E11)
 
 ---
 
@@ -237,7 +272,7 @@ jpa:
 
 **HikariCP (dev):** pool size 10, min-idle 2, connection-timeout 3s.
 
-#### Database Migrations (V1–V5)
+#### Database Migrations (V1–V24)
 
 | Migration | File | Change |
 |-----------|------|--------|
@@ -246,6 +281,25 @@ jpa:
 | V3 | `V3__create_features_tables.sql` | `features` + `tenant_features` tables, 13 seed features |
 | V4 | `V4__create_audit_log.sql` | Append-only `audit_log` table, 8 event categories, 4 indexes |
 | V5 | `V5__create_users_table.sql` | `users` table — UUID PK, `tenant_id` nullable for SUPER_ADMIN |
+| V6 | `V6__create_schools.sql` | `schools` table — first-class campus/school entity inside tenant |
+| V7 | `V7__fix_audit_log_ip_address.sql` | Fix `ip_address` type to `VARCHAR` |
+| V8 | `V8__add_indexes.sql` | Composite indexes on all high-cardinality tenant-scoped queries |
+| V9 | `V9__soft_delete.sql` | `deleted_at` column on soft-deletable entities |
+| V10 | `V10__create_device_tokens.sql` | `device_tokens` for push notification registration |
+| V11 | `V11__create_academic_years.sql` | `academic_years` — per-school year management |
+| V12 | `V12__create_classes.sql` | `classes` — grade/class definitions per school |
+| V13 | `V13__create_sections.sql` | `sections` — sections inside a class |
+| V14 | `V14__create_subjects.sql` | `subjects` — subject catalog per school |
+| V15 | `V15__create_departments.sql` | `departments` — staff department structure |
+| V16 | `V16__create_school_settings.sql` | `school_settings` — per-school configuration JSONB store |
+| V17 | `V17__create_students.sql` | `students` — student lifecycle, admission, profile |
+| V18 | `V18__create_student_parent_links.sql` | `student_parent_links` — parent-to-student mapping |
+| V19 | `V19__create_staff.sql` | `staff` — staff profiles, roles, departments |
+| V20 | `V20__create_attendance_sessions.sql` | `attendance_sessions` — per-class session tracking |
+| V21 | `V21__create_attendance_records.sql` | `attendance_records` — per-student attendance per session |
+| V22 | `V22__create_fee_categories.sql` | `fee_categories` — fee head definitions per school |
+| V23 | `V23__create_fee_structures.sql` | `fee_structures` — amount/frequency per category/class/year |
+| V24 | `V24__create_fee_payments.sql` | `student_fee_records` (invoices) + `fee_payments` (transactions) |
 
 ### Cache Layer
 

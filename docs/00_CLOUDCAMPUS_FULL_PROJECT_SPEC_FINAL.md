@@ -1,7 +1,7 @@
 # CloudCampus — Full Product Specification
 
-**Version:** v2 (Implementation baseline — post audit)
-**Date:** 2026-05-12
+**Version:** v3 (E11 Finance complete — ongoing implementation)
+**Date:** 2026-05-12 (last updated: 2026-05-12 — E11 complete)
 **Status:** Living document — update on every architecture decision
 
 ---
@@ -340,6 +340,25 @@ Single PostgreSQL database, shared schema, `tenant_id` column on all tenant-scop
 | `V3__create_features_tables.sql` | `features` + `tenant_features`, 13 seed features | ✅ Done |
 | `V4__create_audit_log.sql` | Append-only audit trail, 8 event categories | ✅ Done |
 | `V5__create_users_table.sql` | `users` table, UUID PK, `tenant_id` nullable for SUPER_ADMIN | ✅ Done |
+| `V6__create_schools.sql` | `schools` table — first-class school/campus entity inside tenant | ✅ Done |
+| `V7__fix_audit_log_ip_address.sql` | Fix `ip_address` column type to `VARCHAR` for compatibility | ✅ Done |
+| `V8__add_indexes.sql` | Composite indexes on all high-cardinality tenant-scoped queries | ✅ Done |
+| `V9__soft_delete.sql` | `deleted_at` column on soft-deletable entities | ✅ Done |
+| `V10__create_device_tokens.sql` | `device_tokens` table for push notification registration | ✅ Done |
+| `V11__create_academic_years.sql` | `academic_years` — per-school year management | ✅ Done |
+| `V12__create_classes.sql` | `classes` — grade/class definitions per school | ✅ Done |
+| `V13__create_sections.sql` | `sections` — sections inside a class | ✅ Done |
+| `V14__create_subjects.sql` | `subjects` — subject catalog per school | ✅ Done |
+| `V15__create_departments.sql` | `departments` — staff department structure | ✅ Done |
+| `V16__create_school_settings.sql` | `school_settings` — per-school configuration store | ✅ Done |
+| `V17__create_students.sql` | `students` — student lifecycle, admission, profile | ✅ Done |
+| `V18__create_student_parent_links.sql` | `student_parent_links` — parent-to-student mapping | ✅ Done |
+| `V19__create_staff.sql` | `staff` — staff profiles, roles, departments | ✅ Done |
+| `V20__create_attendance_sessions.sql` | `attendance_sessions` — per-class session tracking | ✅ Done |
+| `V21__create_attendance_records.sql` | `attendance_records` — per-student attendance per session | ✅ Done |
+| `V22__create_fee_categories.sql` | `fee_categories` — fee head definitions per school | ✅ Done |
+| `V23__create_fee_structures.sql` | `fee_structures` — amount/frequency per category/class/year | ✅ Done |
+| `V24__create_fee_payments.sql` | `student_fee_records` (invoices) + `fee_payments` (transactions) | ✅ Done |
 
 ### Tenant Resolution
 

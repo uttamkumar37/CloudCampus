@@ -133,6 +133,41 @@ services:
       - prometheus
     restart: unless-stopped
 
+  # ── pg_dump backup sidecar ─────────────────────────────────────────────
+  # Runs daily at 02:00 UTC, dumps the cloudcampus database, uploads to
+  # MinIO bucket "cloudcampus-backups", and prunes dumps older than 7 days.
+  #
+  # To trigger a manual backup immediately:
+  #   docker compose exec pgbackup /usr/local/bin/backup.sh
+  #
+  # To restore a dump:
+  #   docker compose exec pgbackup \
+  #     mc cp backup/cloudcampus-backups/pg/cloudcampus/<timestamp>.dump /tmp/restore.dump
+  #   pg_restore --host=localhost --port=5432 --username=cloudcampus \
+  #     --dbname=cloudcampus --clean /tmp/restore.dump
+  pgbackup:
+    build:
+      context: ./infra/pgbackup
+      dockerfile: Dockerfile
+    container_name: cloudcampus-pgbackup
+    environment:
+      PG_HOST: postgres
+      PG_PORT: "5432"
+      PG_DB: cloudcampus
+      PG_USER: cloudcampus
+      PGPASSWORD: cloudcampus_dev          # matches postgres service password above
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: cloudcampus-backups
+      RETENTION_DAYS: "7"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
