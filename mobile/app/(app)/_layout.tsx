@@ -34,6 +34,10 @@ export default function AppLayout() {
         name="index"
         options={{ title: 'Dashboard', tabBarLabel: 'Home' }}
       />
+      <Tabs.Screen
+        name="notices"
+        options={{ title: 'Notices', tabBarLabel: 'Notices' }}
+      />
       {canMarkAttendance && (
         <Tabs.Screen
           name="attendance"

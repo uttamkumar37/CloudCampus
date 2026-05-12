@@ -1,6 +1,7 @@
 package com.cloudcampus.notice.repository;
 
 import com.cloudcampus.notice.entity.NoticeCategory;
+import com.cloudcampus.notice.entity.NoticeTarget;
 import com.cloudcampus.notice.entity.SchoolNotice;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,4 +28,16 @@ public interface SchoolNoticeRepository extends JpaRepository<SchoolNotice, UUID
             Pageable pageable);
 
     Optional<SchoolNotice> findBySchoolIdAndId(UUID schoolId, UUID id);
+
+    @Query("""
+           SELECT n FROM SchoolNotice n
+           WHERE n.schoolId = :schoolId
+             AND n.published = true
+             AND (n.target = 'ALL' OR n.target = :target)
+           ORDER BY n.priority DESC, n.createdAt DESC
+           """)
+    Page<SchoolNotice> findPublishedForTarget(
+            @Param("schoolId") UUID schoolId,
+            @Param("target")   NoticeTarget target,
+            Pageable pageable);
 }
