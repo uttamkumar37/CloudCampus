@@ -1,7 +1,10 @@
 package com.cloudcampus.attendance.repository;
 
 import com.cloudcampus.attendance.entity.AttendanceRecord;
+import com.cloudcampus.attendance.entity.AttendanceStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +31,9 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     boolean existsBySessionIdAndStudentId(UUID sessionId, UUID studentId);
 
     /** Count present records for a student (quick percentage calculation). */
-    long countByStudentIdAndStatus(UUID studentId,
-            com.cloudcampus.attendance.entity.AttendanceStatus status);
+    long countByStudentIdAndStatus(UUID studentId, AttendanceStatus status);
+
+    /** Per-student status counts for a set of sessions (attendance report). */
+    @Query("SELECT r.studentId, r.status, COUNT(r) FROM AttendanceRecord r WHERE r.sessionId IN :sessionIds GROUP BY r.studentId, r.status")
+    List<Object[]> aggregateByStudentAndStatus(@Param("sessionIds") List<UUID> sessionIds);
 }
