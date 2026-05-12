@@ -33,6 +33,7 @@ export function LoginPage() {
         userId: data.userId,
         role: data.role as AuthUser['role'],
         tenantId: data.tenantId,
+        schoolId: (data as any).schoolId ?? null,
         requiresPasswordChange: data.requiresPasswordChange,
         expiresIn: data.expiresIn,
         features: data.features ?? [],

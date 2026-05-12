@@ -1,0 +1,98 @@
+import axiosInstance from '@/shared/api/axiosInstance';
+import type { ApiResponse } from '@/shared/types/api';
+import type {
+  AdmitStudentRequest,
+  StudentResponse,
+  StudentSummaryResponse,
+  StudentStatus,
+  UpdateStudentRequest,
+} from '../types/student';
+
+const bySchool = (schoolId: string) =>
+  `/v1/school-admin/schools/${schoolId}/students`;
+
+const byId = (id: string) => `/v1/school-admin/students/${id}`;
+
+export async function listStudents(
+  schoolId: string,
+  params?: { status?: StudentStatus; search?: string },
+): Promise<StudentSummaryResponse[]> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentSummaryResponse[]>>(
+    bySchool(schoolId),
+    { params },
+  );
+  return data.data ?? [];
+}
+
+export async function listStudentsByClass(
+  classId: string,
+): Promise<StudentSummaryResponse[]> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentSummaryResponse[]>>(
+    `/v1/school-admin/classes/${classId}/students`,
+  );
+  return data.data ?? [];
+}
+
+export async function listStudentsBySection(
+  sectionId: string,
+): Promise<StudentSummaryResponse[]> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentSummaryResponse[]>>(
+    `/v1/school-admin/sections/${sectionId}/students`,
+  );
+  return data.data ?? [];
+}
+
+export async function getStudent(id: string): Promise<StudentResponse> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentResponse>>(byId(id));
+  return data.data!;
+}
+
+export async function admitStudent(
+  schoolId: string,
+  body: AdmitStudentRequest,
+): Promise<StudentResponse> {
+  const { data } = await axiosInstance.post<ApiResponse<StudentResponse>>(
+    bySchool(schoolId),
+    body,
+  );
+  return data.data!;
+}
+
+export async function updateStudent(
+  id: string,
+  body: UpdateStudentRequest,
+): Promise<StudentResponse> {
+  const { data } = await axiosInstance.put<ApiResponse<StudentResponse>>(
+    byId(id),
+    body,
+  );
+  return data.data!;
+}
+
+export async function graduateStudent(id: string): Promise<StudentResponse> {
+  const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
+    `${byId(id)}/graduate`,
+  );
+  return data.data!;
+}
+
+export async function transferStudent(id: string): Promise<StudentResponse> {
+  const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
+    `${byId(id)}/transfer`,
+  );
+  return data.data!;
+}
+
+export async function suspendStudent(id: string): Promise<StudentResponse> {
+  const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
+    `${byId(id)}/suspend`,
+  );
+  return data.data!;
+}
+
+export async function reinstateStudent(id: string): Promise<StudentResponse> {
+  const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
+    `${byId(id)}/reinstate`,
+  );
+  return data.data!;
+}

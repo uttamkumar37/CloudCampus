@@ -7,6 +7,25 @@ import { TenantListPage } from '@/features/super-admin/pages/TenantListPage';
 import { TenantCreatePage } from '@/features/super-admin/pages/TenantCreatePage';
 import { SchoolAdminLayout } from '@/features/school-admin/layouts/SchoolAdminLayout';
 import { SchoolAdminDashboardPage } from '@/features/school-admin/pages/SchoolAdminDashboardPage';
+import { AcademicYearListPage } from '@/features/school-admin/pages/AcademicYearListPage';
+import { ClassListPage } from '@/features/school-admin/pages/ClassListPage';
+import { SectionListPage } from '@/features/school-admin/pages/SectionListPage';
+import { SubjectListPage } from '@/features/school-admin/pages/SubjectListPage';
+import { StudentListPage } from '@/features/student/pages/StudentListPage';
+import { StudentAdmitPage } from '@/features/student/pages/StudentAdmitPage';
+import { StudentProfilePage } from '@/features/student/pages/StudentProfilePage';
+import { StaffListPage } from '@/features/staff/pages/StaffListPage';
+import { StaffCreatePage } from '@/features/staff/pages/StaffCreatePage';
+import { StaffProfilePage } from '@/features/staff/pages/StaffProfilePage';
+import { AttendanceSessionListPage } from '@/features/attendance/pages/AttendanceSessionListPage';
+import { AttendanceCreateSessionPage } from '@/features/attendance/pages/AttendanceCreateSessionPage';
+import { AttendanceMarkPage } from '@/features/attendance/pages/AttendanceMarkPage';
+import FeeStructureListPage from '@/features/finance/pages/FeeStructureListPage';
+import FeeStructureCreatePage from '@/features/finance/pages/FeeStructureCreatePage';
+import FeeCollectionPage from '@/features/finance/pages/FeeCollectionPage';
+import StudentFeeDetailPage from '@/features/finance/pages/StudentFeeDetailPage';
+import NotificationLogPage from '@/features/notification/pages/NotificationLogPage';
+import WhatsAppPage from '@/features/whatsapp/pages/WhatsAppPage';
 
 /**
  * Application router.
@@ -54,7 +73,25 @@ export function AppRouter() {
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<SchoolAdminDashboardPage />} />
-          {/* Remaining school-admin routes (academic years, classes, etc.) added in C6+ */}
+          <Route path="academic-years" element={<AcademicYearListPage />} />
+          <Route path="classes" element={<ClassListPage />} />
+          <Route path="sections" element={<SectionListPage />} />
+          <Route path="subjects" element={<SubjectListPage />} />
+          <Route path="students" element={<StudentListPage />} />
+          <Route path="students/admit" element={<StudentAdmitPage />} />
+          <Route path="students/:id" element={<StudentProfilePage />} />
+          <Route path="staff" element={<StaffListPage />} />
+          <Route path="staff/new" element={<StaffCreatePage />} />
+          <Route path="staff/:id" element={<StaffProfilePage />} />
+          <Route path="attendance" element={<AttendanceSessionListPage />} />
+          <Route path="attendance/new" element={<AttendanceCreateSessionPage />} />
+          <Route path="attendance/sessions/:sessionId/mark" element={<AttendanceMarkPage />} />
+          <Route path="fees" element={<FeeStructureListPage />} />
+          <Route path="fees/structures/new" element={<FeeStructureCreatePage />} />
+          <Route path="fees/collection" element={<FeeCollectionPage />} />
+          <Route path="fees/records/:recordId" element={<StudentFeeDetailPage />} />
+          <Route path="notifications" element={<NotificationLogPage />} />
+          <Route path="whatsapp" element={<WhatsAppPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}

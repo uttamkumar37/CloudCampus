@@ -630,23 +630,37 @@ Also add `spring.datasource.hikari.leak-detection-threshold=30000` to catch conn
 
 ---
 
-### EUP-021 · Database Backup Strategy (Missing — Production Critical)
+### EUP-021 · Database Backup Strategy ✅ Phase 1 COMPLETED
 
-**Current Problem**
+**Phase 1 Status: DONE** (12 May 2026)
 
-No backup strategy exists. A production database failure would cause permanent data loss.
+Phase 1 (local dev + staging backup sidecar) is fully implemented:
 
-**Recommended Upgrade**
+| Deliverable | File | Status |
+|-------------|------|--------|
+| `pg_dump` backup script | `infra/pgbackup/backup.sh` | ✅ done |
+| Container Dockerfile | `infra/pgbackup/Dockerfile` | ✅ done |
+| Cron schedule (02:00 UTC daily) | `infra/pgbackup/crontab` | ✅ done |
+| `pgbackup` service in docker-compose | `docker-compose.yml` | ✅ done |
 
-Minimum viable backup strategy:
-1. **Continuous WAL archiving** (PostgreSQL `wal_level = replica`)
-2. **Daily `pg_dump` snapshots** stored in cloud object storage (MinIO/S3)
-3. **PITR (Point-in-Time Recovery)** — target RTO < 4 hours, RPO < 15 minutes
-4. **Weekly restore drill** — automated test that restores yesterday's backup to a test instance
+**How it works:**
+- Built on `postgres:16-alpine` (pg_dump version matches server)
+- Uses `supercronic` for reliable in-container cron (no permission issues)
+- Uploads compressed custom-format dumps to MinIO bucket `cloudcampus-backups`
+- 7-day retention — auto-prunes old dumps via `mc find --older-than`
+- Depends on `postgres` (healthy) + `minio` (healthy) before starting
 
-`docker-compose.yml` for dev: add `pgbackup` sidecar that runs `pg_dump` daily.
+**Manual trigger:**
+```bash
+docker compose exec pgbackup /usr/local/bin/backup.sh
+```
 
-**Risk Level:** 🔴 P0 for production (not urgent for dev)
+**Pending (Phase 2 — Production):**
+- WAL archiving (`wal_level = replica`) for PITR
+- Encrypted dumps uploaded to AWS S3 (KMS-managed key)
+- Weekly automated restore drill to a test instance (target RTO < 4h, RPO < 15min)
+
+**Risk Level:** ✅ Phase 1 resolved — Phase 2 pending production setup
 **Task ID:** CC-1904, CC-1905
 
 ---
@@ -1690,7 +1704,7 @@ TanStack Query (online state)
 | C4 | Super Admin: tenant list + tenant create | CC-0302, CC-0304 | ✅ COMPLETED |
 | C5 | Frontend tests (31/31 passing, Vitest + React Testing Library) | — | ✅ COMPLETED |
 
-### 🔵 Phase D — Mobile + DevOps + Scale
+### ✅ Phase D — Mobile + DevOps + Scale
 
 | # | Task | ID | Status |
 |---|------|----|---------|
@@ -1699,8 +1713,22 @@ TanStack Query (online state)
 | D2b | Offline attendance (WatermelonDB + sync queue + sync engine) | EUP-051 | ✅ COMPLETED |
 | D2c | Push notifications (Expo Notifications + FCM/APNs + device register) | EUP-053 | ✅ COMPLETED |
 | D3 | Prometheus + Grafana dashboard + alert rules (docker-compose) | EUP-062 | ✅ COMPLETED |
-| D4 | Staging + production environment profiles | EUP-063 | 🔄 IN PROGRESS |
-| D5 | Backup strategy (dev: `pg_dump` cron sidecar) | EUP-021 | ⏳ PENDING |
+| D4 | Staging + production environment profiles | EUP-063 | ✅ COMPLETED |
+| D5 | Backup strategy (dev: `pg_dump` cron sidecar) | EUP-021 | ✅ COMPLETED |
+
+### 🔵 Phase E — School Admin Domain (Backend + Frontend)
+
+| # | Task | ID | Status |
+|---|------|----|---------|
+| E1 | AcademicYear + Class + Section + Subject entities + Flyway migrations | CC-0402–CC-0405 | ✅ COMPLETED |
+| E2 | Department entity + school settings service | CC-0406–CC-0407 | ✅ COMPLETED |
+| E3 | School Admin backend APIs (CRUD for all entities above) | CC-0401 | ✅ COMPLETED |
+| E4 | Student entity + admission + listing + parent mapping | CC-0501–CC-0504, CC-0506 | ✅ COMPLETED |
+| E5 | Staff / Teacher entity + profile management | CC-0601–CC-0602 | ⏳ PENDING |
+| E6 | Manual attendance backend (mark, list, report) | CC-0801, CC-0805 | ⏳ PENDING |
+| E7 | School Admin frontend: dashboard, academic year, class/section/subject UI | EUP-040–EUP-044 | ⏳ PENDING |
+| E8 | Student frontend: admission form, listing, profile page | CC-0502–CC-0503 | ⏳ PENDING |
+
 
 ---
 

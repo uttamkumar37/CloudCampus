@@ -1,0 +1,10 @@
+# CloudCampus pgbackup — supercronic crontab
+#
+# Format: second minute hour day-of-month month day-of-week command
+#
+# Default schedule: daily at 02:00 UTC
+# Adjust to suit your backup SLA. Common alternatives:
+#   Every 6 hours:  0 0 */6 * * *  /usr/local/bin/backup.sh
+#   Every hour:     0 0 * * * *    /usr/local/bin/backup.sh
+#
+0 0 2 * * * /usr/local/bin/backup.sh

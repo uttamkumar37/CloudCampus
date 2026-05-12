@@ -96,6 +96,21 @@ app:
     access-token-expiry-seconds: 900        # 15 minutes
     refresh-token-expiry-seconds: 2592000   # 30 days
 
+  # ── Firebase (CC-1003 / E13) ──────────────────────────────────────────────
+  # FCM / APNs push dispatch via Firebase Admin SDK.
+  # Disabled by default — the app starts cleanly without Firebase credentials.
+  #
+  # Production setup:
+  #   1. Download service-account JSON from Firebase Console → Project Settings → Service Accounts.
+  #   2. Mount it as a Kubernetes secret or set APP_FIREBASE_CREDENTIALS_PATH env var.
+  #   3. Set APP_FIREBASE_ENABLED=true.
+  #
+  # SECURITY: Never commit the service-account JSON to source control.
+  firebase:
+    enabled: ${APP_FIREBASE_ENABLED:false}
+    credentials-path: ${APP_FIREBASE_CREDENTIALS_PATH:}   # absolute path to service-account JSON
+    project-id: ${APP_FIREBASE_PROJECT_ID:}               # optional — inferred from JSON when blank
+
 # ── OpenAPI / Swagger UI ─────────────────────────────────────────────────────
 # SECURITY: Disabled in production. Enabled per-profile in application-dev.yml.
 # Docs available at: http://localhost:8080/swagger-ui.html (dev only)

@@ -18,7 +18,14 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Classes', to: '/school-admin/classes', feature: 'CLASS_MGMT' },
   { label: 'Sections', to: '/school-admin/sections', feature: 'CLASS_MGMT' },
   { label: 'Subjects', to: '/school-admin/subjects', feature: 'SUBJECT_MGMT' },
+  { label: 'Students', to: '/school-admin/students', feature: 'STUDENT_MANAGEMENT' },
+  { label: 'Staff', to: '/school-admin/staff', feature: 'TEACHER_MANAGEMENT' },
+  { label: 'Attendance', to: '/school-admin/attendance', feature: 'ATTENDANCE' },
+  { label: 'Fees', to: '/school-admin/fees', feature: 'FINANCE' },
+  { label: 'Fee Collection', to: '/school-admin/fees/collection', feature: 'FINANCE' },
   { label: 'Departments', to: '/school-admin/departments', feature: 'DEPT_MGMT' },
+  { label: 'Notifications', to: '/school-admin/notifications', feature: 'NOTIFICATIONS' },
+  { label: 'WhatsApp', to: '/school-admin/whatsapp', feature: 'WHATSAPP' },
   { label: 'Settings', to: '/school-admin/settings' },
 ];
 

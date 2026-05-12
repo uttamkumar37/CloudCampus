@@ -11,6 +11,7 @@ const mockUser = (overrides?: Partial<AuthUser>): AuthUser => ({
   userId: 'u1',
   role: 'SCHOOL_ADMIN',
   tenantId: 't1',
+  schoolId: null,
   requiresPasswordChange: false,
   expiresIn: 900,
   features: ['ATTENDANCE_QR'],

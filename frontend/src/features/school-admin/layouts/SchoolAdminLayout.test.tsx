@@ -20,6 +20,7 @@ function makeUser(overrides?: Partial<AuthUser>): AuthUser {
     userId: 'admin-1',
     role: 'SCHOOL_ADMIN',
     tenantId: 'tenant-abc',
+    schoolId: null,
     requiresPasswordChange: false,
     expiresIn: 900,
     features: [],

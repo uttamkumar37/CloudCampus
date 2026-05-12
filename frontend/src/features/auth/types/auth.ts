@@ -23,6 +23,8 @@ export interface AuthUser {
   userId: string;
   role: UserRole;
   tenantId: string | null;
+  /** Populated for SCHOOL_ADMIN users — the school they administer. */
+  schoolId: string | null;
   requiresPasswordChange: boolean;
   expiresIn: number;
   /** Feature-flag codes enabled for this tenant. Empty array = no features. */
