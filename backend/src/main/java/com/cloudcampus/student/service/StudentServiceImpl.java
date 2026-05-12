@@ -4,6 +4,9 @@ import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.student.dto.AdmitStudentRequest;
+import com.cloudcampus.student.dto.BulkImportResult;
+import com.cloudcampus.student.dto.BulkStudentRow;
+import com.cloudcampus.student.dto.RowError;
 import com.cloudcampus.student.dto.StudentResponse;
 import com.cloudcampus.student.dto.StudentSummaryResponse;
 import com.cloudcampus.student.dto.UpdateStudentRequest;
@@ -14,16 +17,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Year;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 class StudentServiceImpl implements StudentService {
 
-    private final StudentRepository repo;
+    private final StudentRepository    repo;
+    private final BulkStudentImporter  bulkImporter;
 
-    StudentServiceImpl(StudentRepository repo) {
-        this.repo = repo;
+    StudentServiceImpl(StudentRepository repo, BulkStudentImporter bulkImporter) {
+        this.repo         = repo;
+        this.bulkImporter = bulkImporter;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -173,6 +179,23 @@ class StudentServiceImpl implements StudentService {
      * The sequence is 1-based count of students already admitted for the same
      * school in the current calendar year.
      */
+    @Override
+    public BulkImportResult bulkAdmit(UUID schoolId, List<BulkStudentRow> rows) {
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        List<RowError> errors = new ArrayList<>();
+        int success = 0;
+        for (int i = 0; i < rows.size(); i++) {
+            try {
+                bulkImporter.importRow(tenantId, schoolId, rows.get(i));
+                success++;
+            } catch (Exception e) {
+                String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                errors.add(new RowError(i + 1, reason));
+            }
+        }
+        return new BulkImportResult(rows.size(), success, errors.size(), errors);
+    }
+
     private String resolveStudentNumber(UUID schoolId, String provided) {
         if (provided != null && !provided.isBlank()) {
             if (repo.existsBySchoolIdAndStudentNumber(schoolId, provided.trim())) {

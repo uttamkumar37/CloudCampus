@@ -1,6 +1,8 @@
 package com.cloudcampus.student.service;
 
 import com.cloudcampus.student.dto.AdmitStudentRequest;
+import com.cloudcampus.student.dto.BulkImportResult;
+import com.cloudcampus.student.dto.BulkStudentRow;
 import com.cloudcampus.student.dto.StudentResponse;
 import com.cloudcampus.student.dto.StudentSummaryResponse;
 import com.cloudcampus.student.dto.UpdateStudentRequest;
@@ -49,4 +51,7 @@ public interface StudentService {
 
     /** Lift suspension — returns to ACTIVE. */
     StudentResponse reinstate(UUID id);
+
+    /** Import multiple students from a JSON payload derived from a CSV upload (CC-0508). */
+    BulkImportResult bulkAdmit(UUID schoolId, List<BulkStudentRow> rows);
 }

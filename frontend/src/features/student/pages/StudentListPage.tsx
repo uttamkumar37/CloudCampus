@@ -71,12 +71,20 @@ export function StudentListPage() {
             <p className="mt-0.5 text-sm text-gray-500">{data.length} records</p>
           )}
         </div>
-        <Link
-          to="/school-admin/students/admit"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-        >
-          Admit Student
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to="/school-admin/students/bulk"
+            className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+          >
+            Bulk Import
+          </Link>
+          <Link
+            to="/school-admin/students/admit"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            Admit Student
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

@@ -42,6 +42,7 @@ import AssignmentCreatePage from '@/features/assignments/pages/AssignmentCreateP
 import AssignmentDetailPage from '@/features/assignments/pages/AssignmentDetailPage';
 import ReportsPage from '@/features/reports/pages/ReportsPage';
 import NoticeBoardPage from '@/features/notice-board/pages/NoticeBoardPage';
+import StudentBulkImportPage from '@/features/student/pages/StudentBulkImportPage';
 
 /**
  * Application router.
@@ -96,6 +97,7 @@ export function AppRouter() {
           <Route path="sections" element={<SectionListPage />} />
           <Route path="subjects" element={<SubjectListPage />} />
           <Route path="students" element={<StudentListPage />} />
+          <Route path="students/bulk" element={<StudentBulkImportPage />} />
           <Route path="students/admit" element={<StudentAdmitPage />} />
           <Route path="students/:id" element={<StudentProfilePage />} />
           <Route path="staff" element={<StaffListPage />} />

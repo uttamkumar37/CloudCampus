@@ -96,3 +96,40 @@ export async function reinstateStudent(id: string): Promise<StudentResponse> {
   );
   return data.data!;
 }
+
+// ── Bulk import (CC-0508) ─────────────────────────────────────────────────────
+
+export interface BulkStudentRow {
+  firstName:     string;
+  lastName:      string;
+  admissionDate?: string | null;
+  dateOfBirth?:  string | null;
+  gender?:       'MALE' | 'FEMALE' | 'OTHER' | null;
+  studentNumber?: string | null;
+  classId?:      string | null;
+  sectionId?:    string | null;
+  phone?:        string | null;
+}
+
+export interface RowError {
+  row:    number;
+  reason: string;
+}
+
+export interface BulkImportResult {
+  totalRows:    number;
+  successCount: number;
+  failedCount:  number;
+  errors:       RowError[];
+}
+
+export async function bulkImportStudents(
+  schoolId: string,
+  rows: BulkStudentRow[],
+): Promise<BulkImportResult> {
+  const { data } = await axiosInstance.post<ApiResponse<BulkImportResult>>(
+    `${bySchool(schoolId)}/bulk`,
+    rows,
+  );
+  return data.data!;
+}

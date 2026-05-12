@@ -3,6 +3,8 @@ package com.cloudcampus.student.controller;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.student.dto.AdmitStudentRequest;
+import com.cloudcampus.student.dto.BulkImportResult;
+import com.cloudcampus.student.dto.BulkStudentRow;
 import com.cloudcampus.student.dto.StudentResponse;
 import com.cloudcampus.student.dto.StudentSummaryResponse;
 import com.cloudcampus.student.dto.UpdateStudentRequest;
@@ -63,6 +65,16 @@ public class StudentController {
         StudentResponse body = service.admit(schoolId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
+    }
+
+    @Operation(summary = "Bulk import students from CSV-derived JSON (CC-0508)",
+               description = "Accepts a list of student rows parsed from a CSV file. Each row is imported independently — failures are collected and returned without aborting the batch.")
+    @PostMapping("/schools/{schoolId}/students/bulk")
+    public ResponseEntity<ApiResponse<BulkImportResult>> bulkAdmit(
+            @PathVariable UUID schoolId,
+            @RequestBody List<BulkStudentRow> rows) {
+        return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                service.bulkAdmit(schoolId, rows)));
     }
 
     @Operation(summary = "List students for a school",
