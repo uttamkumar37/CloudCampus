@@ -4,14 +4,20 @@
 
 ---
 
-## Progress Summary (as of 2026-05-12 — E18 Timetable Management complete)
+## Progress Summary (as of 2026-05-12 — E19 Homework Management complete)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | 62 (32.1%) |
+| **Completed** | 63 (32.6%) |
 | **In Progress** | 0 |
-| **Not Started** | 133 |
+| **Not Started** | 132 |
+
+### E19 Completions — Homework Management (CC-0702)
+
+| Task | What was built |
+|------|---------------|
+| CC-0702 ✅ | Homework management — `V32` migration (`homework_assignments` table: tenant/school/academic-year/class/section/subject/staff FKs, nullable section (class-wide), `status` CHECK DRAFT/PUBLISHED/CLOSED, `attachment_urls` TEXT, 5 indexes); `HomeworkStatus` enum; `HomeworkAssignment` entity (tenant-filtered @FilterDef/@Filter, factory, publish/close methods); `HomeworkRepository` (filtered paginated JPQL with optional class/section/status, by-school+id); `HomeworkCreateRequest`/`HomeworkStatusUpdateRequest`/`HomeworkResponse` DTOs; `HomeworkService`/`HomeworkServiceImpl` (create with optional immediate publish, paginated list, getById, updateStatus with lifecycle guards — PUBLISHED assignments cannot be deleted, DRAFT→PUBLISHED→CLOSED transitions); `HomeworkController` (POST/GET/GET:id/PATCH:status/DELETE); frontend: `homework.ts` types, `homeworkApi.ts` (create/list/get/updateStatus/delete), `HomeworkListPage` (cascading filters + overdue badge + status advance + draft delete), `HomeworkCreatePage` (full form with publish toggle, due-date min tomorrow); "Homework" nav item; 2 routes wired; **268 modules, 0 errors** |
 
 ### E18 Completions — Timetable Management (CC-0701)
 
@@ -336,7 +342,7 @@ Notes/Risks:
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
 | CC-0701 | Timetable management | P1 | ✅ COMPLETED | V31 migration; TimetableSlot entity; conflict detection; weekly grid frontend |
-| CC-0702 | Homework management | P1 | NOT_STARTED | — |
+| CC-0702 | Homework management | P1 | ✅ COMPLETED | V32 migration; HomeworkAssignment entity; DRAFT→PUBLISHED→CLOSED lifecycle; list + create pages |
 | CC-0703 | Assignment engine | P1 | NOT_STARTED | — |
 | CC-0704 | Lesson planning | P2 | NOT_STARTED | — |
 
@@ -676,6 +682,7 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 | E16 | CC-1102 | Marks entry system — marks recording per student per subject | ✅ DONE |
 | E17 | CC-1103/CC-1104 | Result generation + report card generation | ✅ DONE |
 | E18 | CC-0701 | Timetable management — weekly grid, conflict detection, backend + frontend | ✅ DONE |
+| E19 | CC-0702 | Homework management — DRAFT→PUBLISHED→CLOSED lifecycle, list + create pages | ✅ DONE |
 
 ### ⚪ Phase F — Remaining Foundations (Parallel with E12+)
 
@@ -688,4 +695,4 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 
 ---
 
-*End of Roadmap — updated 2026-05-12 E18 Timetable Management complete (62/193 tasks — 32.1%) — Next: E19*
+*End of Roadmap — updated 2026-05-12 E19 Homework Management complete (63/193 tasks — 32.6%) — Next: E20*

@@ -33,6 +33,8 @@ import MarksEntryPage from '@/features/exam/pages/MarksEntryPage';
 import ResultsPage from '@/features/exam/pages/ResultsPage';
 import ReportCardPage from '@/features/exam/pages/ReportCardPage';
 import TimetablePage from '@/features/timetable/pages/TimetablePage';
+import HomeworkListPage from '@/features/homework/pages/HomeworkListPage';
+import HomeworkCreatePage from '@/features/homework/pages/HomeworkCreatePage';
 
 /**
  * Application router.
@@ -106,6 +108,8 @@ export function AppRouter() {
           <Route path="exams/:examId/results" element={<ResultsPage />} />
           <Route path="exams/:examId/results/students/:studentId" element={<ReportCardPage />} />
           <Route path="timetable" element={<TimetablePage />} />
+          <Route path="homework" element={<HomeworkListPage />} />
+          <Route path="homework/new" element={<HomeworkCreatePage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}
