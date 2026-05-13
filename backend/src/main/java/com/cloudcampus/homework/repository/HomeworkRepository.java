@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,4 +33,18 @@ public interface HomeworkRepository extends JpaRepository<HomeworkAssignment, UU
             Pageable pageable);
 
     Optional<HomeworkAssignment> findBySchoolIdAndId(UUID schoolId, UUID id);
+
+    /** Published homework targeting a class; section match is inclusive (null sectionId = whole class). */
+    @Query("""
+           SELECT h FROM HomeworkAssignment h
+            WHERE h.schoolId = :schoolId
+              AND h.status = 'PUBLISHED'
+              AND h.classId = :classId
+              AND (:sectionId IS NULL OR h.sectionId IS NULL OR h.sectionId = :sectionId)
+            ORDER BY h.dueDate ASC
+           """)
+    List<HomeworkAssignment> findPublishedForClass(
+            @Param("schoolId")  UUID schoolId,
+            @Param("classId")   UUID classId,
+            @Param("sectionId") UUID sectionId);
 }

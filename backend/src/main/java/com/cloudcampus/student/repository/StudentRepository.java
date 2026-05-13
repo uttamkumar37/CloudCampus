@@ -70,4 +70,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     long countBySchoolIdAndStudentNumberPrefix(
             @Param("schoolId") UUID schoolId,
             @Param("prefix") String prefix);
+
+    /** Look up the student profile linked to a login account (for student self-service). */
+    Optional<Student> findBySchoolIdAndUserId(UUID schoolId, UUID userId);
 }

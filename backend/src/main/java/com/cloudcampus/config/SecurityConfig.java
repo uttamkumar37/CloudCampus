@@ -1,6 +1,7 @@
 package com.cloudcampus.config;
 
 import com.cloudcampus.auth.security.JwtAuthenticationFilter;
+import com.cloudcampus.common.tenant.TenantSuspensionFilter;
 import com.cloudcampus.common.web.JsonAuthEntryPoint;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -48,13 +49,16 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final JsonAuthEntryPoint jsonAuthEntryPoint;
+    private final TenantSuspensionFilter  tenantSuspensionFilter;
+    private final JsonAuthEntryPoint      jsonAuthEntryPoint;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            JsonAuthEntryPoint jsonAuthEntryPoint) {
+            TenantSuspensionFilter  tenantSuspensionFilter,
+            JsonAuthEntryPoint      jsonAuthEntryPoint) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.jsonAuthEntryPoint = jsonAuthEntryPoint;
+        this.tenantSuspensionFilter  = tenantSuspensionFilter;
+        this.jsonAuthEntryPoint      = jsonAuthEntryPoint;
     }
 
     /**
@@ -82,6 +86,8 @@ public class SecurityConfig {
 
                 // ── JWT filter — populates SecurityContext when token is present ────
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // ── Tenant suspension filter — rejects SUSPENDED tenant requests ──
+                .addFilterAfter(tenantSuspensionFilter, JwtAuthenticationFilter.class)
 
                 // ── Authorization rules (CC-0113 / CC-0114) ─────────────────────
                 .authorizeHttpRequests(auth -> auth

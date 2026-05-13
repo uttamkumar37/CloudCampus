@@ -23,7 +23,9 @@ export default function AppLayout() {
     user?.role === 'TEACHER' ||
     user?.role === 'SUPER_ADMIN';
 
-  const canViewTimetable = user?.role === 'TEACHER';
+  const canViewTimetable  = user?.role === 'TEACHER';
+  const canViewHomework   = user?.role === 'STUDENT';
+  const canViewChildren   = user?.role === 'PARENT';
 
   return (
     <Tabs
@@ -50,6 +52,18 @@ export default function AppLayout() {
         <Tabs.Screen
           name="timetable"
           options={{ title: 'Timetable', tabBarLabel: 'Timetable' }}
+        />
+      )}
+      {canViewHomework && (
+        <Tabs.Screen
+          name="homework"
+          options={{ title: 'Homework', tabBarLabel: 'Homework' }}
+        />
+      )}
+      {canViewChildren && (
+        <Tabs.Screen
+          name="children"
+          options={{ title: 'My Children', tabBarLabel: 'Children' }}
         />
       )}
     </Tabs>

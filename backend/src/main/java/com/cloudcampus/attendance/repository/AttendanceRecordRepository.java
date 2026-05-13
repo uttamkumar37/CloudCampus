@@ -36,4 +36,7 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     /** Per-student status counts for a set of sessions (attendance report). */
     @Query("SELECT r.studentId, r.status, COUNT(r) FROM AttendanceRecord r WHERE r.sessionId IN :sessionIds GROUP BY r.studentId, r.status")
     List<Object[]> aggregateByStudentAndStatus(@Param("sessionIds") List<UUID> sessionIds);
+
+    /** Total attendance records for a student (denominator for percentage). */
+    long countByStudentId(UUID studentId);
 }
