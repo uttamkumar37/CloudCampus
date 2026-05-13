@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -41,7 +42,7 @@ public class TenantSuspensionFilter extends OncePerRequestFilter {
     private final RedisTemplate<String,String> redis;
 
     public TenantSuspensionFilter(TenantRepository tenantRepository,
-                                   RedisTemplate<String,String> redis) {
+                                   @Qualifier("stringRedisTemplate") RedisTemplate<String,String> redis) {
         this.tenantRepository = tenantRepository;
         this.redis            = redis;
     }
@@ -75,11 +76,11 @@ public class TenantSuspensionFilter extends OncePerRequestFilter {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private String resolveStatus(String tenantId) {
-        String key    = CACHE_PREFIX + tenantId;
-        String cached = redis.opsForValue().get(key);
-        if (cached != null) return cached;
-
+        String key = CACHE_PREFIX + tenantId;
         try {
+            String cached = redis.opsForValue().get(key);
+            if (cached != null) return cached;
+
             String status = tenantRepository.findById(UUID.fromString(tenantId))
                     .map(t -> t.getStatus().name())
                     .orElse(TenantStatus.ACTIVE.name());

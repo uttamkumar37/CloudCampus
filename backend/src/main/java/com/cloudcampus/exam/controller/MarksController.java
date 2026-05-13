@@ -48,11 +48,9 @@ import java.util.UUID;
 public class MarksController {
 
     private final MarksService marksService;
-    private final RequestContext requestContext;
 
-    public MarksController(MarksService marksService, RequestContext requestContext) {
+    public MarksController(MarksService marksService) {
         this.marksService   = marksService;
-        this.requestContext = requestContext;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -65,8 +63,8 @@ public class MarksController {
             @PathVariable UUID subjectEntryId,
             @Valid @RequestBody BulkMarksEntryRequest request) {
 
-        UUID tenantId  = UUID.fromString(requestContext.getTenantId());
-        UUID enteredBy = requestContext.getUserId();
+        UUID tenantId  = UUID.fromString(RequestContext.getTenantId());
+        UUID enteredBy = RequestContext.getUserId();
 
         List<StudentMarkResponse> saved = marksService.bulkSave(
                 tenantId, schoolId, examId, subjectEntryId, request, enteredBy);
@@ -98,7 +96,7 @@ public class MarksController {
             @PathVariable UUID markId,
             @Valid @RequestBody MarksEntryRequest request) {
 
-        UUID enteredBy = requestContext.getUserId();
+        UUID enteredBy = RequestContext.getUserId();
 
         StudentMarkResponse updated = marksService.update(
                 schoolId, examId, subjectEntryId, markId, request, enteredBy);

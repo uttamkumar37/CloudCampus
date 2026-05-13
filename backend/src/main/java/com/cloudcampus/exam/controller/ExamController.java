@@ -61,11 +61,9 @@ import java.util.UUID;
 public class ExamController {
 
     private final ExamService examService;
-    private final RequestContext requestContext;
 
-    public ExamController(ExamService examService, RequestContext requestContext) {
+    public ExamController(ExamService examService) {
         this.examService    = examService;
-        this.requestContext = requestContext;
     }
 
     @Operation(summary = "Create a new exam")
@@ -74,7 +72,7 @@ public class ExamController {
             @PathVariable UUID schoolId,
             @Valid @RequestBody ExamCreateRequest request) {
 
-        UUID tenantId = UUID.fromString(requestContext.getTenantId());
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         ExamResponse body = examService.create(tenantId, schoolId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));

@@ -118,8 +118,9 @@ class FeeServiceImpl implements FeeService {
     @Override
     @Transactional(readOnly = true)
     public List<FeeStructureResponse> listStructures(UUID schoolId, UUID academicYearId) {
-        List<FeeStructure> structures = structureRepo
-                .findBySchoolIdAndAcademicYearId(schoolId, academicYearId);
+        List<FeeStructure> structures = academicYearId != null
+                ? structureRepo.findBySchoolIdAndAcademicYearId(schoolId, academicYearId)
+                : structureRepo.findBySchoolId(schoolId);
 
         // Batch-load categories to avoid N+1
         List<UUID> catIds = structures.stream()
@@ -178,9 +179,16 @@ class FeeServiceImpl implements FeeService {
     @Transactional(readOnly = true)
     public List<StudentFeeRecordResponse> listRecordsBySchool(UUID schoolId, UUID academicYearId,
                                                               FeeStatus status) {
-        List<StudentFeeRecord> records = status != null
-                ? recordRepo.findBySchoolIdAndAcademicYearIdAndStatus(schoolId, academicYearId, status)
-                : recordRepo.findBySchoolIdAndAcademicYearId(schoolId, academicYearId);
+        List<StudentFeeRecord> records;
+        if (academicYearId != null) {
+            records = status != null
+                    ? recordRepo.findBySchoolIdAndAcademicYearIdAndStatus(schoolId, academicYearId, status)
+                    : recordRepo.findBySchoolIdAndAcademicYearId(schoolId, academicYearId);
+        } else {
+            records = status != null
+                    ? recordRepo.findBySchoolIdAndStatus(schoolId, status)
+                    : recordRepo.findBySchoolId(schoolId);
+        }
         return enrichRecords(records);
     }
 

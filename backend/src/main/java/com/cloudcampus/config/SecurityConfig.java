@@ -4,6 +4,7 @@ import com.cloudcampus.auth.security.JwtAuthenticationFilter;
 import com.cloudcampus.common.tenant.TenantSuspensionFilter;
 import com.cloudcampus.common.web.JsonAuthEntryPoint;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -69,6 +70,30 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
+    }
+
+    /**
+     * Prevent Spring Boot from auto-registering these @Component filters as plain
+     * Servlet filters outside the Security filter chain. They must only run inside
+     * the chain (via addFilterBefore/addFilterAfter above), otherwise OncePerRequestFilter
+     * blocks their second execution inside the chain and the SecurityContext set by the
+     * Servlet-level run is wiped by SecurityContextHolderFilter, causing 401 on all
+     * authenticated endpoints.
+     */
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
+            JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> bean = new FilterRegistrationBean<>(filter);
+        bean.setEnabled(false);
+        return bean;
+    }
+
+    @Bean
+    public FilterRegistrationBean<TenantSuspensionFilter> tenantSuspensionFilterRegistration(
+            TenantSuspensionFilter filter) {
+        FilterRegistrationBean<TenantSuspensionFilter> bean = new FilterRegistrationBean<>(filter);
+        bean.setEnabled(false);
+        return bean;
     }
 
     @Bean

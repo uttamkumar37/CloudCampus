@@ -1,12 +1,12 @@
 # CloudCampus — Enterprise Master Architecture
 
-**Version:** v3 (E11 Finance complete — ongoing implementation)
-**Date:** 2026-05-12 (last updated: 2026-05-12 — E11 complete)
+**Version:** v4 (E28 Teacher/Student/Parent portals complete — API fully verified)
+**Date:** 2026-05-13 (last updated: 2026-05-13 — full API audit + E28 complete)
 **Status:** Living document — update on every architecture or stack decision
 
 ---
 
-## Implementation Status (as of 2026-05-12 — E11 Finance complete)
+## Implementation Status (as of 2026-05-13 — E28 complete, all APIs verified)
 
 ### Platform & Infrastructure
 
@@ -14,53 +14,71 @@
 |-------|-----------|--------|
 | Runtime | Java 21 LTS | ✅ Active |
 | Framework | Spring Boot 3.4.5 | ✅ Active |
-| Security | Spring Security 6.x (permit-all Phase 1) | ✅ Active |
-| Auth | JJWT 0.12.6 — `JwtUtil` + `JwtProperties` + `JwtAuthenticationFilter` | ✅ Active |
+| Security | Spring Security 6.x — **Full RBAC enforcement active** (CC-0113 complete) | ✅ Active |
+| Auth | JJWT 0.12.6 — `JwtUtil` + `JwtAuthenticationFilter` + `FilterRegistrationBean` fix | ✅ Active |
 | Password | `BCryptPasswordEncoder(12)` | ✅ Active |
 | Logging | logstash-logback-encoder 8.0 | ✅ Active |
 | Metrics | Micrometer + Prometheus | ✅ Active |
-| Migrations | Flyway 10 (V1–V24) | ✅ Active |
-| Cache | Spring Data Redis (lazy-connect) | ✅ Configured; active for auth/rate-limit |
-| Local dev infra | docker-compose.yml (PG16, Redis7, MinIO, MailHog) | ✅ Active |
-| Tenant resolution | Header-based (`X-Tenant-Id`) + JWT claim | ✅ Active |
+| Migrations | Flyway 10 (V1–V36) | ✅ Active |
+| Cache | Spring Data Redis — fail-open for auth, rate-limit, tenant suspension cache | ✅ Active |
+| Local dev infra | `application-local.yml` — local PG16 + Docker Redis | ✅ Active |
+| Tenant resolution | JWT claim (`tenant_id`) → `RequestContext` → Hibernate `@Filter` | ✅ Active |
+| Tenant suspension | `TenantSuspensionFilter` — Redis-cached 60s, fail-open on Redis down | ✅ Active |
 | Security headers | `SecurityHeadersFilter` (7 OWASP headers) | ✅ Active |
-| Rate limiting | `LoginRateLimiterService` — Redis sliding window | ✅ Active |
-| RBAC enforcement | `SecurityConfig` path matchers per role | ✅ Active |
+| Rate limiting | `LoginRateLimiterService` — Redis sliding window, fail-open | ✅ Active |
+| RBAC enforcement | `SecurityConfig` — path matchers + `@PreAuthorize` method-level | ✅ Active |
 
 ### Backend Domain Packages (`com.cloudcampus.*`)
 
 | Package | Domain | Entities / Key Classes | Status |
 |---------|--------|----------------------|--------|
-| `tenant` | Tenant lifecycle | `Tenant`, `TenantService`, `SuperAdminTenantController` | ✅ Active |
+| `tenant` | Tenant lifecycle | `Tenant`, `TenantService`, `SuperAdminTenantController` (suspend/activate) | ✅ Active |
 | `auth` | Authentication | `AuthController`, `AuthServiceImpl`, `JwtAuthenticationFilter`, `LoginRateLimiterService` | ✅ Active |
 | `audit` | Audit logging | `AuditLog`, `AuditLogService` (`@Async`), `AuditAction` enum | ✅ Active |
 | `feature` | Feature flags | `FeatureFlag`, `TenantFeature`, `FeatureFlagService`, `@RequiresFeature` AOP | ✅ Active |
-| `school` | School/Campus | `School`, `SchoolSettings`, `SchoolRepository` | ✅ Active |
-| `student` | Student lifecycle | `Student`, `StudentParentLink`, `StudentService`, `StudentController` | ✅ Active |
+| `school` | School/Campus | `School`, `SchoolSettings`, `AcademicYear`, `ClassRoom`, `Section`, `Subject`, `Department` | ✅ Active |
+| `student` | Student lifecycle | `Student`, `StudentParentLink`, `StudentController`, `ParentLinkController` | ✅ Active |
 | `staff` | Staff & HR | `Staff`, `StaffService`, `StaffController` | ✅ Active |
 | `attendance` | Attendance | `AttendanceSession`, `AttendanceRecord`, `AttendanceService`, `AttendanceController` | ✅ Active |
 | `finance` | Fees & Payments | `FeeCategory`, `FeeStructure`, `StudentFeeRecord`, `FeePayment`, `FeeService`, `FeeController` | ✅ Active |
-| `notification` | Notifications | Stub — communication channels pending (CC-1001–1003) | 🔴 Stub |
-| `config` | App configuration | `JwtProperties`, `AsyncConfig`, `SecurityConfig` | ✅ Active |
-| `common` | Shared utilities | `ApiResponse`, `ApiError`, `PageResponse`, `RequestContext`, `RestExceptionHandler` | ✅ Active |
+| `exam` | Examinations | `Exam`, `ExamSubject`, `StudentMark`, `ExamResult`, `ExamController`, `MarksController`, `ResultController` | ✅ Active |
+| `timetable` | Timetable | `TimetableSlot`, `TimetableService`, `TimetableController`, `TeacherTimetableController` | ✅ Active |
+| `homework` | Homework | `HomeworkAssignment`, `HomeworkSubmission`, `HomeworkController`, `StudentHomeworkController`, `TeacherHomeworkController` | ✅ Active |
+| `assignment` | Assignments | `Assignment`, `AssignmentSubmission`, `AssignmentController` | ✅ Active |
+| `notice` | Notice Board | `SchoolNotice`, `NoticeController` | ✅ Active |
+| `mobile` | Parent Portal | `ParentController` — children, attendance, results | ✅ Active |
+| `notification` | Notifications | `NotificationLog`, `NotificationService`, `WhatsAppMessageLog`, `WhatsAppService` | ✅ Active |
+| `config` | App configuration | `JwtProperties`, `RateLimitProperties`, `OtpProperties`, `AsyncConfig`, `SecurityConfig` | ✅ Active |
+| `common` | Shared utilities | `ApiResponse`, `ApiError`, `PageResponse`, `RequestContext`, `TenantSuspensionFilter` | ✅ Active |
 
 ### Frontend (`React 19 + TypeScript + Vite`)
 
-| Feature | Pages / Components | Status |
-|---------|-------------------|--------|
-| `auth` | Login, token store, Axios interceptor, refresh flow | ✅ Active |
-| `school-admin` | Dashboard, layout/nav with feature-flag menu | ✅ Active |
-| `school-admin` | Academic year, class, section, subject management | ✅ Active |
-| `student` | Student list, admit, profile (with parent links) | ✅ Active |
+| Feature | Pages / Routes | Status |
+|---------|---------------|--------|
+| `auth` | `/login` — Login, forgot/reset password, token store, Axios interceptor + refresh | ✅ Active |
+| `super-admin` | `/super-admin/dashboard`, `/tenants`, `/tenants/new`, `/tenants/:id` | ✅ Active |
+| `school-admin` | Dashboard, academic years, classes, sections, subjects, departments | ✅ Active |
+| `student` | Student list, admit, bulk import CSV, profile (with parent links) | ✅ Active |
 | `staff` | Staff list, create, profile | ✅ Active |
 | `attendance` | Session list, create session, mark attendance | ✅ Active |
 | `finance` | Fee structure list/create, fee collection, student fee detail + receipt | ✅ Active |
-| `super-admin` | Tenant list, tenant create | ✅ Active |
-| `reports` | Stub pages | 🔴 Stub |
-| `exams` | Stub pages | 🔴 Stub |
-| `communication` | Stub pages | 🔴 Stub |
+| `exam` | Exam list/create/detail, marks entry spreadsheet, results, report card | ✅ Active |
+| `timetable` | Weekly grid (Mon–Sat × Period 1–8), add/delete slot, teacher conflict detection | ✅ Active |
+| `homework` | Homework list (filters + overdue badge), create, status advance | ✅ Active |
+| `assignment` | Assignment list, create, detail (inline grade modal, submissions table) | ✅ Active |
+| `notice-board` | Notice board list and detail | ✅ Active |
+| `teacher` | `/teacher/timetable` — Teacher self-service timetable view | ✅ Active |
+| `notification` | Notification log (3 tabs), WhatsApp log + send | ✅ Active |
+| `settings` | School settings page | ✅ Active |
+| `reports` | Stub page | 🔴 Stub |
+| `communication` | Stub page | 🔴 Stub |
+| Student portal | Student homework list, submit (backend complete, no frontend page yet) | 🟡 Backend only |
+| Parent portal | Parent children, attendance, results (backend complete, no frontend page yet) | 🟡 Backend only |
 
-**Build:** `npm run build` → **249 modules, 0 errors** (as of E11)
+**Build:** `npm run build` → **287 modules, 0 errors** (as of 2026-05-13)
+**Dev server:** `npm run dev` → `http://localhost:5174`
+**Backend:** `SPRING_PROFILES_ACTIVE=local mvn spring-boot:run` → `http://localhost:8080`
+**CORS:** Configured for `http://localhost:*` and `https://*.cloudcampus.io`
 
 ---
 
@@ -272,7 +290,7 @@ jpa:
 
 **HikariCP (dev):** pool size 10, min-idle 2, connection-timeout 3s.
 
-#### Database Migrations (V1–V24)
+#### Database Migrations (V1–V36)
 
 | Migration | File | Change |
 |-----------|------|--------|
@@ -300,6 +318,18 @@ jpa:
 | V22 | `V22__create_fee_categories.sql` | `fee_categories` — fee head definitions per school |
 | V23 | `V23__create_fee_structures.sql` | `fee_structures` — amount/frequency per category/class/year |
 | V24 | `V24__create_fee_payments.sql` | `student_fee_records` (invoices) + `fee_payments` (transactions) |
+| V25 | `V25__create_notification_logs.sql` | `notification_logs` — SMS/email/push delivery log |
+| V26 | `V26__create_whatsapp_message_logs.sql` | `whatsapp_message_logs` — WhatsApp dispatch records |
+| V27 | `V27__create_exams.sql` | `exams` table — status lifecycle DRAFT→SCHEDULED→ONGOING→COMPLETED |
+| V28 | `V28__create_exam_subjects.sql` | `exam_subjects` — per-class/subject paper entries |
+| V29 | `V29__create_student_marks.sql` | `student_marks` — per-student per-paper marks with absent flag |
+| V30 | `V30__create_exam_results.sql` | `exam_results` — aggregated result with grade, rank, pass/fail |
+| V31 | `V31__create_timetable.sql` | `timetable_slots` — weekly schedule, UNIQUE per section+day+period |
+| V32 | `V32__create_homework.sql` | `homework_assignments` — DRAFT/PUBLISHED/CLOSED lifecycle |
+| V33 | `V33__create_assignments.sql` | `assignments` + `assignment_submissions` — graded workflow |
+| V34 | `V34__create_school_notices.sql` | `school_notices` — notice board entries |
+| V35 | `V35__create_homework_submissions.sql` | `homework_submissions` — student submit → teacher review |
+| V36 | `V36__fix_notice_priority_type.sql` | Fix `priority` column SMALLINT → INTEGER for Hibernate |
 
 ### Cache Layer
 

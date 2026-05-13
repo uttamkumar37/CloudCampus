@@ -38,11 +38,9 @@ import java.util.UUID;
 public class ResultController {
 
     private final ResultService  resultService;
-    private final RequestContext requestContext;
 
-    public ResultController(ResultService resultService, RequestContext requestContext) {
+    public ResultController(ResultService resultService) {
         this.resultService  = resultService;
-        this.requestContext = requestContext;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -53,7 +51,7 @@ public class ResultController {
             @PathVariable UUID schoolId,
             @PathVariable UUID examId) {
 
-        UUID tenantId = UUID.fromString(requestContext.getTenantId());
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
 
         List<ExamResultResponse> results = resultService.generate(tenantId, schoolId, examId);
 

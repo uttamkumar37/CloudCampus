@@ -13,6 +13,10 @@ public interface StudentFeeRecordRepository extends JpaRepository<StudentFeeReco
 
     List<StudentFeeRecord> findByStudentIdAndAcademicYearId(UUID studentId, UUID academicYearId);
 
+    List<StudentFeeRecord> findBySchoolId(UUID schoolId);
+
+    List<StudentFeeRecord> findBySchoolIdAndStatus(UUID schoolId, FeeStatus status);
+
     List<StudentFeeRecord> findBySchoolIdAndAcademicYearId(UUID schoolId, UUID academicYearId);
 
     List<StudentFeeRecord> findBySchoolIdAndAcademicYearIdAndStatus(

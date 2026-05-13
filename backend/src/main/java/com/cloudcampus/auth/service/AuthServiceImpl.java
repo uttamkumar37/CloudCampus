@@ -228,11 +228,16 @@ public class AuthServiceImpl implements AuthService {
      */
     private String issueRefreshToken(UUID userId) {
         String token = UUID.randomUUID().toString();
-        redisTemplate.opsForValue().set(
-                RT_KEY_PREFIX + token,
-                userId.toString(),
-                Duration.ofSeconds(jwtProperties.refreshTokenExpirySeconds())
-        );
+        try {
+            redisTemplate.opsForValue().set(
+                    RT_KEY_PREFIX + token,
+                    userId.toString(),
+                    Duration.ofSeconds(jwtProperties.refreshTokenExpirySeconds())
+            );
+        } catch (Exception e) {
+            // Fail-open: access token still works; refresh will fail if Redis is down.
+            log.warn("Could not persist refresh token in Redis (Redis down?): {}", e.getMessage());
+        }
         return token;
     }
 }
