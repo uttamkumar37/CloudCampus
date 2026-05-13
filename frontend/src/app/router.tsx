@@ -51,6 +51,8 @@ import { TeacherLayout } from '@/features/teacher/layouts/TeacherLayout';
 import TeacherTimetablePage from '@/features/teacher/pages/TeacherTimetablePage';
 import TeacherHomeworkListPage from '@/features/teacher/pages/TeacherHomeworkListPage';
 import TeacherHomeworkSubmissionsPage from '@/features/teacher/pages/TeacherHomeworkSubmissionsPage';
+import TeacherAssignmentListPage from '@/features/teacher/pages/TeacherAssignmentListPage';
+import TeacherAssignmentSubmissionsPage from '@/features/teacher/pages/TeacherAssignmentSubmissionsPage';
 
 /**
  * Application router.
@@ -147,6 +149,8 @@ export function AppRouter() {
           <Route path="timetable" element={<TeacherTimetablePage />} />
           <Route path="homework" element={<TeacherHomeworkListPage />} />
           <Route path="homework/:homeworkId/submissions" element={<TeacherHomeworkSubmissionsPage />} />
+          <Route path="assignments" element={<TeacherAssignmentListPage />} />
+          <Route path="assignments/:assignmentId/submissions" element={<TeacherAssignmentSubmissionsPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}
