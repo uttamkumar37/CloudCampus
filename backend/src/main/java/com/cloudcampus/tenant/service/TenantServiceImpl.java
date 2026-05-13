@@ -8,6 +8,7 @@ import com.cloudcampus.common.web.Pagination;
 import com.cloudcampus.school.entity.School;
 import com.cloudcampus.school.entity.SchoolStatus;
 import com.cloudcampus.school.repository.SchoolRepository;
+import com.cloudcampus.school.service.SchoolSettingsService;
 import com.cloudcampus.tenant.dto.SuperAdminStatsResponse;
 import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.TenantResponse;
@@ -30,10 +31,13 @@ public class TenantServiceImpl implements TenantService {
 
     private final TenantRepository tenantRepository;
     private final SchoolRepository schoolRepository;
+    private final SchoolSettingsService schoolSettingsService;
 
-    public TenantServiceImpl(TenantRepository tenantRepository, SchoolRepository schoolRepository) {
+    public TenantServiceImpl(TenantRepository tenantRepository, SchoolRepository schoolRepository,
+                             SchoolSettingsService schoolSettingsService) {
         this.tenantRepository = tenantRepository;
         this.schoolRepository = schoolRepository;
+        this.schoolSettingsService = schoolSettingsService;
     }
 
     @Override
@@ -76,6 +80,7 @@ public class TenantServiceImpl implements TenantService {
                 tenant.getCreatedAt()
         );
         schoolRepository.save(defaultSchool);
+        schoolSettingsService.initDefaults(tenant.getId(), defaultSchool.getId());
 
         return toResponse(tenant);
     }
