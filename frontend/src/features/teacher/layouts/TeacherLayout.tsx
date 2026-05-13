@@ -3,6 +3,7 @@ import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 const NAV = [
   { label: 'Timetable', to: '/teacher/timetable' },
+  { label: 'Homework',  to: '/teacher/homework'   },
 ];
 
 export function TeacherLayout() {

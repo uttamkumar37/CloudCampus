@@ -34,6 +34,9 @@ public interface HomeworkRepository extends JpaRepository<HomeworkAssignment, UU
 
     Optional<HomeworkAssignment> findBySchoolIdAndId(UUID schoolId, UUID id);
 
+    Page<HomeworkAssignment> findBySchoolIdAndAssignedByOrderByCreatedAtDesc(
+            UUID schoolId, UUID assignedBy, Pageable pageable);
+
     /** Published homework targeting a class; section match is inclusive (null sectionId = whole class). */
     @Query("""
            SELECT h FROM HomeworkAssignment h
