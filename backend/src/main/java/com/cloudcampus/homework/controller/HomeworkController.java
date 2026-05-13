@@ -77,7 +77,7 @@ public class HomeworkController {
     @GetMapping
     public ApiResponse<PageResponse<HomeworkResponse>> list(
             @PathVariable UUID schoolId,
-            @RequestParam UUID academicYearId,
+            @RequestParam(required = false) UUID academicYearId,
             @RequestParam(required = false) UUID classId,
             @RequestParam(required = false) UUID sectionId,
             @RequestParam(required = false) HomeworkStatus status,

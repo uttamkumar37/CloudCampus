@@ -10,8 +10,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.ParamDef;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -37,10 +35,6 @@ import java.util.UUID;
                 name = "uq_student_parent_link",
                 columnNames = {"student_id", "parent_user_id"}
         )
-)
-@FilterDef(
-        name = TenantFilter.NAME,
-        parameters = @ParamDef(name = TenantFilter.PARAM, type = UUID.class)
 )
 @Filter(name = TenantFilter.NAME, condition = TenantFilter.CONDITION)
 public class StudentParentLink {

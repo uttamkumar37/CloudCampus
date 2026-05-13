@@ -85,22 +85,31 @@ public class LoginRateLimiterService {
         long nowMs       = System.currentTimeMillis();
         long windowStart = nowMs - (windowSeconds * 1_000L);
 
-        // 1. Evict entries outside the window.
-        redisTemplate.opsForZSet().removeRangeByScore(key, 0, windowStart);
+        try {
+            // 1. Evict entries outside the window.
+            redisTemplate.opsForZSet().removeRangeByScore(key, 0, windowStart);
 
-        // 2. Count remaining entries in the window.
-        Long count = redisTemplate.opsForZSet().zCard(key);
-        if (count != null && count >= maxAttempts) {
-            log.warn("Rate limit exceeded [key={}]", redactKey(key));
-            throw new TooManyRequestsException("Too many requests. Please try again later.");
+            // 2. Count remaining entries in the window.
+            Long count = redisTemplate.opsForZSet().zCard(key);
+            if (count != null && count >= maxAttempts) {
+                log.warn("Rate limit exceeded [key={}]", redactKey(key));
+                throw new TooManyRequestsException("Too many requests. Please try again later.");
+            }
+
+            // 3. Record this attempt — member is unique UUID to avoid zset deduplication.
+            String member = nowMs + ":" + UUID.randomUUID();
+            redisTemplate.opsForZSet().add(key, member, nowMs);
+
+            // 4. Refresh TTL so the key doesn't stay in Redis after the window expires.
+            redisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
+        } catch (TooManyRequestsException e) {
+            throw e; // always propagate rate-limit rejections
+        } catch (Exception e) {
+            // Fail-open: if Redis is unavailable, allow the request through.
+            // BCrypt cost (≈300 ms) still acts as a rate-limit deterrent.
+            log.warn("Rate limiter unavailable (Redis down?), failing open [key={}]: {}",
+                     redactKey(key), e.getMessage());
         }
-
-        // 3. Record this attempt — member is unique UUID to avoid zset deduplication.
-        String member = nowMs + ":" + UUID.randomUUID();
-        redisTemplate.opsForZSet().add(key, member, nowMs);
-
-        // 4. Refresh TTL so the key doesn't stay in Redis after the window expires.
-        redisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
     }
 
     /**

@@ -12,8 +12,6 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.ParamDef;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -40,10 +38,6 @@ import java.util.UUID;
                 name = "uq_staff_school_employee_number",
                 columnNames = {"school_id", "employee_number"}
         )
-)
-@FilterDef(
-        name = TenantFilter.NAME,
-        parameters = @ParamDef(name = TenantFilter.PARAM, type = UUID.class)
 )
 @Filter(name = TenantFilter.NAME, condition = TenantFilter.CONDITION)
 public class Staff {

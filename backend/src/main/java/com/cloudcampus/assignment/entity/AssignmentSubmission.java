@@ -10,8 +10,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.ParamDef;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -27,10 +25,6 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "assignment_submissions")
-@FilterDef(
-        name = TenantFilter.NAME,
-        parameters = @ParamDef(name = TenantFilter.PARAM, type = UUID.class)
-)
 @Filter(name = TenantFilter.NAME, condition = TenantFilter.CONDITION)
 public class AssignmentSubmission {
 

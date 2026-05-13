@@ -39,14 +39,7 @@ spring:
       connect-timeout: 1s
       timeout: 500ms
 
-# ── OpenAPI / Swagger UI — enabled in dev only ────────────────────────────────
-springdoc:
-  api-docs:
-    enabled: true
-  swagger-ui:
-    enabled: true
-# ── Mail — MailHog SMTP catcher (docker-compose localhost:1025) ────────────────
-spring:
+  # ── Mail — MailHog SMTP catcher (docker-compose localhost:1025) ─────────────
   mail:
     host: localhost
     port: 1025
@@ -56,3 +49,10 @@ spring:
           auth: false
           starttls:
             enable: false
+
+# ── OpenAPI / Swagger UI — enabled in dev only ────────────────────────────────
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

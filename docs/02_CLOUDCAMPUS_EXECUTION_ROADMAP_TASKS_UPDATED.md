@@ -4,14 +4,28 @@
 
 ---
 
-## Progress Summary (as of 2026-05-12 — E20 Assignment Engine complete)
+## Progress Summary (as of 2026-05-13 — E28 Bug Fixes & Full API Audit)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | 64 (33.2%) |
+| **Completed** | 69 (35.8%) |
 | **In Progress** | 0 |
-| **Not Started** | 131 |
+| **Not Started** | 124 |
+
+### E28 Completions — Bug Fixes, Full API Audit & System Hardening (2026-05-13)
+
+| Task | What was built / fixed |
+|------|----------------------|
+| BF-001 ✅ | **TenantSuspensionFilter Redis fail-open** — Root cause of 401 UNAUTHORIZED for all tenant-scoped roles (TEACHER/STUDENT/PARENT): `redis.opsForValue().get(key)` was outside the try-catch in `resolveStatus()`. When Redis is unavailable, this threw `RedisConnectionException` which Spring error-dispatched to `/error`, where `AnonymousAuthenticationFilter` reset the SecurityContext → all tenant-scoped users got 401. Fix: moved Redis GET inside existing try-catch; fail-open returns `ACTIVE` for availability. SUPER_ADMIN was unaffected (no tenant_id → filter skipped). |
+| BF-002 ✅ | **SecurityConfig FilterRegistrationBean** — Added `FilterRegistrationBean<JwtAuthenticationFilter>` and `FilterRegistrationBean<TenantSuspensionFilter>` beans with `setEnabled(false)` to prevent Spring Boot from auto-registering `@Component`-annotated filters as plain Servlet filters in addition to the `addFilterBefore()` chain registration. |
+| BF-003 ✅ | **ExamType MIDTERM enum** — Seed data had `exam_type = 'MIDTERM'` but `ExamType` enum lacked it, causing `IllegalArgumentException` on exam queries. Added `MIDTERM` between `UNIT_TEST` and `TERM`. |
+| BF-004 ✅ | **Optional `academicYearId` in Homework** — `GET /v1/school-admin/schools/{schoolId}/homework` rejected requests without `academicYearId`. Made param `required = false` in `HomeworkController`; updated JPQL with `(:academicYearId IS NULL OR h.academicYearId = :academicYearId)`. |
+| BF-005 ✅ | **Optional `academicYearId` in Assignments** — Same fix for `AssignmentController` and `AssignmentRepository`. |
+| BF-006 ✅ | **Optional `academicYearId` in FeeStructures** — `FeeStructureRepository.findBySchoolId()` added; `FeeController.listStructures` made `academicYearId` optional; `FeeServiceImpl` null-safe branching. |
+| BF-007 ✅ | **Optional `academicYearId` + `status` in FeeRecords** — `StudentFeeRecordRepository` gained `findBySchoolId()` and `findBySchoolIdAndStatus()`; `FeeController.listRecordsBySchool` made both params optional; `FeeServiceImpl` null-safe 4-branch logic. |
+| AUDIT ✅ | **Full backend API audit** — All 35 endpoints across 13 modules verified to return HTTP 2xx with valid JWT: auth (3), tenants (3), schools (2), academic-years/classes/sections/subjects (8), students (4), staff (2), attendance (3), fees (5), timetable (1), homework (1), assignments (1), exams (2). Zero failures after fixes above. |
+| FRONTEND ✅ | **Frontend build verified** — `npm run build` (Vite) → **287 modules, 0 errors, 0 warnings**. CORS confirmed: backend allows `http://localhost:5174`, all preflight requests succeed. |
 
 ### E20 Completions — Assignment Engine (CC-0703)
 
@@ -255,7 +269,7 @@ Notes/Risks:
 | CC-0113 | Role-based authorization | P0 | ✅ COMPLETED | `SecurityConfig` matchers — `/v1/super-admin/**` (SUPER_ADMIN), `/v1/admin/**` (TENANT_ADMIN+), `/v1/school-admin/**` (SCHOOL_ADMIN+), `anyRequest().authenticated()` |
 | CC-0114 | Permission middleware | P0 | ✅ COMPLETED | `JsonAuthEntryPoint` — JSON `ApiResponse` 401/403 for Spring Security rejections |
 | CC-0115 | API security middleware | P0 | NOT_STARTED | Depends on CC-0102, CC-0114 |
-| CC-0116 | Password policy + account lockout | P1 | 🔄 IN_PROGRESS | `LoginRateLimiterService` (Redis sliding window, 429) + `RateLimitProperties` done (A4); full account lockout (N-strikes suspend) + complexity rules pending |
+| CC-0116 | Password policy + account lockout | P1 | 🔄 IN_PROGRESS | `LoginRateLimiterService` (Redis sliding window, 429, fail-open) + `RateLimitProperties` done; full account lockout (N-strikes suspend) + password complexity rules pending |
 | CC-0117 | Session revocation strategy | P1 | NOT_STARTED | Redis token blacklist or JTI revocation |
 | CC-0118 | Security headers + CORS policy | P1 | ✅ COMPLETED | `SecurityHeadersFilter` (7 headers), `SecurityConfig` CORS with origin allowlist |
 
@@ -269,7 +283,7 @@ Notes/Risks:
 | CC-0202 | Tenant resolver middleware | P0 | ✅ COMPLETED | `HeaderTenantResolver`, `TenantContextFilter`, `RequestContext` |
 | CC-0203 | Tenant-aware database filters | P0 | ✅ COMPLETED | `TenantFilter` constants + `TenantFilterAspect` (`@Before` AOP); `@Filter`+`@FilterDef(UUID)` on `User`, `School`, `AuditLog`; `@FilterDef` declared once on `User` (Hibernate 6 constraint) |
 | CC-0204 | Tenant onboarding flow | P0 | 🔄 IN_PROGRESS | `SuperAdminTenantController` + `TenantServiceImpl` done; full onboarding wizard + validation pending |
-| CC-0205 | Tenant suspension system | P1 | NOT_STARTED | `TenantSuspendedException` created; suspension API + enforcement pending |
+| CC-0205 | Tenant suspension system | P1 | 🔄 IN_PROGRESS | `TenantSuspensionFilter` (Redis-cached, fail-open) + `TenantSuspendedException` enforced; suspension API (PATCH /tenants/{id}/suspend) + admin UI pending |
 | CC-0206 | Tenant branding engine | P1 | NOT_STARTED | — |
 | CC-0207 | Tenant configuration engine | P0 | NOT_STARTED | — |
 | CC-0208 | Tenant theme management | P2 | NOT_STARTED | — |

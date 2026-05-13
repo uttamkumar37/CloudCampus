@@ -8,8 +8,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.ParamDef;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -30,10 +28,6 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "attendance_sessions")
-@FilterDef(
-        name = TenantFilter.NAME,
-        parameters = @ParamDef(name = TenantFilter.PARAM, type = UUID.class)
-)
 @Filter(name = TenantFilter.NAME, condition = TenantFilter.CONDITION)
 public class AttendanceSession {
 
@@ -71,7 +65,7 @@ public class AttendanceSession {
      * 0 = whole-day, 1-12 = specific class period.
      */
     @Column(name = "period_number", nullable = false)
-    private int periodNumber;
+    private short periodNumber;
 
     @Column(name = "is_finalized", nullable = false)
     private boolean finalized;
@@ -107,7 +101,7 @@ public class AttendanceSession {
         s.classId        = classId;
         s.academicYearId = academicYearId;
         s.sessionDate    = sessionDate;
-        s.periodNumber   = periodNumber;
+        s.periodNumber   = (short) periodNumber;
         s.finalized      = false;
         return s;
     }

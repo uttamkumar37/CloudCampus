@@ -16,7 +16,7 @@ public interface AssignmentRepository extends JpaRepository<Assignment, UUID> {
     @Query("""
             SELECT a FROM Assignment a
              WHERE a.schoolId = :schoolId
-               AND a.academicYearId = :academicYearId
+               AND (:academicYearId IS NULL OR a.academicYearId = :academicYearId)
                AND (:classId   IS NULL OR a.classId   = :classId)
                AND (:sectionId IS NULL OR a.sectionId = :sectionId)
                AND (:status    IS NULL OR a.status    = :status)

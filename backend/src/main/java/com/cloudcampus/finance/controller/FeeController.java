@@ -118,7 +118,7 @@ public class FeeController {
     @GetMapping("/schools/{schoolId}/fee-structures")
     public ResponseEntity<ApiResponse<List<FeeStructureResponse>>> listStructures(
             @PathVariable UUID schoolId,
-            @RequestParam UUID academicYearId) {
+            @RequestParam(required = false) UUID academicYearId) {
         List<FeeStructureResponse> body = service.listStructures(schoolId, academicYearId);
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
     }
@@ -149,7 +149,7 @@ public class FeeController {
     @GetMapping("/schools/{schoolId}/fee-records")
     public ResponseEntity<ApiResponse<List<StudentFeeRecordResponse>>> listRecordsBySchool(
             @PathVariable UUID schoolId,
-            @RequestParam UUID academicYearId,
+            @RequestParam(required = false) UUID academicYearId,
             @RequestParam(required = false) FeeStatus status) {
         List<StudentFeeRecordResponse> body = service.listRecordsBySchool(schoolId, academicYearId, status);
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));

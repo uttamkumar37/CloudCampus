@@ -5,6 +5,7 @@ package com.cloudcampus.exam.entity;
  */
 public enum ExamType {
     UNIT_TEST,
+    MIDTERM,
     TERM,
     HALF_YEARLY,
     ANNUAL,

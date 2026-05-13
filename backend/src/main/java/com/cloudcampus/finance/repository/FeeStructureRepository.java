@@ -8,6 +8,8 @@ import java.util.UUID;
 
 public interface FeeStructureRepository extends JpaRepository<FeeStructure, UUID> {
 
+    List<FeeStructure> findBySchoolId(UUID schoolId);
+
     List<FeeStructure> findBySchoolIdAndAcademicYearId(UUID schoolId, UUID academicYearId);
 
     List<FeeStructure> findBySchoolIdAndAcademicYearIdAndClassId(

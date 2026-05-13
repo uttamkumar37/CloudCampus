@@ -18,7 +18,7 @@ public interface HomeworkRepository extends JpaRepository<HomeworkAssignment, UU
     @Query("""
             SELECT h FROM HomeworkAssignment h
              WHERE h.schoolId = :schoolId
-               AND h.academicYearId = :academicYearId
+               AND (:academicYearId IS NULL OR h.academicYearId = :academicYearId)
                AND (:classId   IS NULL OR h.classId   = :classId)
                AND (:sectionId IS NULL OR h.sectionId = :sectionId)
                AND (:status    IS NULL OR h.status    = :status)

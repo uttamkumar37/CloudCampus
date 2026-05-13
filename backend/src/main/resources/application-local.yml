@@ -1,0 +1,50 @@
+# ── LOCAL profile ─────────────────────────────────────────────────────────────
+# Uses Docker PostgreSQL (docker compose up postgres redis) instead of H2.
+# Run with: SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cloudcampus
+    username: cloudcampus
+    password: cloudcampus_dev
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 3000
+      pool-name: cloudcampus-local-pool
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      connect-timeout: 1s
+      timeout: 500ms
+
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
