@@ -53,6 +53,12 @@ import TeacherHomeworkListPage from '@/features/teacher/pages/TeacherHomeworkLis
 import TeacherHomeworkSubmissionsPage from '@/features/teacher/pages/TeacherHomeworkSubmissionsPage';
 import TeacherAssignmentListPage from '@/features/teacher/pages/TeacherAssignmentListPage';
 import TeacherAssignmentSubmissionsPage from '@/features/teacher/pages/TeacherAssignmentSubmissionsPage';
+import { StudentLayout } from '@/features/student/layouts/StudentLayout';
+import StudentDashboardPage from '@/features/student/pages/StudentDashboardPage';
+import StudentHomeworkPage from '@/features/student/pages/StudentHomeworkPage';
+import StudentAssignmentsPage from '@/features/student/pages/StudentAssignmentsPage';
+import StudentTimetablePage from '@/features/student/pages/StudentTimetablePage';
+import StudentNoticesPage from '@/features/student/pages/StudentNoticesPage';
 
 /**
  * Application router.
@@ -151,6 +157,23 @@ export function AppRouter() {
           <Route path="homework/:homeworkId/submissions" element={<TeacherHomeworkSubmissionsPage />} />
           <Route path="assignments" element={<TeacherAssignmentListPage />} />
           <Route path="assignments/:assignmentId/submissions" element={<TeacherAssignmentSubmissionsPage />} />
+        </Route>
+
+        {/* Student portal — STUDENT role required */}
+        <Route
+          path="/student"
+          element={
+            <ProtectedRoute roles={['STUDENT']}>
+              <StudentLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<StudentDashboardPage />} />
+          <Route path="homework" element={<StudentHomeworkPage />} />
+          <Route path="assignments" element={<StudentAssignmentsPage />} />
+          <Route path="timetable" element={<StudentTimetablePage />} />
+          <Route path="notices" element={<StudentNoticesPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}

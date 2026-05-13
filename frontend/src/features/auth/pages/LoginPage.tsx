@@ -45,7 +45,14 @@ export function LoginPage() {
       if (data.requiresPasswordChange) {
         navigate('/change-password', { replace: true });
       } else {
-        navigate('/app/dashboard', { replace: true });
+        const role = data.role as string;
+        const dest =
+          role === 'SUPER_ADMIN'  ? '/super-admin/dashboard' :
+          role === 'SCHOOL_ADMIN' ? '/school-admin/dashboard' :
+          role === 'TEACHER'      ? '/teacher/timetable' :
+          role === 'STUDENT'      ? '/student/dashboard' :
+          '/app/dashboard';
+        navigate(dest, { replace: true });
       }
     },
   });
