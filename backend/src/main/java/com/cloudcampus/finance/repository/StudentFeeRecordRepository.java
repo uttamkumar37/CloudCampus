@@ -23,4 +23,6 @@ public interface StudentFeeRecordRepository extends JpaRepository<StudentFeeReco
             UUID schoolId, UUID academicYearId, FeeStatus status);
 
     boolean existsByStudentIdAndFeeStructureId(UUID studentId, UUID feeStructureId);
+
+    long countBySchoolIdAndStatus(UUID schoolId, FeeStatus status);
 }

@@ -33,4 +33,6 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, UUID
             UUID schoolId, LeaveStatus status);
 
     Optional<LeaveRequest> findBySchoolIdAndId(UUID schoolId, UUID id);
+
+    long countBySchoolIdAndStatus(UUID schoolId, LeaveStatus status);
 }
