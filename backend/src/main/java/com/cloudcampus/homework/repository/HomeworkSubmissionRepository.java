@@ -14,4 +14,6 @@ public interface HomeworkSubmissionRepository extends JpaRepository<HomeworkSubm
     List<HomeworkSubmission> findAllByHomeworkIdOrderBySubmittedAtAsc(UUID homeworkId);
 
     boolean existsByHomeworkIdAndStudentId(UUID homeworkId, UUID studentId);
+
+    long countByHomeworkId(UUID homeworkId);
 }

@@ -49,6 +49,8 @@ import { TenantDetailPage } from '@/features/super-admin/pages/TenantDetailPage'
 import { SchoolSettingsPage } from '@/features/school-admin/pages/SchoolSettingsPage';
 import { TeacherLayout } from '@/features/teacher/layouts/TeacherLayout';
 import TeacherTimetablePage from '@/features/teacher/pages/TeacherTimetablePage';
+import TeacherHomeworkListPage from '@/features/teacher/pages/TeacherHomeworkListPage';
+import TeacherHomeworkSubmissionsPage from '@/features/teacher/pages/TeacherHomeworkSubmissionsPage';
 
 /**
  * Application router.
@@ -143,6 +145,8 @@ export function AppRouter() {
         >
           <Route index element={<Navigate to="timetable" replace />} />
           <Route path="timetable" element={<TeacherTimetablePage />} />
+          <Route path="homework" element={<TeacherHomeworkListPage />} />
+          <Route path="homework/:homeworkId/submissions" element={<TeacherHomeworkSubmissionsPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}
