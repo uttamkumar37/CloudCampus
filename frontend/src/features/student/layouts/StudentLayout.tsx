@@ -6,6 +6,8 @@ const NAV = [
   { label: 'Homework',    to: '/student/homework'    },
   { label: 'Assignments', to: '/student/assignments' },
   { label: 'Timetable',  to: '/student/timetable'   },
+  { label: 'Results',    to: '/student/results'     },
+  { label: 'Fees',       to: '/student/fees'        },
   { label: 'Notices',    to: '/student/notices'     },
 ];
 

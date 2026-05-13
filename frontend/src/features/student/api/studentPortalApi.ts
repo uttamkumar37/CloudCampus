@@ -108,3 +108,53 @@ export async function getMyNotices(page = 0): Promise<NoticePage> {
     '/v1/mobile/notices', { params: { page, limit: 20 } });
   return data.data!;
 }
+
+// ── Exam Results ──────────────────────────────────────────────────────────────
+
+export interface StudentResultSummary {
+  resultId:            string;
+  examId:              string;
+  examName:            string;
+  examType:            string | null;
+  examStatus:          string | null;
+  totalMarksObtained:  number;
+  totalMarksPossible:  number;
+  percentage:          number;
+  grade:               string | null;
+  rank:                number | null;
+  passed:              boolean;
+  generatedAt:         string;
+}
+
+export async function getMyResults(): Promise<StudentResultSummary[]> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentResultSummary[]>>('/v1/student/results');
+  return data.data ?? [];
+}
+
+// ── Fees ──────────────────────────────────────────────────────────────────────
+
+export type FeeStatus = 'PENDING' | 'PARTIAL' | 'PAID' | 'WAIVED' | 'OVERDUE';
+
+export interface StudentFeeRecord {
+  id:             string;
+  schoolId:       string;
+  studentId:      string;
+  feeStructureId: string;
+  categoryName:   string;
+  academicYearId: string;
+  amountDue:      number;
+  amountPaid:     number;
+  discount:       number;
+  balance:        number;
+  dueDate:        string;
+  status:         FeeStatus;
+  notes:          string | null;
+  createdAt:      string;
+  updatedAt:      string;
+}
+
+export async function getMyFees(academicYearId?: string): Promise<StudentFeeRecord[]> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentFeeRecord[]>>(
+    '/v1/student/fees', { params: academicYearId ? { academicYearId } : {} });
+  return data.data ?? [];
+}
