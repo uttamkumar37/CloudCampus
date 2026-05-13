@@ -51,6 +51,7 @@ export function LoginPage() {
           role === 'SCHOOL_ADMIN' ? '/school-admin/dashboard' :
           role === 'TEACHER'      ? '/teacher/timetable' :
           role === 'STUDENT'      ? '/student/dashboard' :
+          role === 'PARENT'       ? '/parent/dashboard' :
           '/app/dashboard';
         navigate(dest, { replace: true });
       }

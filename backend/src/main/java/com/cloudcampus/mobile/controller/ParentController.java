@@ -8,11 +8,17 @@ import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.exam.dto.ExamResultResponse;
 import com.cloudcampus.exam.repository.ExamResultRepository;
+import com.cloudcampus.homework.dto.HomeworkResponse;
+import com.cloudcampus.homework.repository.HomeworkRepository;
+import com.cloudcampus.school.entity.AcademicYear;
 import com.cloudcampus.school.entity.School;
+import com.cloudcampus.school.repository.AcademicYearRepository;
 import com.cloudcampus.school.repository.SchoolRepository;
 import com.cloudcampus.student.entity.Student;
 import com.cloudcampus.student.repository.StudentParentLinkRepository;
 import com.cloudcampus.student.repository.StudentRepository;
+import com.cloudcampus.timetable.dto.TimetableSlotResponse;
+import com.cloudcampus.timetable.service.TimetableService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.MDC;
@@ -20,6 +26,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -27,18 +34,20 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Parent portal mobile API (CC-1101).
+ * Parent portal API (CC-1302).
  *
- * GET /v1/parent/children                         — linked children with attendance summary
- * GET /v1/parent/children/{studentId}/attendance  — attendance summary for one child
- * GET /v1/parent/children/{studentId}/results     — recent exam results for one child
+ * GET /v1/parent/children                            — linked children with attendance summary
+ * GET /v1/parent/children/{studentId}/attendance     — attendance breakdown for one child
+ * GET /v1/parent/children/{studentId}/results        — exam results for one child
+ * GET /v1/parent/children/{studentId}/homework       — published homework for child's class
+ * GET /v1/parent/children/{studentId}/timetable      — child's class timetable
  *
  * Security: PARENT role only.
  */
 @RestController
 @RequestMapping("/v1/parent")
 @PreAuthorize("hasRole('PARENT')")
-@Tag(name = "Parent — Portal", description = "Parent mobile portal for child monitoring")
+@Tag(name = "Parent — Portal", description = "Parent portal for child monitoring")
 public class ParentController {
 
     // ── Lightweight response types ────────────────────────────────────────────
@@ -71,6 +80,9 @@ public class ParentController {
     private final StudentRepository           studentRepo;
     private final AttendanceRecordRepository  attendanceRepo;
     private final ExamResultRepository        resultRepo;
+    private final HomeworkRepository          homeworkRepo;
+    private final TimetableService            timetableService;
+    private final AcademicYearRepository      academicYearRepo;
     private final SchoolRepository            schoolRepo;
 
     public ParentController(
@@ -78,12 +90,18 @@ public class ParentController {
             StudentRepository           studentRepo,
             AttendanceRecordRepository  attendanceRepo,
             ExamResultRepository        resultRepo,
+            HomeworkRepository          homeworkRepo,
+            TimetableService            timetableService,
+            AcademicYearRepository      academicYearRepo,
             SchoolRepository            schoolRepo) {
-        this.linkRepo       = linkRepo;
-        this.studentRepo    = studentRepo;
-        this.attendanceRepo = attendanceRepo;
-        this.resultRepo     = resultRepo;
-        this.schoolRepo     = schoolRepo;
+        this.linkRepo         = linkRepo;
+        this.studentRepo      = studentRepo;
+        this.attendanceRepo   = attendanceRepo;
+        this.resultRepo       = resultRepo;
+        this.homeworkRepo     = homeworkRepo;
+        this.timetableService = timetableService;
+        this.academicYearRepo = academicYearRepo;
+        this.schoolRepo       = schoolRepo;
     }
 
     @Operation(summary = "My children", description = "All linked children with a quick attendance summary")
@@ -145,6 +163,45 @@ public class ParentController {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), list);
     }
 
+    @Operation(summary = "Child's class homework")
+    @GetMapping("/children/{studentId}/homework")
+    public ApiResponse<List<HomeworkResponse>> homework(@PathVariable UUID studentId) {
+        checkAccess(studentId);
+        Student s = studentRepo.findById(studentId)
+                .orElseThrow(() -> new NotFoundException("Student not found"));
+
+        if (s.getClassId() == null) {
+            return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), List.of());
+        }
+        List<HomeworkResponse> list = homeworkRepo
+                .findPublishedForClass(s.getSchoolId(), s.getClassId(), s.getSectionId())
+                .stream()
+                .map(HomeworkResponse::from)
+                .toList();
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), list);
+    }
+
+    @Operation(summary = "Child's class timetable")
+    @GetMapping("/children/{studentId}/timetable")
+    public ApiResponse<List<TimetableSlotResponse>> timetable(
+            @PathVariable UUID studentId,
+            @RequestParam(required = false) UUID academicYearId) {
+
+        checkAccess(studentId);
+        Student s = studentRepo.findById(studentId)
+                .orElseThrow(() -> new NotFoundException("Student not found"));
+
+        if (s.getClassId() == null) {
+            return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), List.of());
+        }
+
+        School school = resolveSchool();
+        UUID resolvedYearId = resolveAcademicYear(school.getId(), academicYearId);
+        List<TimetableSlotResponse> slots = timetableService.listSlots(
+                school.getId(), resolvedYearId, s.getClassId(), s.getSectionId());
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), slots);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private void checkAccess(UUID studentId) {
@@ -158,5 +215,13 @@ public class ParentController {
         UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         return schoolRepo.findByTenantIdAndCode(tenantId, "MAIN")
                 .orElseThrow(() -> new NotFoundException("School not found"));
+    }
+
+    private UUID resolveAcademicYear(UUID schoolId, UUID requested) {
+        if (requested != null) return requested;
+        return academicYearRepo.findBySchoolIdAndIsCurrent(schoolId, true)
+                .map(AcademicYear::getId)
+                .orElseThrow(() -> new NotFoundException(
+                        "No current academic year — provide academicYearId"));
     }
 }
