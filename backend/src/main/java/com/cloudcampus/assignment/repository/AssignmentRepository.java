@@ -31,4 +31,7 @@ public interface AssignmentRepository extends JpaRepository<Assignment, UUID> {
             Pageable pageable);
 
     Optional<Assignment> findBySchoolIdAndId(UUID schoolId, UUID id);
+
+    Page<Assignment> findBySchoolIdAndAssignedByOrderByCreatedAtDesc(
+            UUID schoolId, UUID assignedBy, Pageable pageable);
 }
