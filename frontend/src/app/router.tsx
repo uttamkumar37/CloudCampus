@@ -46,6 +46,7 @@ import StudentBulkImportPage from '@/features/student/pages/StudentBulkImportPag
 import { SuperAdminLayout } from '@/features/super-admin/layouts/SuperAdminLayout';
 import { SuperAdminDashboardPage } from '@/features/super-admin/pages/SuperAdminDashboardPage';
 import { TenantDetailPage } from '@/features/super-admin/pages/TenantDetailPage';
+import { SchoolSettingsPage } from '@/features/school-admin/pages/SchoolSettingsPage';
 
 /**
  * Application router.
@@ -126,6 +127,7 @@ export function AppRouter() {
           <Route path="assignments/:assignmentId" element={<AssignmentDetailPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="notices" element={<NoticeBoardPage />} />
+          <Route path="settings" element={<SchoolSettingsPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}
