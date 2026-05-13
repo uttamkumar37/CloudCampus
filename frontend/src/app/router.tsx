@@ -47,6 +47,8 @@ import { SuperAdminLayout } from '@/features/super-admin/layouts/SuperAdminLayou
 import { SuperAdminDashboardPage } from '@/features/super-admin/pages/SuperAdminDashboardPage';
 import { TenantDetailPage } from '@/features/super-admin/pages/TenantDetailPage';
 import { SchoolSettingsPage } from '@/features/school-admin/pages/SchoolSettingsPage';
+import { TeacherLayout } from '@/features/teacher/layouts/TeacherLayout';
+import TeacherTimetablePage from '@/features/teacher/pages/TeacherTimetablePage';
 
 /**
  * Application router.
@@ -128,6 +130,19 @@ export function AppRouter() {
           <Route path="reports" element={<ReportsPage />} />
           <Route path="notices" element={<NoticeBoardPage />} />
           <Route path="settings" element={<SchoolSettingsPage />} />
+        </Route>
+
+        {/* Teacher portal — TEACHER role required */}
+        <Route
+          path="/teacher"
+          element={
+            <ProtectedRoute roles={['TEACHER']}>
+              <TeacherLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="timetable" replace />} />
+          <Route path="timetable" element={<TeacherTimetablePage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}

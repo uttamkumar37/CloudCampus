@@ -70,6 +70,15 @@ public class TimetableServiceImpl implements TimetableService {
     }
 
     @Override
+    public List<TimetableSlotResponse> listSlotsByStaff(UUID schoolId, UUID academicYearId, UUID staffId) {
+        return timetableRepository
+                .findBySchoolIdAndAcademicYearIdAndStaffId(schoolId, academicYearId, staffId)
+                .stream()
+                .map(TimetableSlotResponse::from)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public void deleteSlot(UUID schoolId, UUID slotId) {
         TimetableSlot slot = timetableRepository.findBySchoolIdAndId(schoolId, slotId)

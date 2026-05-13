@@ -12,5 +12,8 @@ public interface TimetableService {
 
     List<TimetableSlotResponse> listSlots(UUID schoolId, UUID academicYearId, UUID classId, UUID sectionId);
 
+    /** Returns all slots for a specific teacher (staff) in an academic year. */
+    List<TimetableSlotResponse> listSlotsByStaff(UUID schoolId, UUID academicYearId, UUID staffId);
+
     void deleteSlot(UUID schoolId, UUID slotId);
 }

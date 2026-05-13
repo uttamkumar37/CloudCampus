@@ -38,4 +38,8 @@ public interface TimetableRepository extends JpaRepository<TimetableSlot, UUID> 
             @Param("period") short period);
 
     Optional<TimetableSlot> findBySchoolIdAndId(UUID schoolId, UUID id);
+
+    /** All slots assigned to a specific teacher in an academic year — for teacher self-view. */
+    List<TimetableSlot> findBySchoolIdAndAcademicYearIdAndStaffId(
+            UUID schoolId, UUID academicYearId, UUID staffId);
 }

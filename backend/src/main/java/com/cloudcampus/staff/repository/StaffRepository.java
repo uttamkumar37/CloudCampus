@@ -68,4 +68,7 @@ public interface StaffRepository extends JpaRepository<Staff, UUID> {
     long countBySchoolIdAndEmployeeNumberPrefix(
             @Param("schoolId") UUID schoolId,
             @Param("prefix") String prefix);
+
+    /** Look up the staff profile linked to a login account (for teacher self-service). */
+    Optional<Staff> findBySchoolIdAndUserId(UUID schoolId, UUID userId);
 }

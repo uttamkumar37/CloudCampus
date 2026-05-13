@@ -23,6 +23,8 @@ export default function AppLayout() {
     user?.role === 'TEACHER' ||
     user?.role === 'SUPER_ADMIN';
 
+  const canViewTimetable = user?.role === 'TEACHER';
+
   return (
     <Tabs
       screenOptions={{
@@ -42,6 +44,12 @@ export default function AppLayout() {
         <Tabs.Screen
           name="attendance"
           options={{ title: 'Attendance', tabBarLabel: 'Attendance' }}
+        />
+      )}
+      {canViewTimetable && (
+        <Tabs.Screen
+          name="timetable"
+          options={{ title: 'Timetable', tabBarLabel: 'Timetable' }}
         />
       )}
     </Tabs>
