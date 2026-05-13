@@ -4,14 +4,77 @@
 
 ---
 
-## Progress Summary (as of 2026-05-13 — E28 Bug Fixes & Full API Audit)
+## Progress Summary (as of 2026-05-14 — E38 Student Results & Fees)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | 69 (35.8%) |
+| **Completed** | ~104 (53.9%) |
 | **In Progress** | 0 |
-| **Not Started** | 124 |
+| **Not Started** | ~89 |
+
+### E38 Completions — Student Exam Results & Fee Status Self-Service (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| CC-0601 student results ✅ | `StudentResultsController` — `GET /v1/student/results`; `@PreAuthorize("hasRole('STUDENT')")`; batch-loads exam metadata via `examRepo.findAllById()` + `Collectors.toMap` to avoid N+1; returns `List<StudentResultSummary>` (examName, examType, examStatus, marks, percentage, grade, rank, passed, generatedAt) ordered newest-first |
+| CC-0901 student fees ✅ | `StudentFeesController` — `GET /v1/student/fees?academicYearId=`; delegates to `feeService.listRecordsByStudent()` which handles category name enrichment; optional `academicYearId` filter |
+| Frontend results ✅ | `StudentResultsPage` — summary strip (total/passed/failed/avg%), card grid per exam with percentage bar, grade, rank, pass/fail badge; `getMyResults()` API fn + `StudentResultSummary` TS interface |
+| Frontend fees ✅ | `StudentFeesPage` — summary strip (total due/paid/balance); fee table with category, amount due, discount, paid, balance, due date, status badge; `getMyFees(academicYearId?)` API fn + `StudentFeeRecord` TS interface + `FeeStatus` union type |
+| Nav & routes ✅ | `StudentLayout` NAV updated with "Results" + "Fees" items; `/student/results` + `/student/fees` routes wired in `router.tsx`; `npm run build` → **314 modules, 0 errors** |
+
+### E37 Completions — School Admin Dashboard Live Stats (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| Repo queries ✅ | `ClassRoomRepository.countBySchoolId(UUID)`; `LeaveRequestRepository.countBySchoolIdAndStatus(UUID, LeaveStatus)`; `StudentFeeRecordRepository.countBySchoolIdAndStatus(UUID, FeeStatus)` — Spring Data derived count queries |
+| `SchoolDashboardController` ✅ | `GET /v1/school-admin/schools/{schoolId}/dashboard`; `@PreAuthorize("hasRole('SCHOOL_ADMIN')")`; returns `DashboardStats(totalStudents, totalStaff, totalClasses, pendingLeaveRequests, pendingFeeRecords, partialFeeRecords, publishedNotices)`; notice count via `noticeRepo.findFiltered(..., PageRequest.of(0,1)).getTotalElements()` |
+| Frontend dashboard ✅ | `SchoolAdminDashboardPage` rewritten with live `useQuery`; alert banners for pending leave + unpaid fees; 4 overview stat cards (students/staff/classes/notices with links); fee health section (PENDING + PARTIAL); 8 quick-action links; `schoolDashboardApi.ts` + `SchoolDashboardStats` interface |
+
+### E35 Completions — Teacher Dashboard (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| Repo additions ✅ | `HomeworkSubmissionRepository` JPQL subquery count by teacher+status; `SubmissionRepository` subquery count by teacher+statusIn; `HomeworkRepository.countBySchoolIdAndAssignedBy`; `AssignmentRepository.countBySchoolIdAndAssignedBy` |
+| `TeacherDashboardController` ✅ | `GET /v1/teacher/dashboard`; resolves staff via `findBySchoolIdAndUserId`; converts `java.time.DayOfWeek` → `com.cloudcampus.timetable.entity.DayOfWeek` with try-catch for SUNDAY (not in school enum); returns today's timetable slots + pending homework review count + pending assignment grading count + total posted counts |
+| Frontend dashboard ✅ | `TeacherDashboardPage` — today's schedule grid sorted by period number, pending-work alert banner, 5 stat cards with links, quick-action links; `formatTime(t: string \| null)` null-safe; `teacherDashboardApi.ts` + `TeacherDashboardData` interface |
+| Nav & routes ✅ | `TeacherLayout` NAV updated with "Dashboard" as first item; `/teacher/dashboard` route added; `Navigate` index redirect updated; login redirect changed from `/teacher/timetable` → `/teacher/dashboard` |
+
+### E34 Completions — Staff Leave Management (CC-0604) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| CC-0604 backend ✅ | Staff leave request system — entities, Flyway migration, `LeaveStatus` enum (PENDING/APPROVED/REJECTED/CANCELLED); `LeaveRequestRepository` (by-school, by-staff, by-status with optional filters); `LeaveService`/`LeaveServiceImpl` (submit, list, approve/reject with reason, cancel); `LeaveRequestController` — staff self-service endpoints + school-admin review endpoints; `@PreAuthorize` per role |
+
+### E33 Completions — Staff Attendance System (CC-0603) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| CC-0603 backend ✅ | Staff attendance tracking — `StaffAttendance` entity + Flyway migration; `StaffAttendanceStatus` enum; `StaffAttendanceRepository`; `StaffAttendanceService`/`StaffAttendanceServiceImpl` (mark, bulk mark, list by date/staff); `StaffAttendanceController` — school-admin endpoints for marking + querying staff attendance |
+
+### E32 Completions — Parent Portal (CC-1302) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| CC-1302 ✅ | Parent portal frontend — `ParentLayout` (sidebar nav, sign-out); `ParentDashboardPage` (child list cards via `GET /v1/parent/children`); `ParentChildPage` (child detail: timetable, homework, notices tabs via student-facing APIs); `parentApi.ts`; `ProtectedRoute roles={['PARENT']}`; `/parent` routes wired; login redirect for PARENT role |
+
+### E31 Completions — Student Portal (CC-0601, CC-0701, CC-0703) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| CC-0601/0701/0703 frontend ✅ | Student portal frontend — `StudentLayout` (sidebar with 5→7 nav items); `StudentDashboardPage`; `StudentHomeworkPage` (list + submit modal); `StudentAssignmentsPage` (list + submit modal); `StudentTimetablePage` (weekly grid); `StudentNoticesPage` (paginated list); `studentPortalApi.ts` (6 API functions, 8 interfaces); `ProtectedRoute roles={['STUDENT']}`; login redirect for STUDENT role |
+
+### E30 Completions — Teacher Assignment Portal (CC-0703) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| CC-0703 teacher frontend ✅ | Teacher assignment portal — `TeacherAssignmentListPage` (filters: academicYear/class/subject/status; inline status advance; draft delete); `TeacherAssignmentCreatePage` (full form, max-marks field, optional immediate publish); `TeacherAssignmentDetailPage` (submission stats bar, student submission table, inline grade modal with max-marks enforcement); `teacherAssignmentApi.ts` (7 fns); "Assignments" nav item; 3 routes; `npm run build` passes |
+
+### E29 Completions — Teacher Homework Portal (CC-0702) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| CC-0702 teacher frontend ✅ | Teacher homework portal — `TeacherHomeworkListPage` (cascading filters: academicYear/class/section/subject/status, overdue badge, status advance, draft delete); `TeacherHomeworkCreatePage` (full form with publish toggle, due-date min tomorrow); teacher-facing `homeworkApi.ts` (5 fns); "Homework" nav item; 2 routes wired |
 
 ### E28 Completions — Bug Fixes, Full API Audit & System Hardening (2026-05-13)
 
