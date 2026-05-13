@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn -q compile -DskipTests)",
+      "Bash(git commit -m ' *)",
+      "Bash(java -version)",
+      "Bash(/usr/libexec/java_home -v 21)",
+      "Bash(JAVA_HOME=/Users/uttamkumar/Library/Java/JavaVirtualMachines/temurin-21.0.9/Contents/Home mvn -q compile -DskipTests)",
+      "Bash(sleep 15 && tail -50 /tmp/cc-backend.log 2>&1)",
+      "Read(//private/tmp/**)"
+    ]
+  }
+}
