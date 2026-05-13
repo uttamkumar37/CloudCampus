@@ -50,6 +50,7 @@ import { SuperAdminDashboardPage } from '@/features/super-admin/pages/SuperAdmin
 import { TenantDetailPage } from '@/features/super-admin/pages/TenantDetailPage';
 import { SchoolSettingsPage } from '@/features/school-admin/pages/SchoolSettingsPage';
 import { TeacherLayout } from '@/features/teacher/layouts/TeacherLayout';
+import TeacherDashboardPage from '@/features/teacher/pages/TeacherDashboardPage';
 import TeacherTimetablePage from '@/features/teacher/pages/TeacherTimetablePage';
 import TeacherHomeworkListPage from '@/features/teacher/pages/TeacherHomeworkListPage';
 import TeacherHomeworkSubmissionsPage from '@/features/teacher/pages/TeacherHomeworkSubmissionsPage';
@@ -159,7 +160,8 @@ export function AppRouter() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="timetable" replace />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<TeacherDashboardPage />} />
           <Route path="timetable" element={<TeacherTimetablePage />} />
           <Route path="homework" element={<TeacherHomeworkListPage />} />
           <Route path="homework/:homeworkId/submissions" element={<TeacherHomeworkSubmissionsPage />} />

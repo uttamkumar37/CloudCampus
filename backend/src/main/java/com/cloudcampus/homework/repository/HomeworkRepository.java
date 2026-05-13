@@ -34,6 +34,8 @@ public interface HomeworkRepository extends JpaRepository<HomeworkAssignment, UU
 
     Optional<HomeworkAssignment> findBySchoolIdAndId(UUID schoolId, UUID id);
 
+    long countBySchoolIdAndAssignedBy(UUID schoolId, UUID assignedBy);
+
     Page<HomeworkAssignment> findBySchoolIdAndAssignedByOrderByCreatedAtDesc(
             UUID schoolId, UUID assignedBy, Pageable pageable);
 

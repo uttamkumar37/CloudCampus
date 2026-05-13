@@ -49,7 +49,7 @@ export function LoginPage() {
         const dest =
           role === 'SUPER_ADMIN'  ? '/super-admin/dashboard' :
           role === 'SCHOOL_ADMIN' ? '/school-admin/dashboard' :
-          role === 'TEACHER'      ? '/teacher/timetable' :
+          role === 'TEACHER'      ? '/teacher/dashboard' :
           role === 'STUDENT'      ? '/student/dashboard' :
           role === 'PARENT'       ? '/parent/dashboard' :
           '/app/dashboard';

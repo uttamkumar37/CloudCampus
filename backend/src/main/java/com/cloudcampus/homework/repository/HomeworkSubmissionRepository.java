@@ -1,7 +1,10 @@
 package com.cloudcampus.homework.repository;
 
 import com.cloudcampus.homework.entity.HomeworkSubmission;
+import com.cloudcampus.homework.entity.SubmissionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,4 +19,18 @@ public interface HomeworkSubmissionRepository extends JpaRepository<HomeworkSubm
     boolean existsByHomeworkIdAndStudentId(UUID homeworkId, UUID studentId);
 
     long countByHomeworkId(UUID homeworkId);
+
+    /** Count submissions across all homework assigned by a teacher, filtered by status. */
+    @Query("""
+           SELECT COUNT(s) FROM HomeworkSubmission s
+           WHERE s.homeworkId IN (
+               SELECT h.id FROM HomeworkAssignment h
+               WHERE h.schoolId = :schoolId AND h.assignedBy = :userId
+           )
+           AND s.status = :status
+           """)
+    long countByTeacherAndStatus(
+            @Param("schoolId") UUID schoolId,
+            @Param("userId")   UUID userId,
+            @Param("status")   SubmissionStatus status);
 }

@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 const NAV = [
+  { label: 'Dashboard',   to: '/teacher/dashboard'   },
   { label: 'Timetable',   to: '/teacher/timetable'   },
   { label: 'Homework',    to: '/teacher/homework'    },
   { label: 'Assignments', to: '/teacher/assignments' },
