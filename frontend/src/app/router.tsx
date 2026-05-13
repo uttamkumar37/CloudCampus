@@ -19,6 +19,7 @@ import { StudentProfilePage } from '@/features/student/pages/StudentProfilePage'
 import { StaffListPage } from '@/features/staff/pages/StaffListPage';
 import { StaffCreatePage } from '@/features/staff/pages/StaffCreatePage';
 import { StaffProfilePage } from '@/features/staff/pages/StaffProfilePage';
+import StaffAttendancePage from '@/features/staff/pages/StaffAttendancePage';
 import { AttendanceSessionListPage } from '@/features/attendance/pages/AttendanceSessionListPage';
 import { AttendanceCreateSessionPage } from '@/features/attendance/pages/AttendanceCreateSessionPage';
 import { AttendanceMarkPage } from '@/features/attendance/pages/AttendanceMarkPage';
@@ -120,6 +121,7 @@ export function AppRouter() {
           <Route path="staff" element={<StaffListPage />} />
           <Route path="staff/new" element={<StaffCreatePage />} />
           <Route path="staff/:id" element={<StaffProfilePage />} />
+          <Route path="staff-attendance" element={<StaffAttendancePage />} />
           <Route path="attendance" element={<AttendanceSessionListPage />} />
           <Route path="attendance/new" element={<AttendanceCreateSessionPage />} />
           <Route path="attendance/sessions/:sessionId/mark" element={<AttendanceMarkPage />} />

@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Subjects', to: '/school-admin/subjects', feature: 'SUBJECT_MGMT' },
   { label: 'Students', to: '/school-admin/students', feature: 'STUDENT_MANAGEMENT' },
   { label: 'Staff', to: '/school-admin/staff', feature: 'TEACHER_MANAGEMENT' },
+  { label: 'Staff Attendance', to: '/school-admin/staff-attendance', feature: 'ATTENDANCE' },
   { label: 'Attendance', to: '/school-admin/attendance', feature: 'ATTENDANCE' },
   { label: 'Fees', to: '/school-admin/fees', feature: 'FINANCE' },
   { label: 'Fee Collection', to: '/school-admin/fees/collection', feature: 'FINANCE' },
