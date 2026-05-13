@@ -20,6 +20,7 @@ import { StaffListPage } from '@/features/staff/pages/StaffListPage';
 import { StaffCreatePage } from '@/features/staff/pages/StaffCreatePage';
 import { StaffProfilePage } from '@/features/staff/pages/StaffProfilePage';
 import StaffAttendancePage from '@/features/staff/pages/StaffAttendancePage';
+import LeaveManagementPage from '@/features/staff/pages/LeaveManagementPage';
 import { AttendanceSessionListPage } from '@/features/attendance/pages/AttendanceSessionListPage';
 import { AttendanceCreateSessionPage } from '@/features/attendance/pages/AttendanceCreateSessionPage';
 import { AttendanceMarkPage } from '@/features/attendance/pages/AttendanceMarkPage';
@@ -122,6 +123,7 @@ export function AppRouter() {
           <Route path="staff/new" element={<StaffCreatePage />} />
           <Route path="staff/:id" element={<StaffProfilePage />} />
           <Route path="staff-attendance" element={<StaffAttendancePage />} />
+          <Route path="leave-requests" element={<LeaveManagementPage />} />
           <Route path="attendance" element={<AttendanceSessionListPage />} />
           <Route path="attendance/new" element={<AttendanceCreateSessionPage />} />
           <Route path="attendance/sessions/:sessionId/mark" element={<AttendanceMarkPage />} />
