@@ -1,25 +1,23 @@
 package com.cloudcampus.exam.repository;
 
 import com.cloudcampus.exam.entity.Exam;
+import com.cloudcampus.exam.entity.ExamStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.time.LocalDate;
-import java.util.Collection;
-import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ExamRepository extends JpaRepository<Exam, UUID> {
 
-    List<Exam> findAllByClassId(UUID classId);
+    Page<Exam> findBySchoolIdOrderByStartDateDesc(UUID schoolId, Pageable pageable);
 
-    boolean existsByTitleAndExamDateAndClassIdAndSectionIdAndSubjectId(
-            String title,
-            LocalDate examDate,
-            UUID classId,
-            UUID sectionId,
-            UUID subjectId
-    );
+    Page<Exam> findBySchoolIdAndAcademicYearIdOrderByStartDateDesc(
+            UUID schoolId, UUID academicYearId, Pageable pageable);
 
-    // Teacher dashboard
-    List<Exam> findTop5ByClassIdInOrderByExamDateDesc(Collection<UUID> classIds);
+    Page<Exam> findBySchoolIdAndStatusOrderByStartDateDesc(
+            UUID schoolId, ExamStatus status, Pageable pageable);
+
+    Optional<Exam> findByIdAndSchoolId(UUID id, UUID schoolId);
 }

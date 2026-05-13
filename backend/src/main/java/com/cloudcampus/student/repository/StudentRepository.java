@@ -2,55 +2,75 @@ package com.cloudcampus.student.repository;
 
 import com.cloudcampus.student.entity.Student;
 import com.cloudcampus.student.entity.StudentStatus;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Data access for {@link Student}.
+ *
+ * All methods operate within the active Hibernate tenant filter
+ * (enabled by {@code TenantFilterAspect}).
+ */
 public interface StudentRepository extends JpaRepository<Student, UUID> {
 
-    boolean existsByAdmissionNo(String admissionNo);
+    /** All students in a school, ordered by last name then first name. */
+    List<Student> findAllBySchoolIdOrderByLastNameAscFirstNameAsc(UUID schoolId);
 
-    Optional<Student> findByAdmissionNo(String admissionNo);
+    /** Students in a school filtered by status. */
+    List<Student> findAllBySchoolIdAndStatusOrderByLastNameAscFirstNameAsc(
+            UUID schoolId, StudentStatus status);
 
-    Optional<Student> findByIdAndDeletedAtIsNull(UUID id);
+    /** Students assigned to a specific class. */
+    List<Student> findAllByClassIdOrderByLastNameAscFirstNameAsc(UUID classId);
 
-    Page<Student> findAllByDeletedAtIsNull(Pageable pageable);
+    /** Students assigned to a specific section. */
+    List<Student> findAllBySectionIdOrderByLastNameAscFirstNameAsc(UUID sectionId);
 
-    Page<Student> findAllByStatusAndDeletedAtIsNull(StudentStatus status, Pageable pageable);
+    /** Students in a class filtered by status. */
+    List<Student> findAllByClassIdAndStatusOrderByLastNameAscFirstNameAsc(
+            UUID classId, StudentStatus status);
 
-    long countByActiveTrue();
+    /** Students in a section filtered by status. */
+    List<Student> findAllBySectionIdAndStatusOrderByLastNameAscFirstNameAsc(
+            UUID sectionId, StudentStatus status);
 
-    List<Student> findTop5ByOrderByCreatedAtDesc();
+    /** Find by unique student number within a school. */
+    Optional<Student> findBySchoolIdAndStudentNumber(UUID schoolId, String studentNumber);
 
-    long countByCreatedAtAfter(Instant createdAt);
+    /** Check uniqueness of student number before admission. */
+    boolean existsBySchoolIdAndStudentNumber(UUID schoolId, String studentNumber);
 
-    Optional<Student> findByLinkedUser_Id(UUID userId);
+    /**
+     * Name search — case-insensitive prefix match on first or last name.
+     * Used for quick lookup in admission and roster views.
+     */
+    @Query("""
+           SELECT s FROM Student s
+           WHERE s.schoolId = :schoolId
+             AND (LOWER(s.firstName) LIKE LOWER(CONCAT(:q, '%'))
+               OR LOWER(s.lastName)  LIKE LOWER(CONCAT(:q, '%')))
+           ORDER BY s.lastName, s.firstName
+           """)
+    List<Student> searchByName(@Param("schoolId") UUID schoolId, @Param("q") String query);
 
-    Optional<Student> findByEmailIgnoreCase(String email);
+    /** Count active students per school (dashboard metric). */
+    long countBySchoolIdAndStatus(UUID schoolId, StudentStatus status);
 
-    Optional<Student> findFirstByFirstNameIgnoreCaseAndLastNameIgnoreCase(String firstName, String lastName);
+    /** Find next student number suffix for auto-generation. */
+    @Query("""
+           SELECT COUNT(s) FROM Student s
+           WHERE s.schoolId = :schoolId
+             AND s.studentNumber LIKE CONCAT(:prefix, '%')
+           """)
+    long countBySchoolIdAndStudentNumberPrefix(
+            @Param("schoolId") UUID schoolId,
+            @Param("prefix") String prefix);
 
-    @Query("SELECT s FROM Student s WHERE s.deletedAt IS NULL " +
-           "AND (LOWER(s.firstName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "     OR LOWER(s.lastName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "     OR LOWER(s.admissionNo) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Student> searchStudents(@Param("search") String search, Pageable pageable);
-
-    @Query("SELECT s FROM Student s WHERE s.deletedAt IS NULL " +
-           "AND (LOWER(s.firstName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "     OR LOWER(s.lastName) LIKE LOWER(CONCAT('%', :search, '%')) " +
-           "     OR LOWER(s.admissionNo) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-           "AND s.status = :status")
-    Page<Student> searchStudentsWithStatus(
-            @Param("search") String search,
-            @Param("status") StudentStatus status,
-            Pageable pageable
-    );
+    /** Look up the student profile linked to a login account (for student self-service). */
+    Optional<Student> findBySchoolIdAndUserId(UUID schoolId, UUID userId);
 }

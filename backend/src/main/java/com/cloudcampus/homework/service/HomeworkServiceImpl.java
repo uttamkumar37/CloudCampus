@@ -1,80 +1,100 @@
 package com.cloudcampus.homework.service;
 
-import com.cloudcampus.auth.security.CloudCampusUserDetails;
+import com.cloudcampus.common.exception.BadRequestException;
+import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.homework.dto.HomeworkCreateRequest;
 import com.cloudcampus.homework.dto.HomeworkResponse;
 import com.cloudcampus.homework.entity.HomeworkAssignment;
-import com.cloudcampus.homework.repository.HomeworkAssignmentRepository;
-import com.cloudcampus.tenant.service.TenantContext;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.cloudcampus.homework.entity.HomeworkStatus;
+import com.cloudcampus.homework.repository.HomeworkRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class HomeworkServiceImpl implements HomeworkService {
 
-    private final HomeworkAssignmentRepository homeworkAssignmentRepository;
+    private final HomeworkRepository homeworkRepository;
+
+    public HomeworkServiceImpl(HomeworkRepository homeworkRepository) {
+        this.homeworkRepository = homeworkRepository;
+    }
 
     @Override
     @Transactional
-    public HomeworkResponse create(HomeworkCreateRequest request) {
-        validateTenant();
-        CloudCampusUserDetails user = currentUser();
-        if (user.getUserId() == null) {
-            throw new IllegalArgumentException("Homework must be created by a tenant user account");
+    public HomeworkResponse create(UUID tenantId, UUID schoolId, UUID assignedBy, HomeworkCreateRequest req) {
+        HomeworkAssignment hw = HomeworkAssignment.create(
+                tenantId, schoolId, req.academicYearId(),
+                req.classId(), req.sectionId(), req.subjectId(),
+                assignedBy, req.title(), req.description(), req.dueDate()
+        );
+        if (req.publishImmediately()) {
+            hw.publish();
         }
-
-        HomeworkAssignment hw = new HomeworkAssignment();
-        hw.setTitle(request.title().trim());
-        hw.setInstructions(request.instructions());
-        hw.setClassId(request.classId());
-        hw.setSectionId(request.sectionId());
-        hw.setDueDate(request.dueDate());
-        hw.setAssignedByUserId(user.getUserId());
-
-        HomeworkAssignment saved = homeworkAssignmentRepository.save(hw);
-        return map(saved);
+        homeworkRepository.save(hw);
+        return HomeworkResponse.from(hw);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<HomeworkResponse> listForClass(UUID classId) {
-        validateTenant();
-        return homeworkAssignmentRepository.findByClassIdOrderByCreatedAtDesc(classId)
-                .stream()
-                .map(this::map)
-                .toList();
-    }
-
-    private HomeworkResponse map(HomeworkAssignment h) {
-        return new HomeworkResponse(
-                h.getId(),
-                h.getTitle(),
-                h.getInstructions(),
-                h.getClassId(),
-                h.getSectionId(),
-                h.getAssignedByUserId(),
-                h.getDueDate(),
-                h.getCreatedAt()
+    public PageResponse<HomeworkResponse> list(UUID schoolId, UUID academicYearId,
+                                               UUID classId, UUID sectionId,
+                                               HomeworkStatus status, int page, int size) {
+        Page<HomeworkAssignment> result = homeworkRepository.findFiltered(
+                schoolId, academicYearId, classId, sectionId, status,
+                PageRequest.of(page, size)
+        );
+        return new PageResponse<>(
+                result.getContent().stream().map(HomeworkResponse::from).toList(),
+                page * size,
+                size,
+                result.getTotalElements()
         );
     }
 
-    private void validateTenant() {
-        if (TenantContext.DEFAULT_SCHEMA.equals(TenantContext.getTenant())) {
-            throw new IllegalArgumentException("X-Tenant-Slug header is required");
-        }
+    @Override
+    public HomeworkResponse getById(UUID schoolId, UUID homeworkId) {
+        return HomeworkResponse.from(findOrThrow(schoolId, homeworkId));
     }
 
-    private CloudCampusUserDetails currentUser() {
-        Object p = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (!(p instanceof CloudCampusUserDetails c)) {
-            throw new IllegalStateException("Unexpected principal");
+    @Override
+    @Transactional
+    public HomeworkResponse updateStatus(UUID schoolId, UUID homeworkId, HomeworkStatus status) {
+        HomeworkAssignment hw = findOrThrow(schoolId, homeworkId);
+        switch (status) {
+            case PUBLISHED -> {
+                if (hw.getStatus() != HomeworkStatus.DRAFT) {
+                    throw new BadRequestException("Only DRAFT assignments can be published");
+                }
+                hw.publish();
+            }
+            case CLOSED -> {
+                if (hw.getStatus() == HomeworkStatus.CLOSED) {
+                    throw new BadRequestException("Assignment is already closed");
+                }
+                hw.close();
+            }
+            default -> throw new BadRequestException("Invalid target status: " + status);
         }
-        return c;
+        return HomeworkResponse.from(hw);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID schoolId, UUID homeworkId) {
+        HomeworkAssignment hw = findOrThrow(schoolId, homeworkId);
+        if (hw.getStatus() == HomeworkStatus.PUBLISHED) {
+            throw new BadRequestException("Published assignments cannot be deleted; close them first");
+        }
+        homeworkRepository.delete(hw);
+    }
+
+    private HomeworkAssignment findOrThrow(UUID schoolId, UUID homeworkId) {
+        return homeworkRepository.findBySchoolIdAndId(schoolId, homeworkId)
+                .orElseThrow(() -> new NotFoundException("Homework assignment not found"));
     }
 }

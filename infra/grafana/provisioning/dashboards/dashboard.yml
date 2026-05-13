@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: CloudCampus
+    orgId: 1
+    folder: CloudCampus
+    folderUid: cloudcampus
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

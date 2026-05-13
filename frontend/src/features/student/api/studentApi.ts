@@ -1,52 +1,135 @@
-import { apiClient } from '../../../api/client'
-import { ENDPOINTS } from '../../../api/endpoints'
-import type { ApiResponse } from '../../../types/api'
-import type { PageResponse } from '../../../types/pagination'
+import axiosInstance from '@/shared/api/axiosInstance';
+import type { ApiResponse } from '@/shared/types/api';
+import type {
+  AdmitStudentRequest,
+  StudentResponse,
+  StudentSummaryResponse,
+  StudentStatus,
+  UpdateStudentRequest,
+} from '../types/student';
 
-import type { CreateStudentRequest, Student, StudentFullDetail, StudentStatus, UpdateStudentRequest } from '../types'
+const bySchool = (schoolId: string) =>
+  `/v1/school-admin/schools/${schoolId}/students`;
 
-interface GetStudentsParams {
-  page?: number
-  size?: number
-  search?: string
-  status?: StudentStatus
+const byId = (id: string) => `/v1/school-admin/students/${id}`;
+
+export async function listStudents(
+  schoolId: string,
+  params?: { status?: StudentStatus; search?: string },
+): Promise<StudentSummaryResponse[]> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentSummaryResponse[]>>(
+    bySchool(schoolId),
+    { params },
+  );
+  return data.data ?? [];
 }
 
-export async function getStudents(params: GetStudentsParams = {}) {
-  const { page = 0, size = 20, search, status } = params
-
-  const { data } = await apiClient.get<ApiResponse<PageResponse<Student>>>(ENDPOINTS.students.base, {
-    params: {
-      page,
-      size,
-      ...(search && search.trim() ? { search: search.trim() } : {}),
-      ...(status ? { status } : {}),
-    },
-  })
-
-  return data
+export async function listStudentsByClass(
+  classId: string,
+): Promise<StudentSummaryResponse[]> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentSummaryResponse[]>>(
+    `/v1/school-admin/classes/${classId}/students`,
+  );
+  return data.data ?? [];
 }
 
-export async function createStudent(payload: CreateStudentRequest) {
-  const { data } = await apiClient.post<ApiResponse<Student>>(ENDPOINTS.students.base, payload)
-  return data
+export async function listStudentsBySection(
+  sectionId: string,
+): Promise<StudentSummaryResponse[]> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentSummaryResponse[]>>(
+    `/v1/school-admin/sections/${sectionId}/students`,
+  );
+  return data.data ?? [];
 }
 
-export async function updateStudent(id: string, payload: UpdateStudentRequest) {
-  const { data } = await apiClient.patch<ApiResponse<Student>>(ENDPOINTS.students.byId(id), payload)
-  return data
+export async function getStudent(id: string): Promise<StudentResponse> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentResponse>>(byId(id));
+  return data.data!;
 }
 
-export async function deleteStudent(id: string) {
-  await apiClient.delete(`${ENDPOINTS.students.base}/${id}`)
+export async function admitStudent(
+  schoolId: string,
+  body: AdmitStudentRequest,
+): Promise<StudentResponse> {
+  const { data } = await axiosInstance.post<ApiResponse<StudentResponse>>(
+    bySchool(schoolId),
+    body,
+  );
+  return data.data!;
 }
 
-export async function getStudentDetails(id: string) {
-  const { data } = await apiClient.get<ApiResponse<StudentFullDetail>>(ENDPOINTS.students.details(id))
-  return data
+export async function updateStudent(
+  id: string,
+  body: UpdateStudentRequest,
+): Promise<StudentResponse> {
+  const { data } = await axiosInstance.put<ApiResponse<StudentResponse>>(
+    byId(id),
+    body,
+  );
+  return data.data!;
 }
 
-export async function getMyStudentDetails() {
-  const { data } = await apiClient.get<ApiResponse<StudentFullDetail>>(ENDPOINTS.students.meDetails)
-  return data
+export async function graduateStudent(id: string): Promise<StudentResponse> {
+  const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
+    `${byId(id)}/graduate`,
+  );
+  return data.data!;
+}
+
+export async function transferStudent(id: string): Promise<StudentResponse> {
+  const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
+    `${byId(id)}/transfer`,
+  );
+  return data.data!;
+}
+
+export async function suspendStudent(id: string): Promise<StudentResponse> {
+  const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
+    `${byId(id)}/suspend`,
+  );
+  return data.data!;
+}
+
+export async function reinstateStudent(id: string): Promise<StudentResponse> {
+  const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
+    `${byId(id)}/reinstate`,
+  );
+  return data.data!;
+}
+
+// ── Bulk import (CC-0508) ─────────────────────────────────────────────────────
+
+export interface BulkStudentRow {
+  firstName:     string;
+  lastName:      string;
+  admissionDate?: string | null;
+  dateOfBirth?:  string | null;
+  gender?:       'MALE' | 'FEMALE' | 'OTHER' | null;
+  studentNumber?: string | null;
+  classId?:      string | null;
+  sectionId?:    string | null;
+  phone?:        string | null;
+}
+
+export interface RowError {
+  row:    number;
+  reason: string;
+}
+
+export interface BulkImportResult {
+  totalRows:    number;
+  successCount: number;
+  failedCount:  number;
+  errors:       RowError[];
+}
+
+export async function bulkImportStudents(
+  schoolId: string,
+  rows: BulkStudentRow[],
+): Promise<BulkImportResult> {
+  const { data } = await axiosInstance.post<ApiResponse<BulkImportResult>>(
+    `${bySchool(schoolId)}/bulk`,
+    rows,
+  );
+  return data.data!;
 }

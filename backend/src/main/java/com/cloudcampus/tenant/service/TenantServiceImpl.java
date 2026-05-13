@@ -1,587 +1,154 @@
 package com.cloudcampus.tenant.service;
 
+import com.cloudcampus.common.exception.BadRequestException;
+import com.cloudcampus.common.exception.ConflictException;
+import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.PageResponse;
+import com.cloudcampus.common.web.Pagination;
+import com.cloudcampus.school.entity.School;
+import com.cloudcampus.school.entity.SchoolStatus;
+import com.cloudcampus.school.repository.SchoolRepository;
+import com.cloudcampus.school.service.SchoolSettingsService;
+import com.cloudcampus.tenant.dto.SuperAdminStatsResponse;
 import com.cloudcampus.tenant.dto.TenantCreateRequest;
-import com.cloudcampus.tenant.dto.SchoolSearchResponse;
 import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.entity.Tenant;
-import com.cloudcampus.tenant.mapper.TenantMapper;
+import com.cloudcampus.tenant.entity.TenantStatus;
 import com.cloudcampus.tenant.repository.TenantRepository;
-import com.cloudcampus.user.entity.UserRole;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import java.text.Normalizer;
-import java.util.List;
-import java.util.Locale;
+import java.time.Instant;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
+import java.util.UUID;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class TenantServiceImpl implements TenantService {
 
     private final TenantRepository tenantRepository;
-    private final JdbcTemplate jdbcTemplate;
-    private final TenantMapper tenantMapper;
-    private final PasswordEncoder passwordEncoder;
+    private final SchoolRepository schoolRepository;
+    private final SchoolSettingsService schoolSettingsService;
+
+    public TenantServiceImpl(TenantRepository tenantRepository, SchoolRepository schoolRepository,
+                             SchoolSettingsService schoolSettingsService) {
+        this.tenantRepository = tenantRepository;
+        this.schoolRepository = schoolRepository;
+        this.schoolSettingsService = schoolSettingsService;
+    }
 
     @Override
     @Transactional
-    public TenantResponse createTenant(TenantCreateRequest request) {
-        String tenantId = normalize(request.tenantId());
-        String slug = resolveSlug(request.slug(), request.schoolName(), tenantId);
-        String schemaName = resolveSchemaName(tenantId, request.schemaName());
+    public TenantResponse create(TenantCreateRequest request) {
+        String code = request.code().trim().toLowerCase();
 
-        if (tenantRepository.existsByTenantId(tenantId)) {
-            throw new IllegalArgumentException("Tenant already exists: " + tenantId);
-        }
-        if (tenantRepository.existsBySlug(slug)) {
-            throw new IllegalArgumentException("School slug already exists: " + slug);
-        }
-        if (tenantRepository.existsBySchemaName(schemaName)) {
-            throw new IllegalArgumentException("Schema already registered: " + schemaName);
+        // Fast pre-check (common case — avoids pointless DB write on obvious duplicates).
+        // The DataIntegrityViolationException catch below handles the concurrent-create race.
+        if (tenantRepository.findByCode(code).isPresent()) {
+            throw new ConflictException("Tenant code '" + code + "' already exists");
         }
 
-        createSchemaIfNotExists(schemaName);
-        createSchoolAdminUser(schemaName, tenantId, request);
-
-        Tenant tenant = new Tenant();
-        tenant.setTenantId(tenantId);
-        tenant.setSlug(slug);
-        tenant.setSchoolName(request.schoolName().trim());
-        tenant.setSchemaName(schemaName);
-        tenant.setLogoUrl(normalizeNullable(request.logoUrl()));
-        tenant.setPrimaryColor(request.primaryColor().trim());
-        tenant.setActive(true);
-
-        Tenant saved = tenantRepository.save(tenant);
-        log.info("Tenant created: tenantId={}, slug={}, schema={}", saved.getTenantId(), saved.getSlug(), saved.getSchemaName());
-        return map(saved);
-    }
-
-    private void createSchoolAdminUser(String schemaName, String tenantId, TenantCreateRequest request) {
-        String username = request.schoolAdminUsername().trim().toLowerCase(Locale.ROOT);
-        String email    = request.schoolAdminEmail().trim().toLowerCase(Locale.ROOT);
-        String phone    = normalizeNullable(request.schoolAdminPhone());
-        String table    = "\"" + schemaName + "\".users";
-
-        Integer countUser = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM " + table + " WHERE username = ?", Integer.class, username);
-        if (countUser != null && countUser > 0) {
-            throw new IllegalArgumentException("School admin username already exists in tenant schema");
-        }
-        Integer countEmail = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM " + table + " WHERE email = ?", Integer.class, email);
-        if (countEmail != null && countEmail > 0) {
-            throw new IllegalArgumentException("School admin email already exists in tenant schema");
-        }
-
-        jdbcTemplate.update(
-                "INSERT INTO " + table + " (id, full_name, username, email, phone, password_hash, role, " +
-                "tenant_id, active, first_login_required, created_at) VALUES (gen_random_uuid(), ?, ?, ?, ?, ?, ?, ?, TRUE, FALSE, NOW())",
-                request.schoolAdminFullName().trim(),
-                username,
-                email,
-                phone,
-                passwordEncoder.encode(request.schoolAdminPassword()),
-                UserRole.SCHOOL_ADMIN.name(),
-                tenantId
+        Tenant tenant = new Tenant(
+                UUID.randomUUID(),
+                code,
+                request.name().trim(),
+                TenantStatus.ACTIVE,
+                Instant.now()
         );
 
-        log.info("Provisioned school admin user: tenantId={}, schema={}, username={}", tenantId, schemaName, username);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<TenantResponse> getAllTenants() {
-        return tenantRepository.findAll().stream().map(this::map).toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<SchoolSearchResponse> searchSchools(String query) {
-        if (!StringUtils.hasText(query)) {
-            return List.of();
+        try {
+            tenantRepository.save(tenant);
+        } catch (DataIntegrityViolationException ex) {
+            // C-02: Race condition safety net — two concurrent creates with the same code
+            // both pass the pre-check above and then race to insert. The DB unique constraint
+            // wins; we convert the constraint violation to a clean 409 Conflict.
+            throw new ConflictException("Tenant code '" + code + "' already exists");
         }
 
-        return tenantRepository.searchActiveSchools(query.trim()).stream()
-                .limit(8)
-            .map(tenantMapper::toSchoolSearch)
-                .toList();
+        // Auto-create the default school for this tenant.
+        // Every tenant starts with one school (code = "MAIN"). Additional schools
+        // can be added later via the School management API.
+        School defaultSchool = new School(
+                UUID.randomUUID(),
+                tenant.getId(),
+                tenant.getName(),   // school name defaults to tenant name
+                "MAIN",
+                SchoolStatus.ACTIVE,
+                tenant.getCreatedAt()
+        );
+        schoolRepository.save(defaultSchool);
+        schoolSettingsService.initDefaults(tenant.getId(), defaultSchool.getId());
+
+        return toResponse(tenant);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public SchoolSearchResponse getSchoolBySlug(String tenantSlug) {
-        Tenant tenant = tenantRepository.findBySlug(normalizeSlug(tenantSlug))
-                .filter(Tenant::isActive)
-                .orElseThrow(() -> new IllegalArgumentException("School not found: " + tenantSlug));
-        return tenantMapper.toSchoolSearch(tenant);
+    public TenantResponse get(UUID id) {
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tenant not found"));
+        return toResponse(tenant);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public TenantResponse getTenantByTenantId(String tenantId) {
-        Tenant tenant = tenantRepository.findByTenantId(normalize(tenantId))
-                .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantId));
-        return map(tenant);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public TenantResponse getTenantBySlug(String tenantSlug) {
-        Tenant tenant = tenantRepository.findBySlug(normalizeSlug(tenantSlug))
-                .filter(Tenant::isActive)
-                .orElseThrow(() -> new IllegalArgumentException("School not found: " + tenantSlug));
-        return map(tenant);
+    public PageResponse<TenantResponse> list(Pagination pagination) {
+        var page = tenantRepository.findAll(PageRequest.of(
+                pagination.offset() / pagination.limit(),
+                pagination.limit(),
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        ));
+        var items = page.getContent().stream().map(this::toResponse).toList();
+        return new PageResponse<>(items, pagination.offset(), pagination.limit(), page.getTotalElements());
     }
 
     @Override
     @Transactional
-    public TenantResponse updateTenantActiveStatus(String tenantId, boolean active) {
-        Tenant tenant = tenantRepository.findByTenantId(normalize(tenantId))
-                .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantId));
+    public TenantResponse suspend(UUID id) {
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tenant not found"));
+        if (tenant.getStatus() == TenantStatus.SUSPENDED) {
+            throw new BadRequestException("Tenant is already suspended");
+        }
+        tenant.setStatus(TenantStatus.SUSPENDED);
+        return toResponse(tenantRepository.save(tenant));
+    }
 
-        tenant.setActive(active);
-        Tenant saved = tenantRepository.save(tenant);
-        log.info("Tenant status changed: tenantId={}, active={}", saved.getTenantId(), saved.isActive());
-        return map(saved);
+    @Override
+    @Transactional
+    public TenantResponse activate(UUID id) {
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tenant not found"));
+        if (tenant.getStatus() == TenantStatus.ACTIVE) {
+            throw new BadRequestException("Tenant is already active");
+        }
+        tenant.setStatus(TenantStatus.ACTIVE);
+        return toResponse(tenantRepository.save(tenant));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public String resolveSchemaByTenantIdentifier(String identifier) {
-        String normalized = normalize(identifier);
-
-        return tenantRepository.findBySchemaName(normalized)
-                .or(() -> tenantRepository.findBySlug(normalized))
-                .or(() -> tenantRepository.findByTenantId(normalized))
-                .filter(Tenant::isActive)
-                .map(Tenant::getSchemaName)
-                .orElseThrow(() -> new IllegalArgumentException("School not found: " + identifier));
+    public SuperAdminStatsResponse getStats() {
+        long total     = tenantRepository.count();
+        long active    = tenantRepository.countByStatus(TenantStatus.ACTIVE);
+        long suspended = tenantRepository.countByStatus(TenantStatus.SUSPENDED);
+        Instant startOfMonth = YearMonth.now().atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        long newThisMonth = tenantRepository.countByCreatedAtAfter(startOfMonth);
+        return new SuperAdminStatsResponse(total, active, suspended, newThisMonth);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public TenantResponse getCurrentTenant() {
-        String schemaName = TenantContext.getTenant();
-        validateTenantContext(schemaName);
-
-        Tenant tenant = tenantRepository.findBySchemaName(schemaName)
-                .orElseThrow(() -> new IllegalArgumentException("Tenant not found for schema: " + schemaName));
-        return map(tenant);
+    private TenantResponse toResponse(Tenant tenant) {
+        return new TenantResponse(
+                tenant.getId(),
+                tenant.getCode(),
+                tenant.getName(),
+                tenant.getStatus(),
+                tenant.getCreatedAt(),
+                tenant.getUpdatedAt()
+        );
     }
-
-    private void createSchemaIfNotExists(String schemaName) {
-        String sql = "CREATE SCHEMA IF NOT EXISTS \"" + schemaName + "\"";
-        jdbcTemplate.execute(sql);
-        initializeTenantTables(schemaName);
-        log.info("Schema ensured for tenant: {}", schemaName);
-    }
-
-    private void initializeTenantTables(String schemaName) {
-        String createUsersTable = """
-                CREATE TABLE IF NOT EXISTS "%s".users (
-                    id UUID PRIMARY KEY,
-                    full_name VARCHAR(120) NOT NULL,
-                    username VARCHAR(100) NOT NULL UNIQUE,
-                    email VARCHAR(160) UNIQUE,
-                    phone VARCHAR(30),
-                    password_hash VARCHAR(200) NOT NULL,
-                    role VARCHAR(40) NOT NULL,
-                    tenant_id VARCHAR(80),
-                    active BOOLEAN NOT NULL DEFAULT TRUE,
-                    first_login_required BOOLEAN NOT NULL DEFAULT FALSE,
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID,
-                    deleted_at TIMESTAMPTZ
-                )
-                """.formatted(schemaName);
-
-        String createStudentsTable = """
-                CREATE TABLE IF NOT EXISTS "%s".students (
-                    id UUID PRIMARY KEY,
-                    admission_no VARCHAR(50) NOT NULL UNIQUE,
-                    first_name VARCHAR(80) NOT NULL,
-                    last_name VARCHAR(80) NOT NULL,
-                    date_of_birth DATE NOT NULL,
-                    gender VARCHAR(20) NOT NULL,
-                    email VARCHAR(160),
-                    phone VARCHAR(30),
-                    user_id UUID REFERENCES "%s".users(id),
-                    active BOOLEAN NOT NULL DEFAULT TRUE,
-                    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID,
-                    deleted_at TIMESTAMPTZ
-                )
-                """.formatted(schemaName, schemaName);
-
-        String createTeachersTable = """
-                CREATE TABLE IF NOT EXISTS "%s".teachers (
-                    id UUID PRIMARY KEY,
-                    employee_no VARCHAR(50) NOT NULL UNIQUE,
-                    first_name VARCHAR(80) NOT NULL,
-                    last_name VARCHAR(80) NOT NULL,
-                    email VARCHAR(160) NOT NULL UNIQUE,
-                    phone VARCHAR(30),
-                    hire_date DATE NOT NULL,
-                    user_id UUID REFERENCES "%s".users(id),
-                    active BOOLEAN NOT NULL DEFAULT TRUE,
-                    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID
-                )
-                """.formatted(schemaName, schemaName);
-
-        String createClassesTable = """
-                CREATE TABLE IF NOT EXISTS "%s".classes (
-                    id UUID PRIMARY KEY,
-                    name VARCHAR(80) NOT NULL,
-                    code VARCHAR(40) NOT NULL UNIQUE,
-                    active BOOLEAN NOT NULL DEFAULT TRUE,
-                    created_at TIMESTAMPTZ NOT NULL
-                )
-                """.formatted(schemaName);
-
-        String createSubjectsTable = """
-                CREATE TABLE IF NOT EXISTS "%s".subjects (
-                    id UUID PRIMARY KEY,
-                    name VARCHAR(120) NOT NULL,
-                    code VARCHAR(40) NOT NULL UNIQUE,
-                    active BOOLEAN NOT NULL DEFAULT TRUE,
-                    created_at TIMESTAMPTZ NOT NULL
-                )
-                """.formatted(schemaName);
-
-        String createSectionsTable = """
-                CREATE TABLE IF NOT EXISTS "%s".sections (
-                    id UUID PRIMARY KEY,
-                    name VARCHAR(80) NOT NULL,
-                    class_id UUID NOT NULL REFERENCES "%s".classes(id),
-                    class_teacher_id UUID REFERENCES "%s".teachers(id) ON DELETE SET NULL,
-                    active BOOLEAN NOT NULL DEFAULT TRUE,
-                    created_at TIMESTAMPTZ NOT NULL
-                )
-                """.formatted(schemaName, schemaName, schemaName);
-
-        String createAttendanceTable = """
-                CREATE TABLE IF NOT EXISTS "%s".attendance_records (
-                    id UUID PRIMARY KEY,
-                    student_id UUID NOT NULL REFERENCES "%s".students(id),
-                    class_id UUID NOT NULL REFERENCES "%s".classes(id),
-                    section_id UUID NOT NULL REFERENCES "%s".sections(id),
-                    attendance_date DATE NOT NULL,
-                    status VARCHAR(20) NOT NULL,
-                    remarks VARCHAR(255),
-                    marked_by_user_id UUID NOT NULL,
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID,
-                    CONSTRAINT uq_attendance_student_date UNIQUE (student_id, attendance_date)
-                )
-                """.formatted(schemaName, schemaName, schemaName, schemaName);
-
-        String createFeeAssignmentsTable = """
-                CREATE TABLE IF NOT EXISTS "%s".fee_assignments (
-                    id UUID PRIMARY KEY,
-                    student_id UUID NOT NULL REFERENCES "%s".students(id),
-                    fee_title VARCHAR(120) NOT NULL,
-                    amount NUMERIC(12,2) NOT NULL,
-                    due_date DATE NOT NULL,
-                    status VARCHAR(20) NOT NULL,
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID
-                )
-                """.formatted(schemaName, schemaName);
-
-        String createFeePaymentsTable = """
-                CREATE TABLE IF NOT EXISTS "%s".fee_payments (
-                    id UUID PRIMARY KEY,
-                    fee_assignment_id UUID NOT NULL REFERENCES "%s".fee_assignments(id),
-                    amount_paid NUMERIC(12,2) NOT NULL,
-                    payment_date DATE NOT NULL,
-                    payment_method VARCHAR(30) NOT NULL,
-                    reference_no VARCHAR(80),
-                    received_by_user_id UUID NOT NULL,
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID
-                )
-                """.formatted(schemaName, schemaName);
-
-        String createExamsTable = """
-                CREATE TABLE IF NOT EXISTS "%s".exams (
-                    id UUID PRIMARY KEY,
-                    title VARCHAR(120) NOT NULL,
-                    exam_date DATE NOT NULL,
-                    class_id UUID NOT NULL REFERENCES "%s".classes(id),
-                    section_id UUID NOT NULL REFERENCES "%s".sections(id),
-                    subject_id UUID NOT NULL REFERENCES "%s".subjects(id),
-                    max_marks NUMERIC(6,2) NOT NULL,
-                    active BOOLEAN NOT NULL DEFAULT TRUE,
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID,
-                    CONSTRAINT uq_exam_schedule UNIQUE (title, exam_date, class_id, section_id, subject_id)
-                )
-                """.formatted(schemaName, schemaName, schemaName, schemaName);
-
-        String createExamResultsTable = """
-                CREATE TABLE IF NOT EXISTS "%s".exam_results (
-                    id UUID PRIMARY KEY,
-                    exam_id UUID NOT NULL REFERENCES "%s".exams(id),
-                    student_id UUID NOT NULL REFERENCES "%s".students(id),
-                    marks_obtained NUMERIC(6,2) NOT NULL,
-                    grade VARCHAR(10),
-                    remarks VARCHAR(255),
-                    published BOOLEAN NOT NULL DEFAULT FALSE,
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID,
-                    CONSTRAINT uq_exam_result_student UNIQUE (exam_id, student_id)
-                )
-                """.formatted(schemaName, schemaName, schemaName);
-
-        String idxUsername = "CREATE INDEX IF NOT EXISTS idx_users_username ON \"" + schemaName + "\".users (username)";
-        String idxEmail = "CREATE INDEX IF NOT EXISTS idx_users_email ON \"" + schemaName + "\".users (email)";
-        String idxAdmissionNo = "CREATE INDEX IF NOT EXISTS idx_students_admission_no ON \"" + schemaName + "\".students (admission_no)";
-        String idxTeacherEmployeeNo = "CREATE INDEX IF NOT EXISTS idx_teachers_employee_no ON \"" + schemaName + "\".teachers (employee_no)";
-        String idxTeacherEmail = "CREATE INDEX IF NOT EXISTS idx_teachers_email ON \"" + schemaName + "\".teachers (email)";
-        String idxClassCode = "CREATE INDEX IF NOT EXISTS idx_classes_code ON \"" + schemaName + "\".classes (code)";
-        String idxSubjectCode = "CREATE INDEX IF NOT EXISTS idx_subjects_code ON \"" + schemaName + "\".subjects (code)";
-        String idxSectionClassId = "CREATE INDEX IF NOT EXISTS idx_sections_class_id ON \"" + schemaName + "\".sections (class_id)";
-        String idxAttendanceDate = "CREATE INDEX IF NOT EXISTS idx_attendance_date ON \"" + schemaName + "\".attendance_records (attendance_date)";
-        String idxAttendanceStudent = "CREATE INDEX IF NOT EXISTS idx_attendance_student ON \"" + schemaName + "\".attendance_records (student_id)";
-        String idxFeeAssignmentStudent = "CREATE INDEX IF NOT EXISTS idx_fee_assignments_student ON \"" + schemaName + "\".fee_assignments (student_id)";
-        String idxFeePaymentsAssignment = "CREATE INDEX IF NOT EXISTS idx_fee_payments_assignment ON \"" + schemaName + "\".fee_payments (fee_assignment_id)";
-        String idxExamsClass = "CREATE INDEX IF NOT EXISTS idx_exams_class ON \"" + schemaName + "\".exams (class_id)";
-        String idxExamsDate = "CREATE INDEX IF NOT EXISTS idx_exams_date ON \"" + schemaName + "\".exams (exam_date)";
-        String idxExamResultsExam = "CREATE INDEX IF NOT EXISTS idx_exam_results_exam ON \"" + schemaName + "\".exam_results (exam_id)";
-        String idxExamResultsStudent = "CREATE INDEX IF NOT EXISTS idx_exam_results_student ON \"" + schemaName + "\".exam_results (student_id)";
-
-        String createParentStudentsTable = """
-                CREATE TABLE IF NOT EXISTS "%s".parent_students (
-                    id UUID PRIMARY KEY,
-                    parent_user_id UUID NOT NULL REFERENCES "%s".users(id) ON DELETE CASCADE,
-                    student_id UUID NOT NULL REFERENCES "%s".students(id) ON DELETE CASCADE,
-                    created_at TIMESTAMPTZ NOT NULL,
-                    CONSTRAINT uq_parent_student UNIQUE (parent_user_id, student_id)
-                )
-                """.formatted(schemaName, schemaName, schemaName);
-
-        String createHomeworkTable = """
-                CREATE TABLE IF NOT EXISTS "%s".homework_assignments (
-                    id UUID PRIMARY KEY,
-                    title VARCHAR(200) NOT NULL,
-                    instructions TEXT,
-                    class_id UUID NOT NULL REFERENCES "%s".classes(id),
-                    section_id UUID REFERENCES "%s".sections(id),
-                    assigned_by_user_id UUID NOT NULL,
-                    due_date DATE,
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID
-                )
-                """.formatted(schemaName, schemaName, schemaName);
-
-        String createTimetableTable = """
-                CREATE TABLE IF NOT EXISTS "%s".timetable_slots (
-                    id UUID PRIMARY KEY,
-                    class_id UUID NOT NULL REFERENCES "%s".classes(id),
-                    section_id UUID NOT NULL REFERENCES "%s".sections(id),
-                    subject_id UUID NOT NULL REFERENCES "%s".subjects(id),
-                    teacher_id UUID REFERENCES "%s".teachers(id),
-                    day_of_week SMALLINT NOT NULL,
-                    start_time TIME NOT NULL,
-                    end_time TIME NOT NULL,
-                    label VARCHAR(80),
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID
-                )
-                """.formatted(schemaName, schemaName, schemaName, schemaName, schemaName);
-
-            String createOtpsTable = """
-                CREATE TABLE IF NOT EXISTS "%s".otps (
-                    id UUID PRIMARY KEY,
-                    user_id UUID NOT NULL,
-                    channel VARCHAR(10) NOT NULL,
-                    purpose VARCHAR(40) NOT NULL,
-                    destination VARCHAR(160) NOT NULL,
-                    otp_hash VARCHAR(200) NOT NULL,
-                    expires_at TIMESTAMPTZ NOT NULL,
-                    verify_attempts INTEGER NOT NULL DEFAULT 0,
-                    created_at TIMESTAMPTZ NOT NULL,
-                    updated_at TIMESTAMPTZ,
-                    created_by UUID,
-                    updated_by UUID
-                )
-                """.formatted(schemaName);
-
-        String alterUsersTenantId = "ALTER TABLE \"" + schemaName + "\".users ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(80)";
-            String alterUsersPhone = "ALTER TABLE \"" + schemaName + "\".users ADD COLUMN IF NOT EXISTS phone VARCHAR(30)";
-            String alterUsersFirstLoginRequired = "ALTER TABLE \"" + schemaName + "\".users ADD COLUMN IF NOT EXISTS first_login_required BOOLEAN NOT NULL DEFAULT FALSE";
-        String alterStudentsUserId = "ALTER TABLE \"" + schemaName + "\".students ADD COLUMN IF NOT EXISTS user_id UUID";
-        String alterTeachersUserId = "ALTER TABLE \"" + schemaName + "\".teachers ADD COLUMN IF NOT EXISTS user_id UUID";
-
-        jdbcTemplate.execute(createUsersTable);
-        jdbcTemplate.execute(createStudentsTable);
-        jdbcTemplate.execute(createTeachersTable);
-        jdbcTemplate.execute(createClassesTable);
-        jdbcTemplate.execute(createSubjectsTable);
-        jdbcTemplate.execute(createSectionsTable);
-        jdbcTemplate.execute(createAttendanceTable);
-        jdbcTemplate.execute(createFeeAssignmentsTable);
-        jdbcTemplate.execute(createFeePaymentsTable);
-        jdbcTemplate.execute(createExamsTable);
-        jdbcTemplate.execute(createExamResultsTable);
-        jdbcTemplate.execute(alterUsersTenantId);
-        jdbcTemplate.execute(alterUsersPhone);
-        jdbcTemplate.execute(alterUsersFirstLoginRequired);
-        jdbcTemplate.execute(alterStudentsUserId);
-        jdbcTemplate.execute(alterTeachersUserId);
-        jdbcTemplate.execute(createParentStudentsTable);
-        jdbcTemplate.execute(createHomeworkTable);
-        jdbcTemplate.execute(createTimetableTable);
-        jdbcTemplate.execute(createOtpsTable);
-
-        // Add audit columns to all tables for existing tenants (safe no-op when columns already present)
-        String[] auditTables = {"users", "students", "teachers", "attendance_records", "fee_assignments",
-                "fee_payments", "exams", "exam_results", "homework_assignments", "timetable_slots"};
-        for (String table : auditTables) {
-            jdbcTemplate.execute("ALTER TABLE \"" + schemaName + "\".\"" + table + "\" ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ");
-            jdbcTemplate.execute("ALTER TABLE \"" + schemaName + "\".\"" + table + "\" ADD COLUMN IF NOT EXISTS created_by UUID");
-            jdbcTemplate.execute("ALTER TABLE \"" + schemaName + "\".\"" + table + "\" ADD COLUMN IF NOT EXISTS updated_by UUID");
-        }
-
-        // Add soft-delete column for users, students, teachers
-        String[] softDeleteTables = {"users", "students", "teachers"};
-        for (String table : softDeleteTables) {
-            jdbcTemplate.execute("ALTER TABLE \"" + schemaName + "\".\"" + table + "\" ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ");
-        }
-
-        // Teacher status and class-teacher columns (V12 equivalent for new tenants)
-        jdbcTemplate.execute("ALTER TABLE \"" + schemaName + "\".teachers ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
-        jdbcTemplate.execute("ALTER TABLE \"" + schemaName + "\".sections ADD COLUMN IF NOT EXISTS class_teacher_id UUID REFERENCES \"" + schemaName + "\".teachers(id) ON DELETE SET NULL");
-
-        // Additional indexes for query patterns found in service layer
-        // (student/teacher linked-user resolution, timetable, homework, fee date range, parent lookup)
-        String idxStudentsUserId     = "CREATE INDEX IF NOT EXISTS idx_students_user_id ON \""         + schemaName + "\".students (user_id)";
-        String idxStudentsEmail      = "CREATE INDEX IF NOT EXISTS idx_students_email ON \""            + schemaName + "\".students (email)";
-        String idxTeachersUserId     = "CREATE INDEX IF NOT EXISTS idx_teachers_user_id ON \""          + schemaName + "\".teachers (user_id)";
-        String idxAttendanceDateStudent = "CREATE INDEX IF NOT EXISTS idx_attendance_date_student ON \"" + schemaName + "\".attendance_records (attendance_date, student_id)";
-        String idxFeePaymentsDate    = "CREATE INDEX IF NOT EXISTS idx_fee_payments_date ON \""         + schemaName + "\".fee_payments (payment_date)";
-        String idxTimetableClassSec  = "CREATE INDEX IF NOT EXISTS idx_timetable_class_section ON \""   + schemaName + "\".timetable_slots (class_id, section_id)";
-        String idxTimetableTeacher   = "CREATE INDEX IF NOT EXISTS idx_timetable_teacher ON \""         + schemaName + "\".timetable_slots (teacher_id)";
-        String idxHomeworkClass      = "CREATE INDEX IF NOT EXISTS idx_homework_class ON \""            + schemaName + "\".homework_assignments (class_id)";
-        String idxHomeworkAssignedBy = "CREATE INDEX IF NOT EXISTS idx_homework_assigned_by ON \""      + schemaName + "\".homework_assignments (assigned_by_user_id)";
-        String idxParentStudents     = "CREATE INDEX IF NOT EXISTS idx_parent_students_parent ON \""    + schemaName + "\".parent_students (parent_user_id)";
-        String idxParentStudentsStud = "CREATE INDEX IF NOT EXISTS idx_parent_students_student ON \""   + schemaName + "\".parent_students (student_id)";
-
-        jdbcTemplate.execute(idxUsername);
-        jdbcTemplate.execute(idxEmail);
-        jdbcTemplate.execute(idxAdmissionNo);
-        jdbcTemplate.execute(idxTeacherEmployeeNo);
-        jdbcTemplate.execute(idxTeacherEmail);
-        jdbcTemplate.execute(idxClassCode);
-        jdbcTemplate.execute(idxSubjectCode);
-        jdbcTemplate.execute(idxSectionClassId);
-        jdbcTemplate.execute(idxAttendanceDate);
-        jdbcTemplate.execute(idxAttendanceStudent);
-        jdbcTemplate.execute(idxFeeAssignmentStudent);
-        jdbcTemplate.execute(idxFeePaymentsAssignment);
-        jdbcTemplate.execute(idxExamsClass);
-        jdbcTemplate.execute(idxExamsDate);
-        jdbcTemplate.execute(idxExamResultsExam);
-        jdbcTemplate.execute(idxExamResultsStudent);
-        jdbcTemplate.execute(idxStudentsUserId);
-        jdbcTemplate.execute(idxStudentsEmail);
-        jdbcTemplate.execute(idxTeachersUserId);
-        jdbcTemplate.execute(idxAttendanceDateStudent);
-        jdbcTemplate.execute(idxFeePaymentsDate);
-        jdbcTemplate.execute(idxTimetableClassSec);
-        jdbcTemplate.execute(idxTimetableTeacher);
-        jdbcTemplate.execute(idxHomeworkClass);
-        jdbcTemplate.execute(idxHomeworkAssignedBy);
-        jdbcTemplate.execute(idxParentStudents);
-        jdbcTemplate.execute(idxParentStudentsStud);
-    }
-
-    private String resolveSchemaName(String tenantId, String schemaName) {
-        if (schemaName == null || schemaName.isBlank()) {
-            return "school_" + tenantId;
-        }
-        return normalizeSchema(schemaName);
-    }
-
-    private String normalize(String value) {
-        return value.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private String normalizeSlug(String value) {
-        String normalized = Normalizer.normalize(value.trim().toLowerCase(Locale.ROOT), Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", "")
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("(^-+|-+$)", "")
-                .replaceAll("-{2,}", "-");
-
-        if (!StringUtils.hasText(normalized)) {
-            throw new IllegalArgumentException("slug could not be generated");
-        }
-
-        return normalized;
-    }
-
-    private String normalizeSchema(String value) {
-        return value.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private String resolveSlug(String requestedSlug, String schoolName, String tenantId) {
-        if (StringUtils.hasText(requestedSlug)) {
-            return normalizeSlug(requestedSlug);
-        }
-
-        if (StringUtils.hasText(schoolName)) {
-            return normalizeSlug(schoolName);
-        }
-
-        return normalizeSlug(tenantId);
-    }
-
-    private String normalizeNullable(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim();
-    }
-
-    private void validateTenantContext(String schemaName) {
-        if (schemaName == null || TenantContext.DEFAULT_SCHEMA.equals(schemaName)) {
-            throw new IllegalArgumentException("X-Tenant-Slug header is required for tenant operations");
-        }
-    }
-
-    private TenantResponse map(Tenant tenant) {
-        return tenantMapper.toResponse(tenant);
-    }
-
 }
+

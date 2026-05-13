@@ -1,107 +1,71 @@
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../src/store/authStore';
-import { Colors, Shadow } from '../../src/theme';
-
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-
-function TabIcon({ name, focused, label }: { name: IoniconsName; focused: boolean; label: string }) {
-  return (
-    <View style={[tabStyles.wrap, focused && tabStyles.wrapActive]}>
-      <Ionicons
-        name={focused ? name : (`${name}-outline` as IoniconsName)}
-        size={22}
-        color={focused ? Colors.primary : Colors.textTertiary}
-      />
-      <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>{label}</Text>
-    </View>
-  );
-}
-
-const tabStyles = StyleSheet.create({
-  wrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 6, paddingHorizontal: 10, borderRadius: 12, minWidth: 56 },
-  wrapActive: { backgroundColor: Colors.accentLight },
-  label: { fontSize: 10, fontWeight: '500', color: Colors.textTertiary, marginTop: 2 },
-  labelActive: { color: Colors.primary, fontWeight: '700' },
-});
-
-const SCREEN_OPTIONS = {
-  headerStyle: { backgroundColor: Colors.primary, ...Shadow.md },
-  headerTintColor: Colors.textOnPrimary,
-  headerTitleStyle: { fontWeight: '700' as const, fontSize: 17 },
-  headerShadowVisible: false,
-  tabBarShowLabel: false,
-  tabBarStyle: {
-    backgroundColor: Colors.surface,
-    borderTopColor: Colors.border,
-    borderTopWidth: 1,
-    height: 64,
-    paddingTop: 4,
-    paddingBottom: 8,
-    ...Shadow.md,
-  },
-};
-
-function AdminTeacherTabs({ isAdmin }: { isAdmin: boolean }) {
-  return (
-    <Tabs screenOptions={SCREEN_OPTIONS}>
-      <Tabs.Screen name="index"            options={{ title: 'Dashboard',  tabBarIcon: ({ focused }) => <TabIcon name="home"     focused={focused} label="Home" /> }} />
-      <Tabs.Screen name="students/index"   options={{ title: 'Students',   tabBarIcon: ({ focused }) => <TabIcon name="people"   focused={focused} label="Students" /> }} />
-      <Tabs.Screen name="fees/index"       options={{ title: 'Fees',       tabBarIcon: ({ focused }) => <TabIcon name="card"     focused={focused} label="Fees" />, tabBarItemStyle: isAdmin ? {} : { display: 'none' } }} />
-      <Tabs.Screen name="attendance/index" options={{ title: 'Attendance', tabBarIcon: ({ focused }) => <TabIcon name="calendar" focused={focused} label="Attend." /> }} />
-      {/* Hidden */}
-      <Tabs.Screen name="students/[id]"      options={{ href: null, title: 'Student Detail' }} />
-      <Tabs.Screen name="student/index"      options={{ href: null }} />
-      <Tabs.Screen name="student/fees"       options={{ href: null }} />
-      <Tabs.Screen name="student/attendance" options={{ href: null }} />
-      <Tabs.Screen name="parent/index"       options={{ href: null }} />
-      <Tabs.Screen name="parent/[childId]"   options={{ href: null }} />
-    </Tabs>
-  );
-}
-
-function StudentTabs() {
-  return (
-    <Tabs screenOptions={SCREEN_OPTIONS}>
-      <Tabs.Screen name="student/index"      options={{ title: 'My Profile',    tabBarIcon: ({ focused }) => <TabIcon name="person"   focused={focused} label="Profile" /> }} />
-      <Tabs.Screen name="student/fees"       options={{ title: 'My Fees',       tabBarIcon: ({ focused }) => <TabIcon name="card"     focused={focused} label="My Fees" /> }} />
-      <Tabs.Screen name="student/attendance" options={{ title: 'My Attendance', tabBarIcon: ({ focused }) => <TabIcon name="calendar" focused={focused} label="Attend." /> }} />
-      {/* Hidden */}
-      <Tabs.Screen name="index"            options={{ href: null }} />
-      <Tabs.Screen name="students/index"   options={{ href: null }} />
-      <Tabs.Screen name="students/[id]"    options={{ href: null }} />
-      <Tabs.Screen name="fees/index"       options={{ href: null }} />
-      <Tabs.Screen name="attendance/index" options={{ href: null }} />
-      <Tabs.Screen name="parent/index"     options={{ href: null }} />
-      <Tabs.Screen name="parent/[childId]" options={{ href: null }} />
-    </Tabs>
-  );
-}
-
-function ParentTabs() {
-  return (
-    <Tabs screenOptions={SCREEN_OPTIONS}>
-      <Tabs.Screen name="parent/index"     options={{ title: 'My Children', tabBarIcon: ({ focused }) => <TabIcon name="heart"    focused={focused} label="Children" /> }} />
-      <Tabs.Screen name="parent/[childId]" options={{ href: null, title: 'Child Detail' }} />
-      {/* Hidden */}
-      <Tabs.Screen name="index"            options={{ href: null }} />
-      <Tabs.Screen name="students/index"   options={{ href: null }} />
-      <Tabs.Screen name="students/[id]"    options={{ href: null }} />
-      <Tabs.Screen name="fees/index"       options={{ href: null }} />
-      <Tabs.Screen name="attendance/index" options={{ href: null }} />
-      <Tabs.Screen name="student/index"    options={{ href: null }} />
-      <Tabs.Screen name="student/fees"     options={{ href: null }} />
-      <Tabs.Screen name="student/attendance" options={{ href: null }} />
-    </Tabs>
-  );
-}
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useProactiveTokenRefresh } from '@/shared/hooks/useProactiveTokenRefresh';
+import { useSyncTrigger } from '@/offline/sync/useSyncTrigger';
+import { usePushRegistration } from '@/features/notifications/hooks/usePushRegistration';
+import { useNotificationListeners } from '@/features/notifications/hooks/useNotificationListeners';
 
 export default function AppLayout() {
-  const { session } = useAuthStore();
-  const role = session?.role ?? 'SCHOOL_ADMIN';
+  const user = useAuthStore((s) => s.user);
 
-  if (role === 'STUDENT') return <StudentTabs />;
-  if (role === 'PARENT')  return <ParentTabs />;
-  return <AdminTeacherTabs isAdmin={role === 'SCHOOL_ADMIN'} />;
+  // D2 — pre-empt token expiry on foreground
+  useProactiveTokenRefresh();
+  // D3 — flush pending offline attendance on foreground / reconnect
+  useSyncTrigger();
+  // D4 — request push permission, register token with backend
+  usePushRegistration();
+  // D4 — handle foreground notifications and tap deep-links
+  useNotificationListeners();
+
+  // Role-based tab visibility
+  const canMarkAttendance =
+    user?.role === 'SCHOOL_ADMIN' ||
+    user?.role === 'TEACHER' ||
+    user?.role === 'SUPER_ADMIN';
+
+  const canViewTimetable  = user?.role === 'TEACHER';
+  const canViewHomework   = user?.role === 'STUDENT';
+  const canViewChildren   = user?.role === 'PARENT';
+
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: true,
+        tabBarActiveTintColor: '#1e3a5f',
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{ title: 'Dashboard', tabBarLabel: 'Home' }}
+      />
+      <Tabs.Screen
+        name="notices"
+        options={{ title: 'Notices', tabBarLabel: 'Notices' }}
+      />
+      {canMarkAttendance && (
+        <Tabs.Screen
+          name="attendance"
+          options={{ title: 'Attendance', tabBarLabel: 'Attendance' }}
+        />
+      )}
+      {canViewTimetable && (
+        <Tabs.Screen
+          name="timetable"
+          options={{ title: 'Timetable', tabBarLabel: 'Timetable' }}
+        />
+      )}
+      {canViewHomework && (
+        <Tabs.Screen
+          name="homework"
+          options={{ title: 'Homework', tabBarLabel: 'Homework' }}
+        />
+      )}
+      {canViewChildren && (
+        <Tabs.Screen
+          name="children"
+          options={{ title: 'My Children', tabBarLabel: 'Children' }}
+        />
+      )}
+    </Tabs>
+  );
 }

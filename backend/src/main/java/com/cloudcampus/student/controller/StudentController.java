@@ -1,133 +1,158 @@
 package com.cloudcampus.student.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
-import com.cloudcampus.common.api.PageResponse;
-import com.cloudcampus.student.dto.StudentCreateRequest;
-import com.cloudcampus.student.dto.StudentDetailResponse;
+import com.cloudcampus.common.web.CorrelationId;
+import com.cloudcampus.student.dto.AdmitStudentRequest;
+import com.cloudcampus.student.dto.BulkImportResult;
+import com.cloudcampus.student.dto.BulkStudentRow;
 import com.cloudcampus.student.dto.StudentResponse;
-import com.cloudcampus.student.dto.StudentUpdateRequest;
+import com.cloudcampus.student.dto.StudentSummaryResponse;
+import com.cloudcampus.student.dto.UpdateStudentRequest;
+import com.cloudcampus.student.entity.StudentStatus;
 import com.cloudcampus.student.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
+import org.slf4j.MDC;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.cloudcampus.student.entity.StudentStatus;
 
+import java.util.List;
 import java.util.UUID;
 
+/**
+ * School Admin API — Student Management (CC-0501 – CC-0504).
+ *
+ * POST   /v1/school-admin/schools/{schoolId}/students              — admit student
+ * GET    /v1/school-admin/schools/{schoolId}/students              — list (filtered)
+ * GET    /v1/school-admin/classes/{classId}/students               — roster by class
+ * GET    /v1/school-admin/sections/{sectionId}/students            — roster by section
+ * GET    /v1/school-admin/students/{id}                            — full profile
+ * PUT    /v1/school-admin/students/{id}                            — update profile
+ * PATCH  /v1/school-admin/students/{id}/graduate                   — graduate
+ * PATCH  /v1/school-admin/students/{id}/transfer                   — transfer
+ * PATCH  /v1/school-admin/students/{id}/suspend                    — suspend
+ * PATCH  /v1/school-admin/students/{id}/reinstate                  — reinstate
+ *
+ * Security: SCHOOL_ADMIN, TENANT_ADMIN, SUPER_ADMIN (SecurityConfig path rule).
+ */
 @RestController
-@RequestMapping("/api/v1/students")
-@RequiredArgsConstructor
-@Tag(name = "Student", description = "Student management APIs")
+@RequestMapping("/v1/school-admin")
+@Tag(name = "School Admin — Students", description = "Student admission, profile, and status management")
 public class StudentController {
 
-    private final StudentService studentService;
+    private final StudentService service;
 
-    @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
-    @Operation(summary = "Create a student", parameters = {
-            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
-            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
-    })
-    public ResponseEntity<ApiResponse<StudentResponse>> createStudent(@Valid @RequestBody StudentCreateRequest request) {
-        StudentResponse response = studentService.createStudent(request);
-        return ResponseEntity.ok(ApiResponse.success("Student created successfully", response));
+    public StudentController(StudentService service) {
+        this.service = service;
     }
 
-    @GetMapping("/me")
-    @PreAuthorize("hasRole('STUDENT')")
-    @Operation(summary = "Get own student profile", parameters = {
-            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
-            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
-    })
-    public ResponseEntity<ApiResponse<StudentResponse>> getMyProfile() {
-        StudentResponse response = studentService.getMyProfile();
-        return ResponseEntity.ok(ApiResponse.success("Student profile fetched successfully", response));
+    @Operation(summary = "Admit a new student",
+               description = "Creates a student record. studentNumber is auto-generated if omitted.")
+    @PostMapping("/schools/{schoolId}/students")
+    public ResponseEntity<ApiResponse<StudentResponse>> admit(
+            @PathVariable UUID schoolId,
+            @Valid @RequestBody AdmitStudentRequest request) {
+        StudentResponse body = service.admit(schoolId, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
     }
 
-    @GetMapping("/me/details")
-    @PreAuthorize("hasRole('STUDENT')")
-    @Operation(summary = "Get full details of own student profile (fees, exams, attendance, homework, parents)", parameters = {
-            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
-            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
-    })
-    public ResponseEntity<ApiResponse<StudentDetailResponse>> getMyDetails() {
-        StudentDetailResponse response = studentService.getMyDetails();
-        return ResponseEntity.ok(ApiResponse.success("Student details fetched successfully", response));
+    @Operation(summary = "Bulk import students from CSV-derived JSON (CC-0508)",
+               description = "Accepts a list of student rows parsed from a CSV file. Each row is imported independently — failures are collected and returned without aborting the batch.")
+    @PostMapping("/schools/{schoolId}/students/bulk")
+    public ResponseEntity<ApiResponse<BulkImportResult>> bulkAdmit(
+            @PathVariable UUID schoolId,
+            @RequestBody List<BulkStudentRow> rows) {
+        return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                service.bulkAdmit(schoolId, rows)));
     }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
-    @Operation(summary = "Get student by id", parameters = {
-            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
-            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
-    })
-    public ResponseEntity<ApiResponse<StudentResponse>> getStudentById(@PathVariable UUID id) {
-        StudentResponse response = studentService.getStudentById(id);
-        return ResponseEntity.ok(ApiResponse.success("Student fetched successfully", response));
+    @Operation(summary = "List students for a school",
+               description = "Supports filtering by status and name search via query params.")
+    @GetMapping("/schools/{schoolId}/students")
+    public ResponseEntity<ApiResponse<List<StudentSummaryResponse>>> list(
+            @PathVariable UUID schoolId,
+            @RequestParam(required = false) StudentStatus status,
+            @RequestParam(required = false) String search) {
+
+        List<StudentSummaryResponse> body;
+        if (search != null && !search.isBlank()) {
+            body = service.search(schoolId, search);
+        } else if (status != null) {
+            body = service.listBySchoolAndStatus(schoolId, status);
+        } else {
+            body = service.listBySchool(schoolId);
+        }
+        return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
     }
 
-    @GetMapping("/{id}/details")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
-    @Operation(summary = "Get student with fees, exams, attendance, homework and parent details", parameters = {
-            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
-            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
-    })
-    public ResponseEntity<ApiResponse<StudentDetailResponse>> getStudentDetails(@PathVariable UUID id) {
-        StudentDetailResponse response = studentService.getStudentDetails(id);
-        return ResponseEntity.ok(ApiResponse.success("Student details fetched successfully", response));
+    @Operation(summary = "List students in a class (CC-0504)")
+    @GetMapping("/classes/{classId}/students")
+    public ResponseEntity<ApiResponse<List<StudentSummaryResponse>>> listByClass(
+            @PathVariable UUID classId) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.listByClass(classId)));
     }
 
-    @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN', 'TEACHER')")
-    @Operation(summary = "List students", parameters = {
-            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
-            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
-    })
-    public ResponseEntity<ApiResponse<PageResponse<StudentResponse>>> getStudents(
-            @PageableDefault(size = 20, sort = "lastName", direction = Sort.Direction.ASC) Pageable pageable,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) StudentStatus status) {
-        PageResponse<StudentResponse> page = PageResponse.from(studentService.getStudents(pageable, search, status));
-        return ResponseEntity.ok(ApiResponse.success("Students fetched successfully", page));
+    @Operation(summary = "List students in a section (CC-0504)")
+    @GetMapping("/sections/{sectionId}/students")
+    public ResponseEntity<ApiResponse<List<StudentSummaryResponse>>> listBySection(
+            @PathVariable UUID sectionId) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.listBySection(sectionId)));
     }
 
-    @PatchMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
-    @Operation(summary = "Update a student", parameters = {
-            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
-            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
-    })
-    public ResponseEntity<ApiResponse<StudentResponse>> updateStudent(
+    @Operation(summary = "Get full student profile (CC-0503)")
+    @GetMapping("/students/{id}")
+    public ResponseEntity<ApiResponse<StudentResponse>> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.getById(id)));
+    }
+
+    @Operation(summary = "Update student profile (CC-0503)")
+    @PutMapping("/students/{id}")
+    public ResponseEntity<ApiResponse<StudentResponse>> update(
             @PathVariable UUID id,
-            @Valid @RequestBody StudentUpdateRequest request) {
-        StudentResponse response = studentService.updateStudent(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Student updated successfully", response));
+            @Valid @RequestBody UpdateStudentRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.update(id, request)));
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SCHOOL_ADMIN')")
-    @Operation(summary = "Soft-delete a student", parameters = {
-            @Parameter(name = "X-Tenant-Slug", description = "Tenant schema identifier", required = true),
-            @Parameter(name = "Authorization", description = "Bearer JWT token", required = true)
-    })
-    public ResponseEntity<Void> deleteStudent(@PathVariable UUID id) {
-        studentService.softDeleteStudent(id);
-        return ResponseEntity.noContent().build();
+    @Operation(summary = "Mark student as graduated")
+    @PatchMapping("/students/{id}/graduate")
+    public ResponseEntity<ApiResponse<StudentResponse>> graduate(@PathVariable UUID id) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.graduate(id)));
+    }
+
+    @Operation(summary = "Mark student as transferred to another school")
+    @PatchMapping("/students/{id}/transfer")
+    public ResponseEntity<ApiResponse<StudentResponse>> transfer(@PathVariable UUID id) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.transfer(id)));
+    }
+
+    @Operation(summary = "Suspend student (disciplinary)")
+    @PatchMapping("/students/{id}/suspend")
+    public ResponseEntity<ApiResponse<StudentResponse>> suspend(@PathVariable UUID id) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.suspend(id)));
+    }
+
+    @Operation(summary = "Reinstate suspended student")
+    @PatchMapping("/students/{id}/reinstate")
+    public ResponseEntity<ApiResponse<StudentResponse>> reinstate(@PathVariable UUID id) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.reinstate(id)));
     }
 }

@@ -1,0 +1,230 @@
+{
+  "uid": "cloudcampus-backend",
+  "title": "CloudCampus Backend",
+  "tags": ["cloudcampus"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+
+    {
+      "id": 1,
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"cloudcampus-backend\"}[1m]))",
+          "legendFormat": "req/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" }
+        }
+      }
+    },
+
+    {
+      "id": 2,
+      "title": "HTTP 5xx Error Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"cloudcampus-backend\",status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"cloudcampus-backend\"}[1m]))",
+          "legendFormat": "5xx rate"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red",   "value": 0.01 }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 3,
+      "title": "p50 / p95 / p99 Response Time",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{job=\"cloudcampus-backend\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"cloudcampus-backend\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"cloudcampus-backend\"}[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+
+    {
+      "id": 4,
+      "title": "HikariCP — Active / Idle / Max Connections",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{job=\"cloudcampus-backend\"}",
+          "legendFormat": "active"
+        },
+        {
+          "expr": "hikaricp_connections_idle{job=\"cloudcampus-backend\"}",
+          "legendFormat": "idle"
+        },
+        {
+          "expr": "hikaricp_connections_max{job=\"cloudcampus-backend\"}",
+          "legendFormat": "max"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
+      }
+    },
+
+    {
+      "id": 5,
+      "title": "JVM Heap Usage",
+      "type": "gauge",
+      "gridPos": { "x": 8, "y": 8, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{job=\"cloudcampus-backend\",area=\"heap\"} / jvm_memory_max_bytes{job=\"cloudcampus-backend\",area=\"heap\"}",
+          "legendFormat": "heap %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 0.7  },
+              { "color": "red",    "value": 0.85 }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 6,
+      "title": "JVM Threads",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 8, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{job=\"cloudcampus-backend\"}",
+          "legendFormat": "live"
+        },
+        {
+          "expr": "jvm_threads_daemon_threads{job=\"cloudcampus-backend\"}",
+          "legendFormat": "daemon"
+        },
+        {
+          "expr": "jvm_threads_peak_threads{job=\"cloudcampus-backend\"}",
+          "legendFormat": "peak"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
+      }
+    },
+
+    {
+      "id": 7,
+      "title": "Request Rate by HTTP Status",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(http_server_requests_seconds_count{job=\"cloudcampus-backend\"}[1m]))",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      }
+    },
+
+    {
+      "id": 8,
+      "title": "Top 10 Slowest Endpoints (p95)",
+      "type": "table",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "topk(10, histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"cloudcampus-backend\"}[5m])) by (le, uri)))",
+          "legendFormat": "{{uri}}",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      },
+      "options": {
+        "sortBy": [{ "displayName": "Value", "desc": true }]
+      }
+    },
+
+    {
+      "id": 9,
+      "title": "Request Volume by Tenant",
+      "type": "timeseries",
+      "description": "Requires 'tenantId' label on metrics. Set via MeterFilter in CloudCampusApplication or a MeterRegistry customizer.",
+      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "expr": "sum by (tenantId) (rate(http_server_requests_seconds_count{job=\"cloudcampus-backend\"}[1m]))",
+          "legendFormat": "tenant: {{tenantId}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      }
+    }
+
+  ],
+
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "hide": 0,
+        "label": "Datasource"
+      }
+    ]
+  }
+}

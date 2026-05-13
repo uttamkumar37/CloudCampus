@@ -1,12 +1,12 @@
 {
   "expo": {
     "name": "CloudCampus",
-    "slug": "cloudcampus",
+    "slug": "cloudcampus-mobile",
+    "scheme": "cloudcampus",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "cloudcampus",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -26,6 +26,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1e3a5f",
+          "sounds": []
+        }
+      ]
+    ]
   }
 }

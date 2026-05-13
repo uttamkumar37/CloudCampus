@@ -1,47 +1,49 @@
-import { apiClient } from '../../../api/client'
-import { ENDPOINTS } from '../../../api/endpoints'
-import type { ApiResponse } from '../../../types/api'
+import authClient from '@/shared/api/authClient';
+import type { ApiResponse } from '@/shared/types/api';
 
-import type {
-  ChangePasswordRequest,
-  CredentialOtpRequest,
-  LoginRequest,
-  LoginResponse,
-  SchoolSearchResult,
-  UpdateCredentialsRequest,
-} from '../types'
+// ── Request / response shapes (mirrors backend DTOs) ─────────────────────────
 
-export async function login(payload: LoginRequest) {
-  const { data } = await apiClient.post<ApiResponse<LoginResponse>>(ENDPOINTS.auth.login, payload)
-
-  return data
+export interface LoginRequestData {
+  username: string;
+  password: string;
 }
 
-export async function searchSchools(query: string) {
-  const { data } = await apiClient.get<ApiResponse<SchoolSearchResult[]>>(ENDPOINTS.tenants.searchSchools, {
-    params: { query },
-  })
-
-  return data
+export interface LoginResponseData {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  role: string;
+  userId: string;
+  tenantId: string | null;
+  requiresPasswordChange: boolean;
+  /** Feature-flag codes enabled for the tenant. Backend populates in future. */
+  features?: string[];
 }
 
-export async function getSchoolBySlug(slug: string) {
-  const { data } = await apiClient.get<ApiResponse<SchoolSearchResult>>(ENDPOINTS.tenants.schoolBySlug(slug))
+// ── API functions ─────────────────────────────────────────────────────────────
 
-  return data
+export async function loginApi(
+  credentials: LoginRequestData,
+): Promise<LoginResponseData> {
+  const { data } = await authClient.post<ApiResponse<LoginResponseData>>(
+    '/v1/auth/login',
+    credentials,
+  );
+  return data.data!;
 }
 
-export async function changePassword(payload: ChangePasswordRequest) {
-  const { data } = await apiClient.post<ApiResponse<null>>(ENDPOINTS.auth.changePassword, payload)
-  return data
+export async function logoutApi(refreshToken: string): Promise<void> {
+  await authClient.post('/v1/auth/logout', { refreshToken });
 }
 
-export async function sendCredentialsOtp(payload: CredentialOtpRequest) {
-  const { data } = await apiClient.post<ApiResponse<null>>(ENDPOINTS.auth.sendCredentialsOtp, payload)
-  return data
+export async function forgotPasswordApi(email: string): Promise<void> {
+  await authClient.post('/v1/auth/forgot-password', { email });
 }
 
-export async function updateCredentials(payload: UpdateCredentialsRequest) {
-  const { data } = await apiClient.post<ApiResponse<null>>(ENDPOINTS.auth.updateCredentials, payload)
-  return data
+export async function resetPasswordApi(
+  email: string,
+  otp: string,
+  newPassword: string,
+): Promise<void> {
+  await authClient.post('/v1/auth/reset-password', { email, otp, newPassword });
 }

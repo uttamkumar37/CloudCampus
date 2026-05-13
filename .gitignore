@@ -48,6 +48,9 @@ Thumbs.db
 *.swo
 *.tmp
 
+# Local build caches
+.m2/
+
 # Local data files
 samples/*.xlsx
 samples/*.xls

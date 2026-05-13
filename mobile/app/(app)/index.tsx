@@ -1,446 +1,117 @@
-import { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../src/store/authStore';
-import { getTenantDashboardSummary } from '../../src/api/dashboard';
-import type { TenantDashboardSummary } from '../../src/types/dashboard';
-import { Colors, Spacing, Radius, Shadow, Typography, avatarColor } from '../../src/theme';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { listNotices, type NoticeCategory } from '@/features/notices/api/noticeApi';
 
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
-}
-
-function formatTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return 'Just now';
-    if (diffMin < 60) return `${diffMin}m ago`;
-    const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}h ago`;
-    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-  } catch {
-    return '';
-  }
-}
-
-const ACTIVITY_ICON: Record<string, { icon: IoniconsName; color: string; bg: string }> = {
-  ATTENDANCE: { icon: 'calendar-outline', color: Colors.info, bg: Colors.infoBg },
-  STUDENT: { icon: 'person-add-outline', color: Colors.success, bg: Colors.successBg },
-  FEES: { icon: 'card-outline', color: Colors.warning, bg: Colors.warningBg },
-  EXAM: { icon: 'document-text-outline', color: Colors.primaryLight, bg: Colors.accentLight },
-  HOMEWORK: { icon: 'book-outline', color: '#7C3AED', bg: '#EDE9FE' },
+const ROLE_LABEL: Record<string, string> = {
+  SUPER_ADMIN:  'Super Admin',
+  SCHOOL_ADMIN: 'School Admin',
+  TEACHER:      'Teacher',
+  STUDENT:      'Student',
+  PARENT:       'Parent',
 };
 
+const CATEGORY_COLOR: Record<NoticeCategory, string> = {
+  GENERAL:  '#6b7280',
+  ACADEMIC: '#2563eb',
+  EXAM:     '#7c3aed',
+  FEE:      '#d97706',
+  HOLIDAY:  '#16a34a',
+  CIRCULAR: '#0891b2',
+  URGENT:   '#dc2626',
+};
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
 export default function DashboardScreen() {
-  const router = useRouter();
-  const { session, clearSession } = useAuthStore();
-  const [summary, setSummary] = useState<TenantDashboardSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const user      = useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
 
-  async function fetchSummary() {
-    try {
-      const data = await getTenantDashboardSummary();
-      setSummary(data);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load dashboard';
-      Alert.alert('Error', message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }
+  const { data: noticesPage } = useQuery({
+    queryKey: ['mobile-notices'],
+    queryFn:  () => listNotices(0, 3),
+    staleTime: 2 * 60 * 1000,
+    enabled: !!user,
+  });
 
-  useEffect(() => { fetchSummary(); }, []);
-
-  const schoolName = summary?.branding.schoolName ?? session?.schoolName ?? 'Your School';
-  const initials = (session?.username ?? 'U').slice(0, 2).toUpperCase();
-  const avatarBg = avatarColor(session?.username ?? 'U');
-  const attendancePct = summary?.attendancePercentage ?? 0;
-  const attColor = attendancePct >= 85 ? Colors.success : attendancePct >= 70 ? Colors.warning : Colors.danger;
-  const isAdmin = session?.role === 'SCHOOL_ADMIN';
-  const roleLabel = session?.role === 'SCHOOL_ADMIN' ? 'Admin' : session?.role === 'TEACHER' ? 'Teacher' : session?.role ?? '';
-  const insightCount = summary?.quickInsights.length ?? 0;
-  const activityCount = summary?.recentActivity.length ?? 0;
-  const feeKpi = summary?.feesCollected ?? 0;
-
-  if (loading) {
-    return (
-      <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading dashboard…</Text>
-      </View>
-    );
-  }
+  const latestNotices = noticesPage?.items ?? [];
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => { setRefreshing(true); fetchSummary(); }}
-          tintColor={Colors.primary}
-          colors={[Colors.primary]}
-        />
-      }
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.circle1} />
-        <View style={styles.circle2} />
-        <View style={styles.headerTop}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.headerUsername}>{session?.username}</Text>
-            <View style={styles.schoolBadge}>
-              <Ionicons name="business-outline" size={11} color={Colors.textOnPrimaryMuted} />
-              <Text style={styles.schoolBadgeText} numberOfLines={1}>{schoolName}</Text>
-            </View>
-            {roleLabel ? (
-              <View style={[styles.schoolBadge, { marginTop: 4 }]}>
-                <Ionicons name="shield-checkmark-outline" size={11} color={Colors.textOnPrimaryMuted} />
-                <Text style={styles.schoolBadgeText}>{roleLabel}</Text>
-              </View>
-            ) : null}
-          </View>
-          <View style={styles.headerRight}>
-            <View style={[styles.avatar, { backgroundColor: avatarBg }]}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </View>
-            <TouchableOpacity onPress={() => clearSession()} style={styles.logoutBtn}>
-              <Ionicons name="log-out-outline" size={18} color={Colors.textOnPrimaryMuted} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Attendance bar inside header */}
-        {summary && (
-          <View style={styles.attBar}>
-            <View style={styles.attBarLeft}>
-              <Text style={styles.attBarLabel}>Today's Attendance</Text>
-              <Text style={[styles.attBarPct, { color: '#fff' }]}>
-                {attendancePct.toFixed(1)}%
-              </Text>
-            </View>
-            <View style={styles.attTrack}>
-              <View style={[styles.attFill, { width: `${Math.min(attendancePct, 100)}%` as any, backgroundColor: attColor }]} />
-            </View>
-          </View>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      {/* Welcome */}
+      <View style={styles.welcomeCard}>
+        <Text style={styles.greeting}>Welcome back</Text>
+        <Text style={styles.roleLabel}>{ROLE_LABEL[user?.role ?? ''] ?? user?.role}</Text>
+        {user?.tenantId && (
+          <Text style={styles.tenant} numberOfLines={1}>Tenant: {user.tenantId}</Text>
         )}
       </View>
 
-      {/* KPI Grid */}
-      {summary && (
-        <View style={[styles.snapshotCard, Shadow.sm]}>
-          <Text style={styles.snapshotTitle}>Campus Snapshot</Text>
-          <View style={styles.snapshotMetrics}>
-            <View style={styles.snapshotMetric}>
-              <Text style={styles.snapshotValue}>{summary.totalStudents}</Text>
-              <Text style={styles.snapshotLabel}>Students</Text>
-            </View>
-            <View style={styles.snapshotMetric}>
-              <Text style={styles.snapshotValue}>{summary.totalTeachers}</Text>
-              <Text style={styles.snapshotLabel}>Teachers</Text>
-            </View>
-            <View style={styles.snapshotMetric}>
-              <Text style={styles.snapshotValue}>{insightCount}</Text>
-              <Text style={styles.snapshotLabel}>Insights</Text>
-            </View>
-            <View style={styles.snapshotMetric}>
-              <Text style={styles.snapshotValue}>{activityCount}</Text>
-              <Text style={styles.snapshotLabel}>Recent</Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {summary && (
-        <View style={[styles.snapshotCard, Shadow.sm]}>
-          <Text style={styles.snapshotTitle}>Operations Pulse</Text>
-          <View style={styles.snapshotMetrics}>
-            <View style={styles.snapshotMetric}>
-              <Text style={styles.snapshotValue}>{attendancePct.toFixed(1)}%</Text>
-              <Text style={styles.snapshotLabel}>Attendance</Text>
-            </View>
-            <View style={styles.snapshotMetric}>
-              <Text style={styles.snapshotValue}>{feeKpi >= 1000 ? `${(feeKpi / 1000).toFixed(1)}k` : String(feeKpi)}</Text>
-              <Text style={styles.snapshotLabel}>Fees (₹)</Text>
-            </View>
-            <View style={styles.snapshotMetric}>
-              <Text style={styles.snapshotValue}>{roleLabel || 'User'}</Text>
-              <Text style={styles.snapshotLabel}>Profile</Text>
-            </View>
-            <View style={styles.snapshotMetric}>
-              <Text style={styles.snapshotValue}>{isAdmin ? 'Admin' : 'Academic'}</Text>
-              <Text style={styles.snapshotLabel}>Mode</Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {summary && (
-        <View style={styles.kpiGrid}>
-          <KpiCard
-            label="Students"
-            value={summary.totalStudents}
-            icon="people"
-            color="#2563EB"
-            bg="#EFF6FF"
-          />
-          <KpiCard
-            label="Teachers"
-            value={summary.totalTeachers}
-            icon="school"
-            color={Colors.success}
-            bg={Colors.successBg}
-          />
-          <KpiCard
-            label="Attendance"
-            value={`${attendancePct.toFixed(1)}%`}
-            icon="calendar-outline"
-            color={Colors.warning}
-            bg={Colors.warningBg}
-          />
-          <KpiCard
-            label="Fees (₹)"
-            value={summary.feesCollected >= 1000
-              ? `${(summary.feesCollected / 1000).toFixed(1)}k`
-              : String(summary.feesCollected)}
-            icon="card"
-            color="#7C3AED"
-            bg="#EDE9FE"
-          />
-        </View>
-      )}
-
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionsRow}>
-          <QuickAction
-            icon="people-outline"
-            label="Students"
-            color="#2563EB"
-            bg="#EFF6FF"
-            onPress={() => router.push('/(app)/students')}
-          />
-          {isAdmin && (
-            <QuickAction
-              icon="card-outline"
-              label="Fees"
-              color="#7C3AED"
-              bg="#EDE9FE"
-              onPress={() => router.push('/(app)/fees')}
-            />
-          )}
-          <QuickAction
-            icon="calendar-outline"
-            label="Attendance"
-            color={Colors.success}
-            bg={Colors.successBg}
-            onPress={() => router.push('/(app)/attendance')}
-          />
-        </View>
-      </View>
-
-      {/* Insights */}
-      {summary && summary.quickInsights.length > 0 && (
+      {/* Latest notices preview */}
+      {latestNotices.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Insights</Text>
-          {summary.quickInsights.map((insight, i) => (
-            <View key={i} style={styles.insightRow}>
-              <View style={styles.insightIcon}>
-                <Ionicons name="bulb-outline" size={14} color={Colors.warning} />
-              </View>
-              <Text style={styles.insightText}>{insight}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {/* Recent Activity */}
-      {summary && summary.recentActivity.length > 0 && (
-        <View style={[styles.section, { marginBottom: Spacing.xxxl }]}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          {summary.recentActivity.slice(0, 6).map((activity, i) => {
-            const meta = ACTIVITY_ICON[activity.type] ?? ACTIVITY_ICON['ATTENDANCE'];
+          <Text style={styles.sectionTitle}>Latest Notices</Text>
+          {latestNotices.map((n) => {
+            const color = CATEGORY_COLOR[n.category];
             return (
-              <View key={i} style={[styles.activityRow, i > 0 && styles.activityBorder]}>
-                <View style={[styles.activityIconWrap, { backgroundColor: meta.bg }]}>
-                  <Ionicons name={meta.icon} size={16} color={meta.color} />
+              <View key={n.id} style={[styles.noticeRow, n.priority >= 50 && styles.noticeRowUrgent]}>
+                <View style={[styles.noticeDot, { backgroundColor: color }]} />
+                <View style={styles.noticeContent}>
+                  <Text style={styles.noticeTitle} numberOfLines={1}>{n.title}</Text>
+                  <Text style={styles.noticeDate}>{formatDate(n.createdAt)}</Text>
                 </View>
-                <View style={styles.activityInfo}>
-                  <Text style={styles.activityTitle}>{activity.title}</Text>
-                  <Text style={styles.activityDesc} numberOfLines={1}>
-                    {activity.description}
-                  </Text>
-                </View>
-                <Text style={styles.activityTime}>{formatTime(activity.occurredAt)}</Text>
               </View>
             );
           })}
         </View>
       )}
+
+      <Pressable style={styles.signOut} onPress={clearAuth} testID="btn-sign-out">
+        <Text style={styles.signOutText}>Sign Out</Text>
+      </Pressable>
     </ScrollView>
   );
 }
 
-function KpiCard({
-  label, value, icon, color, bg,
-}: {
-  label: string; value: string | number; icon: IoniconsName; color: string; bg: string;
-}) {
-  return (
-    <View style={[styles.kpiCard, Shadow.sm]}>
-      <View style={[styles.kpiIcon, { backgroundColor: bg }]}>
-        <Ionicons name={icon} size={20} color={color} />
-      </View>
-      <Text style={[styles.kpiValue, { color }]}>{value}</Text>
-      <Text style={styles.kpiLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function QuickAction({
-  icon, label, color, bg, onPress,
-}: {
-  icon: IoniconsName; label: string; color: string; bg: string; onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity style={styles.qaBtn} onPress={onPress} activeOpacity={0.75}>
-      <View style={[styles.qaIcon, { backgroundColor: bg }]}>
-        <Ionicons name={icon} size={24} color={color} />
-      </View>
-      <Text style={styles.qaLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingBottom: Spacing.xxxl },
+  scroll:    { flex: 1, backgroundColor: '#f0f4f8' },
+  container: { padding: 20, paddingBottom: 40 },
 
-  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.background },
-  loadingText: { color: Colors.textSecondary, fontSize: 14 },
+  welcomeCard: {
+    backgroundColor: '#1e3a5f',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+  },
+  greeting:  { fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 4 },
+  roleLabel: { fontSize: 15, color: '#93c5fd', marginBottom: 2 },
+  tenant:    { fontSize: 11, color: '#64748b', marginTop: 4 },
 
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.xxl,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  circle1: {
-    position: 'absolute', width: 180, height: 180, borderRadius: 90,
-    backgroundColor: 'rgba(255,255,255,0.05)', top: -50, right: -40,
-  },
-  circle2: {
-    position: 'absolute', width: 120, height: 120, borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.04)', bottom: -30, left: 20,
-  },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  headerLeft: { flex: 1 },
-  greeting: { fontSize: 13, color: Colors.textOnPrimaryMuted, marginBottom: 2 },
-  headerUsername: { fontSize: 22, fontWeight: '800', color: '#fff', letterSpacing: -0.3 },
-  schoolBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: Radius.full,
-    paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start', marginTop: 6,
-  },
-  schoolBadgeText: { fontSize: 11, color: Colors.textOnPrimaryMuted, fontWeight: '500', maxWidth: 180 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  avatar: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
-  avatarText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  logoutBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  section:      { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#e5e7eb' },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  attBar: { marginTop: Spacing.xl },
-  attBarLeft: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  attBarLabel: { fontSize: 12, color: Colors.textOnPrimaryMuted, fontWeight: '500' },
-  attBarPct: { fontSize: 12, fontWeight: '700' },
-  attTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: Radius.full, overflow: 'hidden' },
-  attFill: { height: 6, borderRadius: Radius.full },
-
-  snapshotCard: {
-    backgroundColor: Colors.surface,
-    marginHorizontal: Spacing.md,
-    marginTop: Spacing.md,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
+  noticeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    gap: 10,
   },
-  snapshotTitle: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 },
-  snapshotMetrics: { flexDirection: 'row', marginTop: Spacing.sm, gap: Spacing.sm },
-  snapshotMetric: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    borderRadius: Radius.md,
-    paddingVertical: 10,
+  noticeRowUrgent: { backgroundColor: '#fff5f5', borderRadius: 6, paddingHorizontal: 4 },
+  noticeDot:       { width: 8, height: 8, borderRadius: 4 },
+  noticeContent:   { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  noticeTitle:     { flex: 1, fontSize: 13, fontWeight: '500', color: '#111827', marginRight: 8 },
+  noticeDate:      { fontSize: 11, color: '#9ca3af' },
+
+  signOut: {
+    marginTop: 'auto',
+    backgroundColor: '#dc2626',
+    borderRadius: 10,
+    padding: 14,
     alignItems: 'center',
   },
-  snapshotValue: { fontSize: 16, fontWeight: '800', color: Colors.text },
-  snapshotLabel: { marginTop: 2, fontSize: 10, color: Colors.textTertiary, fontWeight: '600' },
-
-  kpiGrid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: Spacing.md, paddingTop: Spacing.lg,
-    gap: Spacing.md,
-  },
-  kpiCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    width: '47.5%',
-    alignItems: 'flex-start',
-  },
-  kpiIcon: { width: 40, height: 40, borderRadius: Radius.md, justifyContent: 'center', alignItems: 'center', marginBottom: Spacing.md },
-  kpiValue: { ...Typography.numericMd, marginBottom: 2 },
-  kpiLabel: { fontSize: 12, color: Colors.textSecondary, fontWeight: '500' },
-
-  section: {
-    backgroundColor: Colors.surface,
-    marginHorizontal: Spacing.md,
-    marginTop: Spacing.md,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    ...Shadow.sm,
-  },
-  sectionTitle: { ...Typography.h3, color: Colors.text, marginBottom: Spacing.md },
-
-  actionsRow: { flexDirection: 'row', gap: Spacing.sm },
-  qaBtn: { flex: 1, alignItems: 'center', gap: Spacing.sm },
-  qaIcon: { width: 56, height: 56, borderRadius: Radius.lg, justifyContent: 'center', alignItems: 'center' },
-  qaLabel: { fontSize: 12, fontWeight: '600', color: Colors.text },
-
-  insightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, marginBottom: Spacing.sm },
-  insightIcon: { width: 26, height: 26, borderRadius: 13, backgroundColor: Colors.warningBg, justifyContent: 'center', alignItems: 'center', marginTop: 1 },
-  insightText: { flex: 1, fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
-
-  activityRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: Spacing.md },
-  activityBorder: { borderTopWidth: 1, borderTopColor: Colors.borderLight },
-  activityIconWrap: { width: 36, height: 36, borderRadius: Radius.md, justifyContent: 'center', alignItems: 'center' },
-  activityInfo: { flex: 1 },
-  activityTitle: { fontSize: 13, fontWeight: '600', color: Colors.text },
-  activityDesc: { fontSize: 12, color: Colors.textSecondary, marginTop: 1 },
-  activityTime: { fontSize: 11, color: Colors.textTertiary, fontWeight: '500' },
+  signOutText: { color: '#fff', fontWeight: '600', fontSize: 15 },
 });

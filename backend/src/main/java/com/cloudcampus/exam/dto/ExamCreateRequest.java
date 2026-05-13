@@ -1,5 +1,6 @@
 package com.cloudcampus.exam.dto;
 
+import com.cloudcampus.exam.entity.ExamType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,27 +8,41 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
+/**
+ * Request body for creating or updating an exam.
+ */
 public record ExamCreateRequest(
-        @NotBlank(message = "title is required")
-        @Size(max = 120, message = "title must be at most 120 characters")
-        String title,
 
-        @NotNull(message = "examDate is required")
-        LocalDate examDate,
+        @NotNull(message = "Academic year is required")
+        UUID academicYearId,
 
-        @NotNull(message = "classId is required")
-        UUID classId,
+        @NotBlank(message = "Exam name is required")
+        @Size(max = 200)
+        String name,
 
-        @NotNull(message = "sectionId is required")
-        UUID sectionId,
+        @NotNull(message = "Exam type is required")
+        ExamType examType,
 
-        @NotNull(message = "subjectId is required")
-        UUID subjectId,
+        @NotNull(message = "Start date is required")
+        LocalDate startDate,
 
-        @NotNull(message = "maxMarks is required")
-        @DecimalMin(value = "1.0", message = "maxMarks must be greater than zero")
-        BigDecimal maxMarks
-) {
-}
+        @NotNull(message = "End date is required")
+        LocalDate endDate,
+
+        @NotNull(message = "Total marks is required")
+        @DecimalMin(value = "1", message = "Total marks must be at least 1")
+        BigDecimal totalMarks,
+
+        @NotNull(message = "Passing marks is required")
+        @DecimalMin(value = "0", message = "Passing marks cannot be negative")
+        BigDecimal passingMarks,
+
+        @Size(max = 5000)
+        String instructions,
+
+        /** Optional list of subject papers to create inline. */
+        List<ExamSubjectRequest> subjects
+) {}

@@ -1,203 +1,52 @@
-import { PageHeader } from '../../../components/ui/PageHeader'
-import { DataTable, type DataTableColumn } from '../../../components/ui/DataTable'
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { getTenantStats } from '../api/tenantApi';
 
-import { useSuperAdminDashboardSummary } from '../hooks/useSuperAdminDashboardSummary'
-import type { Tenant } from '../types'
-
-type KpiKey = 'totalTenants' | 'activeTenants' | 'tenantsCreatedThisMonth' | 'inactiveTenants'
-
-const KPI_CONFIG: Array<{ key: KpiKey; label: string; icon: string; bg: string; text: string }> = [
-  { key: 'totalTenants',            label: 'Total Schools',   icon: '🏫', bg: 'bg-violet-50',  text: 'text-violet-700'  },
-  { key: 'activeTenants',           label: 'Active Schools',  icon: '✅', bg: 'bg-emerald-50', text: 'text-emerald-700' },
-  { key: 'tenantsCreatedThisMonth', label: 'New This Month',  icon: '🚀', bg: 'bg-sky-50',     text: 'text-sky-700'     },
-  { key: 'inactiveTenants',         label: 'Inactive',        icon: '⏸', bg: 'bg-slate-50',   text: 'text-slate-600'   },
-]
+const STAT_CARDS = [
+  { key: 'totalTenants',    label: 'Total Tenants',    color: 'text-gray-900',   bg: 'bg-blue-50',   border: 'border-blue-100' },
+  { key: 'activeTenants',   label: 'Active',           color: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-100' },
+  { key: 'suspendedTenants',label: 'Suspended',        color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
+  { key: 'newThisMonth',    label: 'New This Month',   color: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-100' },
+] as const;
 
 export function SuperAdminDashboardPage() {
-  const summaryQuery = useSuperAdminDashboardSummary()
-  const summary = summaryQuery.data?.data
-  const activeRate = summary && summary.totalTenants > 0 ? Math.round((summary.activeTenants / summary.totalTenants) * 100) : 0
-  const newestSchool = summary?.newestTenants[0] ?? null
-
-  const columns: DataTableColumn<Tenant>[] = [
-    {
-      key: 'schoolName',
-      header: 'School',
-      cell: (tenant) => (
-        <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-            style={{ backgroundColor: tenant.primaryColor || '#059669' }}
-          >
-            {tenant.schoolName.slice(0, 2).toUpperCase()}
-          </div>
-          <div>
-            <p className="font-semibold text-slate-900 leading-tight">{tenant.schoolName}</p>
-            <p className="text-xs text-slate-400">/{tenant.slug}</p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'schema',
-      header: 'Schema',
-      cell: (tenant) => (
-        <span className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-lg">{tenant.schemaName}</span>
-      ),
-    },
-    {
-      key: 'branding',
-      header: 'Brand Color',
-      cell: (tenant) => (
-        <div className="flex items-center gap-2.5">
-          <div
-            className="h-5 w-5 rounded-lg border border-slate-200 shadow-sm"
-            style={{ backgroundColor: tenant.primaryColor }}
-          />
-          <span className="text-xs font-mono text-slate-500">{tenant.primaryColor}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      cell: (tenant) => (
-        <span className={`cc-badge ${tenant.active ? 'cc-badge-green' : 'cc-badge-slate'}`}>
-          {tenant.active ? 'Active' : 'Inactive'}
-        </span>
-      ),
-    },
-  ]
+  const { data, isLoading } = useQuery({
+    queryKey: ['super-admin-stats'],
+    queryFn: getTenantStats,
+  });
 
   return (
-    <section className="space-y-8">
-      <PageHeader
-        title="Platform Overview"
-        subtitle="Live tenant portfolio health, provisioning activity, and operating posture."
-        badge={{ label: 'Super Admin', tone: 'blue' }}
-      />
-
-      {summary ? (
-        <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-6 shadow-sm">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-violet-700">Portfolio Snapshot</p>
-              <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">{activeRate}% of schools are active</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                {newestSchool ? (
-                  <>
-                    Latest provisioned school: <span className="font-semibold text-slate-900">{newestSchool.schoolName}</span> on schema{' '}
-                    <span className="font-mono text-slate-700">{newestSchool.schemaName}</span>.
-                  </>
-                ) : (
-                  'No schools have been provisioned yet.'
-                )}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <SnapshotStat label="Active Rate" value={`${activeRate}%`} tone="text-violet-700" />
-              <SnapshotStat label="Newest Schools" value={String(summary.newestTenants.length)} tone="text-sky-700" />
-              <SnapshotStat label="Active" value={String(summary.activeTenants)} tone="text-emerald-700" />
-              <SnapshotStat label="Inactive" value={String(summary.inactiveTenants)} tone="text-slate-700" />
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {summary ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Platform Pulse</p>
-              <p className="mt-2 text-sm text-slate-600">Operational watchpoints for growth speed and tenant lifecycle posture.</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <SnapshotStat label="Total" value={String(summary.totalTenants)} tone="text-violet-700" />
-              <SnapshotStat label="New Month" value={String(summary.tenantsCreatedThisMonth)} tone="text-sky-700" />
-              <SnapshotStat label="Inactive" value={String(summary.inactiveTenants)} tone="text-slate-700" />
-              <SnapshotStat label="Posture" value={summary.inactiveTenants > 0 ? 'Watch' : 'Stable'} tone="text-emerald-700" />
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* KPI Cards */}
-      {summary ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {KPI_CONFIG.map(({ key, label, icon, bg, text }) => (
-            <div
-              key={key}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
-                  <p className="mt-3 text-4xl font-bold tracking-tight text-slate-900">
-                    {summary[key]}
-                  </p>
-                </div>
-                <div className={`w-10 h-10 rounded-xl ${bg} ${text} flex items-center justify-center text-lg`}>
-                  {icon}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : summaryQuery.isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="cc-skeleton-shimmer rounded-2xl h-28" />
-          ))}
-        </div>
-      ) : null}
-
-      {/* Newest Tenants table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100">
-          <h2 className="text-base font-bold text-slate-900">Newest Schools</h2>
-          <p className="mt-0.5 text-sm text-slate-500">Recently provisioned schools across the platform.</p>
-        </div>
-
-        <div className="p-6">
-          {summaryQuery.isError ? (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 flex items-center gap-2">
-              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              Unable to load platform statistics.
-            </div>
-          ) : summaryQuery.isLoading ? (
-            <div className="space-y-3">
-              {[0, 1, 2].map((i) => <div key={i} className="cc-skeleton-shimmer h-14 rounded-xl" />)}
-            </div>
-          ) : summary ? (
-            <DataTable
-              columns={columns}
-              rows={summary.newestTenants}
-              rowKey={(tenant) => tenant.slug}
-              emptyText="No tenants have been created yet."
-            />
-          ) : null}
-        </div>
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+        <p className="mt-0.5 text-sm text-gray-500">Platform-wide tenant overview</p>
       </div>
-    </section>
-  )
-}
 
-function SnapshotStat({
-  label,
-  value,
-  tone,
-}: {
-  label: string
-  value: string
-  tone: string
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className={`mt-1 text-xl font-bold ${tone}`}>{value}</p>
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {STAT_CARDS.map((c) => (
+          <div key={c.key} className={`rounded-xl border ${c.border} ${c.bg} p-4`}>
+            <p className="text-xs font-medium text-gray-500">{c.label}</p>
+            <p className={`mt-1 text-3xl font-bold ${c.color}`}>
+              {isLoading ? '—' : (data?.[c.key] ?? 0)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-3">
+        <Link
+          to="/super-admin/tenants/new"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          Create Tenant
+        </Link>
+        <Link
+          to="/super-admin/tenants"
+          className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+        >
+          View All Tenants
+        </Link>
+      </div>
     </div>
-  )
+  );
 }

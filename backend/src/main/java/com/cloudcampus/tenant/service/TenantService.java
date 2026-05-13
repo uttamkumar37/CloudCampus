@@ -1,28 +1,24 @@
 package com.cloudcampus.tenant.service;
 
+import com.cloudcampus.common.web.PageResponse;
+import com.cloudcampus.common.web.Pagination;
+import com.cloudcampus.tenant.dto.SuperAdminStatsResponse;
 import com.cloudcampus.tenant.dto.TenantCreateRequest;
-import com.cloudcampus.tenant.dto.SchoolSearchResponse;
 import com.cloudcampus.tenant.dto.TenantResponse;
 
-import java.util.List;
+import java.util.UUID;
 
 public interface TenantService {
+    TenantResponse create(TenantCreateRequest request);
 
-    TenantResponse createTenant(TenantCreateRequest request);
+    TenantResponse get(UUID id);
 
-    List<TenantResponse> getAllTenants();
+    PageResponse<TenantResponse> list(Pagination pagination);
 
-    List<SchoolSearchResponse> searchSchools(String query);
+    TenantResponse suspend(UUID id);
 
-    SchoolSearchResponse getSchoolBySlug(String tenantSlug);
+    TenantResponse activate(UUID id);
 
-    TenantResponse getTenantByTenantId(String tenantId);
-
-    TenantResponse getTenantBySlug(String tenantSlug);
-
-    TenantResponse updateTenantActiveStatus(String tenantId, boolean active);
-
-    String resolveSchemaByTenantIdentifier(String identifier);
-
-    TenantResponse getCurrentTenant();
+    SuperAdminStatsResponse getStats();
 }
+

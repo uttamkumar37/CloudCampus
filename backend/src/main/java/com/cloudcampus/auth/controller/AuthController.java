@@ -1,126 +1,173 @@
 package com.cloudcampus.auth.controller;
 
-import com.cloudcampus.auth.dto.ChangePasswordRequest;
+import com.cloudcampus.auth.dto.ForgotPasswordRequest;
 import com.cloudcampus.auth.dto.LoginRequest;
 import com.cloudcampus.auth.dto.LoginResponse;
-import com.cloudcampus.auth.dto.SendOtpRequest;
-import com.cloudcampus.auth.dto.UpdateCredentialsRequest;
+import com.cloudcampus.auth.dto.RefreshRequest;
+import com.cloudcampus.auth.dto.RefreshResponse;
+import com.cloudcampus.auth.dto.ResetPasswordRequest;
 import com.cloudcampus.auth.service.AuthService;
-import com.cloudcampus.auth.service.CredentialsUpdateService;
-import com.cloudcampus.auth.security.CloudCampusUserDetails;
+import com.cloudcampus.auth.service.PasswordResetService;
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.web.CorrelationId;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
+import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
-import com.cloudcampus.auth.dto.UserProfileResponse;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
-
+/**
+ * Authentication endpoints (CC-0103, CC-0105).
+ *
+ * POST /v1/auth/login   — username/password → JWT pair + refresh token
+ * POST /v1/auth/refresh — refresh token → new JWT pair (token rotated)
+ * POST /v1/auth/logout  — invalidate refresh token in Redis
+ *
+ * All endpoints are publicly accessible — the /v1/auth/** permitAll rule in
+ * SecurityConfig allows unauthenticated access. This is correct by design.
+ */
 @RestController
-@RequestMapping("/api/v1/auth")
-@RequiredArgsConstructor
-@Tag(name = "Auth", description = "Authentication APIs")
+@RequestMapping("/v1/auth")
+@Tag(name = "Authentication", description = "Login, token refresh, logout, and password reset")
 public class AuthController {
 
     private final AuthService authService;
-    private final CredentialsUpdateService credentialsUpdateService;
+    private final PasswordResetService passwordResetService;
 
-    @Value("${app.security.jwt.access-token-expiration-ms:3600000}")
-    private long jwtExpirationMs;
+    public AuthController(AuthService authService, PasswordResetService passwordResetService) {
+        this.authService = authService;
+        this.passwordResetService = passwordResetService;
+    }
 
-    @Value("${app.cookie.secure:false}")
-    private boolean cookieSecure;
-
+    /**
+     * Authenticate with username and password.
+     *
+     * On success:            200 with accessToken + refreshToken.
+     * Rate limit exceeded:   429 (TooManyRequestsException).
+     * Bad credentials:       401 (UnauthorizedException — generic message, no field hint).
+     * Suspended account:     403 (ForbiddenException).
+     * Validation failure:    400 (@Valid).
+     *
+     * SECURITY: Never log or include request.password() in any output.
+     */
+    @Operation(summary = "Login", description = "Authenticate with username and password. Returns JWT access token and refresh token.")
+    @SecurityRequirements  // no auth required — public endpoint
     @PostMapping("/login")
-    @Operation(summary = "Login and obtain JWT access token")
     public ResponseEntity<ApiResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request,
-            HttpServletResponse httpResponse) {
-        LoginResponse response = authService.login(request);
-        ResponseCookie cookie = ResponseCookie.from("app_jwt", response.accessToken())
-                .httpOnly(true)
-                .secure(cookieSecure)
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(jwtExpirationMs / 1000)
-                .build();
-        httpResponse.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+            HttpServletRequest httpRequest
+    ) {
+        String clientIp = extractClientIp(httpRequest);
+        LoginResponse body = authService.login(request, clientIp);
+        return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
     }
 
+    /**
+     * Exchange a refresh token for a new access token.
+     *
+     * On success:            200 with new accessToken and rotated refreshToken.
+     *                        Client MUST replace stored refresh token with the new one.
+     * Unknown/expired token: 401.
+     * Suspended account:     403.
+     *
+     * Token rotation: the submitted refresh token is deleted from Redis and a new
+     * one is issued. This limits the damage window if a token is leaked.
+     */
+    @Operation(summary = "Refresh token", description = "Exchange a refresh token for a new JWT pair. The submitted refresh token is rotated.")
+    @SecurityRequirements  // no auth required — public endpoint
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<RefreshResponse>> refresh(
+            @Valid @RequestBody RefreshRequest request
+    ) {
+        RefreshResponse body = authService.refresh(request);
+        return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
+    }
+
+    /**
+     * Invalidate the refresh token (logout).
+     *
+     * On success (or token already expired): 204 No Content.
+     * The access token is short-lived (15 min) and will self-expire.
+     *
+     * SECURITY: Never throw on an already-absent token — prevents token probing.
+     */
+    @Operation(summary = "Logout", description = "Invalidate the refresh token. Access token expires on its own TTL (15 min).")
+    @SecurityRequirements  // no auth required — token may already be expired
     @PostMapping("/logout")
-    @Operation(summary = "Logout and expire the HttpOnly auth cookie")
-    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse httpResponse) {
-        ResponseCookie expired = ResponseCookie.from("app_jwt", "")
-                .httpOnly(true)
-                .secure(cookieSecure)
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(0)
-                .build();
-        httpResponse.addHeader(HttpHeaders.SET_COOKIE, expired.toString());
-        return ResponseEntity.ok(ApiResponse.success("Logged out", null));
+    public ResponseEntity<Void> logout(
+            @Valid @RequestBody RefreshRequest request
+    ) {
+        authService.logout(request);
+        return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/me")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Current authenticated user profile")
-    public ResponseEntity<ApiResponse<UserProfileResponse>> me() {
-        return ResponseEntity.ok(ApiResponse.success("Profile loaded", authService.currentProfile()));
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * Initiate a password reset. A 6-digit OTP will be sent to the email.
+     *
+     * Always returns 200 regardless of whether the email is registered
+     * (OWASP user enumeration prevention).
+     */
+    @Operation(
+            summary = "Forgot password",
+            description = "Send a 6-digit OTP to the email address. Always returns 200 to prevent user enumeration."
+    )
+    @SecurityRequirements  // public — no bearer token required
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ) {
+        passwordResetService.requestReset(request.email());
+        return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), null));
     }
 
-    @PostMapping("/change-password")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Change password for the authenticated user")
-    public ResponseEntity<ApiResponse<Void>> changePassword(
-            @Valid @RequestBody ChangePasswordRequest request) {
-        authService.changePassword(request);
-        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
+    /**
+     * Verify the OTP and set a new password.
+     *
+     * On success:           200.
+     * Wrong / expired OTP: 400.
+     */
+    @Operation(
+            summary = "Reset password",
+            description = "Verify the OTP received by email and set a new password."
+    )
+    @SecurityRequirements  // public — no bearer token required
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+        passwordResetService.resetPassword(request.email(), request.otp(), request.newPassword());
+        return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), null));
     }
 
-    @PostMapping("/credentials/send-otp")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Send OTP for credential update (email or SMS)")
-    public ResponseEntity<ApiResponse<Void>> sendCredentialOtp(
-            @Valid @RequestBody SendOtpRequest request) {
-        credentialsUpdateService.sendOtpForCredentialUpdate(requireCurrentUserId(), request.channel());
-        return ResponseEntity.ok(ApiResponse.success("OTP sent", null));
-    }
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
-    @PostMapping("/credentials/update")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Verify OTP and update username/password")
-    public ResponseEntity<ApiResponse<Void>> updateCredentials(
-            @Valid @RequestBody UpdateCredentialsRequest request) {
-        credentialsUpdateService.verifyOtpAndUpdateCredentials(
-                requireCurrentUserId(),
-                request.channel(),
-                request.otp(),
-                request.newUsername(),
-                request.newPassword()
-        );
-        return ResponseEntity.ok(ApiResponse.success("Credentials updated successfully", null));
-    }
-
-    private UUID requireCurrentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof CloudCampusUserDetails campus) || campus.getUserId() == null) {
-            throw new IllegalStateException("Authenticated tenant user is required");
+    /**
+     * Extract the real client IP, respecting reverse-proxy headers.
+     *
+     * Priority: X-Forwarded-For (first entry) → X-Real-IP → remoteAddr.
+     *
+     * SECURITY NOTE: X-Forwarded-For can be spoofed by clients if your reverse proxy
+     * does not strip/override it. In production, ensure your load balancer sets this
+     * header and clients cannot inject arbitrary values.
+     */
+    private static String extractClientIp(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            // Format: "client, proxy1, proxy2" — take the leftmost (original client).
+            return xff.split(",")[0].trim();
         }
-        return campus.getUserId();
+        String xri = request.getHeader("X-Real-IP");
+        if (xri != null && !xri.isBlank()) {
+            return xri.trim();
+        }
+        return request.getRemoteAddr();
     }
 }

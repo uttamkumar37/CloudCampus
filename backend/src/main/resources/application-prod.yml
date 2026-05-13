@@ -1,0 +1,132 @@
+# ── PRODUCTION profile ────────────────────────────────────────────────────────
+#
+# Purpose: live traffic. Hardened security. Zero tolerance for config drift.
+#
+# CRITICAL: Never commit real secrets to version control.
+# All secrets must be supplied via environment variables injected at runtime
+# from AWS Secrets Manager, HashiCorp Vault, or equivalent.
+#
+# Required environment variables:
+#   DATABASE_URL          e.g. jdbc:postgresql://prod-rds.region.rds.amazonaws.com:5432/cloudcampus
+#   DATABASE_USERNAME     prod DB user (least-privilege — no DROP/CREATE privileges)
+#   DATABASE_PASSWORD     strong random password, rotated quarterly
+#   REDIS_HOST            ElastiCache primary endpoint
+#   REDIS_PORT            6379
+#   JWT_SECRET            >= 64 chars, rotated per security policy
+#   MAIL_HOST / MAIL_PORT / MAIL_USERNAME / MAIL_PASSWORD   (SES, SendGrid, etc.)
+#   BOOTSTRAP_ADMIN_PASSWORD   first-boot only; remove after initial setup
+#   BOOTSTRAP_ADMIN_EMAIL
+
+spring:
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: cloudcampus-prod-pool
+      maximum-pool-size: 20          # tune based on RDS max_connections
+      minimum-idle: 5
+      connection-timeout: 3000       # 3 s — fail fast to surface pool exhaustion
+      idle-timeout: 300000           # 5 min
+      max-lifetime: 1800000          # 30 min — rotate before PostgreSQL kills idle
+      leak-detection-threshold: 30000
+      # SECURITY: never log credentials in connection strings
+      data-source-properties:
+        ssl: "true"
+        sslfactory: org.postgresql.ssl.NonValidatingFactory   # replace with RDS CA cert in production
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate             # NEVER create/update in prod — Flyway owns schema
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        session:
+          events:
+            log:
+              LOG_QUERIES_SLOWER_THAN_MS: 500   # higher threshold in prod to reduce noise
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    out-of-order: false              # never allow out-of-order migrations in prod
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: 2s
+      timeout: 1s
+      # For Redis Cluster (ElastiCache with cluster mode):
+      # cluster:
+      #   nodes: ${REDIS_CLUSTER_NODES}
+      #   max-redirects: 3
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+# ── OpenAPI — DISABLED in production (no API explorer for external users) ─────
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# ── Logging — structured JSON, WARN+ for framework, INFO for app code ─────────
+# Logback config in logback-spring.xml handles JSON formatting.
+# Logs ship to Loki via Promtail (Phase 2 observability).
+logging:
+  level:
+    root: WARN
+    com.cloudcampus: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.flywaydb: INFO             # keep Flyway INFO so migration runs are auditable
+
+# ── Actuator — restrict to health + prometheus only; no info/env endpoints ────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus   # info and metrics NOT exposed externally
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never           # SECURITY: never expose DB/Redis status externally
+  server:
+    # SECURITY: bind actuator to internal port so it is not reachable from the
+    # public load balancer. Configure your ECS task / K8s service to expose 8081
+    # only to internal VPC / monitoring security group.
+    port: 8081
+
+server:
+  # SECURITY: forward-headers from load balancer (required for HTTPS redirect)
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
+
+# ── App-level production config ───────────────────────────────────────────────
+app:
+  jwt:
+    secret: ${JWT_SECRET}            # no default — deployment fails if unset
+    access-token-expiry-seconds: 900         # 15 min
+    refresh-token-expiry-seconds: 2592000    # 30 days
+  bootstrap:
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+    admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}

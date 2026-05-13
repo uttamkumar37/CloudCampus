@@ -1,131 +1,251 @@
 package com.cloudcampus.attendance.service;
 
-import com.cloudcampus.academic.repository.SchoolClassRepository;
-import com.cloudcampus.academic.repository.SectionRepository;
-import com.cloudcampus.attendance.dto.AttendanceCreateRequest;
-import com.cloudcampus.attendance.dto.AttendanceResponse;
+import com.cloudcampus.attendance.dto.AttendanceRecordEntry;
+import com.cloudcampus.attendance.dto.AttendanceRecordResponse;
+import com.cloudcampus.attendance.dto.AttendanceSessionResponse;
+import com.cloudcampus.attendance.dto.AttendanceSessionSummaryResponse;
+import com.cloudcampus.attendance.dto.CreateSessionRequest;
+import com.cloudcampus.attendance.dto.MarkAttendanceRequest;
+import com.cloudcampus.attendance.dto.StudentAttendanceReport;
 import com.cloudcampus.attendance.entity.AttendanceRecord;
+import com.cloudcampus.attendance.entity.AttendanceSession;
+import com.cloudcampus.attendance.entity.AttendanceStatus;
 import com.cloudcampus.attendance.repository.AttendanceRecordRepository;
-import com.cloudcampus.auth.security.CloudCampusUserDetails;
-import com.cloudcampus.student.repository.StudentRepository;
-import com.cloudcampus.tenant.service.TenantContext;
-import jakarta.annotation.Nullable;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.cloudcampus.attendance.repository.AttendanceSessionRepository;
+import com.cloudcampus.common.exception.BadRequestException;
+import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.RequestContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
-public class AttendanceServiceImpl implements AttendanceService {
+class AttendanceServiceImpl implements AttendanceService {
 
-    private final AttendanceRecordRepository attendanceRecordRepository;
-    private final StudentRepository studentRepository;
-    private final SchoolClassRepository schoolClassRepository;
-    private final SectionRepository sectionRepository;
+    private final AttendanceSessionRepository sessionRepo;
+    private final AttendanceRecordRepository  recordRepo;
+
+    AttendanceServiceImpl(AttendanceSessionRepository sessionRepo,
+                          AttendanceRecordRepository  recordRepo) {
+        this.sessionRepo = sessionRepo;
+        this.recordRepo  = recordRepo;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Session management
+    // ─────────────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
-    public AttendanceResponse markAttendance(AttendanceCreateRequest request) {
-        validateTenantContext();
+    public AttendanceSessionResponse openSession(UUID schoolId, CreateSessionRequest req) {
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
 
-        if (!studentRepository.existsById(request.studentId())) {
-            throw new IllegalArgumentException("Student not found: " + request.studentId());
+        // Guard: prevent duplicate session
+        boolean duplicate;
+        if (req.sectionId() != null) {
+            duplicate = sessionRepo.findBySchoolIdAndClassIdAndSectionIdAndSessionDateAndPeriodNumber(
+                    schoolId, req.classId(), req.sectionId(),
+                    req.sessionDate(), req.periodNumber()).isPresent();
+        } else {
+            duplicate = sessionRepo.findBySchoolIdAndClassIdAndSectionIdIsNullAndSessionDateAndPeriodNumber(
+                    schoolId, req.classId(), req.sessionDate(), req.periodNumber()).isPresent();
         }
-        if (!schoolClassRepository.existsById(request.classId())) {
-            throw new IllegalArgumentException("Class not found: " + request.classId());
-        }
-        if (!sectionRepository.existsById(request.sectionId())) {
-            throw new IllegalArgumentException("Section not found: " + request.sectionId());
-        }
-        if (attendanceRecordRepository.existsByStudentIdAndAttendanceDate(request.studentId(), request.attendanceDate())) {
-            throw new IllegalArgumentException("Attendance already marked for student on date: " + request.attendanceDate());
+        if (duplicate) {
+            throw new BadRequestException(
+                    "An attendance session already exists for this class/section on "
+                    + req.sessionDate() + " period " + req.periodNumber());
         }
 
-        AttendanceRecord attendanceRecord = new AttendanceRecord();
-        attendanceRecord.setStudentId(request.studentId());
-        attendanceRecord.setClassId(request.classId());
-        attendanceRecord.setSectionId(request.sectionId());
-        attendanceRecord.setAttendanceDate(request.attendanceDate());
-        attendanceRecord.setStatus(request.status());
-        attendanceRecord.setRemarks(normalizeNullable(request.remarks()));
-        attendanceRecord.setMarkedByUserId(resolveActorUserId(request.markedByUserId()));
+        AttendanceSession session = AttendanceSession.create(
+                tenantId, schoolId, req.classId(), req.academicYearId(),
+                req.sessionDate(), req.periodNumber());
 
-        AttendanceRecord saved = attendanceRecordRepository.save(attendanceRecord);
-        log.info("Attendance marked: studentId={}, date={}, status={}, tenant={}",
-                saved.getStudentId(), saved.getAttendanceDate(), saved.getStatus(), TenantContext.getTenant());
-        return map(saved);
+        session.setSectionId(req.sectionId());
+        session.setSubjectId(req.subjectId());
+        session.setTakenByStaffId(req.takenByStaffId());
+
+        AttendanceSession saved = sessionRepo.save(session);
+        return AttendanceSessionResponse.from(saved, List.of());
+    }
+
+    @Override
+    @Transactional
+    public AttendanceSessionResponse markAttendance(UUID sessionId, MarkAttendanceRequest req) {
+        AttendanceSession session = findSessionOrThrow(sessionId);
+
+        if (session.isFinalized()) {
+            throw new BadRequestException(
+                    "Session " + sessionId + " is finalized — no further changes are allowed");
+        }
+
+        UUID tenantId = session.getTenantId();
+
+        for (AttendanceRecordEntry entry : req.records()) {
+            Optional<AttendanceRecord> existing =
+                    recordRepo.findBySessionIdAndStudentId(sessionId, entry.studentId());
+
+            if (existing.isPresent()) {
+                // Update (correction)
+                AttendanceRecord record = existing.get();
+                record.setStatus(entry.status());
+                record.setRemarks(entry.remarks());
+                recordRepo.save(record);
+            } else {
+                // Create
+                AttendanceRecord record = AttendanceRecord.create(
+                        tenantId, sessionId, entry.studentId(), entry.status());
+                record.setRemarks(entry.remarks());
+                recordRepo.save(record);
+            }
+        }
+
+        if (req.lockSession()) {
+            session.setFinalized(true);
+            sessionRepo.save(session);
+        }
+
+        // Reload the session to get the updated timestamp, then fetch all records
+        AttendanceSession reloaded = findSessionOrThrow(sessionId);
+        List<AttendanceRecordResponse> records = recordRepo.findAllBySessionId(sessionId)
+                .stream().map(AttendanceRecordResponse::from).toList();
+
+        return AttendanceSessionResponse.from(reloaded, records);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public AttendanceResponse getAttendanceById(UUID attendanceId, @Nullable Set<UUID> allowedStudentIds) {
-        validateTenantContext();
-        AttendanceRecord record = attendanceRecordRepository.findById(attendanceId)
-                .orElseThrow(() -> new IllegalArgumentException("Attendance record not found: " + attendanceId));
-        if (allowedStudentIds != null && !allowedStudentIds.contains(record.getStudentId())) {
-            throw new AccessDeniedException("Access denied to attendance record: " + attendanceId);
-        }
-        return map(record);
+    public AttendanceSessionResponse getSession(UUID sessionId) {
+        AttendanceSession session = findSessionOrThrow(sessionId);
+        List<AttendanceRecordResponse> records = recordRepo.findAllBySessionId(sessionId)
+                .stream().map(AttendanceRecordResponse::from).toList();
+        return AttendanceSessionResponse.from(session, records);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Listing
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AttendanceSessionSummaryResponse> listBySchoolAndDate(UUID schoolId, LocalDate date) {
+        return sessionRepo.findAllBySchoolIdAndSessionDateOrderByPeriodNumberAsc(schoolId, date)
+                          .stream().map(AttendanceSessionSummaryResponse::from).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<AttendanceResponse> getAttendanceByDate(LocalDate date, @Nullable Set<UUID> allowedStudentIds) {
-        validateTenantContext();
-        // FIXED: was findAllByAttendanceDate() (loads entire day) then filter in-memory.
-        // When the caller is a STUDENT or PARENT, push the filter into the DB query so
-        // only the relevant rows are fetched.
-        List<AttendanceRecord> records = (allowedStudentIds != null)
-                ? attendanceRecordRepository.findAllByAttendanceDateAndStudentIdIn(date, allowedStudentIds)
-                : attendanceRecordRepository.findAllByAttendanceDate(date);
-        return records.stream().map(this::map).toList();
+    public List<AttendanceSessionSummaryResponse> listByClassAndDateRange(
+            UUID classId, UUID sectionId, LocalDate from, LocalDate to) {
+        List<AttendanceSession> sessions;
+        if (sectionId != null) {
+            sessions = sessionRepo
+                    .findAllByClassIdAndSectionIdAndSessionDateBetweenOrderBySessionDateAscPeriodNumberAsc(
+                            classId, sectionId, from, to);
+        } else {
+            sessions = sessionRepo
+                    .findAllByClassIdAndSessionDateBetweenOrderBySessionDateAscPeriodNumberAsc(
+                            classId, from, to);
+        }
+        return sessions.stream().map(AttendanceSessionSummaryResponse::from).toList();
     }
 
-    private void validateTenantContext() {
-        if (TenantContext.DEFAULT_SCHEMA.equals(TenantContext.getTenant())) {
-            throw new IllegalArgumentException("X-Tenant-Slug header is required for attendance operations");
+    // ─────────────────────────────────────────────────────────────────────────
+    // Reports (CC-0805)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public StudentAttendanceReport getStudentReport(UUID studentId, LocalDate from, LocalDate to) {
+        // 1. Fetch all attendance records for the student
+        List<AttendanceRecord> all = recordRepo.findAllByStudentIdOrderByCreatedAtAsc(studentId);
+
+        if (all.isEmpty()) {
+            return StudentAttendanceReport.of(studentId, 0L, 0L, 0L, 0L);
         }
+
+        // 2. Get the distinct session IDs referenced by those records
+        List<UUID> sessionIds = all.stream()
+                .map(AttendanceRecord::getSessionId).distinct().toList();
+
+        // 3. Load session dates for those IDs
+        Map<UUID, LocalDate> sessionDateMap = sessionRepo.findAllById(sessionIds)
+                .stream().collect(Collectors.toMap(
+                        AttendanceSession::getId, AttendanceSession::getSessionDate));
+
+        // 4. Keep only records whose session falls within [from, to]
+        List<AttendanceRecord> filtered = all.stream()
+                .filter(r -> {
+                    LocalDate d = sessionDateMap.get(r.getSessionId());
+                    return d != null && !d.isBefore(from) && !d.isAfter(to);
+                }).toList();
+
+        return aggregateRecords(studentId, filtered);
     }
 
-    private String normalizeNullable(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
+    @Override
+    @Transactional(readOnly = true)
+    public List<StudentAttendanceReport> getClassReport(
+            UUID classId, UUID sectionId, LocalDate from, LocalDate to) {
+
+        // 1. Find sessions for this class/section over the date range
+        List<UUID> sessionIds;
+        if (sectionId != null) {
+            sessionIds = sessionRepo
+                    .findAllByClassIdAndSectionIdAndSessionDateBetweenOrderBySessionDateAscPeriodNumberAsc(
+                            classId, sectionId, from, to)
+                    .stream().map(AttendanceSession::getId).toList();
+        } else {
+            sessionIds = sessionRepo
+                    .findAllByClassIdAndSessionDateBetweenOrderBySessionDateAscPeriodNumberAsc(
+                            classId, from, to)
+                    .stream().map(AttendanceSession::getId).toList();
         }
-        return value.trim();
+
+        if (sessionIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 2. Fetch all records for those sessions
+        List<AttendanceRecord> records = recordRepo.findAllBySessionIdIn(sessionIds);
+
+        // 3. Group by studentId and aggregate
+        Map<UUID, List<AttendanceRecord>> byStudent = records.stream()
+                .collect(Collectors.groupingBy(AttendanceRecord::getStudentId));
+
+        return byStudent.entrySet().stream()
+                .map(e -> aggregateRecords(e.getKey(), e.getValue()))
+                .toList();
     }
 
-    private UUID resolveActorUserId(UUID requestedUserId) {
-        if (requestedUserId != null) {
-            return requestedUserId;
-        }
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof CloudCampusUserDetails principal) || principal.getUserId() == null) {
-            throw new IllegalArgumentException("Unable to resolve acting user from authentication context");
-        }
-        return principal.getUserId();
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private AttendanceSession findSessionOrThrow(UUID sessionId) {
+        return sessionRepo.findById(sessionId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Attendance session not found: " + sessionId));
     }
 
-    private AttendanceResponse map(AttendanceRecord record) {
-        return new AttendanceResponse(
-                record.getId(),
-                record.getStudentId(),
-                record.getClassId(),
-                record.getSectionId(),
-                record.getAttendanceDate(),
-                record.getStatus(),
-                record.getRemarks(),
-                record.getMarkedByUserId(),
-                record.getCreatedAt()
+    private StudentAttendanceReport aggregateRecords(UUID studentId,
+                                                     List<AttendanceRecord> records) {
+        Map<AttendanceStatus, Long> counts = new EnumMap<>(AttendanceStatus.class);
+        for (AttendanceRecord r : records) {
+            counts.merge(r.getStatus(), 1L, Long::sum);
+        }
+        return StudentAttendanceReport.of(
+                studentId,
+                counts.getOrDefault(AttendanceStatus.PRESENT,  0L),
+                counts.getOrDefault(AttendanceStatus.ABSENT,   0L),
+                counts.getOrDefault(AttendanceStatus.LATE,     0L),
+                counts.getOrDefault(AttendanceStatus.EXCUSED,  0L)
         );
     }
 }

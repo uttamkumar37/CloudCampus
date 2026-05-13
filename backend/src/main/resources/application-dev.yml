@@ -1,0 +1,58 @@
+# ── DEV profile ───────────────────────────────────────────────────────────
+# Uses H2 in-memory database for fast local development.
+# IMPORTANT: H2 MODE=PostgreSQL does NOT cover all PostgreSQL semantics.
+# Plan: Replace with Testcontainers PostgreSQL in CC-0210 (tenant isolation test suite).
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:cloudcampus;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=true
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    # C-20: Simulate realistic pool pressure even in dev.
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 3000    # 3 seconds — fail fast if pool is exhausted
+      idle-timeout: 300000        # 5 minutes
+      max-lifetime: 1200000       # 20 minutes
+      pool-name: cloudcampus-dev-pool
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+
+  # Redis — connect to local Docker Redis (see docker-compose.yml).
+  # If Redis is not running, app starts in degraded mode (caches miss-through to DB).
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      connect-timeout: 1s
+      timeout: 500ms
+
+  # ── Mail — MailHog SMTP catcher (docker-compose localhost:1025) ─────────────
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+# ── OpenAPI / Swagger UI — enabled in dev only ────────────────────────────────
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

@@ -1,26 +1,26 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { PropsWithChildren } from 'react'
-
-import { ToastViewport } from '../components/ui/ToastViewport'
-import { AuthProvider } from '../features/auth/components/AuthProvider'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
-      staleTime: 30_000,
+      staleTime: 30_000,        // 30 s
       retry: 1,
     },
   },
-})
+});
 
-export function AppProviders({ children }: PropsWithChildren) {
+interface ProvidersProps {
+  children: React.ReactNode;
+}
+
+/**
+ * Root provider tree.
+ * Add new providers here (i18n, theme, etc.) as features are built.
+ */
+export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        {children}
-        <ToastViewport />
-      </AuthProvider>
+      {children}
     </QueryClientProvider>
-  )
+  );
 }

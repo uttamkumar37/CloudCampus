@@ -1,21 +1,50 @@
-# syntax=docker/dockerfile:1.7
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 1 — builder
+#   Extracts the Spring Boot layered JAR into its four cache-friendly layers so
+#   Docker only re-copies changed layers on each build.
+# ─────────────────────────────────────────────────────────────────────────────
+FROM eclipse-temurin:21-jre-jammy AS builder
 
-FROM maven:3.9.9-eclipse-temurin-17 AS build
-WORKDIR /workspace
+WORKDIR /builder
 
-COPY pom.xml .
-RUN mvn -q -DskipTests dependency:go-offline
+# Copy only the fat-jar produced by `mvn package -DskipTests`
+COPY target/cloudcampus-backend-*.jar app.jar
 
-COPY src ./src
-RUN mvn -q -DskipTests clean package
+# Extract layers:  dependencies | spring-boot-loader | snapshot-dependencies | application
+RUN java -Djarmode=layertools -jar app.jar extract --destination extracted
 
-FROM eclipse-temurin:17-jre AS runtime
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 2 — runtime
+#   Minimal JRE image, non-root user, four ordered COPY layers so the heavy
+#   dependency layer is cached across most rebuilds.
+# ─────────────────────────────────────────────────────────────────────────────
+FROM eclipse-temurin:21-jre-jammy AS runtime
+
+# Non-root user/group
+RUN groupadd --system --gid 1001 appgroup \
+ && useradd  --system --uid 1001 --gid appgroup --no-create-home appuser
+
 WORKDIR /app
 
-RUN groupadd -r spring && useradd -r -g spring spring
+# Layer order matters: least-frequently-changed first ─ maximum layer re-use
+COPY --from=builder /builder/extracted/dependencies/          ./
+COPY --from=builder /builder/extracted/spring-boot-loader/    ./
+COPY --from=builder /builder/extracted/snapshot-dependencies/ ./
+COPY --from=builder /builder/extracted/application/           ./
 
-COPY --from=build /workspace/target/cloudcampus-backend-0.0.1-SNAPSHOT.jar app.jar
+# Drop to non-root
+USER appuser
 
+# Expose default Spring Boot port
 EXPOSE 8080
-USER spring:spring
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]
+
+# Health-check via Spring Boot Actuator
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "org.springframework.boot.loader.launch.JarLauncher"]
