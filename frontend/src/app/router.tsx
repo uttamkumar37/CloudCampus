@@ -59,6 +59,10 @@ import StudentHomeworkPage from '@/features/student/pages/StudentHomeworkPage';
 import StudentAssignmentsPage from '@/features/student/pages/StudentAssignmentsPage';
 import StudentTimetablePage from '@/features/student/pages/StudentTimetablePage';
 import StudentNoticesPage from '@/features/student/pages/StudentNoticesPage';
+import { ParentLayout } from '@/features/parent/layouts/ParentLayout';
+import ParentDashboardPage from '@/features/parent/pages/ParentDashboardPage';
+import ParentChildPage from '@/features/parent/pages/ParentChildPage';
+import ParentNoticesPage from '@/features/parent/pages/ParentNoticesPage';
 
 /**
  * Application router.
@@ -174,6 +178,21 @@ export function AppRouter() {
           <Route path="assignments" element={<StudentAssignmentsPage />} />
           <Route path="timetable" element={<StudentTimetablePage />} />
           <Route path="notices" element={<StudentNoticesPage />} />
+        </Route>
+
+        {/* Parent portal — PARENT role required */}
+        <Route
+          path="/parent"
+          element={
+            <ProtectedRoute roles={['PARENT']}>
+              <ParentLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<ParentDashboardPage />} />
+          <Route path="children/:studentId" element={<ParentChildPage />} />
+          <Route path="notices" element={<ParentNoticesPage />} />
         </Route>
 
         {/* Authenticated catch-all → role-appropriate home */}
