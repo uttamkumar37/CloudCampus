@@ -24,8 +24,11 @@ export default function AppLayout() {
     user?.role === 'SUPER_ADMIN';
 
   const canViewTimetable  = user?.role === 'TEACHER';
-  const canViewHomework   = user?.role === 'STUDENT';
-  const canViewChildren   = user?.role === 'PARENT';
+  const canViewHomework    = user?.role === 'STUDENT';
+  const canViewAssignments = user?.role === 'STUDENT';
+  const canViewResults     = user?.role === 'STUDENT';
+  const canViewFees        = user?.role === 'STUDENT';
+  const canViewChildren    = user?.role === 'PARENT';
 
   return (
     <Tabs
@@ -58,6 +61,24 @@ export default function AppLayout() {
         <Tabs.Screen
           name="homework"
           options={{ title: 'Homework', tabBarLabel: 'Homework' }}
+        />
+      )}
+      {canViewAssignments && (
+        <Tabs.Screen
+          name="assignments"
+          options={{ title: 'Assignments', tabBarLabel: 'Assignments' }}
+        />
+      )}
+      {canViewResults && (
+        <Tabs.Screen
+          name="results"
+          options={{ title: 'Results', tabBarLabel: 'Results' }}
+        />
+      )}
+      {canViewFees && (
+        <Tabs.Screen
+          name="fees"
+          options={{ title: 'Fees', tabBarLabel: 'Fees' }}
         />
       )}
       {canViewChildren && (
