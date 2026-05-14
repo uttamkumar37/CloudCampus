@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage';
+import { ChangePasswordPage } from '@/features/auth/pages/ChangePasswordPage';
 import { ForbiddenPage } from '@/features/auth/pages/ForbiddenPage';
 import { PlanUpgradePage } from '@/features/auth/pages/PlanUpgradePage';
 import { ProtectedRoute } from '@/shared/components/ProtectedRoute';
@@ -89,6 +90,16 @@ export function AppRouter() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/403" element={<ForbiddenPage />} />
         <Route path="/plan-upgrade" element={<PlanUpgradePage />} />
+
+        {/* Authenticated — any role */}
+        <Route
+          path="/change-password"
+          element={
+            <ProtectedRoute>
+              <ChangePasswordPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Super Admin portal — SUPER_ADMIN role required */}
         <Route

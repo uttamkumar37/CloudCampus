@@ -109,6 +109,17 @@ public class AuditLogService {
                 .build());
     }
 
+    @Async("auditExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logPasswordChanged(UUID userId, UUID tenantId) {
+        persist(AuditLog.builder()
+                .actorId(userId)
+                .tenantId(tenantId)
+                .eventType(AuditAction.AUTH_PASSWORD_CHANGED)
+                .description("Password changed by user")
+                .build());
+    }
+
     // ── Tenant events ────────────────────────────────────────────────────────
 
     @Async("auditExecutor")

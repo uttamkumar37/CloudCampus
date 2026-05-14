@@ -53,4 +53,13 @@ public interface AuthService {
      * throw on missing tokens to avoid leaking token existence information.
      */
     void logout(RefreshRequest request);
+
+    /**
+     * Change the authenticated user's password.
+     *
+     * Verifies currentPassword against the stored BCrypt hash, then replaces it.
+     * Throws BadRequestException if currentPassword is wrong or newPassword equals
+     * the current one.
+     */
+    void changePassword(java.util.UUID userId, String currentPassword, String newPassword);
 }

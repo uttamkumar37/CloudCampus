@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useFeatureFlag } from '@/shared/hooks/useFeatureFlag';
 
@@ -93,6 +93,12 @@ export function SchoolAdminLayout() {
           <div className="mb-2 truncate px-1 text-xs text-gray-500">
             {user?.tenantId ?? '—'}
           </div>
+          <Link
+            to="/change-password"
+            className="block w-full rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          >
+            Change Password
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"

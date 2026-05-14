@@ -1,5 +1,6 @@
 package com.cloudcampus.auth.controller;
 
+import com.cloudcampus.auth.dto.ChangePasswordRequest;
 import com.cloudcampus.auth.dto.ForgotPasswordRequest;
 import com.cloudcampus.auth.dto.LoginRequest;
 import com.cloudcampus.auth.dto.LoginResponse;
@@ -10,6 +11,7 @@ import com.cloudcampus.auth.service.AuthService;
 import com.cloudcampus.auth.service.PasswordResetService;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.web.CorrelationId;
+import com.cloudcampus.common.web.RequestContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -104,6 +107,30 @@ public class AuthController {
             @Valid @RequestBody RefreshRequest request
     ) {
         authService.logout(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Change the authenticated user's own password.
+     *
+     * Requires a valid JWT — this endpoint is NOT in the /v1/auth/** permitAll block.
+     * Any role (STUDENT, TEACHER, SCHOOL_ADMIN, SUPER_ADMIN, PARENT) may call this.
+     *
+     * On success:               204 No Content.
+     * Wrong current password:   400 (BadRequestException).
+     * New == current:           400 (BadRequestException).
+     */
+    @Operation(summary = "Change password", description = "Change the authenticated user's password. Requires the current password for verification.")
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        authService.changePassword(
+                RequestContext.getUserId(),
+                request.currentPassword(),
+                request.newPassword()
+        );
         return ResponseEntity.noContent().build();
     }
 

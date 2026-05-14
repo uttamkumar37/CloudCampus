@@ -10,9 +10,12 @@ import com.cloudcampus.auth.entity.UserStatus;
 import com.cloudcampus.auth.repository.UserRepository;
 import com.cloudcampus.auth.security.JwtUtil;
 import com.cloudcampus.auth.security.LoginRateLimiterService;
+import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ForbiddenException;
+import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.exception.TooManyRequestsException;
 import com.cloudcampus.common.exception.UnauthorizedException;
+import org.springframework.transaction.annotation.Transactional;
 import com.cloudcampus.config.JwtProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -215,6 +218,29 @@ public class AuthServiceImpl implements AuthService {
                 }
             }
         }
+    }
+
+    // ── Change password ──────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public void changePassword(UUID userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new BadRequestException("New password must differ from the current one");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setForcePasswordChange(false);
+        userRepository.save(user);
+
+        auditLog.logPasswordChanged(userId, user.getTenantId());
+        log.info("Password changed [userId={}]", userId);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

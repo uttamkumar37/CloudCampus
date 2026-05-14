@@ -1,4 +1,5 @@
 import authClient from '@/shared/api/authClient';
+import axiosInstance from '@/shared/api/axiosInstance';
 import type { ApiResponse } from '@/shared/types/api';
 
 // ── Request / response shapes (mirrors backend DTOs) ─────────────────────────
@@ -46,4 +47,11 @@ export async function resetPasswordApi(
   newPassword: string,
 ): Promise<void> {
   await authClient.post('/v1/auth/reset-password', { email, otp, newPassword });
+}
+
+export async function changePasswordApi(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  await axiosInstance.post('/v1/auth/change-password', { currentPassword, newPassword });
 }

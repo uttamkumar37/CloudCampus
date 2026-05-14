@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 const NAV = [
@@ -45,6 +45,12 @@ export function ParentLayout() {
         <div className="border-t border-gray-100 p-3">
           <div className="mb-1 px-1 text-xs font-medium text-gray-500">Parent Portal</div>
           <div className="mb-2 truncate px-1 text-xs text-gray-400">{user?.userId ?? ''}</div>
+          <Link
+            to="/change-password"
+            className="block w-full rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+          >
+            Change Password
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-600 hover:bg-gray-100"
