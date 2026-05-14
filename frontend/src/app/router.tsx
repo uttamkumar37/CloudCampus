@@ -50,6 +50,7 @@ import { SuperAdminLayout } from '@/features/super-admin/layouts/SuperAdminLayou
 import { SuperAdminDashboardPage } from '@/features/super-admin/pages/SuperAdminDashboardPage';
 import { TenantDetailPage } from '@/features/super-admin/pages/TenantDetailPage';
 import { SchoolSettingsPage } from '@/features/school-admin/pages/SchoolSettingsPage';
+import { DepartmentListPage } from '@/features/school-admin/pages/DepartmentListPage';
 import { TeacherLayout } from '@/features/teacher/layouts/TeacherLayout';
 import TeacherDashboardPage from '@/features/teacher/pages/TeacherDashboardPage';
 import TeacherTimetablePage from '@/features/teacher/pages/TeacherTimetablePage';
@@ -165,6 +166,7 @@ export function AppRouter() {
           <Route path="assignments/:assignmentId" element={<AssignmentDetailPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="notices" element={<NoticeBoardPage />} />
+          <Route path="departments" element={<DepartmentListPage />} />
           <Route path="settings" element={<SchoolSettingsPage />} />
         </Route>
 
