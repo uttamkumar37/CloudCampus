@@ -8,6 +8,8 @@ import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.exam.dto.ExamResultResponse;
 import com.cloudcampus.exam.repository.ExamResultRepository;
+import com.cloudcampus.finance.dto.StudentFeeRecordResponse;
+import com.cloudcampus.finance.service.FeeService;
 import com.cloudcampus.homework.dto.HomeworkResponse;
 import com.cloudcampus.homework.repository.HomeworkRepository;
 import com.cloudcampus.school.entity.AcademicYear;
@@ -84,6 +86,7 @@ public class ParentController {
     private final TimetableService            timetableService;
     private final AcademicYearRepository      academicYearRepo;
     private final SchoolRepository            schoolRepo;
+    private final FeeService                  feeService;
 
     public ParentController(
             StudentParentLinkRepository linkRepo,
@@ -93,7 +96,8 @@ public class ParentController {
             HomeworkRepository          homeworkRepo,
             TimetableService            timetableService,
             AcademicYearRepository      academicYearRepo,
-            SchoolRepository            schoolRepo) {
+            SchoolRepository            schoolRepo,
+            FeeService                  feeService) {
         this.linkRepo         = linkRepo;
         this.studentRepo      = studentRepo;
         this.attendanceRepo   = attendanceRepo;
@@ -102,6 +106,7 @@ public class ParentController {
         this.timetableService = timetableService;
         this.academicYearRepo = academicYearRepo;
         this.schoolRepo       = schoolRepo;
+        this.feeService       = feeService;
     }
 
     @Operation(summary = "My children", description = "All linked children with a quick attendance summary")
@@ -200,6 +205,15 @@ public class ParentController {
         List<TimetableSlotResponse> slots = timetableService.listSlots(
                 school.getId(), resolvedYearId, s.getClassId(), s.getSectionId());
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), slots);
+    }
+
+    @Operation(summary = "Child fee records")
+    @GetMapping("/children/{studentId}/fees")
+    public ApiResponse<List<StudentFeeRecordResponse>> fees(
+            @PathVariable UUID studentId) {
+        checkAccess(studentId);
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                feeService.listRecordsByStudent(studentId, null));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
