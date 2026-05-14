@@ -1,12 +1,10 @@
 package com.cloudcampus.config;
 
-import com.github.dockerjava.zerodep.ZerodepDockerHttpClient;
 import org.testcontainers.dockerclient.DockerClientProviderStrategy;
 import org.testcontainers.dockerclient.InvalidConfigurationException;
 import org.testcontainers.dockerclient.TransportConfig;
 
 import java.net.URI;
-import java.time.Duration;
 
 /**
  * Custom Testcontainers Docker client strategy that forces docker-java to use
@@ -34,20 +32,11 @@ public class DockerApiVersionFixStrategy extends DockerClientProviderStrategy {
 
     @Override
     public TransportConfig getTransportConfig() throws InvalidConfigurationException {
-        URI dockerHost = URI.create(DOCKER_SOCKET);
-
-        // TransportConfig in Testcontainers 1.20.x only carries the HTTP transport.
-        // The DockerClientConfig (with api.version) is resolved separately by
-        // DockerClientProviderStrategy.test() via DefaultDockerClientConfig.createDefaultConfigBuilder(),
-        // which reads the 'api.version' system property set via Surefire <argLine>.
-        ZerodepDockerHttpClient httpClient = new ZerodepDockerHttpClient.Builder()
-                .dockerHost(dockerHost)
-                .connectionTimeout(Duration.ofSeconds(10))
-                .responseTimeout(Duration.ofSeconds(30))
-                .build();
-
+        // TransportConfig in Testcontainers 1.20.x only carries the Docker host URI
+        // and optional SSL config. The api.version is picked up from the JVM system
+        // property -Dapi.version=1.41 set via Surefire <argLine> in pom.xml.
         return TransportConfig.builder()
-                .dockerHttpClient(httpClient)
+                .dockerHost(URI.create(DOCKER_SOCKET))
                 .build();
     }
 
