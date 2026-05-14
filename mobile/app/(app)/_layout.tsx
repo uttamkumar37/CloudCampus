@@ -24,6 +24,7 @@ export default function AppLayout() {
     user?.role === 'SUPER_ADMIN';
 
   const canViewTimetable         = user?.role === 'TEACHER' || user?.role === 'STUDENT';
+  const canViewLeave             = user?.role === 'TEACHER';
   const canViewHomework          = user?.role === 'STUDENT';
   const canViewAssignments       = user?.role === 'STUDENT';
   const canViewTeacherHomework   = user?.role === 'TEACHER';
@@ -100,6 +101,12 @@ export default function AppLayout() {
         <Tabs.Screen
           name="teacher-assignments"
           options={{ title: 'Assignments', tabBarLabel: 'Assignments' }}
+        />
+      )}
+      {canViewLeave && (
+        <Tabs.Screen
+          name="leave"
+          options={{ title: 'Leave', tabBarLabel: 'Leave' }}
         />
       )}
       {canViewChildren && (
