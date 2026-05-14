@@ -6,7 +6,9 @@ import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.student.dto.AdmitStudentRequest;
 import com.cloudcampus.student.dto.BulkImportResult;
 import com.cloudcampus.student.dto.BulkStudentRow;
+import com.cloudcampus.student.dto.PromotionResult;
 import com.cloudcampus.student.dto.RowError;
+import com.cloudcampus.student.dto.StudentPromotionRequest;
 import com.cloudcampus.student.dto.StudentResponse;
 import com.cloudcampus.student.dto.StudentSummaryResponse;
 import com.cloudcampus.student.dto.UpdateStudentRequest;
@@ -194,6 +196,23 @@ class StudentServiceImpl implements StudentService {
             }
         }
         return new BulkImportResult(rows.size(), success, errors.size(), errors);
+    }
+
+    @Override
+    @Transactional
+    public PromotionResult promoteStudents(UUID schoolId, StudentPromotionRequest req) {
+        List<Student> students = req.sourceSectionId() != null
+                ? repo.findAllByClassIdAndSectionIdAndStatusOrderByLastNameAscFirstNameAsc(
+                        req.sourceClassId(), req.sourceSectionId(), StudentStatus.ACTIVE)
+                : repo.findAllByClassIdAndStatusOrderByLastNameAscFirstNameAsc(
+                        req.sourceClassId(), StudentStatus.ACTIVE);
+
+        for (Student s : students) {
+            s.setClassId(req.targetClassId());
+            s.setSectionId(req.targetSectionId());
+        }
+        repo.saveAll(students);
+        return new PromotionResult(students.size(), students.size());
     }
 
     private String resolveStudentNumber(UUID schoolId, String provided) {

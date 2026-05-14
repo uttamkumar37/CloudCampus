@@ -71,6 +71,10 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
             @Param("schoolId") UUID schoolId,
             @Param("prefix") String prefix);
 
+    /** Students in a specific class+section filtered by status (used for bulk promotion). */
+    List<Student> findAllByClassIdAndSectionIdAndStatusOrderByLastNameAscFirstNameAsc(
+            UUID classId, UUID sectionId, StudentStatus status);
+
     /** Look up the student profile linked to a login account (for student self-service). */
     Optional<Student> findBySchoolIdAndUserId(UUID schoolId, UUID userId);
 }

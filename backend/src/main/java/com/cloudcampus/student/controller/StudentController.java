@@ -5,6 +5,8 @@ import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.student.dto.AdmitStudentRequest;
 import com.cloudcampus.student.dto.BulkImportResult;
 import com.cloudcampus.student.dto.BulkStudentRow;
+import com.cloudcampus.student.dto.PromotionResult;
+import com.cloudcampus.student.dto.StudentPromotionRequest;
 import com.cloudcampus.student.dto.StudentResponse;
 import com.cloudcampus.student.dto.StudentSummaryResponse;
 import com.cloudcampus.student.dto.UpdateStudentRequest;
@@ -75,6 +77,16 @@ public class StudentController {
             @RequestBody List<BulkStudentRow> rows) {
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
                 service.bulkAdmit(schoolId, rows)));
+    }
+
+    @Operation(summary = "Bulk-promote ACTIVE students to a new class/section (CC-0509)",
+               description = "Moves all ACTIVE students from sourceClassId (optionally filtered by sourceSectionId) to targetClassId/targetSectionId. Used at year-end for class promotion.")
+    @PostMapping("/schools/{schoolId}/students/promote")
+    public ResponseEntity<ApiResponse<PromotionResult>> promote(
+            @PathVariable UUID schoolId,
+            @Valid @RequestBody StudentPromotionRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                service.promoteStudents(schoolId, request)));
     }
 
     @Operation(summary = "List students for a school",

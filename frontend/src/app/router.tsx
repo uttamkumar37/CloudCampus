@@ -46,6 +46,7 @@ import AssignmentDetailPage from '@/features/assignments/pages/AssignmentDetailP
 import ReportsPage from '@/features/reports/pages/ReportsPage';
 import NoticeBoardPage from '@/features/notice-board/pages/NoticeBoardPage';
 import StudentBulkImportPage from '@/features/student/pages/StudentBulkImportPage';
+import StudentPromotionPage from '@/features/student/pages/StudentPromotionPage';
 import { SuperAdminLayout } from '@/features/super-admin/layouts/SuperAdminLayout';
 import { SuperAdminDashboardPage } from '@/features/super-admin/pages/SuperAdminDashboardPage';
 import { TenantDetailPage } from '@/features/super-admin/pages/TenantDetailPage';
@@ -136,6 +137,7 @@ export function AppRouter() {
           <Route path="subjects" element={<SubjectListPage />} />
           <Route path="students" element={<StudentListPage />} />
           <Route path="students/bulk" element={<StudentBulkImportPage />} />
+          <Route path="students/promote" element={<StudentPromotionPage />} />
           <Route path="students/admit" element={<StudentAdmitPage />} />
           <Route path="students/:id" element={<StudentProfilePage />} />
           <Route path="staff" element={<StaffListPage />} />
