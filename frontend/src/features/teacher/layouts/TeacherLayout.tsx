@@ -8,6 +8,7 @@ const NAV = [
   { label: 'Homework',    to: '/teacher/homework'    },
   { label: 'Assignments', to: '/teacher/assignments' },
   { label: 'Notices',     to: '/teacher/notices'     },
+  { label: 'Leave',       to: '/teacher/leave'       },
 ];
 
 export function TeacherLayout() {
