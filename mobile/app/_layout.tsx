@@ -33,9 +33,14 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!ready) return;
     const inAuthGroup = segments[0] === '(auth)';
+    const inChangePassword = segments[1] === 'change-password';
+
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/login');
-    } else if (user && inAuthGroup) {
+    } else if (user && user.requiresPasswordChange && !inChangePassword) {
+      // Force password change before accessing any app screen.
+      router.replace('/(auth)/change-password');
+    } else if (user && !user.requiresPasswordChange && inAuthGroup) {
       router.replace('/(app)/');
     }
   }, [user, segments, router, ready]);
