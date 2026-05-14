@@ -26,6 +26,7 @@ export default function AppLayout() {
   const canViewTimetable         = user?.role === 'TEACHER' || user?.role === 'STUDENT';
   const canViewLeave             = user?.role === 'TEACHER';
   const canManageLeave           = user?.role === 'SCHOOL_ADMIN';
+  const canManageStaffAttendance = user?.role === 'SCHOOL_ADMIN';
   const canViewHomework          = user?.role === 'STUDENT';
   const canViewAssignments       = user?.role === 'STUDENT';
   const canViewTeacherHomework   = user?.role === 'TEACHER';
@@ -114,6 +115,12 @@ export default function AppLayout() {
         <Tabs.Screen
           name="admin-leave"
           options={{ title: 'Leave Approvals', tabBarLabel: 'Leave' }}
+        />
+      )}
+      {canManageStaffAttendance && (
+        <Tabs.Screen
+          name="staff-attendance"
+          options={{ title: 'Staff Attendance', tabBarLabel: 'Staff Att.' }}
         />
       )}
       {canViewChildren && (
