@@ -19,6 +19,9 @@ export interface ClassAttendanceSummary {
   late: number;
 }
 
+export interface ClassPickerItem { id: string; name: string; }
+export interface SectionPickerItem { id: string; name: string; }
+
 export async function fetchStudentsByClass(
   classId: string,
   sectionId: string,
@@ -28,4 +31,18 @@ export async function fetchStudentsByClass(
     { params: { offset: 0, limit: 200 } },
   );
   return data.data?.items ?? [];
+}
+
+export async function fetchClassesForSchool(schoolId: string): Promise<ClassPickerItem[]> {
+  const { data } = await axiosInstance.get<ApiResponse<ClassPickerItem[]>>(
+    `/v1/school-admin/schools/${schoolId}/classes`,
+  );
+  return data.data ?? [];
+}
+
+export async function fetchSectionsForClass(classId: string): Promise<SectionPickerItem[]> {
+  const { data } = await axiosInstance.get<ApiResponse<SectionPickerItem[]>>(
+    `/v1/school-admin/classes/${classId}/sections`,
+  );
+  return data.data ?? [];
 }
