@@ -1,14 +1,14 @@
 # ── DEV profile ───────────────────────────────────────────────────────────
-# Uses H2 in-memory database for fast local development.
-# IMPORTANT: H2 MODE=PostgreSQL does NOT cover all PostgreSQL semantics.
-# Plan: Replace with Testcontainers PostgreSQL in CC-0210 (tenant isolation test suite).
+# Uses the Docker Compose PostgreSQL instance (localhost:5432).
+# Start local services first: docker compose up -d
+# Connection details match docker-compose.yml (POSTGRES_USER / POSTGRES_PASSWORD).
 
 spring:
   datasource:
-    url: jdbc:h2:mem:cloudcampus;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=true
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:postgresql://localhost:5432/cloudcampus
+    driver-class-name: org.postgresql.Driver
+    username: cloudcampus
+    password: cloudcampus_dev
     # C-20: Simulate realistic pool pressure even in dev.
     hikari:
       maximum-pool-size: 10
@@ -49,6 +49,13 @@ spring:
           auth: false
           starttls:
             enable: false
+
+app:
+  # Dev overrides — use fixed keys so empty env vars don't shadow the base defaults.
+  encryption:
+    secret: "dev-aes-key-for-local-only-do-not-use-in-production-32+"
+  retention:
+    soft-delete-retention-days: 90
 
 # ── OpenAPI / Swagger UI — enabled in dev only ────────────────────────────────
 springdoc:
