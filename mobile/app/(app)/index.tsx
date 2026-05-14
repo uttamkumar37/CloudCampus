@@ -18,6 +18,16 @@ interface TeacherDash {
 
 interface StudentAtt { attendancePct: number; }
 
+interface SchoolDashStats {
+  totalStudents:       number;
+  totalStaff:          number;
+  totalClasses:        number;
+  pendingLeaveRequests: number;
+  pendingFeeRecords:   number;
+  partialFeeRecords:   number;
+  publishedNotices:    number;
+}
+
 // ── Role label ────────────────────────────────────────────────────────────────
 
 const ROLE_LABEL: Record<string, string> = {
@@ -57,6 +67,8 @@ export default function DashboardScreen() {
   const isStudent     = role === 'STUDENT';
   const isTeacher     = role === 'TEACHER';
   const isParent      = role === 'PARENT';
+  const isSchoolAdmin = role === 'SCHOOL_ADMIN';
+  const schoolId      = user?.schoolId;
 
   // Notices (all roles)
   const { data: noticesPage } = useQuery({
@@ -102,6 +114,17 @@ export default function DashboardScreen() {
     queryKey: ['parent-children'],
     queryFn:  getChildren,
     enabled:  isParent,
+  });
+
+  // School admin stats
+  const { data: schoolStats } = useQuery<SchoolDashStats>({
+    queryKey: ['school-dash', schoolId],
+    queryFn:  () => axiosInstance
+                      .get<ApiResponse<SchoolDashStats>>(
+                        `/v1/school-admin/schools/${schoolId}/dashboard`)
+                      .then((r) => r.data.data!),
+    enabled:  isSchoolAdmin && !!schoolId,
+    staleTime: 2 * 60_000,
   });
 
   const latestNotices    = noticesPage?.items ?? [];
@@ -158,6 +181,31 @@ export default function DashboardScreen() {
             <StatChip label="Today's Classes" value={todayPeriods} color="#1e3a5f" />
             <StatChip label="Pending Review"  value={pendingReview} color={pendingReview > 0 ? '#d97706' : '#16a34a'} />
           </View>
+        </SectionCard>
+      )}
+
+      {/* School admin stats */}
+      {isSchoolAdmin && schoolStats && (
+        <SectionCard title="School Overview">
+          <View style={styles.chipRow}>
+            <StatChip label="Students" value={schoolStats.totalStudents} color="#1e3a5f" />
+            <StatChip label="Staff"    value={schoolStats.totalStaff}    color="#2563eb" />
+            <StatChip label="Classes"  value={schoolStats.totalClasses}  color="#0891b2" />
+          </View>
+          {schoolStats.pendingLeaveRequests > 0 && (
+            <View style={styles.alert}>
+              <Text style={styles.alertText}>
+                {schoolStats.pendingLeaveRequests} leave request{schoolStats.pendingLeaveRequests !== 1 ? 's' : ''} pending approval
+              </Text>
+            </View>
+          )}
+          {(schoolStats.pendingFeeRecords + schoolStats.partialFeeRecords) > 0 && (
+            <View style={[styles.alert, { backgroundColor: '#fee2e2' }]}>
+              <Text style={[styles.alertText, { color: '#dc2626' }]}>
+                {schoolStats.pendingFeeRecords + schoolStats.partialFeeRecords} fee record{(schoolStats.pendingFeeRecords + schoolStats.partialFeeRecords) !== 1 ? 's' : ''} outstanding
+              </Text>
+            </View>
+          )}
         </SectionCard>
       )}
 
