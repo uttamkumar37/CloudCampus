@@ -46,7 +46,10 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties({JwtProperties.class, RateLimitProperties.class, OtpProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, RateLimitProperties.class, OtpProperties.class,
+        com.cloudcampus.common.ratelimit.ApiRateLimitProperties.class,
+        com.cloudcampus.common.crypto.EncryptionProperties.class,
+        com.cloudcampus.common.retention.RetentionProperties.class})
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;

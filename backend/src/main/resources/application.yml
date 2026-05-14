@@ -145,6 +145,24 @@ springdoc:
       window-seconds-per-username: 900 # 15 minutes
       lockout-threshold: 10            # 10 consecutive bad-credential failures → account suspended
       lockout-window-seconds: 3600     # counter resets after 1 hour of inactivity
+    api:
+      per-user-requests: 20            # 20 @RateLimit calls per user per minute
+      per-user-window-seconds: 60
+      per-tenant-requests: 60          # 60 @RateLimit calls per tenant per minute
+      per-tenant-window-seconds: 60
+
+  # ── PII data retention (CC-1806) ──────────────────────────────────────────────
+  # Nightly job (02:00 UTC) hard-deletes user rows soft-deleted for longer than
+  # this window. Set to 0 to disable physical purge (soft-delete-only mode).
+  retention:
+    soft-delete-retention-days: 90
+
+  # ── PII field encryption (CC-1803) ────────────────────────────────────────────
+  # AES-256-GCM key for Student.phone/address and Staff.phone/email/address.
+  # Production: load from HashiCorp Vault / AWS Secrets Manager.
+  # SECURITY: Never commit the real secret to source control.
+  encryption:
+    secret: ${ENCRYPTION_SECRET:dev-encryption-key-must-be-at-least-32ch}
 
   # ── OTP (password reset) ───────────────────────────────────────────────────────
   # Redis key: cc:otp:{userId}  TTL: 5 min (CC-0108)

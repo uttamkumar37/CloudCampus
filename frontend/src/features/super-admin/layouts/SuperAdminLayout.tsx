@@ -2,8 +2,9 @@ import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', to: '/super-admin/dashboard' },
-  { label: 'Tenants',   to: '/super-admin/tenants' },
+  { label: 'Dashboard',   to: '/super-admin/dashboard' },
+  { label: 'Tenants',     to: '/super-admin/tenants' },
+  { label: 'Comparison',  to: '/super-admin/comparison' },
 ];
 
 export function SuperAdminLayout() {

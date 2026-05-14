@@ -8,6 +8,8 @@ import com.cloudcampus.school.dto.AcademicYearResponse;
 import com.cloudcampus.school.entity.AcademicYear;
 import com.cloudcampus.school.entity.AcademicYearStatus;
 import com.cloudcampus.school.repository.AcademicYearRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ class AcademicYearServiceImpl implements AcademicYearService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "academic-years", allEntries = true)
     public AcademicYearResponse create(UUID schoolId, AcademicYearRequest req) {
         if (!req.endDate().isAfter(req.startDate())) {
             throw new BadRequestException("endDate must be after startDate");
@@ -44,6 +47,7 @@ class AcademicYearServiceImpl implements AcademicYearService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "academic-years", key = "#schoolId")
     public List<AcademicYearResponse> listBySchool(UUID schoolId) {
         return repo.findAllBySchoolIdOrderByStartDateDesc(schoolId)
                    .stream()
@@ -59,6 +63,7 @@ class AcademicYearServiceImpl implements AcademicYearService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "academic-years", allEntries = true)
     public AcademicYearResponse update(UUID id, AcademicYearRequest req) {
         if (!req.endDate().isAfter(req.startDate())) {
             throw new BadRequestException("endDate must be after startDate");
@@ -76,6 +81,7 @@ class AcademicYearServiceImpl implements AcademicYearService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "academic-years", allEntries = true)
     public AcademicYearResponse setAsCurrent(UUID id) {
         AcademicYear year = findOrThrow(id);
         repo.clearCurrentForSchool(year.getSchoolId());
@@ -85,6 +91,7 @@ class AcademicYearServiceImpl implements AcademicYearService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "academic-years", allEntries = true)
     public void close(UUID id) {
         AcademicYear year = findOrThrow(id);
         if (year.getStatus() == AcademicYearStatus.CLOSED) {

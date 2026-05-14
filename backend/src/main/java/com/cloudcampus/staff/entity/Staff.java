@@ -1,8 +1,10 @@
 package com.cloudcampus.staff.entity;
 
+import com.cloudcampus.common.crypto.EncryptedStringConverter;
 import com.cloudcampus.common.tenant.TenantFilter;
 import com.cloudcampus.student.entity.Gender;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -83,13 +85,16 @@ public class Staff {
     @Column(name = "gender", length = 30)
     private Gender gender;
 
-    @Column(name = "phone", length = 30)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "phone", length = 500)
     private String phone;
 
-    @Column(name = "email", length = 200)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "email", length = 500)
     private String email;
 
-    @Column(name = "address", length = 500)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "address", length = 1000)
     private String address;
 
     @Column(name = "photo_url", length = 500)

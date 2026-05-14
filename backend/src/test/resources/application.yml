@@ -41,6 +41,12 @@ spring:
             required: false
 
 app:
+  retention:
+    soft-delete-retention-days: 1
+
+  encryption:
+    secret: "test-encryption-secret-for-integration-tests-only-do-not-use-in-production"
+
   jwt:
     secret: "test-secret-key-for-integration-tests-only-do-not-use-in-production-must-be-long-enough"
     expiration-ms: 3600000
@@ -49,6 +55,20 @@ app:
     ttl-seconds: 300
     length: 6
     from-email: noreply@cloudcampus.io
+
+  rate-limit:
+    login:
+      max-attempts-per-ip: 20
+      window-seconds-per-ip: 300
+      max-attempts-per-username: 10
+      window-seconds-per-username: 900
+      lockout-threshold: 10
+      lockout-window-seconds: 3600
+    api:
+      per-user-requests: 20
+      per-user-window-seconds: 60
+      per-tenant-requests: 60
+      per-tenant-window-seconds: 60
 
 logging:
   level:

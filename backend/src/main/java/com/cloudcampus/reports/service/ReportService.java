@@ -1,6 +1,7 @@
 package com.cloudcampus.reports.service;
 
 import com.cloudcampus.reports.dto.AttendanceReportResponse;
+import com.cloudcampus.reports.dto.ComparisonResponse;
 import com.cloudcampus.reports.dto.FeeReportResponse;
 import com.cloudcampus.reports.dto.PerformanceReportResponse;
 
@@ -13,4 +14,6 @@ public interface ReportService {
     FeeReportResponse feeReport(UUID schoolId, UUID academicYearId);
 
     PerformanceReportResponse performanceReport(UUID schoolId, UUID examId);
+
+    ComparisonResponse comparisonReport(UUID tenantId);
 }

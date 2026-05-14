@@ -8,6 +8,9 @@ const base = (schoolId: string) =>
 
 export interface AttendanceReportRow {
   studentId: string;
+  studentNumber: string;
+  firstName: string;
+  lastName: string;
   totalSessions: number;
   presentCount: number;
   absentCount: number;
@@ -38,6 +41,9 @@ export interface FeeReport {
 
 export interface PerformanceReportRow {
   studentId: string;
+  studentNumber: string;
+  firstName: string;
+  lastName: string;
   totalMarksObtained: number;
   totalMarksPossible: number;
   percentage: number;

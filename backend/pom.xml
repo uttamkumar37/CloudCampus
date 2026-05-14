@@ -52,6 +52,12 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
 
+        <!-- Spring Cache abstraction — wired to Redis (CC-1702) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
         <!-- Email — OTP password reset (CC-1002 / B10) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

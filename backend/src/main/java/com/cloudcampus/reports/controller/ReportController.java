@@ -1,6 +1,7 @@
 package com.cloudcampus.reports.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.ratelimit.RateLimit;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.reports.dto.AttendanceReportResponse;
 import com.cloudcampus.reports.dto.FeeReportResponse;
@@ -45,6 +46,7 @@ public class ReportController {
     }
 
     @GetMapping("/attendance")
+    @RateLimit
     @Operation(summary = "Attendance report for a school + academic year (CC-1401)")
     public ResponseEntity<ApiResponse<AttendanceReportResponse>> attendanceReport(
             @PathVariable UUID schoolId,
@@ -54,6 +56,7 @@ public class ReportController {
     }
 
     @GetMapping("/fees")
+    @RateLimit
     @Operation(summary = "Fee collection report for a school + academic year (CC-1402)")
     public ResponseEntity<ApiResponse<FeeReportResponse>> feeReport(
             @PathVariable UUID schoolId,
@@ -63,6 +66,7 @@ public class ReportController {
     }
 
     @GetMapping("/performance")
+    @RateLimit
     @Operation(summary = "Student performance report for an exam (CC-1403)")
     public ResponseEntity<ApiResponse<PerformanceReportResponse>> performanceReport(
             @PathVariable UUID schoolId,
@@ -74,6 +78,7 @@ public class ReportController {
     // ── CSV exports ───────────────────────────────────────────────────────────
 
     @GetMapping("/attendance/export")
+    @RateLimit
     @Operation(summary = "Export attendance report as CSV (CC-1401)")
     public ResponseEntity<byte[]> exportAttendance(
             @PathVariable UUID schoolId,
@@ -81,9 +86,11 @@ public class ReportController {
 
         AttendanceReportResponse report = reportService.attendanceReport(schoolId, academicYearId);
         StringBuilder sb = new StringBuilder();
-        sb.append("Student ID,Total Sessions,Present,Absent,Late,Excused,Attendance %\r\n");
+        sb.append("Student Number,First Name,Last Name,Total Sessions,Present,Absent,Late,Excused,Attendance %\r\n");
         for (AttendanceReportResponse.Row r : report.rows()) {
-            sb.append(csv(r.studentId()))
+            sb.append(csv(r.studentNumber()))
+              .append(',').append(csv(r.firstName()))
+              .append(',').append(csv(r.lastName()))
               .append(',').append(r.totalSessions())
               .append(',').append(r.presentCount())
               .append(',').append(r.absentCount())
@@ -96,6 +103,7 @@ public class ReportController {
     }
 
     @GetMapping("/fees/export")
+    @RateLimit
     @Operation(summary = "Export fee collection report as CSV (CC-1402)")
     public ResponseEntity<byte[]> exportFees(
             @PathVariable UUID schoolId,
@@ -117,6 +125,7 @@ public class ReportController {
     }
 
     @GetMapping("/performance/export")
+    @RateLimit
     @Operation(summary = "Export student performance report as CSV (CC-1403)")
     public ResponseEntity<byte[]> exportPerformance(
             @PathVariable UUID schoolId,
@@ -124,10 +133,12 @@ public class ReportController {
 
         PerformanceReportResponse report = reportService.performanceReport(schoolId, examId);
         StringBuilder sb = new StringBuilder();
-        sb.append("Rank,Student ID,Marks Obtained,Marks Possible,Percentage,Grade,Passed\r\n");
+        sb.append("Rank,Student Number,First Name,Last Name,Marks Obtained,Marks Possible,Percentage,Grade,Passed\r\n");
         for (PerformanceReportResponse.Row r : report.rows()) {
             sb.append(r.rank() != null ? r.rank() : "")
-              .append(',').append(csv(r.studentId()))
+              .append(',').append(csv(r.studentNumber()))
+              .append(',').append(csv(r.firstName()))
+              .append(',').append(csv(r.lastName()))
               .append(',').append(r.totalMarksObtained())
               .append(',').append(r.totalMarksPossible())
               .append(',').append(String.format("%.1f", r.percentage()))

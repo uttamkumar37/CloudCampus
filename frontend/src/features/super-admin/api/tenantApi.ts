@@ -1,6 +1,7 @@
 import axiosInstance from '@/shared/api/axiosInstance';
 import type { ApiResponse, PageResponse } from '@/shared/types/api';
 import type {
+  ComparisonResponse,
   FeatureResponse,
   SuperAdminStatsResponse,
   TenantCreateRequest,
@@ -60,4 +61,11 @@ export async function enableFeature(tenantId: string, featureKey: string): Promi
 
 export async function disableFeature(tenantId: string, featureKey: string): Promise<void> {
   await axiosInstance.delete(`${BASE}/${tenantId}/features/${featureKey}`);
+}
+
+export async function getComparisonReport(tenantId: string): Promise<ComparisonResponse> {
+  const { data } = await axiosInstance.get<ApiResponse<ComparisonResponse>>(
+    `${BASE}/${tenantId}/comparison`,
+  );
+  return data.data!;
 }

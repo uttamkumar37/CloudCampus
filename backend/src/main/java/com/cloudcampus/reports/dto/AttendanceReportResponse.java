@@ -11,6 +11,9 @@ public record AttendanceReportResponse(
 ) {
     public record Row(
             UUID   studentId,
+            String studentNumber,
+            String firstName,
+            String lastName,
             long   totalSessions,
             long   presentCount,
             long   absentCount,

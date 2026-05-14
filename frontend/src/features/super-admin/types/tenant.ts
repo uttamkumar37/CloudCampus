@@ -38,3 +38,23 @@ export interface TenantFeatureResponse {
   enabled: boolean;
   updatedAt: string;
 }
+
+export interface SchoolComparisonRow {
+  schoolId: string;
+  schoolName: string;
+  schoolCode: string;
+  academicYearId: string | null;
+  academicYearName: string;
+  activeStudents: number;
+  totalSessions: number;
+  attendanceRate: number;
+  totalDue: number;
+  totalPaid: number;
+  feeCollectionRate: number;
+}
+
+export interface ComparisonResponse {
+  tenantId: string;
+  totalSchools: number;
+  schools: SchoolComparisonRow[];
+}

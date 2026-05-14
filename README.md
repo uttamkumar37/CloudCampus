@@ -2,7 +2,7 @@
 
 Enterprise Digital School SaaS — multi-tenant, schema-based architecture.
 
-**Stack:** Java 21 · Spring Boot 3.4.5 · React 18 · Expo (React Native) · PostgreSQL 16 · Redis 7 · MinIO · Prometheus · Grafana
+**Stack:** Java 21 · Spring Boot 3.4.5 · React 19 · Expo (React Native) · PostgreSQL 16 · Redis 7 · MinIO · Prometheus · Grafana
 
 ---
 
@@ -54,7 +54,7 @@ Browser / Mobile
 | Cache / Session | Redis 7 |
 | Object Storage | MinIO (S3-compatible) |
 | Auth | JWT (HS256) · Spring Security |
-| Web App | React 18 · TypeScript · Vite · TanStack Query |
+| Web App | React 19 · TypeScript · Vite · TanStack Query v5 |
 | Mobile | Expo SDK 54 · React Native 0.81.5 (New Architecture) |
 | Offline sync | WatermelonDB + custom sync queue |
 | Push notifications | Expo Notifications + FCM / APNs |
@@ -143,7 +143,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 
 ## Feature Status
 
-> **As of 2026-05-14 (E52 complete) — ~118 of 193 tasks done (61%)**
+> **As of 2026-05-14 (E76 complete) — ~132 of 193 tasks done (68%)**
 
 ### Backend (Java / Spring Boot)
 
@@ -155,7 +155,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Change password (`POST /v1/auth/change-password`) | ✅ Done |
 | User management (CRUD + roles) | ✅ Done |
 | Tenant management (super-admin) | ✅ Done |
-| Flyway migrations V1–V33 | ✅ Done |
+| Flyway migrations V1–V39 | ✅ Done |
 | Security headers (7 OWASP) | ✅ Done |
 | Structured JSON logging (Logback) | ✅ Done |
 | Prometheus + Micrometer metrics | ✅ Done |
@@ -175,8 +175,14 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | SMS / email / push / WhatsApp notification services | ✅ Done |
 | Parent portal APIs (children list + per-child detail) | ✅ Done |
 | Teacher dashboard + school-admin live dashboard | ✅ Done |
-| Rate limiting + audit logging + account lockout + `@StrongPassword` constraint | ✅ Done |
+| Rate limiting (login + per-user/per-tenant API) + audit logging + account lockout + `@StrongPassword` | ✅ Done |
 | Tenant isolation (Hibernate filters + Testcontainers tests) | ✅ Done |
+| Attendance / fee / performance reports (JSON + CSV export) | ✅ Done |
+| Cross-school comparison dashboard (`/v1/super-admin/tenants/{id}/comparison`) | ✅ Done |
+| Redis API caching — `@Cacheable` on reference data (academic years / classes / subjects / sections) | ✅ Done |
+| Query optimisation — 5 composite covering indexes (V39) | ✅ Done |
+| At-rest PII encryption — AES-256-GCM `@Convert` on Student/Staff phone, email, address (V40) | ✅ Done |
+| GDPR/PDPA data retention — nightly hard-purge of expired soft-deleted users (configurable window) | ✅ Done |
 
 ### Web Frontend (React / TypeScript)
 
@@ -223,7 +229,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Grafana dashboards (9 panels) | ✅ Done |
 | Staging / production profiles | ✅ Done |
 | pg_dump backup sidecar | ⏳ Pending |
-| CI/CD pipeline | ⏳ Pending |
+| CI/CD pipeline (4-job GitHub Actions: backend / frontend / mobile / docker) | ✅ Done |
 
 ---
 
