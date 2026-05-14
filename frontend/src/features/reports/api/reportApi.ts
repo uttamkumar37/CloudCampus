@@ -90,3 +90,38 @@ export async function getPerformanceReport(
   );
   return data.data!;
 }
+
+// ── CSV exports ───────────────────────────────────────────────────────────────
+
+export async function exportAttendanceCsv(schoolId: string, academicYearId: string): Promise<Blob> {
+  const { data } = await axiosInstance.get<Blob>(
+    `${base(schoolId)}/attendance/export`,
+    { params: { academicYearId }, responseType: 'blob' },
+  );
+  return data;
+}
+
+export async function exportFeesCsv(schoolId: string, academicYearId: string): Promise<Blob> {
+  const { data } = await axiosInstance.get<Blob>(
+    `${base(schoolId)}/fees/export`,
+    { params: { academicYearId }, responseType: 'blob' },
+  );
+  return data;
+}
+
+export async function exportPerformanceCsv(schoolId: string, examId: string): Promise<Blob> {
+  const { data } = await axiosInstance.get<Blob>(
+    `${base(schoolId)}/performance/export`,
+    { params: { examId }, responseType: 'blob' },
+  );
+  return data;
+}
+
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
