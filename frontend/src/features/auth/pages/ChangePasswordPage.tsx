@@ -4,6 +4,14 @@ import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { changePasswordApi } from '../api/authApi';
 
+function isStrongPassword(pw: string): boolean {
+  return pw.length >= 8
+    && /[A-Z]/.test(pw)
+    && /[a-z]/.test(pw)
+    && /\d/.test(pw)
+    && /[^a-zA-Z\d]/.test(pw);
+}
+
 export function ChangePasswordPage() {
   const navigate   = useNavigate();
   const user       = useAuthStore((s) => s.user);
@@ -30,8 +38,8 @@ export function ChangePasswordPage() {
     e.preventDefault();
     setFieldError('');
 
-    if (next.length < 8) {
-      setFieldError('New password must be at least 8 characters.');
+    if (!isStrongPassword(next)) {
+      setFieldError('Password must be at least 8 characters and include uppercase, lowercase, digit, and special character.');
       return;
     }
     if (next !== confirm) {
@@ -117,7 +125,9 @@ export function ChangePasswordPage() {
                   minLength={8}
                   className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
-                <p className="mt-1 text-xs text-gray-400">Minimum 8 characters</p>
+                <p className="mt-1 text-xs text-gray-400">
+                  Min 8 chars · uppercase · lowercase · digit · special character
+                </p>
               </div>
 
               <div>
