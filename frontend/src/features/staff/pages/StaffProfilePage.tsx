@@ -12,6 +12,8 @@ import {
   resignStaff,
   terminateStaff,
 } from '../api/staffApi';
+import { listDepartments } from '@/features/school-admin/api/departmentApi';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import type { StaffStatus, StaffType, UpdateStaffRequest } from '../types/staff';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -50,6 +52,7 @@ function fmt(iso: string | null | undefined) {
 const editSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
+  departmentId: z.string().optional(),
   joiningDate: z.string().optional(),
   dateOfBirth: z.string().optional(),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
@@ -81,14 +84,22 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 function EditForm({
   id,
+  schoolId,
   defaultValues,
   onCancel,
 }: {
   id: string;
+  schoolId: string;
   defaultValues: EditValues;
   onCancel: () => void;
 }) {
   const queryClient = useQueryClient();
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments', schoolId],
+    queryFn:  () => listDepartments(schoolId),
+    enabled:  !!schoolId,
+  });
 
   const {
     register,
@@ -102,6 +113,7 @@ function EditForm({
       const body: UpdateStaffRequest = {
         firstName: values.firstName,
         lastName: values.lastName,
+        departmentId: values.departmentId || undefined,
         joiningDate: values.joiningDate || undefined,
         dateOfBirth: values.dateOfBirth || undefined,
         gender: values.gender || undefined,
@@ -169,6 +181,14 @@ function EditForm({
         <Field label="Last Name" required error={errors.lastName?.message}>
           <input {...register('lastName')} className={inputCls} />
         </Field>
+        <Field label="Department">
+          <select {...register('departmentId')} className={inputCls}>
+            <option value="">No department</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>{d.name}{d.code ? ` (${d.code})` : ''}</option>
+            ))}
+          </select>
+        </Field>
         <Field label="Email" error={errors.email?.message}>
           <input type="email" {...register('email')} className={inputCls} />
         </Field>
@@ -234,12 +254,21 @@ export function StaffProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
 
   const { data: staff, isLoading, isError } = useQuery({
     queryKey: ['staff-member', id],
     queryFn: () => getStaff(id!),
     enabled: !!id,
   });
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments', schoolId],
+    queryFn:  () => listDepartments(schoolId),
+    enabled:  !!schoolId,
+  });
+  const deptName = (deptId: string | null) =>
+    departments.find((d) => d.id === deptId)?.name ?? deptId;
 
   function makeStatusMutation(
     fn: (id: string) => Promise<unknown>,
@@ -270,6 +299,7 @@ export function StaffProfilePage() {
   const defaultEditValues: EditValues = {
     firstName: staff.firstName,
     lastName: staff.lastName,
+    departmentId: staff.departmentId ?? '',
     joiningDate: staff.joiningDate ?? '',
     dateOfBirth: staff.dateOfBirth ?? '',
     gender: (staff.gender as EditValues['gender']) ?? undefined,
@@ -380,6 +410,7 @@ export function StaffProfilePage() {
       {editing && (
         <EditForm
           id={staff.id}
+          schoolId={schoolId}
           defaultValues={defaultEditValues}
           onCancel={() => setEditing(false)}
         />
@@ -437,7 +468,7 @@ export function StaffProfilePage() {
             </h3>
             <dl className="grid grid-cols-1 gap-3">
               <InfoRow label="Staff ID" value={<span className="font-mono text-xs">{staff.id}</span>} />
-              <InfoRow label="Department ID" value={staff.departmentId ? <span className="font-mono text-xs">{staff.departmentId}</span> : null} />
+              <InfoRow label="Department" value={staff.departmentId ? deptName(staff.departmentId) : null} />
               <InfoRow label="Created" value={fmt(staff.createdAt)} />
               <InfoRow label="Last Updated" value={fmt(staff.updatedAt)} />
             </dl>
