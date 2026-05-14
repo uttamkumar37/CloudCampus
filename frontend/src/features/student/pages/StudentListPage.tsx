@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
-import { listStudents } from '../api/studentApi';
+import { listStudents, listStudentsByClass, listStudentsBySection } from '../api/studentApi';
+import { listAcademicYears } from '@/features/school-admin/api/academicYearApi';
+import { listClasses } from '@/features/school-admin/api/classApi';
+import { listSections } from '@/features/school-admin/api/sectionApi';
 import type { StudentStatus } from '../types/student';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -30,24 +33,56 @@ export function StudentListPage() {
   const user = useAuthStore((s) => s.user);
   const schoolId = user?.schoolId ?? null;
 
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<StudentStatus | ''>('');
-  const [committed, setCommitted] = useState<{ search: string; status: StudentStatus | '' }>({
-    search: '',
-    status: '',
-  });
+  const [search, setSearch]       = useState('');
+  const [status, setStatus]       = useState<StudentStatus | ''>('');
+  const [yearId, setYearId]       = useState('');
+  const [classId, setClassId]     = useState('');
+  const [sectionId, setSectionId] = useState('');
+
+  const [committed, setCommitted] = useState<{
+    search: string; status: StudentStatus | '';
+    classId: string; sectionId: string;
+  }>({ search: '', status: '', classId: '', sectionId: '' });
 
   function applyFilters() {
-    setCommitted({ search: search.trim(), status });
+    setCommitted({ search: search.trim(), status, classId, sectionId });
   }
 
+  // Cascading dropdowns
+  const { data: years = [] } = useQuery({
+    queryKey: ['academic-years', schoolId],
+    queryFn:  () => listAcademicYears(schoolId!),
+    enabled:  !!schoolId,
+  });
+
+  const effectiveYearId = yearId || years.find((y) => y.isCurrent)?.id || years[0]?.id || '';
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes', effectiveYearId],
+    queryFn:  () => listClasses(effectiveYearId),
+    enabled:  !!effectiveYearId,
+  });
+
+  const { data: sections = [] } = useQuery({
+    queryKey: ['sections', classId],
+    queryFn:  () => listSections(classId),
+    enabled:  !!classId,
+  });
+
+  // Maps for name resolution in the table
+  const classMap   = new Map(classes.map((c) => [c.id, c.name]));
+  const sectionMap = new Map(sections.map((s) => [s.id, s.name]));
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['students', schoolId, committed.status, committed.search],
-    queryFn: () =>
-      listStudents(schoolId!, {
+    queryKey: ['students', schoolId, committed.status, committed.search, committed.classId, committed.sectionId],
+    queryFn: () => {
+      if (committed.sectionId) return listStudentsBySection(committed.sectionId);
+      if (committed.classId)   return listStudentsByClass(committed.classId);
+      return listStudents(schoolId!, {
         status: committed.status || undefined,
         search: committed.search || undefined,
-      }),
+      });
+    },
     enabled: !!schoolId,
   });
 
@@ -103,9 +138,38 @@ export function StudentListPage() {
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <select
+          value={yearId || effectiveYearId}
+          onChange={(e) => { setYearId(e.target.value); setClassId(''); setSectionId(''); }}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {years.map((y) => (
+            <option key={y.id} value={y.id}>{y.name}{y.isCurrent ? ' ★' : ''}</option>
+          ))}
+        </select>
+        <select
+          value={classId}
+          onChange={(e) => { setClassId(e.target.value); setSectionId(''); }}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={!effectiveYearId}
+        >
+          <option value="">All classes</option>
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        <select
+          value={sectionId}
+          onChange={(e) => setSectionId(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={!classId}
+        >
+          <option value="">All sections</option>
+          {sections.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
         <button
@@ -135,6 +199,7 @@ export function StudentListPage() {
               <tr>
                 <th className="px-4 py-3">Student</th>
                 <th className="px-4 py-3">Number</th>
+                <th className="px-4 py-3">Class / Section</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
@@ -164,6 +229,10 @@ export function StudentListPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 font-mono text-gray-600">{s.studentNumber}</td>
+                  <td className="px-4 py-3 text-xs text-gray-500">
+                    {s.classId ? classMap.get(s.classId) ?? '—' : '—'}
+                    {s.sectionId ? ` / ${sectionMap.get(s.sectionId) ?? '—'}` : ''}
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[s.status]}`}
