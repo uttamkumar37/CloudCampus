@@ -17,9 +17,17 @@ export interface TimetableSlot {
   endTime:        string | null;
 }
 
-export async function getMyTimetable(academicYearId?: string): Promise<TimetableSlot[]> {
+export async function getTeacherTimetable(academicYearId?: string): Promise<TimetableSlot[]> {
   const { data } = await axiosInstance.get<ApiResponse<TimetableSlot[]>>(
     '/v1/teacher/timetable',
+    { params: academicYearId ? { academicYearId } : undefined },
+  );
+  return data.data ?? [];
+}
+
+export async function getStudentTimetable(academicYearId?: string): Promise<TimetableSlot[]> {
+  const { data } = await axiosInstance.get<ApiResponse<TimetableSlot[]>>(
+    '/v1/student/timetable',
     { params: academicYearId ? { academicYearId } : undefined },
   );
   return data.data ?? [];

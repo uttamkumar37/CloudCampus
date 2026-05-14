@@ -7,7 +7,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { getMyTimetable, type DayOfWeek, type TimetableSlot } from '../api/timetableApi';
+import { getTeacherTimetable, getStudentTimetable, type DayOfWeek, type TimetableSlot } from '../api/timetableApi';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,9 @@ function timeRange(slot: TimetableSlot) {
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function TimetableScreen() {
+  const role = useAuthStore((s) => s.user?.role);
+  const isStudent = role === 'STUDENT';
+
   const {
     data: slots = [],
     isLoading,
@@ -44,8 +48,8 @@ export default function TimetableScreen() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ['my-timetable'],
-    queryFn:  () => getMyTimetable(),
+    queryKey: [isStudent ? 'student-timetable' : 'teacher-timetable'],
+    queryFn:  () => isStudent ? getStudentTimetable() : getTeacherTimetable(),
   });
 
   if (isLoading) {
@@ -60,7 +64,10 @@ export default function TimetableScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.error}>
-          Could not load timetable.{'\n'}Make sure your staff profile is linked.
+          Could not load timetable.{'\n'}
+          {isStudent
+            ? 'Make sure your student profile is set up correctly.'
+            : 'Make sure your staff profile is linked.'}
         </Text>
       </View>
     );

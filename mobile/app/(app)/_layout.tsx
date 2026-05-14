@@ -23,7 +23,7 @@ export default function AppLayout() {
     user?.role === 'TEACHER' ||
     user?.role === 'SUPER_ADMIN';
 
-  const canViewTimetable         = user?.role === 'TEACHER';
+  const canViewTimetable         = user?.role === 'TEACHER' || user?.role === 'STUDENT';
   const canViewHomework          = user?.role === 'STUDENT';
   const canViewAssignments       = user?.role === 'STUDENT';
   const canViewTeacherHomework   = user?.role === 'TEACHER';
