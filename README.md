@@ -143,7 +143,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 
 ## Feature Status
 
-> **As of 2026-05-14 (E46 complete) — ~112 of 193 tasks done (58%)**
+> **As of 2026-05-14 (E52 complete) — ~118 of 193 tasks done (61%)**
 
 ### Backend (Java / Spring Boot)
 
@@ -175,7 +175,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | SMS / email / push / WhatsApp notification services | ✅ Done |
 | Parent portal APIs (children list + per-child detail) | ✅ Done |
 | Teacher dashboard + school-admin live dashboard | ✅ Done |
-| Rate limiting + audit logging | ✅ Done |
+| Rate limiting + audit logging + account lockout + `@StrongPassword` constraint | ✅ Done |
 | Tenant isolation (Hibernate filters + Testcontainers tests) | ✅ Done |
 
 ### Web Frontend (React / TypeScript)
@@ -208,7 +208,10 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Offline-first attendance (WatermelonDB) | ✅ Done |
 | Push notifications (FCM / APNs) | ✅ Done |
 | Role-aware dashboard (Student / Teacher / Parent sections) | ✅ Done |
-| Student screens: assignments, results, fees, attendance | ✅ Done |
+| Student screens: assignments, results, fees, attendance, timetable | ✅ Done |
+| Teacher screens: timetable, homework, assignments | ✅ Done |
+| Parent screens: children list with attendance, homework, fees, exam results | ✅ Done |
+| Forgot password + reset password (OTP-based) | ✅ Done |
 | Change password screen + forced-change navigation guard | ✅ Done |
 
 ### DevOps / Observability

@@ -4,14 +4,67 @@
 
 ---
 
-## Progress Summary (as of 2026-05-14 — E46 Parent Portal Child Fee Records)
+## Progress Summary (as of 2026-05-14 — E52 Mobile Student Timetable)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~112 (58.0%) |
+| **Completed** | ~118 (61.1%) |
 | **In Progress** | 0 |
-| **Not Started** | ~81 |
+| **Not Started** | ~75 |
+
+### E52 Completions — Mobile Student Timetable Tab (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `timetableApi.ts` additions ✅ | `getStudentTimetable(academicYearId?)` — `GET /v1/student/timetable`; renamed `getMyTimetable` → `getTeacherTimetable` for clarity |
+| `TimetableScreen.tsx` role-aware ✅ | Reads role from `useAuthStore`; picks `getStudentTimetable` for STUDENT, `getTeacherTimetable` for TEACHER; role-specific error message when fetch fails |
+| `_layout.tsx` tab visibility ✅ | `canViewTimetable = TEACHER \|\| STUDENT`; Timetable tab now appears for students |
+
+### E51 Completions — Mobile Parent Child Homework + Fees (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `parentApi.ts` additions ✅ | `HomeworkStatus` type, `ChildHomework` interface, `getChildHomework(studentId)` → `GET /v1/parent/children/{id}/homework`; `FeeStatus` type, `ChildFeeRecord` interface, `getChildFees(studentId)` → `GET /v1/parent/children/{id}/fees` |
+| `ParentDashboardScreen.tsx` ✅ | `ChildDetail` panel expanded — Homework section (title, due date, status badge in color), Fees section (balance-due alert banner + per-record rows with ₹ amounts and status badge); TanStack Query parallel fetches |
+
+### E50 Completions — Mobile Forgot / Reset Password (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `authApi.ts` additions ✅ | `forgotPasswordApi(email)` → `POST /v1/auth/forgot-password`; `resetPasswordApi(email, otp, newPassword)` → `POST /v1/auth/reset-password` |
+| `ForgotPasswordScreen.tsx` ✅ | Email validation + OWASP enumeration-safe success panel (always shown); routes to `/(auth)/reset-password?email=...` |
+| `ResetPasswordScreen.tsx` ✅ | Pre-fills email from `useLocalSearchParams`; OTP numeric-only; show/hide password toggle; `isStrongPassword()` client-side check; on success → `/(auth)/login` |
+| Route wrappers ✅ | `mobile/app/(auth)/forgot-password.tsx` + `reset-password.tsx` thin wrappers |
+| Login screen ✅ | "Forgot password?" link added below Sign In button |
+
+### E49 Completions — Password Complexity Rules (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `@StrongPassword` annotation ✅ | `common/validation/StrongPassword.java` — Bean Validation `@Constraint` annotation |
+| `StrongPasswordValidator` ✅ | Checks length ≥8, uppercase, lowercase, digit, special char via compiled `Pattern` constants |
+| DTO updates ✅ | `ChangePasswordRequest.newPassword` + `ResetPasswordRequest.newPassword` annotated `@StrongPassword` (replaces `@Size(min=8)`) |
+| Frontend parity ✅ | `isStrongPassword()` helper added to `ChangePasswordPage.tsx` and `ResetPasswordPage.tsx`; hint text updated |
+
+### E48 Completions — Mobile Teacher Timetable / Homework / Assignments (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| Teacher timetable ✅ | `TimetableScreen.tsx` grid view; `GET /v1/teacher/timetable`; day-column cards with period badges and time ranges |
+| Teacher homework ✅ | `TeacherHomeworkScreen.tsx`; `GET /v1/teacher/homework`; list with status badges and due dates |
+| Teacher assignments ✅ | `TeacherAssignmentsScreen.tsx`; `GET /v1/teacher/assignments`; paginated list |
+| Tab visibility ✅ | `canViewTeacherHomework` + `canViewTeacherAssignments` + `canViewTimetable` (TEACHER only at this stage) in `_layout.tsx` |
+
+### E47 Completions — Account Lockout After Repeated Failures (CC-0116) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `AuditAction.AUTH_ACCOUNT_LOCKED` ✅ | New enum value + `AuditLogService.logAccountLocked()` async method |
+| `RateLimitProperties` ✅ | Added `lockoutThreshold` (int) + `lockoutWindowSeconds` (long); configured 10 failures / 1 hour in `application.yml` |
+| `LoginRateLimiterService` ✅ | `recordCredentialFailure(username)` — Redis `INCR` + `EXPIRE`; returns true when threshold reached. `clearCredentialFailures(username)` — deletes key on successful login |
+| `AuthServiceImpl` ✅ | On bad credentials: `maybeUser.ifPresent()` increments counter, suspends account + audits on first lockout; on success: clears counter |
+| Frontend lockout UX ✅ | `LoginPage.tsx` shows 403 → "Account not active", 429 → "Too many attempts" error messages |
 
 ### E38 Completions — Student Exam Results & Fee Status Self-Service (2026-05-14)
 
