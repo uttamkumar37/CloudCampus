@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
-import { listStaff } from '../api/staffApi';
+import { listStaff, listStaffByDepartment } from '../api/staffApi';
+import { listDepartments } from '@/features/school-admin/api/departmentApi';
 import type { StaffStatus, StaffType } from '../types/staff';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -55,27 +56,39 @@ export function StaffListPage() {
   const user = useAuthStore((s) => s.user);
   const schoolId = user?.schoolId ?? null;
 
-  const [search, setSearch] = useState('');
-  const [type, setType] = useState<StaffType | ''>('');
-  const [status, setStatus] = useState<StaffStatus | ''>('ACTIVE');
+  const [search, setSearch]   = useState('');
+  const [type, setType]       = useState<StaffType | ''>('');
+  const [status, setStatus]   = useState<StaffStatus | ''>('ACTIVE');
+  const [deptId, setDeptId]   = useState('');
   const [committed, setCommitted] = useState<{
     search: string;
-    type: StaffType | '';
+    type:   StaffType | '';
     status: StaffStatus | '';
-  }>({ search: '', type: '', status: 'ACTIVE' });
+    deptId: string;
+  }>({ search: '', type: '', status: 'ACTIVE', deptId: '' });
 
   function applyFilters() {
-    setCommitted({ search: search.trim(), type, status });
+    setCommitted({ search: search.trim(), type, status, deptId });
   }
 
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments', schoolId],
+    queryFn:  () => listDepartments(schoolId!, false),
+    enabled:  !!schoolId,
+  });
+
+  const deptMap = new Map(departments.map((d) => [d.id, d.name]));
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['staff', schoolId, committed.status, committed.type, committed.search],
+    queryKey: ['staff', schoolId, committed.status, committed.type, committed.search, committed.deptId],
     queryFn: () =>
-      listStaff(schoolId!, {
-        status: committed.status || undefined,
-        type: committed.type || undefined,
-        search: committed.search || undefined,
-      }),
+      committed.deptId
+        ? listStaffByDepartment(committed.deptId)
+        : listStaff(schoolId!, {
+            status: committed.status || undefined,
+            type:   committed.type   || undefined,
+            search: committed.search || undefined,
+          }),
     enabled: !!schoolId,
   });
 
@@ -135,6 +148,16 @@ export function StaffListPage() {
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
+        <select
+          value={deptId}
+          onChange={(e) => setDeptId(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All departments</option>
+          {departments.map((d) => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
+        </select>
         <button
           onClick={applyFilters}
           className="rounded-lg bg-gray-800 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
@@ -163,6 +186,7 @@ export function StaffListPage() {
                 <th className="px-4 py-3">Staff Member</th>
                 <th className="px-4 py-3">Emp No.</th>
                 <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Department</th>
                 <th className="px-4 py-3">Contact</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Actions</th>
@@ -194,6 +218,9 @@ export function StaffListPage() {
                   </td>
                   <td className="px-4 py-3 font-mono text-gray-600">{s.employeeNumber}</td>
                   <td className="px-4 py-3 text-gray-600">{TYPE_LABEL[s.staffType]}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">
+                    {s.departmentId ? deptMap.get(s.departmentId) ?? '—' : '—'}
+                  </td>
                   <td className="px-4 py-3 text-gray-500">
                     <div className="text-xs">
                       {s.email && <div>{s.email}</div>}
