@@ -7,6 +7,8 @@ import com.cloudcampus.school.dto.SubjectRequest;
 import com.cloudcampus.school.dto.SubjectResponse;
 import com.cloudcampus.school.entity.Subject;
 import com.cloudcampus.school.repository.SubjectRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "subjects", allEntries = true)
     public SubjectResponse create(UUID schoolId, SubjectRequest req) {
         if (repo.existsBySchoolIdAndCode(schoolId, req.code())) {
             throw new BadRequestException("Subject code '" + req.code() + "' already exists for this school");
@@ -37,6 +40,7 @@ class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "subjects", key = "#schoolId")
     public List<SubjectResponse> listBySchool(UUID schoolId) {
         return repo.findAllBySchoolIdOrderByNameAsc(schoolId)
                    .stream()
@@ -46,6 +50,7 @@ class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "subjects", key = "#schoolId + ':active'")
     public List<SubjectResponse> listActive(UUID schoolId) {
         return repo.findAllBySchoolIdAndIsActiveOrderByNameAsc(schoolId, true)
                    .stream()
@@ -61,6 +66,7 @@ class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "subjects", allEntries = true)
     public SubjectResponse update(UUID id, SubjectRequest req) {
         Subject subject = findOrThrow(id);
         // If code is changing, verify it won't clash with another subject.
@@ -76,6 +82,7 @@ class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "subjects", allEntries = true)
     public SubjectResponse deactivate(UUID id) {
         Subject subject = findOrThrow(id);
         if (!subject.isActive()) {
@@ -87,6 +94,7 @@ class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "subjects", allEntries = true)
     public SubjectResponse activate(UUID id) {
         Subject subject = findOrThrow(id);
         if (subject.isActive()) {

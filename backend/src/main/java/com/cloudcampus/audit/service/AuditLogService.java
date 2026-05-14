@@ -148,6 +148,19 @@ public class AuditLogService {
                 .build());
     }
 
+    // ── System / retention events ────────────────────────────────────────────
+
+    @Async("auditExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logDataPurge(int purgedCount, int retentionDays) {
+        persist(AuditLog.builder()
+                .eventType(AuditAction.DATA_PURGE_COMPLETED)
+                .resourceType("User")
+                .description("Nightly retention purge: hard-deleted " + purgedCount +
+                             " user row(s) soft-deleted for >" + retentionDays + " days")
+                .build());
+    }
+
     // ── Internal ─────────────────────────────────────────────────────────────
 
     /**

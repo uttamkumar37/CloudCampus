@@ -50,6 +50,7 @@ import StudentPromotionPage from '@/features/student/pages/StudentPromotionPage'
 import { SuperAdminLayout } from '@/features/super-admin/layouts/SuperAdminLayout';
 import { SuperAdminDashboardPage } from '@/features/super-admin/pages/SuperAdminDashboardPage';
 import { TenantDetailPage } from '@/features/super-admin/pages/TenantDetailPage';
+import { SchoolComparisonPage } from '@/features/super-admin/pages/SchoolComparisonPage';
 import { SchoolSettingsPage } from '@/features/school-admin/pages/SchoolSettingsPage';
 import { DepartmentListPage } from '@/features/school-admin/pages/DepartmentListPage';
 import { TeacherLayout } from '@/features/teacher/layouts/TeacherLayout';
@@ -118,6 +119,7 @@ export function AppRouter() {
           <Route path="tenants" element={<TenantListPage />} />
           <Route path="tenants/new" element={<TenantCreatePage />} />
           <Route path="tenants/:id" element={<TenantDetailPage />} />
+          <Route path="comparison" element={<SchoolComparisonPage />} />
         </Route>
 
         {/* School Admin portal — SCHOOL_ADMIN role required */}

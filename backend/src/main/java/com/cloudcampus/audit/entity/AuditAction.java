@@ -43,6 +43,9 @@ public enum AuditAction {
     CONFIG_FEATURE_ENABLED,
     CONFIG_FEATURE_DISABLED,
 
+    // ── DATA ──────────────────────────────────────────────────────────────
+    DATA_PURGE_COMPLETED,            // nightly retention job hard-deleted expired soft-deleted rows
+
     // ── SYSTEM ────────────────────────────────────────────────────────────
     SYSTEM_BOOTSTRAP,
     SYSTEM_SCHEDULED_JOB

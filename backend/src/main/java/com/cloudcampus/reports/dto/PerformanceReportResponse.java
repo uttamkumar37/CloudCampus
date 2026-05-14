@@ -15,6 +15,9 @@ public record PerformanceReportResponse(
 ) {
     public record Row(
             UUID       studentId,
+            String     studentNumber,
+            String     firstName,
+            String     lastName,
             BigDecimal totalMarksObtained,
             BigDecimal totalMarksPossible,
             BigDecimal percentage,

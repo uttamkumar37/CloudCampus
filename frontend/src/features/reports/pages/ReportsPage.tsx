@@ -33,10 +33,6 @@ function currency(val: number) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 }
 
-function shortId(id: string) {
-  return id.slice(0, 8) + '…';
-}
-
 // ── Attendance tab ────────────────────────────────────────────────────────────
 
 function AttendanceTab({ schoolId }: { schoolId: string }) {
@@ -123,7 +119,7 @@ function AttendanceTab({ schoolId }: { schoolId: string }) {
               <table className="min-w-full divide-y divide-gray-100 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    {['Student ID', 'Sessions', 'Present', 'Absent', 'Late', 'Excused', 'Attendance %'].map((h) => (
+                    {['Student', 'Sessions', 'Present', 'Absent', 'Late', 'Excused', 'Attendance %'].map((h) => (
                       <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{h}</th>
                     ))}
                   </tr>
@@ -131,7 +127,10 @@ function AttendanceTab({ schoolId }: { schoolId: string }) {
                 <tbody className="divide-y divide-gray-50">
                   {data.rows.map((r) => (
                     <tr key={r.studentId} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{shortId(r.studentId)}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-800">{r.lastName}, {r.firstName}</div>
+                        <div className="text-xs text-gray-400">{r.studentNumber}</div>
+                      </td>
                       <td className="px-4 py-3 text-gray-700">{r.totalSessions}</td>
                       <td className="px-4 py-3 text-green-700">{r.presentCount}</td>
                       <td className="px-4 py-3 text-red-600">{r.absentCount}</td>
@@ -342,7 +341,7 @@ function PerformanceTab({ schoolId }: { schoolId: string }) {
               <table className="min-w-full divide-y divide-gray-100 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    {['Rank', 'Student ID', 'Marks', 'Percentage', 'Grade', 'Status'].map((h) => (
+                    {['Rank', 'Student', 'Marks', 'Percentage', 'Grade', 'Status'].map((h) => (
                       <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{h}</th>
                     ))}
                   </tr>
@@ -351,7 +350,10 @@ function PerformanceTab({ schoolId }: { schoolId: string }) {
                   {data.rows.map((r) => (
                     <tr key={r.studentId} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-semibold text-gray-700">{r.rank ?? '—'}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{shortId(r.studentId)}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-800">{r.lastName}, {r.firstName}</div>
+                        <div className="text-xs text-gray-400">{r.studentNumber}</div>
+                      </td>
                       <td className="px-4 py-3 text-gray-700">
                         {Number(r.totalMarksObtained).toFixed(1)} / {Number(r.totalMarksPossible).toFixed(1)}
                       </td>

@@ -7,6 +7,8 @@ import com.cloudcampus.school.dto.ClassRoomRequest;
 import com.cloudcampus.school.dto.ClassRoomResponse;
 import com.cloudcampus.school.entity.ClassRoom;
 import com.cloudcampus.school.repository.ClassRoomRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ class ClassRoomServiceImpl implements ClassRoomService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "classes", allEntries = true)
     public ClassRoomResponse create(UUID schoolId, ClassRoomRequest req) {
         if (repo.existsBySchoolIdAndAcademicYearIdAndName(schoolId, req.academicYearId(), req.name())) {
             throw new BadRequestException(
@@ -39,6 +42,7 @@ class ClassRoomServiceImpl implements ClassRoomService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "classes", key = "#academicYearId")
     public List<ClassRoomResponse> listByAcademicYear(UUID academicYearId) {
         return repo.findAllByAcademicYearIdOrderByGradeOrderAscNameAsc(academicYearId)
                    .stream()
@@ -54,6 +58,7 @@ class ClassRoomServiceImpl implements ClassRoomService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "classes", allEntries = true)
     public ClassRoomResponse update(UUID id, ClassRoomRequest req) {
         ClassRoom classRoom = findOrThrow(id);
         classRoom.setName(req.name());
@@ -64,6 +69,7 @@ class ClassRoomServiceImpl implements ClassRoomService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "classes", allEntries = true)
     public void delete(UUID id) {
         if (!repo.existsById(id)) {
             throw new NotFoundException("Class not found: " + id);

@@ -4,14 +4,96 @@
 
 ---
 
-## Progress Summary (as of 2026-05-14 — E52 Mobile Student Timetable)
+## Progress Summary (as of 2026-05-14 — E76 PII Data Retention)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~118 (61.1%) |
+| **Completed** | ~132 (68.4%) |
 | **In Progress** | 0 |
-| **Not Started** | ~75 |
+| **Not Started** | ~61 |
+
+### E76 Completions — PII Data Retention + Scheduled Purge (CC-1806) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `RetentionProperties` ✅ | `@ConfigurationProperties(prefix="app.retention")` record — `softDeleteRetentionDays` (default 90); set to 0 to disable physical purge |
+| `DataRetentionService` ✅ | `@Scheduled(cron="0 0 2 * * *", zone="UTC")` nightly job — computes cutoff, calls `hardDeleteExpiredUsers`, logs via `AuditLogService` |
+| `UserRepository.hardDeleteExpiredUsers` ✅ | Native `DELETE FROM users WHERE deleted_at IS NOT NULL AND deleted_at < :cutoff` with `@Modifying(clearAutomatically=true)` — bypasses `@SQLRestriction` |
+| `AuditAction.DATA_PURGE_COMPLETED` ✅ | New enum value + `AuditLogService.logDataPurge(count, days)` async method |
+| `@EnableScheduling` ✅ | Added to `AsyncConfig` alongside existing `@EnableAsync` |
+| `application.yml` ✅ | `app.retention.soft-delete-retention-days: 90`; test yml uses 1 day |
+
+### E75 Completions — At-Rest PII Field Encryption (CC-1803) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `EncryptedStringConverter` ✅ | JPA `AttributeConverter<String,String>` — AES-256-GCM with `ENC:` prefix + Base64(IV ‖ ciphertext ‖ GCM tag); backward-compat: plaintext column values pass through and are re-encrypted on next save |
+| `EncryptionProperties` ✅ | `@ConfigurationProperties(prefix="app.encryption")` record — `secret` field; key derived via SHA-256 |
+| `EncryptionConfig` ✅ | `@PostConstruct` pushes AES key into converter's static field before Hibernate processes any entity |
+| `Student` entity ✅ | `@Convert(converter=EncryptedStringConverter.class)` on `phone` + `address` |
+| `Staff` entity ✅ | `@Convert(converter=EncryptedStringConverter.class)` on `phone`, `email`, `address` |
+| `V40__pii_encryption_column_widths.sql` ✅ | `ALTER TABLE students/staff` — widens columns to fit encrypted form (phone → 500, address → 1000, email → 500) |
+| `application.yml` ✅ | `app.encryption.secret: ${ENCRYPTION_SECRET:dev-...}` |
+
+### E74 Completions — Query Optimisation Indexes (CC-1701) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `V39__performance_indexes.sql` ✅ | 5 composite indexes: `attendance_sessions(school_id, academic_year_id)` — report hot-path; `attendance_records(session_id, status)` — covering index for aggregate queries; `exam_results(school_id, exam_id, rank ASC NULLS LAST)` — performance report sort-avoiding; `school_notices(school_id, is_published, priority DESC, created_at DESC)` — notice listing sort-avoiding; `school_notices(school_id, target, is_published)` — target-audience filter |
+
+### E73 Completions — Per-User / Per-Tenant API Rate Limiting (CC-1805) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `@RateLimit` annotation ✅ | `common/ratelimit/RateLimit.java` — marker annotation for annotated controller methods |
+| `ApiRateLimitProperties` ✅ | `@ConfigurationProperties(prefix="app.rate-limit.api")` record — `perUserRequests`, `perUserWindowSeconds`, `perTenantRequests`, `perTenantWindowSeconds` |
+| `ApiRateLimiterService` ✅ | Redis sorted-set sliding-window per user + per tenant; fails open when Redis unavailable |
+| `RateLimitInterceptor` ✅ | `HandlerInterceptor.preHandle` — reads `@RateLimit` via reflection, looks up userId from `auth.getName()` + tenantId from `RequestContext`; throws 429 on breach |
+| `WebMvcConfig` ✅ | `WebMvcConfigurer.addInterceptors` — registers `RateLimitInterceptor` |
+| All report + notice endpoints ✅ | `@RateLimit` added to all 6 report endpoints + all notice board endpoints |
+| `application.yml` ✅ | `app.rate-limit.api.*` block; `test/application.yml` updated with matching block |
+
+### E72 Completions — CI/CD Pipeline (CC-1502) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `.github/workflows/ci.yml` ✅ | 4-job pipeline: `backend` (Maven verify + Testcontainers), `frontend` (npm ci + Vite build), `mobile` (npm ci + tsc --noEmit), `docker` (needs all three; builds + pushes layered Docker image to GHCR on main-branch push only) |
+| Concurrency control ✅ | `cancel-in-progress: true` per ref so stale PR runs are cancelled on force-push |
+| Testcontainers compatibility ✅ | `-Dapi.version=1.41` Surefire arg already in `pom.xml`; works with `ubuntu-latest` Docker socket |
+
+### E71 Completions — Redis API Caching (CC-1702) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `spring-boot-starter-cache` ✅ | Added to `pom.xml` |
+| `CacheConfig` ✅ | `@EnableCaching` + `RedisCacheManager` with per-cache TTLs: `academic-years` 10 min, `classes` 10 min, `subjects` 10 min, `sections` 5 min, `departments` 10 min; `GenericJackson2JsonRedisSerializer` for values |
+| `AcademicYearServiceImpl` ✅ | `@Cacheable("academic-years")` on `listBySchool`; `@CacheEvict(allEntries=true)` on create / update / setAsCurrent / close |
+| `SubjectServiceImpl` ✅ | `@Cacheable("subjects")` on `listBySchool` + `listActive`; `@CacheEvict(allEntries=true)` on mutations |
+| `ClassRoomServiceImpl` ✅ | `@Cacheable("classes")` on `listByAcademicYear`; `@CacheEvict(allEntries=true)` on mutations |
+| `SectionServiceImpl` ✅ | `@Cacheable("sections")` on `listByClass`; `@CacheEvict(allEntries=true)` on mutations |
+
+### E70 Completions — Cross-School Comparison Dashboard (CC-1404) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `countByStatusForSessions` ✅ | New `@Query` JPQL on `AttendanceRecordRepository` — GROUP BY status for a list of session IDs |
+| `SchoolComparisonRow` + `ComparisonResponse` DTOs ✅ | Per-school metrics: activeStudents, totalSessions, attendanceRate, totalDue, totalPaid, feeCollectionRate |
+| `ReportServiceImpl.comparisonReport()` ✅ | Iterates schools in tenant; per school: current academic year → session IDs → attendance aggregate → fee aggregate; sorted alphabetically |
+| `SuperAdminReportController` ✅ | `GET /v1/super-admin/tenants/{tenantId}/comparison`; `@PreAuthorize("hasRole('SUPER_ADMIN')")` |
+| `SchoolComparisonPage.tsx` ✅ | Tenant picker, sortable table with color-coded attendance + fee-rate badges, summary strip |
+| Router + nav ✅ | `/super-admin/comparison` route wired; "Comparison" item in `SuperAdminLayout` nav |
+
+### E69 Completions — Student Name Enrichment in Reports (CC-1401/CC-1402/CC-1403) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `ReportServiceImpl` batch enrichment ✅ | `studentRepo.findAllById(ids)` batch fetch → `Map<UUID, Student>`; populates `studentNumber`, `firstName`, `lastName` in both `attendanceReport()` and `performanceReport()` |
+| `AttendanceReportResponse.Row` ✅ | Added `studentNumber`, `firstName`, `lastName` fields |
+| `PerformanceReportResponse.Row` ✅ | Added `studentNumber`, `firstName`, `lastName` fields |
+| `ReportController` CSV exports ✅ | Headers updated to `Student Number,First Name,Last Name,...`; all 6 endpoints annotated `@RateLimit` |
+| `reportApi.ts` ✅ | `AttendanceReportRow` + `PerformanceReportRow` TS interfaces updated with name fields |
+| `ReportsPage.tsx` ✅ | "Student" column renders `{lastName}, {firstName}` with `studentNumber` sub-text; "Student ID" column header removed |
 
 ### E52 Completions — Mobile Student Timetable Tab (2026-05-14)
 
@@ -627,10 +709,10 @@ Notes/Risks:
 
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
-| CC-1401 | Attendance reports | P1 | NOT_STARTED | — |
-| CC-1402 | Fee reports | P1 | NOT_STARTED | — |
-| CC-1403 | Student performance reports | P1 | NOT_STARTED | — |
-| CC-1404 | Cross-school comparison dashboards (within tenant) | P2 | NOT_STARTED | — |
+| CC-1401 | Attendance reports | P1 | ✅ COMPLETED | JSON + CSV export; student names enriched (E69) |
+| CC-1402 | Fee reports | P1 | ✅ COMPLETED | JSON + CSV export (E69) |
+| CC-1403 | Student performance reports | P1 | ✅ COMPLETED | JSON + CSV export; rank + grade (E69) |
+| CC-1404 | Cross-school comparison dashboards (within tenant) | P2 | ✅ COMPLETED | `SuperAdminReportController` + `SchoolComparisonPage` (E70) |
 | CC-1405 | Super Admin anonymized benchmarking (optional) | P3 | NOT_STARTED | — |
 
 ---
@@ -640,8 +722,8 @@ Notes/Risks:
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
 | CC-1501 | Docker setup | P0 | ✅ COMPLETED | `docker-compose.yml` — PostgreSQL 16, Redis 7, MinIO, MailHog with health checks |
-| CC-1502 | CI/CD pipeline | P1 | NOT_STARTED | — |
-| CC-1503 | Redis integration | P1 | 🔄 IN_PROGRESS | Spring Data Redis dependency + `application.yml` config done; `RedisTemplate` usage pending |
+| CC-1502 | CI/CD pipeline | P1 | ✅ COMPLETED | 4-job GitHub Actions: backend / frontend / mobile / docker (E72) |
+| CC-1503 | Redis integration | P1 | ✅ COMPLETED | `RedisCacheManager` + `RedisTemplate` rate-limiter; `@Cacheable` on reference data (E71) |
 | CC-1504 | Queue integration | P1 | NOT_STARTED | RabbitMQ planned |
 
 ---
@@ -667,8 +749,8 @@ Notes/Risks:
 
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
-| CC-1701 | Query optimization | P1 | NOT_STARTED | Slow query logging > 200ms already active |
-| CC-1702 | API caching | P1 | NOT_STARTED | Redis configured; caching strategy pending |
+| CC-1701 | Query optimization | P1 | ✅ COMPLETED | V39: 5 composite/covering indexes for report hot-paths + notice board (E74) |
+| CC-1702 | API caching | P1 | ✅ COMPLETED | `RedisCacheManager` + `@Cacheable` on academic-years / classes / subjects / sections (E71) |
 | CC-1703 | Load testing | P1 | NOT_STARTED | — |
 | CC-1704 | Stress testing | P1 | NOT_STARTED | — |
 | CC-1705 | Caching strategy definition (what/where/TTL) | P1 | NOT_STARTED | — |
@@ -681,10 +763,10 @@ Notes/Risks:
 |---------|-------|----------|--------|-------|
 | CC-1801 | Rate limiting | P1 | ✅ COMPLETED | `LoginRateLimiterService` — Redis sliding window, 429 `TooManyRequestsException`, `RateLimitProperties` |
 | CC-1802 | Security audit logging | P1 | ✅ COMPLETED | `AuditLogService` `@Async` writer wired for auth events; `AuditLog` entity + `AuditAction` enum |
-| CC-1803 | Data encryption validation | P1 | NOT_STARTED | At-rest encryption for PII fields |
+| CC-1803 | Data encryption validation | P1 | ✅ COMPLETED | AES-256-GCM `EncryptedStringConverter` on Student/Staff PII fields; V40 migration (E75) |
 | CC-1804 | Tenant isolation verification | P0 | ✅ COMPLETED | `TenantIsolationTest` (6 tests, Testcontainers) — all pass |
-| CC-1805 | Abuse prevention (throttles per tenant/user) | P1 | NOT_STARTED | — |
-| CC-1806 | PII handling policy + retention | P1 | NOT_STARTED | GDPR/PDPA compliance |
+| CC-1805 | Abuse prevention (throttles per tenant/user) | P1 | ✅ COMPLETED | `@RateLimit` annotation + `RateLimitInterceptor` + `ApiRateLimiterService` (E73) |
+| CC-1806 | PII handling policy + retention | P1 | ✅ COMPLETED | Nightly `DataRetentionService` hard-purges expired soft-deleted users; configurable window (E76) |
 
 ---
 

@@ -1,7 +1,9 @@
 package com.cloudcampus.student.entity;
 
 import com.cloudcampus.common.tenant.TenantFilter;
+import com.cloudcampus.common.crypto.EncryptedStringConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -90,10 +92,12 @@ public class Student {
     @Column(name = "blood_group", length = 10)
     private String bloodGroup;
 
-    @Column(name = "phone", length = 30)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "phone", length = 500)
     private String phone;
 
-    @Column(name = "address", length = 500)
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "address", length = 1000)
     private String address;
 
     @Column(name = "photo_url", length = 500)
