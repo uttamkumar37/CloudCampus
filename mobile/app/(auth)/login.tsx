@@ -10,11 +10,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { loginApi } from '@/features/auth/api/authApi';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import type { AuthUser } from '@/features/auth/types/auth';
 
 export default function LoginScreen() {
+  const router    = useRouter();
   const setTokens = useAuthStore((s) => s.setTokens);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -86,6 +88,13 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>Sign In</Text>
           )}
         </Pressable>
+
+        <Pressable
+          style={styles.forgotLink}
+          onPress={() => router.push('/(auth)/forgot-password')}
+        >
+          <Text style={styles.forgotText}>Forgot password?</Text>
+        </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
@@ -144,5 +153,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 15,
+  },
+  forgotLink: {
+    marginTop: 14,
+    alignItems: 'center',
+  },
+  forgotText: {
+    fontSize: 14,
+    color: '#2563eb',
   },
 });
