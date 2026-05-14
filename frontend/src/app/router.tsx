@@ -57,6 +57,7 @@ import TeacherHomeworkSubmissionsPage from '@/features/teacher/pages/TeacherHome
 import TeacherAssignmentListPage from '@/features/teacher/pages/TeacherAssignmentListPage';
 import TeacherAssignmentSubmissionsPage from '@/features/teacher/pages/TeacherAssignmentSubmissionsPage';
 import TeacherAttendancePage from '@/features/teacher/pages/TeacherAttendancePage';
+import TeacherNoticesPage from '@/features/teacher/pages/TeacherNoticesPage';
 import { StudentLayout } from '@/features/student/layouts/StudentLayout';
 import StudentDashboardPage from '@/features/student/pages/StudentDashboardPage';
 import StudentHomeworkPage from '@/features/student/pages/StudentHomeworkPage';
@@ -172,6 +173,7 @@ export function AppRouter() {
           <Route path="homework/:homeworkId/submissions" element={<TeacherHomeworkSubmissionsPage />} />
           <Route path="assignments" element={<TeacherAssignmentListPage />} />
           <Route path="assignments/:assignmentId/submissions" element={<TeacherAssignmentSubmissionsPage />} />
+          <Route path="notices" element={<TeacherNoticesPage />} />
         </Route>
 
         {/* Student portal — STUDENT role required */}
