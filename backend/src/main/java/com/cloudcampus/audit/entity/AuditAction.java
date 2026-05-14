@@ -23,6 +23,7 @@ public enum AuditAction {
     AUTH_TOKEN_REFRESH_FAILED,
     AUTH_PASSWORD_CHANGED,
     AUTH_PASSWORD_RESET_REQUESTED,
+    AUTH_ACCOUNT_LOCKED,              // auto-suspended after N bad-credential attempts
 
     // ── TENANT ────────────────────────────────────────────────────────────
     TENANT_CREATED,

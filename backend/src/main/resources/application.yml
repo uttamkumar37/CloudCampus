@@ -143,6 +143,8 @@ springdoc:
       window-seconds-per-ip: 300       # 5 minutes
       max-attempts-per-username: 10    # 10 failures per username in 15 minutes
       window-seconds-per-username: 900 # 15 minutes
+      lockout-threshold: 10            # 10 consecutive bad-credential failures → account suspended
+      lockout-window-seconds: 3600     # counter resets after 1 hour of inactivity
 
   # ── OTP (password reset) ───────────────────────────────────────────────────────
   # Redis key: cc:otp:{userId}  TTL: 5 min (CC-0108)

@@ -44,6 +44,7 @@ public class LoginRateLimiterService {
 
     private static final String KEY_PREFIX_IP   = "rl:login:ip:";
     private static final String KEY_PREFIX_USER = "rl:login:user:";
+    private static final String KEY_PREFIX_LOCK = "lock:fail:";
 
     private final RedisTemplate<String, String> redisTemplate;
     private final RateLimitProperties           props;
@@ -77,6 +78,43 @@ public class LoginRateLimiterService {
                 props.maxAttemptsPerUsername(),
                 props.windowSecondsPerUsername()
         );
+    }
+
+    // ── Credential-failure lockout ───────────────────────────────────────────
+
+    /**
+     * Increments the bad-credential counter for a username.
+     *
+     * Must be called ONLY when the user exists and the password was wrong — not for
+     * unknown usernames (no account to suspend).
+     *
+     * @return true if the lockout threshold is now reached (caller should suspend the account)
+     */
+    public boolean recordCredentialFailure(String username) {
+        String key = KEY_PREFIX_LOCK + username;
+        try {
+            Long count = redisTemplate.opsForValue().increment(key);
+            redisTemplate.expire(key, Duration.ofSeconds(props.lockoutWindowSeconds()));
+            return count != null && count >= props.lockoutThreshold();
+        } catch (Exception e) {
+            log.warn("Lockout counter unavailable (Redis down?), failing open [key={}]: {}",
+                    redactKey(key), e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Clears the bad-credential counter after a successful login.
+     * No-op if Redis is unavailable.
+     */
+    public void clearCredentialFailures(String username) {
+        String key = KEY_PREFIX_LOCK + username;
+        try {
+            redisTemplate.delete(key);
+        } catch (Exception e) {
+            log.warn("Could not clear lockout counter (Redis down?), ignoring [key={}]: {}",
+                    redactKey(key), e.getMessage());
+        }
     }
 
     // ── Internals ────────────────────────────────────────────────────────────

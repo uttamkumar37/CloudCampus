@@ -128,10 +128,27 @@ public class AuthServiceImpl implements AuthService {
         if (!credentialsValid) {
             log.warn("Failed login attempt for username: {}", request.username());
             auditLog.logLoginFailed(request.username(), clientIp, "bad credentials");
+
+            // Track consecutive bad-credential failures for existing accounts only.
+            // Unknown usernames cannot be locked (nothing to suspend).
+            maybeUser.ifPresent(u -> {
+                boolean lockoutReached = rateLimiter.recordCredentialFailure(request.username());
+                if (lockoutReached && u.getStatus() == UserStatus.ACTIVE) {
+                    u.setStatus(UserStatus.SUSPENDED);
+                    userRepository.save(u);
+                    auditLog.logAccountLocked(u.getId(), u.getTenantId(), request.username(), clientIp);
+                    log.warn("Account suspended after repeated failed logins [userId={}, username={}]",
+                            u.getId(), request.username());
+                }
+            });
+
             throw new UnauthorizedException("Invalid credentials");
         }
 
         User user = maybeUser.get();
+
+        // Clear lockout counter on successful credential validation.
+        rateLimiter.clearCredentialFailures(request.username());
 
         // Step 3: Account status check — only revealed after valid credentials.
         if (user.getStatus() != UserStatus.ACTIVE) {

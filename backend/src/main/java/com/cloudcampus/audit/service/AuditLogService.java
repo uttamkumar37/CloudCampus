@@ -111,6 +111,19 @@ public class AuditLogService {
 
     @Async("auditExecutor")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logAccountLocked(UUID userId, UUID tenantId, String username, String ipAddress) {
+        persist(AuditLog.builder()
+                .actorId(userId)
+                .tenantId(tenantId)
+                .actorUsername(username)
+                .eventType(AuditAction.AUTH_ACCOUNT_LOCKED)
+                .description("Account suspended after repeated failed login attempts")
+                .ipAddress(ipAddress)
+                .build());
+    }
+
+    @Async("auditExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logPasswordChanged(UUID userId, UUID tenantId) {
         persist(AuditLog.builder()
                 .actorId(userId)

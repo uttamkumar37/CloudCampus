@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import { loginApi } from '../api/authApi';
 import { useAuthStore } from '../store/useAuthStore';
 import type { AuthUser } from '../types/auth';
@@ -20,6 +21,7 @@ export function LoginPage() {
   const location  = useLocation();
   const setTokens = useAuthStore((s) => s.setTokens);
   const [showPassword, setShowPassword] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const passwordReset = (location.state as { passwordReset?: boolean })?.passwordReset ?? false;
 
   const {
@@ -28,9 +30,24 @@ export function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
 
-  const { mutate, isPending, isError } = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationFn: loginApi,
+    onError: (err) => {
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        if (status === 403) {
+          setApiError('Account is not active. Please contact your administrator.');
+        } else if (status === 429) {
+          setApiError('Too many attempts. Please wait before trying again.');
+        } else {
+          setApiError('Invalid credentials. Please check your details and try again.');
+        }
+      } else {
+        setApiError('Unable to sign in. Please try again.');
+      }
+    },
     onSuccess: (data) => {
+      setApiError(null);
       const user: AuthUser = {
         userId: data.userId,
         role: data.role as AuthUser['role'],
@@ -130,9 +147,9 @@ export function LoginPage() {
           </div>
 
           {/* API error */}
-          {isError && (
+          {apiError && (
             <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              Invalid credentials. Please check your details and try again.
+              {apiError}
             </p>
           )}
 
