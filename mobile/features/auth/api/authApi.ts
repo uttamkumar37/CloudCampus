@@ -7,14 +7,15 @@ export interface LoginRequestData {
 }
 
 export interface LoginResponseData {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  role: string;
-  userId: string;
-  tenantId: string | null;
+  accessToken:            string;
+  refreshToken:           string;
+  expiresIn:              number;
+  role:                   string;
+  userId:                 string;
+  tenantId:               string | null;
+  schoolId:               string | null;
   requiresPasswordChange: boolean;
-  features?: string[];
+  features?:              string[];
 }
 
 export async function loginApi(credentials: LoginRequestData): Promise<LoginResponseData> {
