@@ -35,6 +35,7 @@ export default function AppLayout() {
   const canViewFees         = user?.role === 'STUDENT';
   const canViewMyAttendance = user?.role === 'STUDENT';
   const canViewChildren     = user?.role === 'PARENT';
+  const canManageNotices    = user?.role === 'SCHOOL_ADMIN';
 
   return (
     <Tabs
@@ -127,6 +128,12 @@ export default function AppLayout() {
         <Tabs.Screen
           name="children"
           options={{ title: 'My Children', tabBarLabel: 'Children' }}
+        />
+      )}
+      {canManageNotices && (
+        <Tabs.Screen
+          name="admin-notices"
+          options={{ title: 'Notices', tabBarLabel: 'Notices' }}
         />
       )}
     </Tabs>
