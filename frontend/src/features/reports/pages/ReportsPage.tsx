@@ -7,6 +7,10 @@ import {
   getAttendanceReport,
   getFeeReport,
   getPerformanceReport,
+  exportAttendanceCsv,
+  exportFeesCsv,
+  exportPerformanceCsv,
+  downloadBlob,
 } from '../api/reportApi';
 
 // ── Tab types ─────────────────────────────────────────────────────────────────
@@ -38,6 +42,7 @@ function shortId(id: string) {
 function AttendanceTab({ schoolId }: { schoolId: string }) {
   const [academicYearId, setAcademicYearId] = useState('');
   const [run, setRun] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const { data: years = [] } = useQuery({
     queryKey: ['academic-years', schoolId],
@@ -52,6 +57,16 @@ function AttendanceTab({ schoolId }: { schoolId: string }) {
   });
 
   function handleRun() { setRun(true); }
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const blob = await exportAttendanceCsv(schoolId, academicYearId);
+      downloadBlob(blob, `attendance-report.csv`);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -68,6 +83,12 @@ function AttendanceTab({ schoolId }: { schoolId: string }) {
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
           Run Report
         </button>
+        {data && data.rows.length > 0 && (
+          <button onClick={handleExport} disabled={exporting}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            {exporting ? 'Exporting…' : '↓ Export CSV'}
+          </button>
+        )}
       </div>
 
       {isLoading && <div className="py-10 text-center text-sm text-gray-400">Loading…</div>}
@@ -138,6 +159,7 @@ function AttendanceTab({ schoolId }: { schoolId: string }) {
 function FeeTab({ schoolId }: { schoolId: string }) {
   const [academicYearId, setAcademicYearId] = useState('');
   const [run, setRun] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const { data: years = [] } = useQuery({
     queryKey: ['academic-years', schoolId],
@@ -150,6 +172,16 @@ function FeeTab({ schoolId }: { schoolId: string }) {
     queryFn: () => getFeeReport(schoolId, academicYearId),
     enabled: run && !!academicYearId,
   });
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const blob = await exportFeesCsv(schoolId, academicYearId);
+      downloadBlob(blob, `fee-report.csv`);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -166,6 +198,12 @@ function FeeTab({ schoolId }: { schoolId: string }) {
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
           Run Report
         </button>
+        {data && (
+          <button onClick={handleExport} disabled={exporting}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            {exporting ? 'Exporting…' : '↓ Export CSV'}
+          </button>
+        )}
       </div>
 
       {isLoading && <div className="py-10 text-center text-sm text-gray-400">Loading…</div>}
@@ -212,6 +250,7 @@ function PerformanceTab({ schoolId }: { schoolId: string }) {
   const [academicYearId, setAcademicYearId] = useState('');
   const [examId, setExamId] = useState('');
   const [run, setRun] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const { data: years = [] } = useQuery({
     queryKey: ['academic-years', schoolId],
@@ -261,6 +300,18 @@ function PerformanceTab({ schoolId }: { schoolId: string }) {
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
           Run Report
         </button>
+        {data && data.rows.length > 0 && (
+          <button
+            onClick={async () => {
+              setExporting(true);
+              try { downloadBlob(await exportPerformanceCsv(schoolId, examId), 'performance-report.csv'); }
+              finally { setExporting(false); }
+            }}
+            disabled={exporting}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+            {exporting ? 'Exporting…' : '↓ Export CSV'}
+          </button>
+        )}
       </div>
 
       {isLoading && <div className="py-10 text-center text-sm text-gray-400">Loading…</div>}
