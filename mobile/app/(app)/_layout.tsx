@@ -23,9 +23,11 @@ export default function AppLayout() {
     user?.role === 'TEACHER' ||
     user?.role === 'SUPER_ADMIN';
 
-  const canViewTimetable  = user?.role === 'TEACHER';
-  const canViewHomework    = user?.role === 'STUDENT';
-  const canViewAssignments  = user?.role === 'STUDENT';
+  const canViewTimetable         = user?.role === 'TEACHER';
+  const canViewHomework          = user?.role === 'STUDENT';
+  const canViewAssignments       = user?.role === 'STUDENT';
+  const canViewTeacherHomework   = user?.role === 'TEACHER';
+  const canViewTeacherAssignments = user?.role === 'TEACHER';
   const canViewResults      = user?.role === 'STUDENT';
   const canViewFees         = user?.role === 'STUDENT';
   const canViewMyAttendance = user?.role === 'STUDENT';
@@ -86,6 +88,18 @@ export default function AppLayout() {
         <Tabs.Screen
           name="my-attendance"
           options={{ title: 'Attendance', tabBarLabel: 'Attendance' }}
+        />
+      )}
+      {canViewTeacherHomework && (
+        <Tabs.Screen
+          name="teacher-homework"
+          options={{ title: 'Homework', tabBarLabel: 'Homework' }}
+        />
+      )}
+      {canViewTeacherAssignments && (
+        <Tabs.Screen
+          name="teacher-assignments"
+          options={{ title: 'Assignments', tabBarLabel: 'Assignments' }}
         />
       )}
       {canViewChildren && (
