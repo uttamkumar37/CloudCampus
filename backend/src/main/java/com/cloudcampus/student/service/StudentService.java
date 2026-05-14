@@ -3,6 +3,8 @@ package com.cloudcampus.student.service;
 import com.cloudcampus.student.dto.AdmitStudentRequest;
 import com.cloudcampus.student.dto.BulkImportResult;
 import com.cloudcampus.student.dto.BulkStudentRow;
+import com.cloudcampus.student.dto.PromotionResult;
+import com.cloudcampus.student.dto.StudentPromotionRequest;
 import com.cloudcampus.student.dto.StudentResponse;
 import com.cloudcampus.student.dto.StudentSummaryResponse;
 import com.cloudcampus.student.dto.UpdateStudentRequest;
@@ -54,4 +56,7 @@ public interface StudentService {
 
     /** Import multiple students from a JSON payload derived from a CSV upload (CC-0508). */
     BulkImportResult bulkAdmit(UUID schoolId, List<BulkStudentRow> rows);
+
+    /** Bulk-promote all ACTIVE students from one class/section to another (CC-0509). */
+    PromotionResult promoteStudents(UUID schoolId, StudentPromotionRequest request);
 }

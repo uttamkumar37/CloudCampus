@@ -174,3 +174,28 @@ export async function addParentLink(
 export async function removeParentLink(linkId: string): Promise<void> {
   await axiosInstance.delete(`/v1/school-admin/student-parent-links/${linkId}`);
 }
+
+// ── Student Promotion (CC-0509) ───────────────────────────────────────────────
+
+export interface StudentPromotionRequest {
+  sourceClassId:   string;
+  sourceSectionId: string | null;
+  targetClassId:   string;
+  targetSectionId: string | null;
+}
+
+export interface PromotionResult {
+  studentsFound:    number;
+  studentsPromoted: number;
+}
+
+export async function promoteStudents(
+  schoolId: string,
+  body: StudentPromotionRequest,
+): Promise<PromotionResult> {
+  const { data } = await axiosInstance.post<ApiResponse<PromotionResult>>(
+    `/v1/school-admin/schools/${schoolId}/students/promote`,
+    body,
+  );
+  return data.data!;
+}
