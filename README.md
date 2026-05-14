@@ -143,6 +143,8 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 
 ## Feature Status
 
+> **As of 2026-05-14 (E46 complete) — ~112 of 193 tasks done (58%)**
+
 ### Backend (Java / Spring Boot)
 
 | Area | Status |
@@ -150,24 +152,51 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Multi-tenant schema resolver | ✅ Done |
 | JWT authentication filter | ✅ Done |
 | Login / logout / refresh token API | ✅ Done |
+| Change password (`POST /v1/auth/change-password`) | ✅ Done |
 | User management (CRUD + roles) | ✅ Done |
 | Tenant management (super-admin) | ✅ Done |
-| Flyway migrations V1–V10 | ✅ Done |
+| Flyway migrations V1–V33 | ✅ Done |
 | Security headers (7 OWASP) | ✅ Done |
 | Structured JSON logging (Logback) | ✅ Done |
 | Prometheus + Micrometer metrics | ✅ Done |
 | Device token registration (push) | ✅ Done |
 | Staging + production Spring profiles | ✅ Done |
+| Academic year / class / section / subject management | ✅ Done |
+| Student admission + profile + listing APIs | ✅ Done |
+| Staff profiles + staff attendance + leave management | ✅ Done |
+| Attendance sessions + bulk mark (school-admin + teacher) | ✅ Done |
+| Student attendance self-view (`GET /v1/student/attendance`) | ✅ Done |
+| Fee structure + collection + receipts | ✅ Done |
+| Student fee self-view + parent child fee records | ✅ Done |
+| Timetable management (weekly grid, conflict detection) | ✅ Done |
+| Homework management (DRAFT→PUBLISHED→CLOSED lifecycle) | ✅ Done |
+| Assignment engine (submissions + grading) | ✅ Done |
+| Examination system (exams, papers, marks entry, results) | ✅ Done |
+| SMS / email / push / WhatsApp notification services | ✅ Done |
+| Parent portal APIs (children list + per-child detail) | ✅ Done |
+| Teacher dashboard + school-admin live dashboard | ✅ Done |
+| Rate limiting + audit logging | ✅ Done |
+| Tenant isolation (Hibernate filters + Testcontainers tests) | ✅ Done |
 
 ### Web Frontend (React / TypeScript)
 
 | Area | Status |
 |------|--------|
-| Auth (login · logout · token refresh) | ✅ Done |
+| Auth (login · logout · token refresh · change password) | ✅ Done |
 | Super-admin tenant management UI | ✅ Done |
-| School-admin dashboard | ✅ Done |
-| Shared component library | ✅ Done |
-| React Router v6 with role guards | ✅ Done |
+| School-admin dashboard (live stats), academic management | ✅ Done |
+| Student management (admit / profile / list) | ✅ Done |
+| Staff management (list / create / profile) | ✅ Done |
+| Attendance management (session list / create / mark) | ✅ Done |
+| Fee management (structures / collection / receipts) | ✅ Done |
+| Timetable, homework, assignment, exam, marks pages | ✅ Done |
+| Communication pages (notifications / WhatsApp) | ✅ Done |
+| Student portal (dashboard / homework / assignments / timetable / notices / results / fees / attendance) | ✅ Done |
+| Teacher portal (dashboard / timetable / homework / assignments / attendance / notices) | ✅ Done |
+| Parent portal (dashboard / child detail with 5 tabs: attendance / homework / results / timetable / fees) | ✅ Done |
+| Change Password page (all 5 portal layouts) | ✅ Done |
+| Role-based protected routes (Student / Teacher / Parent / SchoolAdmin / SuperAdmin) | ✅ Done |
+| Feature-flag-driven sidebar navigation | ✅ Done |
 
 ### Mobile (Expo / React Native)
 
@@ -178,6 +207,9 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Proactive JWT refresh | ✅ Done |
 | Offline-first attendance (WatermelonDB) | ✅ Done |
 | Push notifications (FCM / APNs) | ✅ Done |
+| Role-aware dashboard (Student / Teacher / Parent sections) | ✅ Done |
+| Student screens: assignments, results, fees, attendance | ✅ Done |
+| Change password screen + forced-change navigation guard | ✅ Done |
 
 ### DevOps / Observability
 

@@ -4,14 +4,14 @@
 
 ---
 
-## Progress Summary (as of 2026-05-14 — E38 Student Results & Fees)
+## Progress Summary (as of 2026-05-14 — E46 Parent Portal Child Fee Records)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~104 (53.9%) |
+| **Completed** | ~112 (58.0%) |
 | **In Progress** | 0 |
-| **Not Started** | ~89 |
+| **Not Started** | ~81 |
 
 ### E38 Completions — Student Exam Results & Fee Status Self-Service (2026-05-14)
 
@@ -22,6 +22,79 @@
 | Frontend results ✅ | `StudentResultsPage` — summary strip (total/passed/failed/avg%), card grid per exam with percentage bar, grade, rank, pass/fail badge; `getMyResults()` API fn + `StudentResultSummary` TS interface |
 | Frontend fees ✅ | `StudentFeesPage` — summary strip (total due/paid/balance); fee table with category, amount due, discount, paid, balance, due date, status badge; `getMyFees(academicYearId?)` API fn + `StudentFeeRecord` TS interface + `FeeStatus` union type |
 | Nav & routes ✅ | `StudentLayout` NAV updated with "Results" + "Fees" items; `/student/results` + `/student/fees` routes wired in `router.tsx`; `npm run build` → **314 modules, 0 errors** |
+
+### E46 Completions — Parent Portal Child Fee Records Tab (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| Backend GET fees endpoint ✅ | `GET /v1/parent/children/{studentId}/fees` in `ParentController`; delegates to `FeeService.listRecordsByStudent(studentId, null)`; guarded by `checkAccess()` parent-link verification |
+| `parentApi.ts` additions ✅ | `ChildFeeRecord` interface + `getChildFees()` API function |
+| `FeesTab` component ✅ | Added to `ParentChildPage.tsx` — 3-card summary (total due / paid / balance, balance card red when >0) + per-record table (category, amounts in ₹, due date, status badge) |
+| Tab bar expansion ✅ | Tab bar in `ParentChildPage` now has 5 tabs (Attendance / Homework / Results / Timetable / Fees) with `overflow-x-auto` for horizontal scroll on narrow screens |
+
+### E45 Completions — Mobile Change-Password Screen + Navigation Guard Fix (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `ChangePasswordScreen.tsx` ✅ | 3-field form (current / new / confirm); calls `POST /v1/auth/change-password`; clears `requiresPasswordChange` in Zustand store on success; routes to `/(app)/` |
+| Expo Router entry point ✅ | `mobile/app/(auth)/change-password.tsx` — thin wrapper mounting `ChangePasswordScreen` |
+| `NavigationGuard` fix ✅ | `_layout.tsx` — added case: if authenticated AND `requiresPasswordChange` AND not already on change-password → redirect to `/(auth)/change-password`, preventing infinite redirect loops |
+
+### E44 Completions — Populate schoolId in Login Response for SCHOOL_ADMIN (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `LoginResponse.java` update ✅ | Added `UUID schoolId` field (non-null only for SCHOOL_ADMIN role) |
+| `AuthServiceImpl` schoolId resolution ✅ | Injected `SchoolRepository`; resolves school via `findByTenantIdAndCode(tenantId, "MAIN")` for SCHOOL_ADMIN at login time |
+| Frontend type fix ✅ | `LoginResponseData` interface typed with `schoolId?: string \| null`; removed `(data as any).schoolId` cast in `LoginPage.tsx` |
+| Impact ✅ | Unblocks `NoticeBoardPage` which had `enabled: !!schoolId` — schoolId was always null before this fix |
+
+### E43 Completions — Change Password for Authenticated Users (CC-0116 partial) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `ChangePasswordRequest.java` DTO ✅ | Validated DTO (currentPassword, newPassword, confirmPassword) |
+| `AuthService.changePassword()` ✅ | Interface method + `AuthServiceImpl` implementation: BCrypt verify current, reject if new == current, encode new hash, clear `forcePasswordChange`, fire `AUTH_PASSWORD_CHANGED` audit event; `AuditLogService.logPasswordChanged()` added |
+| `POST /v1/auth/change-password` ✅ | `AuthController` endpoint; `@PreAuthorize("isAuthenticated()")` — any authenticated role can call it |
+| `ChangePasswordPage.tsx` ✅ | Forced-change banner when `requiresPasswordChange=true`; client-side validation (min 8 chars, confirm match); success state with role-appropriate redirect; `changePasswordApi()` in `authApi.ts` |
+| Sidebar links ✅ | All 5 portal layouts (Student / Teacher / Parent / SchoolAdmin / SuperAdmin) — "Change Password" link added in sidebar footer above "Sign Out" |
+| `/change-password` route ✅ | Wired as `ProtectedRoute` (any authenticated role) |
+
+### E42 Completions — Teacher Notices Page + Role-Aware Mobile Dashboard (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `TeacherNoticesPage.tsx` ✅ | Category filter, paginated list, high-priority notices with red border; calls existing `GET /v1/mobile/notices` endpoint |
+| TeacherLayout NAV update ✅ | "Notices" nav item added; `/teacher/notices` route wired |
+| `mobile/app/(app)/index.tsx` rewrite ✅ | Role-aware TanStack Query hooks with `enabled` flags per role; Student section (attendance %, homework, assignments, fee balance alert, low-attendance warning <75% badge); Teacher section (today's classes, pending review chips); Parent section (children list with attendance badges); all roles: latest 3 notices |
+
+### E41 Completions — Student Attendance Self-View (backend + web + mobile) (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `AttendanceRecordRepository` addition ✅ | `findStudentHistory()` JPQL query with implicit join; ordered by session date descending |
+| `StudentAttendanceController` ✅ | `GET /v1/student/attendance`; `@PreAuthorize("hasRole('STUDENT')")`; returns `MyAttendanceResponse` (totalSessions, presentCount, absentCount, lateCount, excusedCount, attendancePct, List recent) |
+| `StudentAttendancePage.tsx` ✅ | 5-card summary strip (total / present / absent / late / excused); percentage bar (green ≥75%, red <75% with warning banner); paginated sessions table |
+| `AttendanceScreen.tsx` (mobile) ✅ | 4 summary cards, percentage bar with color coding, session rows list; route `mobile/app/(app)/my-attendance.tsx` |
+| Nav & routes ✅ | `StudentLayout` NAV updated with "Attendance" item; `/student/attendance` route wired |
+
+### E40 Completions — Mobile Student Assignments, Results, Fees Screens (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `AssignmentsScreen.tsx` ✅ | Student assignment list with submission-status badges (PENDING / SUBMITTED / LATE / GRADED) |
+| `ResultsScreen.tsx` ✅ | Exam results list with percentage bars and pass/fail indicators |
+| `FeesScreen.tsx` ✅ | Fee records with ₹-formatted summary (total due / paid / balance), status badges per record |
+| Route files ✅ | `mobile/app/(app)/assignments.tsx`, `results.tsx`, `fees.tsx` — Expo Router entry points |
+| `_layout.tsx` tabs update ✅ | Added `canViewAssignments`, `canViewResults`, `canViewFees` tab visibility flags for STUDENT role |
+
+### E39 Completions — Teacher Attendance Marking Portal (2026-05-14)
+
+| Task | What was built |
+|------|---------------|
+| `TeacherAttendancePage.tsx` ✅ | Teacher can select a class/section and mark attendance session directly from the teacher portal (previously only school-admin could do this) |
+| Backend ✅ | No new endpoint required — reuses existing `POST /v1/attendance/sessions` and `PATCH /v1/attendance/sessions/{id}/mark` endpoints |
+| Nav & routes ✅ | `TeacherLayout` NAV updated with "Attendance" item; `/teacher/attendance` route wired |
 
 ### E37 Completions — School Admin Dashboard Live Stats (2026-05-14)
 
@@ -332,7 +405,7 @@ Notes/Risks:
 | CC-0113 | Role-based authorization | P0 | ✅ COMPLETED | `SecurityConfig` matchers — `/v1/super-admin/**` (SUPER_ADMIN), `/v1/admin/**` (TENANT_ADMIN+), `/v1/school-admin/**` (SCHOOL_ADMIN+), `anyRequest().authenticated()` |
 | CC-0114 | Permission middleware | P0 | ✅ COMPLETED | `JsonAuthEntryPoint` — JSON `ApiResponse` 401/403 for Spring Security rejections |
 | CC-0115 | API security middleware | P0 | NOT_STARTED | Depends on CC-0102, CC-0114 |
-| CC-0116 | Password policy + account lockout | P1 | 🔄 IN_PROGRESS | `LoginRateLimiterService` (Redis sliding window, 429, fail-open) + `RateLimitProperties` done; full account lockout (N-strikes suspend) + password complexity rules pending |
+| CC-0116 | Password policy + account lockout | P1 | 🔄 IN_PROGRESS | `LoginRateLimiterService` (Redis sliding window, 429, fail-open) + `RateLimitProperties` done; `POST /v1/auth/change-password` + `ChangePasswordPage` done (E43); full account lockout (N-strikes suspend) + password complexity rules pending |
 | CC-0117 | Session revocation strategy | P1 | NOT_STARTED | Redis token blacklist or JTI revocation |
 | CC-0118 | Security headers + CORS policy | P1 | ✅ COMPLETED | `SecurityHeadersFilter` (7 headers), `SecurityConfig` CORS with origin allowlist |
 
@@ -414,8 +487,8 @@ Notes/Risks:
 |---------|-------|----------|--------|-------|
 | CC-0601 | Staff entity | P0 | ✅ COMPLETED | `Staff` entity + V19 migration; `StaffRepository`; tenant-filtered |
 | CC-0602 | Teacher profile management | P0 | ✅ COMPLETED | Backend API + `StaffListPage`, `StaffCreatePage`, `StaffProfilePage` |
-| CC-0603 | Staff attendance system | P1 | NOT_STARTED | — |
-| CC-0604 | Leave management | P1 | NOT_STARTED | — |
+| CC-0603 | Staff attendance system | P1 | ✅ COMPLETED | `StaffAttendance` entity + Flyway migration; `StaffAttendanceStatus` enum; bulk mark + list endpoints (E33) |
+| CC-0604 | Leave management | P1 | ✅ COMPLETED | `LeaveRequest` entity + Flyway migration; `LeaveStatus` enum; staff self-service + school-admin review endpoints (E34) |
 | CC-0605 | Payroll engine | P2 | NOT_STARTED | — |
 
 ---
@@ -491,9 +564,9 @@ Notes/Risks:
 
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
-| CC-1301 | Student app APIs | P1 | NOT_STARTED | — |
-| CC-1302 | Parent app APIs | P1 | NOT_STARTED | — |
-| CC-1303 | Teacher app APIs | P1 | NOT_STARTED | — |
+| CC-1301 | Student app APIs | P1 | 🔄 IN_PROGRESS | `AssignmentsScreen`, `ResultsScreen`, `FeesScreen`, `AttendanceScreen` + role-aware mobile dashboard (E40/E41/E42); change-password screen (E45) |
+| CC-1302 | Parent app APIs | P1 | 🔄 IN_PROGRESS | Parent section in role-aware mobile dashboard (E42); change-password screen (E45) |
+| CC-1303 | Teacher app APIs | P1 | 🔄 IN_PROGRESS | Teacher section in role-aware mobile dashboard (E42); change-password screen (E45) |
 
 ---
 
@@ -768,6 +841,29 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 | E19 | CC-0702 | Homework management — DRAFT→PUBLISHED→CLOSED lifecycle, list + create pages | ✅ DONE |
 | E20 | CC-0703 | Assignment engine — submissions + grading, 2-table schema, grade modal | ✅ DONE |
 
+### 🟤 Phase G — Portal Completions & Cross-Cutting (E28–E46 ✅ COMPLETE)
+
+| Session | Domain | What was built | Status |
+|---------|--------|---------------|--------|
+| E28 | Bug fixes + hardening | Redis fail-open fix, FilterRegistrationBean, ExamType MIDTERM, optional academicYearId params (homework/assignments/fees), full 35-endpoint API audit, 287 modules 0 errors | ✅ DONE |
+| E29 | Teacher homework portal | `TeacherHomeworkListPage` (cascading filters, overdue badge), `TeacherHomeworkCreatePage`, 5 API functions, 2 routes | ✅ DONE |
+| E30 | Teacher assignment portal | `TeacherAssignmentListPage`, `TeacherAssignmentCreatePage`, `TeacherAssignmentDetailPage` (grade modal, max-marks), 7 API functions, 3 routes | ✅ DONE |
+| E31 | Student portal | `StudentLayout`, `StudentDashboardPage`, homework+assignments+timetable+notices pages, `studentPortalApi.ts`, STUDENT role guards | ✅ DONE |
+| E32 | Parent portal | `ParentLayout`, `ParentDashboardPage`, `ParentChildPage` (tabs: timetable/homework/notices), `parentApi.ts`, PARENT role guards | ✅ DONE |
+| E33 | Staff attendance backend | `StaffAttendance` entity, `StaffAttendanceStatus` enum, bulk mark, school-admin endpoints (CC-0603) | ✅ DONE |
+| E34 | Leave management backend | `LeaveRequest` entity, `LeaveStatus` enum, staff self-service + school-admin review endpoints (CC-0604) | ✅ DONE |
+| E35 | Teacher dashboard | `TeacherDashboardController` (today's timetable, pending reviews), `TeacherDashboardPage`, updated login redirect | ✅ DONE |
+| E37 | School admin live dashboard | `SchoolDashboardController` with live counts, `SchoolAdminDashboardPage` rewritten with live TanStack Query + alert banners | ✅ DONE |
+| E38 | Student results + fees self-service | `StudentResultsController`, `StudentFeesController`, `StudentResultsPage`, `StudentFeesPage`, nav + routes (CC-0601/CC-0901) | ✅ DONE |
+| E39 | Teacher attendance marking | `TeacherAttendancePage` — teacher-portal class/section attendance marking, reuses existing session/mark endpoints | ✅ DONE |
+| E40 | Mobile student screens | `AssignmentsScreen`, `ResultsScreen`, `FeesScreen` with ₹-formatted summaries; Expo Router files; STUDENT tab flags in `_layout.tsx` | ✅ DONE |
+| E41 | Student attendance self-view | `AttendanceRecordRepository.findStudentHistory()`, `StudentAttendanceController` (`GET /v1/student/attendance`), `StudentAttendancePage`, `AttendanceScreen` (mobile) | ✅ DONE |
+| E42 | Teacher notices + role-aware mobile dashboard | `TeacherNoticesPage`, mobile `index.tsx` rewritten with per-role TanStack Query hooks (Student / Teacher / Parent sections + notices) | ✅ DONE |
+| E43 | Change password (CC-0116 partial) | `ChangePasswordRequest` DTO, `AuthServiceImpl.changePassword()` (BCrypt verify + audit), `POST /v1/auth/change-password`, `ChangePasswordPage`, sidebar links in all 5 layouts | ✅ DONE |
+| E44 | schoolId in login response | `LoginResponse.schoolId` UUID field, `AuthServiceImpl` resolves school for SCHOOL_ADMIN at login, frontend type cleanup, unblocks `NoticeBoardPage` | ✅ DONE |
+| E45 | Mobile change-password + nav guard | `ChangePasswordScreen`, `/(auth)/change-password` Expo route, `NavigationGuard` forced-change redirect case | ✅ DONE |
+| E46 | Parent child fee records tab | `GET /v1/parent/children/{studentId}/fees`, `getChildFees()` API fn, `FeesTab` component in `ParentChildPage`, 5-tab bar with `overflow-x-auto` | ✅ DONE |
+
 ### ⚪ Phase F — Remaining Foundations (Parallel with E12+)
 
 | Session | Task ID | What to build |
@@ -779,4 +875,4 @@ Follow this order strictly. One task per session. Stop after each and confirm.
 
 ---
 
-*End of Roadmap — updated 2026-05-12 E20 Assignment Engine complete (64/193 tasks — 33.2%) — Next: E21*
+*End of Roadmap — updated 2026-05-14 E46 complete (112/193 tasks — 58.0%) — Next: E47*
