@@ -3,6 +3,14 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { resetPasswordApi } from '../api/authApi';
 
+function isStrongPassword(pw: string): boolean {
+  return pw.length >= 8
+    && /[A-Z]/.test(pw)
+    && /[a-z]/.test(pw)
+    && /\d/.test(pw)
+    && /[^a-zA-Z\d]/.test(pw);
+}
+
 export function ResetPasswordPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -27,8 +35,8 @@ export function ResetPasswordPage() {
       setClientError('OTP must be exactly 6 digits');
       return;
     }
-    if (newPassword.length < 8) {
-      setClientError('Password must be at least 8 characters');
+    if (!isStrongPassword(newPassword)) {
+      setClientError('Password must be at least 8 characters and include uppercase, lowercase, digit, and special character.');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -105,6 +113,9 @@ export function ResetPasswordPage() {
                 placeholder="Min. 8 characters"
                 className="block w-full rounded-lg border border-gray-300 px-3 py-2 pr-16 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                Min 8 chars · uppercase · lowercase · digit · special character
+              </p>
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}

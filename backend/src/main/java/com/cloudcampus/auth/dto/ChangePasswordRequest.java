@@ -1,7 +1,7 @@
 package com.cloudcampus.auth.dto;
 
+import com.cloudcampus.common.validation.StrongPassword;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 /**
  * Request body for POST /v1/auth/change-password (E43 / CC-0116).
@@ -11,6 +11,6 @@ public record ChangePasswordRequest(
         String currentPassword,
 
         @NotBlank(message = "New password is required")
-        @Size(min = 8, message = "New password must be at least 8 characters")
+        @StrongPassword
         String newPassword
 ) {}
