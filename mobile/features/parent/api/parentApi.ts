@@ -53,3 +53,43 @@ export async function getChildResults(studentId: string): Promise<ChildResult[]>
   );
   return data.data ?? [];
 }
+
+// ── Homework ─────────────────────────────────────────────────────────────────
+
+export type HomeworkStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED';
+
+export interface ChildHomework {
+  id:          string;
+  title:       string;
+  description: string | null;
+  dueDate:     string;
+  status:      HomeworkStatus;
+}
+
+export async function getChildHomework(studentId: string): Promise<ChildHomework[]> {
+  const { data } = await axiosInstance.get<ApiResponse<ChildHomework[]>>(
+    `/v1/parent/children/${studentId}/homework`,
+  );
+  return data.data ?? [];
+}
+
+// ── Fees ─────────────────────────────────────────────────────────────────────
+
+export type FeeStatus = 'PENDING' | 'PARTIAL' | 'PAID' | 'WAIVED' | 'OVERDUE';
+
+export interface ChildFeeRecord {
+  id:           string;
+  categoryName: string;
+  amountDue:    number;
+  amountPaid:   number;
+  balance:      number;
+  dueDate:      string | null;
+  status:       FeeStatus;
+}
+
+export async function getChildFees(studentId: string): Promise<ChildFeeRecord[]> {
+  const { data } = await axiosInstance.get<ApiResponse<ChildFeeRecord[]>>(
+    `/v1/parent/children/${studentId}/fees`,
+  );
+  return data.data ?? [];
+}

@@ -13,8 +13,26 @@ import {
   getChildren,
   getChildAttendance,
   getChildResults,
+  getChildHomework,
+  getChildFees,
   type ChildSummary,
+  type HomeworkStatus,
+  type FeeStatus,
 } from '../api/parentApi';
+
+const HW_STATUS_COLOR: Record<HomeworkStatus, string> = {
+  DRAFT:     '#9ca3af',
+  PUBLISHED: '#16a34a',
+  CLOSED:    '#6b7280',
+};
+
+const FEE_STATUS_COLOR: Record<FeeStatus, string> = {
+  PENDING:  '#d97706',
+  PARTIAL:  '#2563eb',
+  PAID:     '#16a34a',
+  WAIVED:   '#9ca3af',
+  OVERDUE:  '#dc2626',
+};
 
 // ── Child detail panel ────────────────────────────────────────────────────────
 
@@ -27,6 +45,16 @@ function ChildDetail({ studentId }: { studentId: string }) {
     queryKey: ['child-results', studentId],
     queryFn:  () => getChildResults(studentId),
   });
+  const { data: homework = [], isLoading: hwLoading } = useQuery({
+    queryKey: ['child-homework', studentId],
+    queryFn:  () => getChildHomework(studentId),
+  });
+  const { data: fees = [], isLoading: feesLoading } = useQuery({
+    queryKey: ['child-fees', studentId],
+    queryFn:  () => getChildFees(studentId),
+  });
+
+  const totalBalance = fees.reduce((sum, f) => sum + f.balance, 0);
 
   return (
     <View style={styles.detail}>
@@ -42,6 +70,62 @@ function ChildDetail({ studentId }: { studentId: string }) {
           <AttStat label="Overall" value={`${att.attendancePct}%`} color="#1e3a5f" />
         </View>
       ) : null}
+
+      {/* Homework */}
+      <Text style={[styles.sectionLabel, { marginTop: 14 }]}>Homework</Text>
+      {hwLoading ? (
+        <ActivityIndicator size="small" color="#1e3a5f" />
+      ) : homework.length === 0 ? (
+        <Text style={styles.noData}>No homework assigned.</Text>
+      ) : (
+        homework.slice(0, 5).map((hw) => {
+          const color = HW_STATUS_COLOR[hw.status];
+          const due   = new Date(hw.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+          return (
+            <View key={hw.id} style={styles.hwRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.hwTitle} numberOfLines={1}>{hw.title}</Text>
+                <Text style={styles.hwDue}>Due {due}</Text>
+              </View>
+              <View style={[styles.statusBadge, { borderColor: color, backgroundColor: color + '18' }]}>
+                <Text style={[styles.statusText, { color }]}>{hw.status}</Text>
+              </View>
+            </View>
+          );
+        })
+      )}
+
+      {/* Fees */}
+      <Text style={[styles.sectionLabel, { marginTop: 14 }]}>Fees</Text>
+      {feesLoading ? (
+        <ActivityIndicator size="small" color="#1e3a5f" />
+      ) : fees.length === 0 ? (
+        <Text style={styles.noData}>No fee records.</Text>
+      ) : (
+        <>
+          {totalBalance > 0 && (
+            <View style={styles.feeAlert}>
+              <Text style={styles.feeAlertText}>Balance due: ₹{totalBalance.toLocaleString('en-IN')}</Text>
+            </View>
+          )}
+          {fees.map((fee) => {
+            const color = FEE_STATUS_COLOR[fee.status];
+            return (
+              <View key={fee.id} style={styles.feeRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.feeCat}>{fee.categoryName}</Text>
+                  <Text style={styles.feeAmounts}>
+                    Due ₹{fee.amountDue.toLocaleString('en-IN')} · Paid ₹{fee.amountPaid.toLocaleString('en-IN')}
+                  </Text>
+                </View>
+                <View style={[styles.statusBadge, { borderColor: color, backgroundColor: color + '18' }]}>
+                  <Text style={[styles.statusText, { color }]}>{fee.status}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </>
+      )}
 
       {/* Exam results */}
       <Text style={[styles.sectionLabel, { marginTop: 14 }]}>Recent Exam Results</Text>
@@ -171,6 +255,44 @@ const styles = StyleSheet.create({
   attLabel:    { fontSize: 10, color: '#9ca3af', marginTop: 2 },
 
   noData:      { fontSize: 12, color: '#9ca3af' },
+
+  // Homework
+  hwRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    gap: 8,
+  },
+  hwTitle: { fontSize: 13, fontWeight: '600', color: '#1f2937' },
+  hwDue:   { fontSize: 11, color: '#6b7280', marginTop: 2 },
+
+  // Fees
+  feeAlert: {
+    backgroundColor: '#fef2f2',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    padding: 8,
+    marginBottom: 8,
+  },
+  feeAlertText: { fontSize: 13, fontWeight: '700', color: '#dc2626' },
+  feeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+    gap: 8,
+  },
+  feeCat:     { fontSize: 13, fontWeight: '600', color: '#1f2937' },
+  feeAmounts: { fontSize: 11, color: '#6b7280', marginTop: 2 },
+
+  // Shared badge
+  statusBadge: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  statusText:  { fontSize: 10, fontWeight: '700', letterSpacing: 0.3 },
+
   resultRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
