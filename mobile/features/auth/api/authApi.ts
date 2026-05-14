@@ -29,3 +29,15 @@ export async function loginApi(credentials: LoginRequestData): Promise<LoginResp
 export async function logoutApi(refreshToken: string): Promise<void> {
   await authClient.post('/v1/auth/logout', { refreshToken });
 }
+
+export async function forgotPasswordApi(email: string): Promise<void> {
+  await authClient.post('/v1/auth/forgot-password', { email });
+}
+
+export async function resetPasswordApi(
+  email: string,
+  otp: string,
+  newPassword: string,
+): Promise<void> {
+  await authClient.post('/v1/auth/reset-password', { email, otp, newPassword });
+}
