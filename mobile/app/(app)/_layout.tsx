@@ -18,10 +18,10 @@ export default function AppLayout() {
   useNotificationListeners();
 
   // Role-based tab visibility
-  const canMarkAttendance =
+  const canMarkAttendance =        // school admin offline class-picker flow (WatermelonDB)
     user?.role === 'SCHOOL_ADMIN' ||
-    user?.role === 'TEACHER' ||
     user?.role === 'SUPER_ADMIN';
+  const canMarkTeacherAttendance = user?.role === 'TEACHER'; // timetable-based teacher flow
 
   const canViewTimetable         = user?.role === 'TEACHER' || user?.role === 'STUDENT';
   const canViewLeave             = user?.role === 'TEACHER';
@@ -55,6 +55,12 @@ export default function AppLayout() {
       {canMarkAttendance && (
         <Tabs.Screen
           name="attendance"
+          options={{ title: 'Attendance', tabBarLabel: 'Attendance' }}
+        />
+      )}
+      {canMarkTeacherAttendance && (
+        <Tabs.Screen
+          name="teacher-attendance"
           options={{ title: 'Attendance', tabBarLabel: 'Attendance' }}
         />
       )}

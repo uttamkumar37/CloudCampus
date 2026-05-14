@@ -26,10 +26,29 @@ spring:
         max-size: 2
         queue-capacity: 10
 
+  # Mail — no-op SMTP; satisfies JavaMailSender autowiring without sending real email.
+  mail:
+    host: localhost
+    port: 25
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            required: false
+
 app:
   jwt:
     secret: "test-secret-key-for-integration-tests-only-do-not-use-in-production-must-be-long-enough"
     expiration-ms: 3600000
+
+  otp:
+    ttl-seconds: 300
+    length: 6
+    from-email: noreply@cloudcampus.io
 
 logging:
   level:
