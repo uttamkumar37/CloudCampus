@@ -6,6 +6,7 @@ import com.cloudcampus.auth.dto.LoginResponse;
 import com.cloudcampus.auth.dto.RefreshRequest;
 import com.cloudcampus.auth.dto.RefreshResponse;
 import com.cloudcampus.auth.entity.User;
+import com.cloudcampus.auth.entity.UserRole;
 import com.cloudcampus.auth.entity.UserStatus;
 import com.cloudcampus.auth.repository.UserRepository;
 import com.cloudcampus.auth.security.JwtUtil;
@@ -15,6 +16,7 @@ import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.exception.TooManyRequestsException;
 import com.cloudcampus.common.exception.UnauthorizedException;
+import com.cloudcampus.school.repository.SchoolRepository;
 import org.springframework.transaction.annotation.Transactional;
 import com.cloudcampus.config.JwtProperties;
 import org.slf4j.Logger;
@@ -74,6 +76,7 @@ public class AuthServiceImpl implements AuthService {
     private final RedisTemplate<String, String> redisTemplate;
     private final LoginRateLimiterService rateLimiter;
     private final AuditLogService auditLog;
+    private final SchoolRepository schoolRepository;
 
     public AuthServiceImpl(
             UserRepository userRepository,
@@ -82,7 +85,8 @@ public class AuthServiceImpl implements AuthService {
             JwtProperties jwtProperties,
             RedisTemplate<String, String> redisTemplate,
             LoginRateLimiterService rateLimiter,
-            AuditLogService auditLog
+            AuditLogService auditLog,
+            SchoolRepository schoolRepository
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -91,6 +95,7 @@ public class AuthServiceImpl implements AuthService {
         this.redisTemplate   = redisTemplate;
         this.rateLimiter     = rateLimiter;
         this.auditLog        = auditLog;
+        this.schoolRepository = schoolRepository;
     }
 
     // ── Login ────────────────────────────────────────────────────────────────
@@ -140,6 +145,16 @@ public class AuthServiceImpl implements AuthService {
                 user.getId(), user.getTenantId(), null, user.getRole().name());
         String refreshToken = issueRefreshToken(user.getId());
 
+        // Step 5: Resolve schoolId for SCHOOL_ADMIN so the client can call
+        // school-scoped endpoints without a separate lookup (Notice Board, etc.).
+        UUID schoolId = null;
+        if (user.getRole() == UserRole.SCHOOL_ADMIN && user.getTenantId() != null) {
+            schoolId = schoolRepository
+                    .findByTenantIdAndCode(user.getTenantId(), "MAIN")
+                    .map(s -> s.getId())
+                    .orElse(null);
+        }
+
         auditLog.logLoginSuccess(user.getId(), user.getTenantId(), user.getUsername(), clientIp);
         log.info("Successful login [userId={}, role={}]", user.getId(), user.getRole());
 
@@ -150,6 +165,7 @@ public class AuthServiceImpl implements AuthService {
                 user.getRole().name(),
                 user.getId(),
                 user.getTenantId(),
+                schoolId,
                 user.isForcePasswordChange()
         );
     }

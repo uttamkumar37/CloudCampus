@@ -13,6 +13,9 @@ import java.util.UUID;
  * role         — the authenticated user's role string (e.g. "SUPER_ADMIN").
  * userId       — authenticated user's UUID.
  * tenantId     — null for SUPER_ADMIN, non-null for all tenant-scoped roles.
+ * schoolId     — null for all roles except SCHOOL_ADMIN. Populated with the primary
+ *                school UUID so the client can call school-scoped endpoints directly
+ *                without a separate lookup.
  * requiresPasswordChange — when true, client must redirect to the change-password flow
  *                          before accessing any other page.
  */
@@ -24,5 +27,6 @@ public record LoginResponse(
         String  role,
         UUID    userId,
         UUID    tenantId,
+        UUID    schoolId,
         boolean requiresPasswordChange
 ) {}
