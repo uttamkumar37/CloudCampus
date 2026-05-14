@@ -59,6 +59,7 @@ import TeacherAssignmentListPage from '@/features/teacher/pages/TeacherAssignmen
 import TeacherAssignmentSubmissionsPage from '@/features/teacher/pages/TeacherAssignmentSubmissionsPage';
 import TeacherAttendancePage from '@/features/teacher/pages/TeacherAttendancePage';
 import TeacherNoticesPage from '@/features/teacher/pages/TeacherNoticesPage';
+import TeacherLeavePage from '@/features/teacher/pages/TeacherLeavePage';
 import { StudentLayout } from '@/features/student/layouts/StudentLayout';
 import StudentDashboardPage from '@/features/student/pages/StudentDashboardPage';
 import StudentHomeworkPage from '@/features/student/pages/StudentHomeworkPage';
@@ -185,6 +186,7 @@ export function AppRouter() {
           <Route path="assignments" element={<TeacherAssignmentListPage />} />
           <Route path="assignments/:assignmentId/submissions" element={<TeacherAssignmentSubmissionsPage />} />
           <Route path="notices" element={<TeacherNoticesPage />} />
+          <Route path="leave"   element={<TeacherLeavePage />} />
         </Route>
 
         {/* Student portal — STUDENT role required */}
