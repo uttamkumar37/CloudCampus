@@ -27,12 +27,12 @@ public class ApiRateLimiterService {
     private static final String KEY_USER   = "rl:api:user:";
     private static final String KEY_TENANT = "rl:api:tenant:";
 
-    private final RedisTemplate<String, String> redis;
+    private final RedisTemplate<String, String> redisTemplate;
     private final ApiRateLimitProperties        props;
 
-    public ApiRateLimiterService(RedisTemplate<String, String> redis,
+    public ApiRateLimiterService(RedisTemplate<String, String> redisTemplate,
                                  ApiRateLimitProperties props) {
-        this.redis = redis;
+        this.redisTemplate = redisTemplate;
         this.props = props;
     }
 
@@ -51,16 +51,16 @@ public class ApiRateLimiterService {
         long windowStart = nowMs - (windowSeconds * 1_000L);
 
         try {
-            redis.opsForZSet().removeRangeByScore(key, 0, windowStart);
+            redisTemplate.opsForZSet().removeRangeByScore(key, 0, windowStart);
 
-            Long count = redis.opsForZSet().zCard(key);
+            Long count = redisTemplate.opsForZSet().zCard(key);
             if (count != null && count >= maxRequests) {
                 log.warn("API rate limit exceeded [key={}]", redact(key));
                 throw new TooManyRequestsException("Rate limit exceeded. Please slow down.");
             }
 
-            redis.opsForZSet().add(key, nowMs + ":" + UUID.randomUUID(), nowMs);
-            redis.expire(key, Duration.ofSeconds(windowSeconds));
+            redisTemplate.opsForZSet().add(key, nowMs + ":" + UUID.randomUUID(), nowMs);
+            redisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
         } catch (TooManyRequestsException e) {
             throw e;
         } catch (Exception e) {
