@@ -16,6 +16,8 @@ export interface LoginResponseData {
   role: string;
   userId: string;
   tenantId: string | null;
+  /** Populated for SCHOOL_ADMIN — the primary school UUID for that tenant. */
+  schoolId?: string | null;
   requiresPasswordChange: boolean;
   /** Feature-flag codes enabled for the tenant. Backend populates in future. */
   features?: string[];
