@@ -6,21 +6,28 @@ import {
   getChildResults,
   getChildHomework,
   getChildTimetable,
+  getChildFees,
 } from '../api/parentApi';
 import { DAYS_OF_WEEK } from '@/features/timetable/types/timetable';
 import type { DayOfWeek, TimetableSlot } from '@/features/timetable/types/timetable';
 
-type Tab = 'attendance' | 'homework' | 'results' | 'timetable';
+type Tab = 'attendance' | 'homework' | 'results' | 'timetable' | 'fees';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'attendance', label: 'Attendance' },
   { key: 'homework',   label: 'Homework' },
-  { key: 'results',    label: 'Exam Results' },
+  { key: 'results',    label: 'Results' },
   { key: 'timetable',  label: 'Timetable' },
+  { key: 'fees',       label: 'Fees' },
 ];
 
-function formatDate(iso: string) {
+function formatDate(iso: string | null) {
+  if (!iso) return '—';
   return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function currency(n: number) {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 }
 
 // ── Attendance Tab ─────────────────────────────────────────────────────────────
@@ -46,9 +53,9 @@ function AttendanceTab({ studentId }: { studentId: string }) {
 
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Present', value: data.present,       color: 'bg-green-50 text-green-700' },
-          { label: 'Absent',  value: data.absent,        color: 'bg-red-50 text-red-700' },
-          { label: 'Late',    value: data.late,          color: 'bg-amber-50 text-amber-700' },
+          { label: 'Present', value: data.present, color: 'bg-green-50 text-green-700' },
+          { label: 'Absent',  value: data.absent,  color: 'bg-red-50 text-red-700' },
+          { label: 'Late',    value: data.late,    color: 'bg-amber-50 text-amber-700' },
         ].map((s) => (
           <div key={s.label} className={`rounded-xl p-4 ${s.color} text-center`}>
             <div className="text-2xl font-bold">{s.value}</div>
@@ -131,7 +138,6 @@ function ResultsTab({ studentId }: { studentId: string }) {
       <table className="min-w-full text-sm">
         <thead className="bg-gray-50 text-xs font-semibold text-gray-500">
           <tr>
-            <th className="px-4 py-3 text-left">Exam</th>
             <th className="px-4 py-3 text-right">Marks</th>
             <th className="px-4 py-3 text-right">%</th>
             <th className="px-4 py-3 text-center">Grade</th>
@@ -142,7 +148,6 @@ function ResultsTab({ studentId }: { studentId: string }) {
         <tbody className="divide-y divide-gray-100">
           {results.map((r) => (
             <tr key={r.id} className="hover:bg-gray-50">
-              <td className="px-4 py-3 text-xs text-gray-400">{r.examId.slice(0, 8)}…</td>
               <td className="px-4 py-3 text-right">
                 {r.totalMarksObtained ?? '—'} / {r.totalMarksPossible ?? '—'}
               </td>
@@ -246,6 +251,92 @@ function TimetableTab({ studentId }: { studentId: string }) {
   );
 }
 
+// ── Fees Tab ───────────────────────────────────────────────────────────────────
+
+const FEE_STATUS_BADGE: Record<string, string> = {
+  PENDING: 'bg-amber-100 text-amber-700',
+  PARTIAL: 'bg-blue-100 text-blue-700',
+  PAID:    'bg-green-100 text-green-700',
+  WAIVED:  'bg-gray-100 text-gray-500',
+  OVERDUE: 'bg-red-100 text-red-700',
+};
+
+function FeesTab({ studentId }: { studentId: string }) {
+  const { data: fees = [], isLoading, isError } = useQuery({
+    queryKey: ['parent-child-fees', studentId],
+    queryFn: () => getChildFees(studentId),
+  });
+
+  if (isLoading) return <div className="py-8 text-center text-sm text-gray-400">Loading…</div>;
+  if (isError) return <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">Failed to load fee records.</div>;
+
+  if (fees.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-400">
+        No fee records found.
+      </div>
+    );
+  }
+
+  const totalDue     = fees.reduce((s, f) => s + f.amountDue, 0);
+  const totalPaid    = fees.reduce((s, f) => s + f.amountPaid, 0);
+  const totalBalance = fees.reduce((s, f) => s + f.balance, 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Summary strip */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl bg-gray-50 p-3 text-center">
+          <div className="text-xs font-medium text-gray-500">Total Due</div>
+          <div className="mt-1 text-lg font-bold text-gray-800">{currency(totalDue)}</div>
+        </div>
+        <div className="rounded-xl bg-green-50 p-3 text-center">
+          <div className="text-xs font-medium text-green-600">Paid</div>
+          <div className="mt-1 text-lg font-bold text-green-700">{currency(totalPaid)}</div>
+        </div>
+        <div className={`rounded-xl p-3 text-center ${totalBalance > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
+          <div className={`text-xs font-medium ${totalBalance > 0 ? 'text-red-500' : 'text-gray-500'}`}>Balance</div>
+          <div className={`mt-1 text-lg font-bold ${totalBalance > 0 ? 'text-red-700' : 'text-gray-700'}`}>
+            {currency(totalBalance)}
+          </div>
+        </div>
+      </div>
+
+      {/* Records table */}
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50 text-xs font-semibold text-gray-500">
+            <tr>
+              <th className="px-4 py-3 text-left">Category</th>
+              <th className="px-4 py-3 text-right">Due</th>
+              <th className="px-4 py-3 text-right">Paid</th>
+              <th className="px-4 py-3 text-right">Balance</th>
+              <th className="px-4 py-3 text-center">Due Date</th>
+              <th className="px-4 py-3 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {fees.map((f) => (
+              <tr key={f.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3 font-medium text-gray-900">{f.categoryName}</td>
+                <td className="px-4 py-3 text-right text-gray-700">{currency(f.amountDue)}</td>
+                <td className="px-4 py-3 text-right text-gray-700">{currency(f.amountPaid)}</td>
+                <td className="px-4 py-3 text-right font-semibold text-gray-900">{currency(f.balance)}</td>
+                <td className="px-4 py-3 text-center text-xs text-gray-500">{formatDate(f.dueDate)}</td>
+                <td className="px-4 py-3 text-center">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${FEE_STATUS_BADGE[f.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                    {f.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ParentChildPage() {
@@ -266,12 +357,12 @@ export default function ParentChildPage() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 rounded-xl bg-gray-100 p-1">
+      <div className="flex gap-1 overflow-x-auto rounded-xl bg-gray-100 p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? 'bg-white text-emerald-700 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
@@ -288,6 +379,7 @@ export default function ParentChildPage() {
         {activeTab === 'homework'   && <HomeworkTab   studentId={studentId} />}
         {activeTab === 'results'    && <ResultsTab    studentId={studentId} />}
         {activeTab === 'timetable'  && <TimetableTab  studentId={studentId} />}
+        {activeTab === 'fees'       && <FeesTab        studentId={studentId} />}
       </div>
     </div>
   );

@@ -86,6 +86,29 @@ export async function getChildTimetable(studentId: string): Promise<TimetableSlo
   return data.data ?? [];
 }
 
+// ── Fees ──────────────────────────────────────────────────────────────────────
+
+export type FeeStatus = 'PENDING' | 'PARTIAL' | 'PAID' | 'WAIVED' | 'OVERDUE';
+
+export interface ChildFeeRecord {
+  id:             string;
+  categoryName:   string;
+  academicYearId: string;
+  amountDue:      number;
+  amountPaid:     number;
+  discount:       number;
+  balance:        number;
+  dueDate:        string | null;
+  status:         FeeStatus;
+  notes:          string | null;
+}
+
+export async function getChildFees(studentId: string): Promise<ChildFeeRecord[]> {
+  const { data } = await axiosInstance.get<ApiResponse<ChildFeeRecord[]>>(
+    `/v1/parent/children/${studentId}/fees`);
+  return data.data ?? [];
+}
+
 // ── Notices (shared with student portal) ─────────────────────────────────────
 
 export interface NoticeItem {
