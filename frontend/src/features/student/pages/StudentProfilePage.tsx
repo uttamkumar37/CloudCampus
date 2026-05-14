@@ -11,6 +11,11 @@ import {
   transferStudent,
   suspendStudent,
   reinstateStudent,
+  listParentLinks,
+  addParentLink,
+  removeParentLink,
+  type Relationship,
+  type ParentLinkResponse,
 } from '../api/studentApi';
 import type { StudentResponse, StudentStatus } from '../types/student';
 
@@ -196,6 +201,183 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
   );
 }
 
+// ── Parent links section ──────────────────────────────────────────────────────
+
+const RELATIONSHIPS: Relationship[] = ['FATHER', 'MOTHER', 'GUARDIAN'];
+
+function ParentLinksSection({ studentId }: { studentId: string }) {
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [parentUserId, setParentUserId] = useState('');
+  const [relationship, setRelationship] = useState<Relationship>('GUARDIAN');
+  const [makePrimary, setMakePrimary] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const { data: links = [], isLoading } = useQuery({
+    queryKey: ['parent-links', studentId],
+    queryFn:  () => listParentLinks(studentId),
+  });
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['parent-links', studentId] });
+
+  const addMutation = useMutation({
+    mutationFn: () => addParentLink(studentId, { parentUserId, relationship, makePrimary }),
+    onSuccess: () => {
+      invalidate();
+      setShowForm(false);
+      setParentUserId('');
+      setRelationship('GUARDIAN');
+      setMakePrimary(false);
+      setFormError('');
+    },
+    onError: (e: { response?: { data?: { error?: string } } }) => {
+      setFormError(e?.response?.data?.error ?? 'Failed to add parent link.');
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (linkId: string) => removeParentLink(linkId),
+    onSuccess: invalidate,
+  });
+
+  function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!parentUserId.trim()) { setFormError('Parent User ID is required.'); return; }
+    setFormError('');
+    addMutation.mutate();
+  }
+
+  return (
+    <div className="mt-5 rounded-xl border border-gray-200 bg-white p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+          Parent / Guardian Links
+        </h3>
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+          >
+            + Add Parent
+          </button>
+        )}
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleAdd} className="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-4 space-y-3">
+          {formError && (
+            <p className="rounded-lg bg-red-50 p-2 text-xs text-red-700">{formError}</p>
+          )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">
+                Parent User ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                value={parentUserId}
+                onChange={(e) => setParentUserId(e.target.value)}
+                placeholder="UUID of parent user"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">Relationship</label>
+              <select
+                value={relationship}
+                onChange={(e) => setRelationship(e.target.value as Relationship)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {RELATIONSHIPS.map((r) => (
+                  <option key={r} value={r}>{r.charAt(0) + r.slice(1).toLowerCase()}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end pb-1">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={makePrimary}
+                  onChange={(e) => setMakePrimary(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                />
+                Set as primary
+              </label>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={addMutation.isPending}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {addMutation.isPending ? 'Adding…' : 'Add Link'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowForm(false); setFormError(''); }}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-xs text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {isLoading && <p className="text-sm text-gray-400">Loading…</p>}
+
+      {!isLoading && links.length === 0 && (
+        <p className="text-sm text-gray-400">No parents linked. Use the button above to add one.</p>
+      )}
+
+      {links.length > 0 && (
+        <div className="overflow-hidden rounded-xl border border-gray-100">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <tr>
+                <th className="px-4 py-2.5 text-left">Parent User ID</th>
+                <th className="px-4 py-2.5 text-left">Relationship</th>
+                <th className="px-4 py-2.5 text-left">Primary</th>
+                <th className="px-4 py-2.5 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {links.map((link: ParentLinkResponse) => (
+                <tr key={link.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                    {link.parentUserId.slice(0, 8)}…
+                  </td>
+                  <td className="px-4 py-3 text-gray-700">
+                    {link.relationship.charAt(0) + link.relationship.slice(1).toLowerCase()}
+                  </td>
+                  <td className="px-4 py-3">
+                    {link.isPrimary && (
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                        Primary
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => {
+                        if (confirm('Remove this parent link?')) removeMutation.mutate(link.id);
+                      }}
+                      disabled={removeMutation.isPending}
+                      className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function StudentProfilePage() {
@@ -348,6 +530,9 @@ export function StudentProfilePage() {
           </dl>
         </div>
       )}
+
+      {/* Parent links */}
+      <ParentLinksSection studentId={student.id} />
     </div>
   );
 }

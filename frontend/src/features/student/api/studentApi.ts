@@ -133,3 +133,44 @@ export async function bulkImportStudents(
   );
   return data.data!;
 }
+
+// ── Parent links (CC-0506) ────────────────────────────────────────────────────
+
+export type Relationship = 'FATHER' | 'MOTHER' | 'GUARDIAN';
+
+export interface ParentLinkResponse {
+  id:           string;
+  studentId:    string;
+  parentUserId: string;
+  relationship: Relationship;
+  isPrimary:    boolean;
+  createdAt:    string;
+}
+
+export interface ParentLinkRequest {
+  parentUserId: string;
+  relationship: Relationship;
+  makePrimary:  boolean;
+}
+
+export async function listParentLinks(studentId: string): Promise<ParentLinkResponse[]> {
+  const { data } = await axiosInstance.get<ApiResponse<ParentLinkResponse[]>>(
+    `/v1/school-admin/students/${studentId}/parents`,
+  );
+  return data.data ?? [];
+}
+
+export async function addParentLink(
+  studentId: string,
+  body: ParentLinkRequest,
+): Promise<ParentLinkResponse> {
+  const { data } = await axiosInstance.post<ApiResponse<ParentLinkResponse>>(
+    `/v1/school-admin/students/${studentId}/parents`,
+    body,
+  );
+  return data.data!;
+}
+
+export async function removeParentLink(linkId: string): Promise<void> {
+  await axiosInstance.delete(`/v1/school-admin/student-parent-links/${linkId}`);
+}
