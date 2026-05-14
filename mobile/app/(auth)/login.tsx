@@ -31,12 +31,13 @@ export default function LoginScreen() {
     try {
       const data = await loginApi({ username: username.trim(), password });
       const user: AuthUser = {
-        userId: data.userId,
-        role: data.role as AuthUser['role'],
-        tenantId: data.tenantId,
+        userId:                 data.userId,
+        role:                   data.role as AuthUser['role'],
+        tenantId:               data.tenantId,
+        schoolId:               data.schoolId ?? null,
         requiresPasswordChange: data.requiresPasswordChange,
-        expiresIn: data.expiresIn,
-        features: data.features ?? [],
+        expiresIn:              data.expiresIn,
+        features:               data.features ?? [],
       };
       setTokens(data.accessToken, data.refreshToken, user);
       // Navigation guard in _layout.tsx handles redirect

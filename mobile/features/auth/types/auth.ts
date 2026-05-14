@@ -11,10 +11,11 @@ export type UserRole =
   | 'STUDENT';
 
 export interface AuthUser {
-  userId: string;
-  role: UserRole;
-  tenantId: string | null;
+  userId:                 string;
+  role:                   UserRole;
+  tenantId:               string | null;
+  schoolId:               string | null;
   requiresPasswordChange: boolean;
-  expiresIn: number;
-  features: string[];
+  expiresIn:              number;
+  features:               string[];
 }
