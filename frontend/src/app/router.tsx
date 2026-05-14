@@ -56,6 +56,7 @@ import TeacherHomeworkListPage from '@/features/teacher/pages/TeacherHomeworkLis
 import TeacherHomeworkSubmissionsPage from '@/features/teacher/pages/TeacherHomeworkSubmissionsPage';
 import TeacherAssignmentListPage from '@/features/teacher/pages/TeacherAssignmentListPage';
 import TeacherAssignmentSubmissionsPage from '@/features/teacher/pages/TeacherAssignmentSubmissionsPage';
+import TeacherAttendancePage from '@/features/teacher/pages/TeacherAttendancePage';
 import { StudentLayout } from '@/features/student/layouts/StudentLayout';
 import StudentDashboardPage from '@/features/student/pages/StudentDashboardPage';
 import StudentHomeworkPage from '@/features/student/pages/StudentHomeworkPage';
@@ -165,6 +166,7 @@ export function AppRouter() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<TeacherDashboardPage />} />
           <Route path="timetable" element={<TeacherTimetablePage />} />
+          <Route path="attendance" element={<TeacherAttendancePage />} />
           <Route path="homework" element={<TeacherHomeworkListPage />} />
           <Route path="homework/:homeworkId/submissions" element={<TeacherHomeworkSubmissionsPage />} />
           <Route path="assignments" element={<TeacherAssignmentListPage />} />
