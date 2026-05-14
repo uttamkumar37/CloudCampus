@@ -39,4 +39,15 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
 
     /** Total attendance records for a student (denominator for percentage). */
     long countByStudentId(UUID studentId);
+
+    /** Per-record history for a student joined with session date and period, newest first. */
+    @Query("""
+           SELECT r.status, s.sessionDate, s.periodNumber
+           FROM AttendanceRecord r, AttendanceSession s
+           WHERE r.sessionId = s.id
+             AND r.studentId = :studentId
+           ORDER BY s.sessionDate DESC, s.id DESC
+           """)
+    List<Object[]> findStudentHistory(@Param("studentId") UUID studentId,
+                                      org.springframework.data.domain.Pageable pageable);
 }

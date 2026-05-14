@@ -8,6 +8,7 @@ const NAV = [
   { label: 'Timetable',  to: '/student/timetable'   },
   { label: 'Results',    to: '/student/results'     },
   { label: 'Fees',       to: '/student/fees'        },
+  { label: 'Attendance', to: '/student/attendance'  },
   { label: 'Notices',    to: '/student/notices'     },
 ];
 

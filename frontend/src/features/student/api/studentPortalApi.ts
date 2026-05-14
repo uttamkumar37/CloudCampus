@@ -158,3 +158,28 @@ export async function getMyFees(academicYearId?: string): Promise<StudentFeeReco
     '/v1/student/fees', { params: academicYearId ? { academicYearId } : {} });
   return data.data ?? [];
 }
+
+// ── Attendance ────────────────────────────────────────────────────────────────
+
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+
+export interface AttendanceRecord {
+  date:   string;
+  period: number;
+  status: AttendanceStatus;
+}
+
+export interface MyAttendance {
+  totalSessions: number;
+  presentCount:  number;
+  absentCount:   number;
+  lateCount:     number;
+  excusedCount:  number;
+  attendancePct: number;
+  recent:        AttendanceRecord[];
+}
+
+export async function getMyAttendance(): Promise<MyAttendance> {
+  const { data } = await axiosInstance.get<ApiResponse<MyAttendance>>('/v1/student/attendance');
+  return data.data!;
+}

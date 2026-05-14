@@ -65,6 +65,7 @@ import StudentTimetablePage from '@/features/student/pages/StudentTimetablePage'
 import StudentNoticesPage from '@/features/student/pages/StudentNoticesPage';
 import StudentResultsPage from '@/features/student/pages/StudentResultsPage';
 import StudentFeesPage from '@/features/student/pages/StudentFeesPage';
+import StudentAttendancePage from '@/features/student/pages/StudentAttendancePage';
 import { ParentLayout } from '@/features/parent/layouts/ParentLayout';
 import ParentDashboardPage from '@/features/parent/pages/ParentDashboardPage';
 import ParentChildPage from '@/features/parent/pages/ParentChildPage';
@@ -189,6 +190,7 @@ export function AppRouter() {
           <Route path="timetable" element={<StudentTimetablePage />} />
           <Route path="results" element={<StudentResultsPage />} />
           <Route path="fees" element={<StudentFeesPage />} />
+          <Route path="attendance" element={<StudentAttendancePage />} />
           <Route path="notices" element={<StudentNoticesPage />} />
         </Route>
 
