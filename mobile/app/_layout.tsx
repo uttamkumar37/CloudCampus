@@ -10,7 +10,7 @@
  */
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useSessionHydration } from '@/shared/hooks/useSessionHydration';
@@ -27,13 +27,14 @@ const queryClient = new QueryClient({
 function NavigationGuard({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const segments = useSegments();
+  const pathname = usePathname();
   const router = useRouter();
   const { ready } = useSessionHydration();
 
   useEffect(() => {
     if (!ready) return;
     const inAuthGroup = segments[0] === '(auth)';
-    const inChangePassword = segments[1] === 'change-password';
+    const inChangePassword = pathname.includes('change-password');
 
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/login');
@@ -43,7 +44,7 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
     } else if (user && !user.requiresPasswordChange && inAuthGroup) {
       router.replace('/(app)/');
     }
-  }, [user, segments, router, ready]);
+  }, [user, segments, pathname, router, ready]);
 
   if (!ready) {
     return (
