@@ -133,6 +133,19 @@ public class AuditLogService {
                 .build());
     }
 
+    @Async("auditExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logAllSessionsRevoked(UUID userId, UUID tenantId, int revokedCount, String ipAddress) {
+        persist(AuditLog.builder()
+                .actorId(userId)
+                .tenantId(tenantId)
+                .eventType(AuditAction.AUTH_ALL_SESSIONS_REVOKED)
+                .description("All sessions revoked (" + revokedCount + " refresh token(s) invalidated)")
+                .ipAddress(ipAddress)
+                .metadata(Map.of("revokedCount", String.valueOf(revokedCount)))
+                .build());
+    }
+
     // ── Tenant events ────────────────────────────────────────────────────────
 
     @Async("auditExecutor")

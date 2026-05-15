@@ -26,7 +26,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -61,8 +63,12 @@ public class AuthServiceImpl implements AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
-    // Prefix for Redis refresh-token keys.
+    // Prefix for per-token Redis keys: rt:{uuid} → userId
     static final String RT_KEY_PREFIX = "rt:";
+
+    // Prefix for per-user token-index keys: cc:rt:user:{userId} → Set<uuid>
+    // Used to bulk-revoke all sessions for a user (CC-0117).
+    static final String RT_USER_KEY_PREFIX = "cc:rt:user:";
 
     // Constant-time dummy hash to prevent username enumeration via timing.
     // BCrypt format — will never match any real input.
@@ -216,6 +222,8 @@ public class AuthServiceImpl implements AuthService {
         // If the old token was already deleted by a concurrent request, the user
         // above would not have been found — so by here we still hold the only copy.
         redisTemplate.delete(oldKey);
+        // Remove old UUID from the per-user index before issuing the new one.
+        redisTemplate.opsForSet().remove(RT_USER_KEY_PREFIX + userId, request.refreshToken());
         String newRefreshToken = issueRefreshToken(userId);
 
         String newAccessToken = jwtUtil.generateAccessToken(
@@ -235,7 +243,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logout(RefreshRequest request) {
-        String key = RT_KEY_PREFIX + request.refreshToken();
+        String token = request.refreshToken();
+        String key = RT_KEY_PREFIX + token;
         // Look up userId before deleting so the audit log captures the actor.
         String userIdStr = redisTemplate.opsForValue().get(key);
         Boolean deleted = redisTemplate.delete(key);
@@ -245,12 +254,37 @@ public class AuthServiceImpl implements AuthService {
             if (userIdStr != null) {
                 try {
                     UUID userId = UUID.fromString(userIdStr);
+                    // Remove from the per-user token index so revokeAllSessions stays accurate.
+                    redisTemplate.opsForSet().remove(RT_USER_KEY_PREFIX + userId, token);
                     auditLog.logLogout(userId, null, null);
                 } catch (IllegalArgumentException ignored) {
                     // Corrupted Redis value — audit failure is non-critical.
                 }
             }
         }
+    }
+
+    @Override
+    public int revokeAllSessions(UUID userId, UUID tenantId, String clientIp) {
+        String userKey = RT_USER_KEY_PREFIX + userId;
+        Set<String> tokens = redisTemplate.opsForSet().members(userKey);
+
+        int revoked = 0;
+        if (tokens != null && !tokens.isEmpty()) {
+            // Delete all per-token keys in a single pipeline round-trip.
+            List<String> tokenKeys = tokens.stream()
+                    .map(t -> RT_KEY_PREFIX + t)
+                    .toList();
+            Long deleted = redisTemplate.delete(tokenKeys);
+            revoked = deleted != null ? deleted.intValue() : 0;
+        }
+
+        // Always delete the index, even if no tokens were found (may be stale).
+        redisTemplate.delete(userKey);
+
+        auditLog.logAllSessionsRevoked(userId, tenantId, revoked, clientIp);
+        log.info("All sessions revoked [userId={}, count={}]", userId, revoked);
+        return revoked;
     }
 
     // ── Change password ──────────────────────────────────────────────────────
@@ -281,18 +315,22 @@ public class AuthServiceImpl implements AuthService {
     /**
      * Generate an opaque refresh token UUID and persist it in Redis.
      *
-     * Key:   rt:{uuid}
-     * Value: userId (string)
-     * TTL:   app.jwt.refresh-token-expiry-seconds (default 30 days)
+     * Keys written:
+     *   rt:{uuid}              → userId    (TTL: refreshTokenExpirySeconds)
+     *   cc:rt:user:{userId}    → Set<uuid> (TTL: refreshTokenExpirySeconds, reset on each add)
+     *
+     * The per-user set enables bulk revocation via revokeAllSessions() (CC-0117).
      */
     private String issueRefreshToken(UUID userId) {
         String token = UUID.randomUUID().toString();
+        Duration ttl = Duration.ofSeconds(jwtProperties.refreshTokenExpirySeconds());
         try {
-            redisTemplate.opsForValue().set(
-                    RT_KEY_PREFIX + token,
-                    userId.toString(),
-                    Duration.ofSeconds(jwtProperties.refreshTokenExpirySeconds())
-            );
+            // Per-token entry.
+            redisTemplate.opsForValue().set(RT_KEY_PREFIX + token, userId.toString(), ttl);
+            // Per-user index — add UUID and refresh the set's TTL to match the latest token.
+            String userKey = RT_USER_KEY_PREFIX + userId;
+            redisTemplate.opsForSet().add(userKey, token);
+            redisTemplate.expire(userKey, ttl);
         } catch (Exception e) {
             // Fail-open: access token still works; refresh will fail if Redis is down.
             log.warn("Could not persist refresh token in Redis (Redis down?): {}", e.getMessage());

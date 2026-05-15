@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
-import { changePasswordApi } from '../api/authApi';
+import { changePasswordApi, revokeAllSessionsApi } from '../api/authApi';
 
 function isStrongPassword(pw: string): boolean {
   return pw.length >= 8
@@ -31,6 +31,15 @@ export function ChangePasswordPage() {
       useAuthStore.setState((s) => ({
         user: s.user ? { ...s.user, requiresPasswordChange: false } : s.user,
       }));
+    },
+  });
+
+  const logout = useAuthStore((s) => s.logout);
+  const { mutate: revokeAll, isPending: isRevoking, isSuccess: revoked } = useMutation({
+    mutationFn: revokeAllSessionsApi,
+    onSuccess: () => {
+      logout();
+      navigate('/login', { replace: true });
     },
   });
 
@@ -168,6 +177,22 @@ export function ChangePasswordPage() {
               </p>
             )}
           </>
+        )}
+
+        {!isForced && !done && (
+          <div className="mt-8 border-t border-gray-200 pt-6">
+            <h2 className="mb-1 text-sm font-semibold text-gray-900">Sign out from all devices</h2>
+            <p className="mb-3 text-xs text-gray-500">
+              Immediately invalidates all active sessions. Use this if your account may have been compromised or you signed in on a shared device.
+            </p>
+            <button
+              onClick={() => revokeAll()}
+              disabled={isRevoking || revoked}
+              className="w-full rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+            >
+              {isRevoking ? 'Signing out…' : 'Sign out from all devices'}
+            </button>
+          </div>
         )}
       </div>
     </main>

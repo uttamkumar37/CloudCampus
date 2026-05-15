@@ -24,6 +24,7 @@ public enum AuditAction {
     AUTH_PASSWORD_CHANGED,
     AUTH_PASSWORD_RESET_REQUESTED,
     AUTH_ACCOUNT_LOCKED,              // auto-suspended after N bad-credential attempts
+    AUTH_ALL_SESSIONS_REVOKED,        // user triggered "sign out from all devices"
 
     // ── TENANT ────────────────────────────────────────────────────────────
     TENANT_CREATED,

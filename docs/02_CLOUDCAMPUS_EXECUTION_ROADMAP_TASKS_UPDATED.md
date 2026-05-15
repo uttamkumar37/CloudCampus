@@ -4,14 +4,25 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E80 Secrets Management Standard)
+## Progress Summary (as of 2026-05-15 — E81 Session Revocation Strategy)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~139 (72%) |
+| **Completed** | ~140 (72.5%) |
 | **In Progress** | 0 |
-| **Not Started** | ~54 |
+| **Not Started** | ~53 |
+
+### E81 Completions — Session Revocation Strategy (CC-0117) (2026-05-15)
+
+| Task | What was built |
+|------|---------------|
+| Per-user token index ✅ | `cc:rt:user:{userId}` Redis Set — maintained on every `issueRefreshToken`; EXPIRE reset to 30 days on each add; SREM on `logout` and `refresh` rotation |
+| `revokeAllSessions()` ✅ | `AuthService` + `AuthServiceImpl` — SMEMBERS per-user index → pipeline DELETE all `rt:{uuid}` keys → DELETE index; returns revoked count; audit logged as `AUTH_ALL_SESSIONS_REVOKED` |
+| `POST /v1/auth/revoke-all` ✅ | Authenticated endpoint; returns 204 + `X-Revoked-Sessions` header |
+| `AUTH_ALL_SESSIONS_REVOKED` ✅ | New `AuditAction` enum value + `AuditLogService.logAllSessionsRevoked()` |
+| `revokeAllSessionsApi()` ✅ | Added to `authApi.ts` — `POST /v1/auth/revoke-all` via authenticated axiosInstance |
+| "Sign out from all devices" ✅ | Danger-zone section on `ChangePasswordPage` — calls `revokeAllSessions`, then clears auth store and navigates to `/login`; hidden during forced-password-change flow |
 
 ### E80 Completions — Secrets Management Standard (CC-1906) (2026-05-15)
 
@@ -584,7 +595,7 @@ Notes/Risks:
 | CC-0114 | Permission middleware | P0 | ✅ COMPLETED | `JsonAuthEntryPoint` — JSON `ApiResponse` 401/403 for Spring Security rejections |
 | CC-0115 | API security middleware | P0 | NOT_STARTED | Depends on CC-0102, CC-0114 |
 | CC-0116 | Password policy + account lockout | P1 | 🔄 IN_PROGRESS | `LoginRateLimiterService` (Redis sliding window, 429, fail-open) + `RateLimitProperties` done; `POST /v1/auth/change-password` + `ChangePasswordPage` done (E43); full account lockout (N-strikes suspend) + password complexity rules pending |
-| CC-0117 | Session revocation strategy | P1 | NOT_STARTED | Redis token blacklist or JTI revocation |
+| CC-0117 | Session revocation strategy | P1 | ✅ COMPLETED | Per-user Redis Set tracks all refresh tokens; `POST /v1/auth/revoke-all` bulk-deletes them; "Sign out from all devices" on ChangePasswordPage (E81) |
 | CC-0118 | Security headers + CORS policy | P1 | ✅ COMPLETED | `SecurityHeadersFilter` (7 headers), `SecurityConfig` CORS with origin allowlist |
 
 ---

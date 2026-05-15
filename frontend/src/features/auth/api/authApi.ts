@@ -57,3 +57,7 @@ export async function changePasswordApi(
 ): Promise<void> {
   await axiosInstance.post('/v1/auth/change-password', { currentPassword, newPassword });
 }
+
+export async function revokeAllSessionsApi(): Promise<void> {
+  await axiosInstance.post('/v1/auth/revoke-all');
+}

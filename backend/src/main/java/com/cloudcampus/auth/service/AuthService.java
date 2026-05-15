@@ -62,4 +62,18 @@ public interface AuthService {
      * the current one.
      */
     void changePassword(java.util.UUID userId, String currentPassword, String newPassword);
+
+    /**
+     * Invalidate every active refresh token for the given user (CC-0117).
+     *
+     * Deletes all entries in the per-user Redis token index (cc:rt:user:{userId})
+     * and their corresponding rt:{uuid} keys. The current session's access token
+     * remains valid until its natural expiry (max 15 min).
+     *
+     * @param userId    the user whose sessions should be revoked
+     * @param tenantId  for audit logging
+     * @param clientIp  for audit logging
+     * @return number of refresh tokens invalidated
+     */
+    int revokeAllSessions(java.util.UUID userId, java.util.UUID tenantId, String clientIp);
 }

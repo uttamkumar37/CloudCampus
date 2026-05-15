@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -132,6 +133,34 @@ public class AuthController {
                 request.newPassword()
         );
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Revoke all active refresh tokens for the authenticated user (CC-0117).
+     *
+     * Signs the user out of every device simultaneously. The current access token
+     * remains valid until its natural 15-minute expiry — the client should discard
+     * it immediately and redirect to the login screen.
+     *
+     * On success: 204 No Content + revokedCount header.
+     */
+    @Operation(
+            summary = "Sign out from all devices",
+            description = "Invalidates all active refresh tokens for the current user. Use this to revoke access from lost or compromised devices."
+    )
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/revoke-all")
+    public ResponseEntity<Void> revokeAllSessions(HttpServletRequest httpRequest) {
+        String tenantIdStr = RequestContext.getTenantId();
+        UUID tenantId = tenantIdStr != null ? UUID.fromString(tenantIdStr) : null;
+        int revoked = authService.revokeAllSessions(
+                RequestContext.getUserId(),
+                tenantId,
+                extractClientIp(httpRequest)
+        );
+        return ResponseEntity.noContent()
+                .header("X-Revoked-Sessions", String.valueOf(revoked))
+                .build();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
