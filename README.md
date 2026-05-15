@@ -116,7 +116,7 @@ npx expo start
 
 | Profile | DB | When to use |
 |---------|----|-------------|
-| `dev` | H2 in-memory (PostgreSQL mode) | Local development |
+| `dev` | PostgreSQL (Docker Compose) | Local development |
 | `test` | Testcontainers PostgreSQL | CI / automated tests |
 | `staging` | PostgreSQL via env vars | Pre-production validation |
 | `prod` | PostgreSQL via env vars (SSL) | Live traffic |
@@ -143,7 +143,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 
 ## Feature Status
 
-> **As of 2026-05-14 (E76 complete) — ~132 of 193 tasks done (68%)**
+> **As of 2026-05-15 (E87 complete) — ~159 of 193 tasks done (82%)**
 
 ### Backend (Java / Spring Boot)
 
@@ -155,7 +155,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Change password (`POST /v1/auth/change-password`) | ✅ Done |
 | User management (CRUD + roles) | ✅ Done |
 | Tenant management (super-admin) | ✅ Done |
-| Flyway migrations V1–V39 | ✅ Done |
+| Flyway migrations V1–V42 | ✅ Done |
 | Security headers (7 OWASP) | ✅ Done |
 | Structured JSON logging (Logback) | ✅ Done |
 | Prometheus + Micrometer metrics | ✅ Done |
@@ -183,6 +183,9 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Query optimisation — 5 composite covering indexes (V39) | ✅ Done |
 | At-rest PII encryption — AES-256-GCM `@Convert` on Student/Staff phone, email, address (V40) | ✅ Done |
 | GDPR/PDPA data retention — nightly hard-purge of expired soft-deleted users (configurable window) | ✅ Done |
+| JNV Lucknow demo seed (V42) — 560 students, 23 staff, 7 classes, April 2026 data, 5 working logins | ✅ Done |
+| Redis `CacheConfig` fix — `NON_FINAL` Jackson typing prevents `@Cacheable` INTERNAL_ERROR on Java records | ✅ Done |
+| `TenantContextFilter` fix — JWT UUID no longer overwritten by raw header slug, fixing 40+ call sites | ✅ Done |
 
 ### Web Frontend (React / TypeScript)
 
@@ -233,23 +236,83 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 
 ---
 
+## Postman Collection
+
+A comprehensive Postman collection is provided in `docs/postman/`:
+
+| File | Description |
+|------|-------------|
+| `CloudCampus.postman_collection.json` | 8 folders, ~80 requests covering all roles |
+| `CloudCampus.local.postman_environment.json` | 73 pre-filled variables (JNV Lucknow UUIDs, tokens) |
+
+Login requests auto-save JWT tokens to environment variables. Import both files, run a login request, then execute any request in that role's folder.
+
+See [docs/LOGIN_CREDENTIALS.md](docs/LOGIN_CREDENTIALS.md) for all credentials and verified endpoint URLs.
+
+---
+
 ## API Reference
 
-Swagger UI is available at **`/swagger-ui.html`** in `dev` and `staging` profiles.
+Swagger UI is available at **`/swagger-ui.html`** in `dev` profile only.
 
 Base path: `/v1`
+
+### Auth
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `POST` | `/v1/auth/login` | Obtain access + refresh tokens |
 | `POST` | `/v1/auth/refresh` | Rotate refresh token |
 | `POST` | `/v1/auth/logout` | Revoke refresh token |
-| `GET` | `/v1/tenants` | List all tenants (super-admin) |
-| `POST` | `/v1/tenants` | Create tenant (super-admin) |
-| `GET` | `/v1/users` | List users in current tenant |
-| `POST` | `/v1/devices/register` | Register push notification token |
+| `POST` | `/v1/auth/change-password` | Change own password |
+| `POST` | `/v1/auth/forgot-password` | Send OTP reset email |
+| `POST` | `/v1/auth/reset-password` | Reset password with OTP |
+
+### School Admin
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/v1/school-admin/schools/{id}/dashboard` | Live dashboard stats |
+| `GET` | `/v1/school-admin/schools/{id}/academic-years` | List academic years |
+| `GET` | `/v1/school-admin/academic-years/{id}/classes` | List classes |
+| `GET` | `/v1/school-admin/classes/{id}/sections` | List sections |
+| `GET` | `/v1/school-admin/schools/{id}/students` | List students |
+| `GET` | `/v1/school-admin/schools/{id}/staff` | List staff |
+| `GET` | `/v1/school-admin/schools/{id}/attendance/sessions?date=` | Sessions on a date |
+| `GET` | `/v1/school-admin/classes/{id}/attendance/sessions?from=&to=` | Sessions date range |
+| `GET` | `/v1/school-admin/schools/{id}/timetable?academicYearId=&classId=&sectionId=` | Timetable (3 params required) |
+| `GET` | `/v1/school-admin/schools/{id}/exams` | List exams |
+| `GET` | `/v1/school-admin/schools/{id}/fee-structures` | List fee structures |
+| `GET` | `/v1/school-admin/schools/{id}/notices` | List notices |
+
+### Teacher / Student / Parent
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/v1/teacher/dashboard` | Teacher dashboard |
+| `GET` | `/v1/teacher/timetable` | Own timetable |
+| `GET` | `/v1/teacher/attendance/students?classId=&sectionId=` | Students for attendance |
+| `GET` | `/v1/student/fees` | Own fee records |
+| `GET` | `/v1/student/timetable` | Own timetable |
+| `GET` | `/v1/student/attendance?from=&to=` | Own attendance (date range required) |
+| `GET` | `/v1/parent/children` | Linked children list |
+| `GET` | `/v1/parent/children/{studentId}/attendance?from=&to=` | Child attendance |
+| `GET` | `/v1/parent/children/{studentId}/fees` | Child fee records |
+
+### Super Admin
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/v1/super-admin/tenants` | List all tenants |
+| `POST` | `/v1/super-admin/tenants` | Create tenant |
+| `GET` | `/v1/super-admin/analytics` | Platform-wide analytics |
+
+### Actuator
+
+| Method | Path | Description |
+|--------|------|-------------|
 | `GET` | `/actuator/health` | Health check |
-| `GET` | `/actuator/prometheus` | Prometheus metrics endpoint |
+| `GET` | `/actuator/prometheus` | Prometheus metrics |
 
 ---
 

@@ -1,29 +1,31 @@
-# CloudCampus — Login Credentials
+# CloudCampus — Login Credentials & Local Dev Guide
 
-> **Note:** This file is for local/dev reference only. Never commit real production passwords.
+> **Dev reference only.** Never commit real production secrets.
 
 ---
 
-## How to Start the Backend
+## Quick Start
 
 ```bash
-# Option 1 — Docker PostgreSQL + Redis (recommended)
-docker compose up -d postgres redis
-cd backend
-SPRING_PROFILES_ACTIVE=local \
-  BOOTSTRAP_ADMIN_PASSWORD=Admin@1234 \
-  JAVA_HOME=$(/usr/libexec/java_home -v 21) \
-  mvn spring-boot:run
+# 1. Start infrastructure (PostgreSQL, Redis, MinIO, MailHog, Prometheus, Grafana)
+docker compose up -d
 
-# Option 2 — H2 in-memory (no Docker needed, resets on restart)
+# 2. Run the backend (dev profile — PostgreSQL, Flyway auto-applies V1–V42)
 cd backend
-BOOTSTRAP_ADMIN_PASSWORD=Admin@1234 \
-  JAVA_HOME=$(/usr/libexec/java_home -v 21) \
-  mvn spring-boot:run
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+# 3. Run the web frontend
+cd frontend
+npm install && npm run dev        # http://localhost:5173
+
+# 4. (Optional) Run the mobile app
+cd mobile
+npm install --legacy-peer-deps
+npx expo start
 ```
 
-API base URL: `http://localhost:8080`
-Swagger UI: `http://localhost:8080/swagger-ui.html`
+> **First boot:** `superadmin` is bootstrapped automatically with `BOOTSTRAP_ADMIN_PASSWORD`.
+> The `dev` profile defaults to `Admin@123` via `application-dev.yml`.
 
 ---
 
@@ -32,143 +34,264 @@ Swagger UI: `http://localhost:8080/swagger-ui.html`
 ```
 POST /v1/auth/login
 Content-Type: application/json
-X-Tenant-Id: <tenantId>     ← omit for SUPER_ADMIN
+X-Tenant-Id: jnv-lucknow          ← omit for SUPER_ADMIN only
 
 {
-  "username": "...",
-  "password": "..."
+  "username": "<username>",
+  "password": "<password>"
 }
 ```
 
+Response includes `data.accessToken` and `data.refreshToken`.
+
 ---
 
-## Super Admin
+## Demo Tenant — JNV Lucknow (seeded via V42 migration)
 
-| Field    | Value        |
-|----------|--------------|
+Flyway migration **V42** seeds a complete demo school based on Jawahar Navodaya
+Vidyalaya Lucknow. All data is idempotent — safe to re-run.
+
+| Field | Value |
+|-------|-------|
+| Tenant slug | `jnv-lucknow` |
+| Tenant UUID | `aaaaaaaa-0000-0000-0000-000000000001` |
+| School name | Jawahar Navodaya Vidyalaya Lucknow |
+| School UUID | `bbbbbbbb-0000-0000-0000-000000000001` |
+| Academic year | 2025-26 (`cccccccc-0000-0000-0000-000000000001`) |
+| Classes | 6, 7, 8, 9, 10, 11, 12 (2 sections each: A & B) |
+| Students | 40 per section (27 boys + 13 girls) = **560 total** |
+| Staff | 23 (Principal, Vice-Principal, 20 teachers, 1 lab assistant) |
+| Demo data | April 2026 — attendance, fee records, notices, homework, exams |
+
+---
+
+## All Login Credentials
+
+All accounts use password: **`Admin@123`**
+
+### Super Admin
+
+| Field | Value |
+|-------|-------|
 | Username | `superadmin` |
-| Password | Set via `BOOTSTRAP_ADMIN_PASSWORD` env var at first boot (e.g. `Admin@1234`) |
-| Role     | `SUPER_ADMIN` |
-| Tenant   | None — platform-level account, **do NOT send `X-Tenant-Id` header** |
+| Password | `Admin@123` |
+| Role | `SUPER_ADMIN` |
+| Header | _Do NOT send `X-Tenant-Id`_ |
 
-> The super admin account is created once on first boot by `SuperAdminBootstrap`. If the user already exists, the bootstrap is a no-op.
+### School Admin
 
----
+| Field | Value |
+|-------|-------|
+| Username | `schooladmin` |
+| Password | `Admin@123` |
+| Role | `SCHOOL_ADMIN` |
+| Header | `X-Tenant-Id: jnv-lucknow` |
 
-## Demo Tenant & School (seeded via onboarding API)
+### Teacher
 
-These are created by calling the tenant onboarding API, not pre-seeded in migrations.
+| Field | Value |
+|-------|-------|
+| Username | `teacher1` |
+| Password | `Admin@123` |
+| Role | `TEACHER` |
+| Header | `X-Tenant-Id: jnv-lucknow` |
+| Staff ID | `00000000-2222-2222-2222-000000000001` |
 
-### Create tenant + school (run once)
+### Student
 
-```bash
-POST /v1/super-admin/tenants
-Authorization: Bearer <superadmin_access_token>
+| Field | Value |
+|-------|-------|
+| Username | `student1` |
+| Password | `Admin@123` |
+| Role | `STUDENT` |
+| Header | `X-Tenant-Id: jnv-lucknow` |
+| Student ID | `77777777-0000-0000-0000-000000000001` (Class 10-A) |
 
-{
-  "name": "Demo School District",
-  "code": "DEMO",
-  "contactEmail": "admin@demo.cloudcampus.io",
-  "planType": "PROFESSIONAL"
-}
-```
+### Parent
 
-The response returns `tenantId` and `schoolId`. Use these in all subsequent requests.
-
----
-
-## Tenant Admin
-
-| Field    | Value |
-|----------|-------|
-| Username | Created via `POST /v1/admin/users` after tenant is set up |
-| Password | Set at creation time |
-| Role     | `TENANT_ADMIN` |
-| Header   | `X-Tenant-Id: <tenantId>` |
-
----
-
-## School Admin
-
-| Field    | Value |
-|----------|-------|
-| Username | Created via `POST /v1/admin/users` |
-| Password | Set at creation time |
-| Role     | `SCHOOL_ADMIN` |
-| Header   | `X-Tenant-Id: <tenantId>` |
+| Field | Value |
+|-------|-------|
+| Username | `parent1` |
+| Password | `Admin@123` |
+| Role | `PARENT` |
+| Header | `X-Tenant-Id: jnv-lucknow` |
+| Linked child | `student1` (student ID `77777777-0000-0000-0000-000000000001`) |
 
 ---
 
-## Teacher
+## Postman Collection
 
-| Field    | Value |
-|----------|-------|
-| Username | Created via `POST /v1/admin/users` |
-| Password | Set at creation time |
-| Role     | `TEACHER` |
-| Header   | `X-Tenant-Id: <tenantId>` |
+Import both files from `docs/postman/` into Postman:
 
----
+| File | Purpose |
+|------|---------|
+| `CloudCampus.postman_collection.json` | All API requests (8 folders, ~80 requests) |
+| `CloudCampus.local.postman_environment.json` | 73 variables — all JNV UUIDs pre-filled |
 
-## Student
+**Login requests auto-save tokens** via test scripts:
+- `superadmin` login → saves `{{superToken}}` and `{{authToken}}`
+- `schooladmin` login → saves `{{schoolAdminToken}}` and `{{authToken}}`
+- `teacher1` login → saves `{{teacherToken}}` and `{{authToken}}`
+- `student1` login → saves `{{studentToken}}` and `{{authToken}}`
+- `parent1` login → saves `{{parentToken}}` and `{{authToken}}`
 
-| Field    | Value |
-|----------|-------|
-| Username | Created via `POST /v1/admin/users` |
-| Password | Set at creation time |
-| Role     | `STUDENT` |
-| Header   | `X-Tenant-Id: <tenantId>` |
-
----
-
-## Parent
-
-| Field    | Value |
-|----------|-------|
-| Username | Created via `POST /v1/admin/users` |
-| Password | Set at creation time |
-| Role     | `PARENT` |
-| Header   | `X-Tenant-Id: <tenantId>` |
+Run the relevant login request first, then all other requests in that folder
+will use the correct token automatically.
 
 ---
 
-## Database (Local/Docker)
+## Key UUIDs (JNV Lucknow)
 
-| Field    | Value |
-|----------|-------|
-| Host     | `localhost:5432` |
+| Resource | Name | UUID |
+|----------|------|------|
+| Tenant | jnv-lucknow | `aaaaaaaa-0000-0000-0000-000000000001` |
+| School | JNV Lucknow | `bbbbbbbb-0000-0000-0000-000000000001` |
+| Academic Year | 2025-26 | `cccccccc-0000-0000-0000-000000000001` |
+| Class 6 | Class VI | `aa060000-0000-0000-0000-000000000001` |
+| Class 7 | Class VII | `aa070000-0000-0000-0000-000000000001` |
+| Class 8 | Class VIII | `aa080000-0000-0000-0000-000000000001` |
+| Class 9 | Class IX | `aa090000-0000-0000-0000-000000000001` |
+| Class 10 | Class X | `aa100000-0000-0000-0000-000000000001` |
+| Class 11 | Class XI | `aa110000-0000-0000-0000-000000000001` |
+| Class 12 | Class XII | `aa120000-0000-0000-0000-000000000001` |
+| Section 6-A | Class VI Section A | `ab060000-0000-0000-0000-000000000001` |
+| Section 6-B | Class VI Section B | `ab060000-0000-0000-0000-000000000002` |
+| Section 10-A | Class X Section A | `ab100000-0000-0000-0000-000000000001` |
+| Section 12-A | Class XII Section A | `ab120000-0000-0000-0000-000000000001` |
+| Staff (teacher1) | Demo Teacher | `00000000-2222-2222-2222-000000000001` |
+| Student (student1) | Demo Student (10-A) | `77777777-0000-0000-0000-000000000001` |
+
+---
+
+## Verified Endpoint Summary
+
+All endpoints below are smoke-tested and confirmed working after the latest fixes.
+
+### School Admin (`X-Tenant-Id: jnv-lucknow`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/v1/school-admin/schools/{schoolId}/dashboard` | Live stats |
+| `GET` | `/v1/school-admin/schools/{schoolId}/settings` | School config |
+| `GET` | `/v1/school-admin/schools/{schoolId}/academic-years` | Returns 1 |
+| `GET` | `/v1/school-admin/academic-years/{academicYearId}/classes` | Returns 7 |
+| `GET` | `/v1/school-admin/classes/{classId}/sections` | Returns 2 |
+| `GET` | `/v1/school-admin/schools/{schoolId}/subjects` | Returns 11 |
+| `GET` | `/v1/school-admin/schools/{schoolId}/departments` | Returns 6 |
+| `GET` | `/v1/school-admin/schools/{schoolId}/staff` | Returns 23 |
+| `GET` | `/v1/school-admin/schools/{schoolId}/students` | Returns 561 |
+| `GET` | `/v1/school-admin/schools/{schoolId}/notices` | Returns 9 |
+| `GET` | `/v1/school-admin/schools/{schoolId}/exams` | Returns 4 |
+| `GET` | `/v1/school-admin/schools/{schoolId}/fee-structures` | Returns 14 |
+| `GET` | `/v1/school-admin/schools/{schoolId}/attendance/sessions?date=2026-04-07` | 14 sessions |
+| `GET` | `/v1/school-admin/classes/{classId}/attendance/sessions?from=...&to=...` | 50 sessions |
+| `GET` | `/v1/school-admin/classes/{classId}/attendance/report?from=...&to=...` | 80 entries |
+| `GET` | `/v1/school-admin/schools/{schoolId}/timetable?academicYearId=...&classId=...&sectionId=...` | 3 params required |
+
+### Teacher (`X-Tenant-Id: jnv-lucknow`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/v1/teacher/dashboard` | Teacher stats |
+| `GET` | `/v1/teacher/timetable` | 12 slots |
+| `GET` | `/v1/teacher/attendance/students?classId=...&sectionId=...` | Students for marking |
+| `GET` | `/v1/teacher/homework` | Homework list |
+| `GET` | `/v1/teacher/assignments` | Assignment list |
+| `GET` | `/v1/teacher/leave` | Leave requests |
+
+### Student (`X-Tenant-Id: jnv-lucknow`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/v1/student/fees` | Fee records |
+| `GET` | `/v1/student/timetable` | 36 slots |
+| `GET` | `/v1/student/attendance?from=...&to=...` | Date range required |
+| `GET` | `/v1/student/homework` | Homework |
+| `GET` | `/v1/student/results` | Exam results |
+
+### Parent (`X-Tenant-Id: jnv-lucknow`)
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/v1/parent/children` | Linked children |
+| `GET` | `/v1/parent/children/{studentId}/attendance?from=...&to=...` | Use student UUID, not user UUID |
+| `GET` | `/v1/parent/children/{studentId}/fees` | Fee records |
+| `GET` | `/v1/parent/children/{studentId}/timetable` | Timetable |
+| `GET` | `/v1/parent/children/{studentId}/results` | Results |
+| `GET` | `/v1/parent/children/{studentId}/homework` | Homework |
+
+> **Important:** Parent child endpoints use the **student record ID** (e.g. `77777777-0000-0000-0000-000000000001`),
+> not the user ID (`00000000-4444-4444-4444-000000000001`).
+
+---
+
+## Infrastructure (Local/Docker)
+
+### PostgreSQL
+
+| Field | Value |
+|-------|-------|
+| Host | `localhost:5432` |
 | Database | `cloudcampus` |
 | Username | `cloudcampus` |
 | Password | `cloudcampus_dev` |
 
----
+```bash
+PGPASSWORD=cloudcampus_dev psql -U cloudcampus -d cloudcampus -h localhost
+```
 
-## Redis (Local/Docker)
-
-| Field | Value |
-|-------|-------|
-| Host  | `localhost:6379` |
-| Auth  | None (dev only) |
-
----
-
-## Frontend
+### Redis
 
 | Field | Value |
 |-------|-------|
-| Dev server | `http://localhost:5174` (run `npm run dev` in `frontend/`) |
-| Build | `npm run build` |
+| Host | `localhost:6379` |
+| Auth | None (dev only) |
+
+```bash
+# Flush all caches (useful after config changes)
+redis-cli FLUSHALL
+```
+
+> **Cache note:** After a backend restart that changes `CacheConfig`, always run
+> `redis-cli FLUSHALL` before testing `@Cacheable` endpoints to avoid stale
+> serialization errors from the old format.
+
+---
+
+## Local Service URLs
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| Backend API | http://localhost:8080 | — |
+| Swagger UI | http://localhost:8080/swagger-ui.html | dev profile only |
+| Frontend | http://localhost:5173 | — |
+| MailHog | http://localhost:8025 | — |
+| MinIO | http://localhost:9001 | minioadmin / minioadmin |
+| Prometheus | http://localhost:9090 | — |
+| Grafana | http://localhost:3100 | admin / admin |
 
 ---
 
 ## Environment Variables Reference
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `BOOTSTRAP_ADMIN_USERNAME` | `superadmin` | Super admin username (set once at first boot) |
-| `BOOTSTRAP_ADMIN_PASSWORD` | *(empty — bootstrap skipped)* | Super admin password — must be set on first run |
-| `JWT_SECRET` | `changeme-dev-secret-minimum-32-chars!!` | JWT signing secret — change in production |
-| `SPRING_PROFILES_ACTIVE` | `dev` | Use `local` for Docker Postgres, `dev` for H2 |
-| `DATABASE_URL` | *(set in profile yml)* | PostgreSQL JDBC URL |
-| `MAIL_HOST` / `MAIL_PORT` | `localhost:1025` (MailHog in dev) | SMTP server |
+| Variable | Default (dev) | Description |
+|----------|---------------|-------------|
+| `BOOTSTRAP_ADMIN_USERNAME` | `superadmin` | Super admin username |
+| `BOOTSTRAP_ADMIN_PASSWORD` | `Admin@123` | Set at first boot; empty = skip bootstrap |
+| `JWT_SECRET` | `changeme-dev-secret-minimum-32-chars!!` | Change in production |
+| `ENCRYPTION_SECRET` | `dev-encryption-key-must-be-at-least-32ch` | AES-256-GCM key for PII fields |
+| `DATABASE_URL` | set in `application-dev.yml` | PostgreSQL JDBC URL |
+| `REDIS_HOST` / `REDIS_PORT` | `localhost` / `6379` | Redis connection |
+| `MAIL_HOST` / `MAIL_PORT` | `localhost` / `1025` (MailHog) | SMTP server |
 | `APP_FIREBASE_ENABLED` | `false` | Enable Firebase push notifications |
+
+---
+
+## Known Dev Behaviour
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Actuator `/health` shows `DOWN` | RabbitMQ not running in dev | Ignore — app works; start RabbitMQ Docker if needed |
+| `@Cacheable` endpoints fail after restart | Stale Redis data with old serializer format | Run `redis-cli FLUSHALL` then retry |
+| Parent child endpoints return "not linked" | Using user ID instead of student ID | Use student record UUID (e.g. `77777777-...`) |
+| Timetable returns empty | No timetable slots seeded in V42 | Create slots via `POST /v1/school-admin/schools/{id}/timetable` |
