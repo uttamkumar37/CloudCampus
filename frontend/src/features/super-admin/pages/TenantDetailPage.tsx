@@ -75,9 +75,30 @@ export function TenantDetailPage() {
   const suspendMutation  = useMutation({ mutationFn: () => suspendTenant(id!),  onSuccess: invalidateTenant });
   const activateMutation = useMutation({ mutationFn: () => activateTenant(id!), onSuccess: invalidateTenant });
 
-  const invalidateFeatures = () => queryClient.invalidateQueries({ queryKey: ['tenant-features', id] });
-  const enableMutation  = useMutation({ mutationFn: (key: string) => enableFeature(id!, key),  onSuccess: invalidateFeatures });
-  const disableMutation = useMutation({ mutationFn: (key: string) => disableFeature(id!, key), onSuccess: invalidateFeatures });
+  const [featureError, setFeatureError] = useState<string | null>(null);
+
+  const invalidateFeatures = () => {
+    queryClient.invalidateQueries({ queryKey: ['tenant-features', id] });
+    setFeatureError(null);
+  };
+  const enableMutation  = useMutation({
+    mutationFn: (key: string) => enableFeature(id!, key),
+    onSuccess: invalidateFeatures,
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { error?: { message?: string } } } })
+        ?.response?.data?.error?.message ?? 'Failed to enable feature';
+      setFeatureError(msg);
+    },
+  });
+  const disableMutation = useMutation({
+    mutationFn: (key: string) => disableFeature(id!, key),
+    onSuccess: invalidateFeatures,
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { error?: { message?: string } } } })
+        ?.response?.data?.error?.message ?? 'Failed to disable feature';
+      setFeatureError(msg);
+    },
+  });
 
   if (isLoading) return <div className="p-6 text-sm text-gray-500">Loading…</div>;
   if (!tenant)   return <div className="p-6 text-sm text-red-600">Tenant not found.</div>;
@@ -200,9 +221,24 @@ export function TenantDetailPage() {
         <div className="border-b border-gray-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-gray-700">Feature Flags</h2>
           <p className="mt-0.5 text-xs text-gray-400">
-            CORE features are always enabled and cannot be toggled.
+            CORE features are always enabled and cannot be toggled. Enabling a feature
+            auto-enables its dependencies.
           </p>
         </div>
+
+        {featureError && (
+          <div className="mx-4 mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            {featureError}
+            <button
+              type="button"
+              className="ml-2 font-semibold underline"
+              onClick={() => setFeatureError(null)}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         <div className="divide-y divide-gray-50">
           {allFeatures.map((feature) => {
             const tf        = featureMap.get(feature.key);
@@ -221,6 +257,16 @@ export function TenantDetailPage() {
                   {feature.description && (
                     <p className="mt-0.5 truncate text-xs text-gray-400">{feature.description}</p>
                   )}
+                  {feature.dependencies.length > 0 && (
+                    <p className="mt-0.5 text-xs text-amber-600">
+                      Requires:{' '}
+                      {feature.dependencies.map((dep) => (
+                        <span key={dep} className="mr-1 rounded bg-amber-50 px-1 font-mono">
+                          {dep}
+                        </span>
+                      ))}
+                    </p>
+                  )}
                 </div>
 
                 {/* Toggle switch */}
@@ -231,6 +277,7 @@ export function TenantDetailPage() {
                   disabled={isCore || isTogglingBusy}
                   onClick={() => {
                     if (isCore) return;
+                    setFeatureError(null);
                     if (isEnabled) disableMutation.mutate(feature.key);
                     else           enableMutation.mutate(feature.key);
                   }}

@@ -1,5 +1,6 @@
 package com.cloudcampus.feature.service;
 
+import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.feature.entity.Feature;
 import com.cloudcampus.feature.entity.FeatureType;
 import com.cloudcampus.feature.entity.TenantFeature;
@@ -90,6 +91,16 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     @Transactional
     public void enable(UUID tenantId, String featureKey) {
         validateFeatureKey(featureKey);
+
+        // Auto-enable required dependencies (skip CORE — they are always on).
+        for (String dep : FeatureDependencies.getRequired(featureKey)) {
+            Feature depFeature = featureRepository.findById(dep).orElse(null);
+            if (depFeature != null && depFeature.getType() != FeatureType.CORE) {
+                upsertEnabled(tenantId, dep, true);
+                log.info("Feature auto-enabled (dependency): tenantId={}, feature={}", tenantId, dep);
+            }
+        }
+
         upsertEnabled(tenantId, featureKey, true);
         invalidateCache(tenantId);
         log.info("Feature enabled: tenantId={}, feature={}", tenantId, featureKey);
@@ -103,6 +114,16 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
 
         if (feature.getType() == FeatureType.CORE) {
             throw new IllegalArgumentException("CORE feature '" + featureKey + "' cannot be disabled");
+        }
+
+        // Block if any currently-enabled feature depends on this one.
+        List<String> blockers = FeatureDependencies.getDependents(featureKey).stream()
+                .filter(dep -> isEnabledInDb(tenantId, dep))
+                .toList();
+        if (!blockers.isEmpty()) {
+            throw new BadRequestException(
+                    "Cannot disable '" + featureKey + "' — required by: " +
+                    String.join(", ", blockers) + ". Disable those features first.");
         }
 
         upsertEnabled(tenantId, featureKey, false);
@@ -155,5 +176,11 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
         if (!featureRepository.existsById(featureKey)) {
             throw new IllegalArgumentException("Unknown feature: " + featureKey);
         }
+    }
+
+    private boolean isEnabledInDb(UUID tenantId, String featureKey) {
+        return tenantFeatureRepository.findById(new TenantFeatureId(tenantId, featureKey))
+                .map(TenantFeature::isEnabled)
+                .orElse(false);
     }
 }
