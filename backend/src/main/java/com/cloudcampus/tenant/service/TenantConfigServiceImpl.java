@@ -23,6 +23,10 @@ public class TenantConfigServiceImpl implements TenantConfigService {
             Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
     private static final Pattern LANGUAGE_RE =
             Pattern.compile("^[a-z]{2}$");
+    private static final Pattern HEX_COLOR_RE =
+            Pattern.compile("^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$");
+    private static final Pattern URL_RE =
+            Pattern.compile("^https?://[^\\s]{1,2000}$");
 
     private final TenantConfigRepository configRepository;
     private final TenantRepository       tenantRepository;
@@ -102,6 +106,16 @@ public class TenantConfigServiceImpl implements TenantConfigService {
             case DEFAULT_LANGUAGE -> {
                 if (!LANGUAGE_RE.matcher(value.trim()).matches()) {
                     throw new BadRequestException("DEFAULT_LANGUAGE must be a 2-letter ISO 639-1 code (e.g. en, hi)");
+                }
+            }
+            case LOGO_URL, FAVICON_URL -> {
+                if (!value.isBlank() && !URL_RE.matcher(value.trim()).matches()) {
+                    throw new BadRequestException(key.name() + " must be a valid HTTP/HTTPS URL or empty");
+                }
+            }
+            case PRIMARY_COLOR, SECONDARY_COLOR -> {
+                if (!HEX_COLOR_RE.matcher(value.trim()).matches()) {
+                    throw new BadRequestException(key.name() + " must be a CSS hex colour (e.g. #2563EB or #26B)");
                 }
             }
         }

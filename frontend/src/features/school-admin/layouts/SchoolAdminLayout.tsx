@@ -1,6 +1,7 @@
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useFeatureFlag } from '@/shared/hooks/useFeatureFlag';
+import { useBranding } from '@/shared/hooks/useBranding';
 
 // ── Nav item definition ───────────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ export function SchoolAdminLayout() {
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
+  const branding = useBranding();
 
   function handleLogout() {
     clearAuth();
@@ -79,7 +81,15 @@ export function SchoolAdminLayout() {
       <aside className="flex w-56 flex-col border-r border-gray-200 bg-white">
         {/* Brand */}
         <div className="flex h-14 items-center border-b border-gray-100 px-4">
-          <span className="text-base font-bold text-blue-700">CloudCampus</span>
+          {branding?.logoUrl ? (
+            <img
+              src={branding.logoUrl}
+              alt="School logo"
+              className="h-8 max-w-[140px] object-contain"
+            />
+          ) : (
+            <span className="text-base font-bold text-blue-700">CloudCampus</span>
+          )}
         </div>
 
         {/* Nav */}

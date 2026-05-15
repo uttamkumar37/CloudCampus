@@ -35,6 +35,25 @@ public enum TenantConfigKey {
     DEFAULT_LANGUAGE(
             "en",
             "Default UI language code (ISO 639-1, e.g. en, hi, ta)"
+    ),
+
+    // ── Branding (CC-0206) ────────────────────────────────────────────────────
+
+    LOGO_URL(
+            "",
+            "URL of the tenant logo image (HTTPS recommended, max 2 MB, shown in portal sidebar)"
+    ),
+    FAVICON_URL(
+            "",
+            "URL of the browser favicon for this tenant's portal (ICO or PNG, 32×32 recommended)"
+    ),
+    PRIMARY_COLOR(
+            "#2563EB",
+            "Primary brand colour as a CSS hex value (e.g. #2563EB)"
+    ),
+    SECONDARY_COLOR(
+            "#1e40af",
+            "Secondary brand colour as a CSS hex value (e.g. #1e40af)"
     );
 
     private final String defaultValue;

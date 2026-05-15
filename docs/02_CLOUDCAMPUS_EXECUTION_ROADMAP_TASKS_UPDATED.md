@@ -4,14 +4,27 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E84 Feature Dependency Engine)
+## Progress Summary (as of 2026-05-15 — E85 Tenant Branding Engine)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~156 (81%) |
+| **Completed** | ~157 (81%) |
 | **In Progress** | 1 |
-| **Not Started** | ~36 |
+| **Not Started** | ~35 |
+
+### E85 Completions — Tenant Branding Engine (CC-0206) (2026-05-15)
+
+| Task | What was built |
+|------|---------------|
+| `TenantConfigKey` branding keys ✅ | 4 new keys: `LOGO_URL` (default `""`), `FAVICON_URL` (default `""`), `PRIMARY_COLOR` (default `#2563EB`), `SECONDARY_COLOR` (default `#1e40af`) |
+| Validation in `TenantConfigServiceImpl` ✅ | `HEX_COLOR_RE` (`^#([0-9A-Fa-f]{3}\|[0-9A-Fa-f]{6})$`) for colors; `URL_RE` (`^https?://...`) for URL fields — empty string allowed for optional URLs |
+| `BrandingResponse` DTO ✅ | Record with `logoUrl`, `faviconUrl`, `primaryColor`, `secondaryColor` |
+| `BrandingController` ✅ | `GET /v1/public/branding` — no auth required; reads `X-Tenant-Id` header directly (TenantContextFilter skips `/v1/public`); falls back to defaults on absent/unknown tenant; overlays stored overrides from `TenantConfigRepository` |
+| `brandingApi.ts` ✅ | `getBrandingApi(tenantId)` — plain axios GET to `/v1/public/branding` with `X-Tenant-Id` header |
+| `useBranding` hook ✅ | `useQuery` with 10-min staleTime; applies `--brand-primary` / `--brand-secondary` CSS custom properties on `<html>`; swaps `<link rel="icon">` when faviconUrl is set; returns `BrandingResponse \| null` |
+| `SchoolAdminLayout` ✅ | Calls `useBranding()`; sidebar header shows `<img>` when `branding.logoUrl` is set, otherwise falls back to "CloudCampus" text |
+| Frontend build ✅ | 327 modules, 0 errors |
 
 ### E84 Completions — Feature Dependency Engine (CC-0307) (2026-05-15)
 
@@ -654,7 +667,7 @@ Notes/Risks:
 | CC-0203 | Tenant-aware database filters | P0 | ✅ COMPLETED | `TenantFilter` constants + `TenantFilterAspect` (`@Before` AOP); `@Filter`+`@FilterDef(UUID)` on `User`, `School`, `AuditLog`; `@FilterDef` declared once on `User` (Hibernate 6 constraint) |
 | CC-0204 | Tenant onboarding flow | P0 | 🔄 IN_PROGRESS | `SuperAdminTenantController` + `TenantServiceImpl` done; full onboarding wizard + validation pending |
 | CC-0205 | Tenant suspension system | P1 | 🔄 IN_PROGRESS | `TenantSuspensionFilter` (Redis-cached, fail-open) + `TenantSuspendedException` enforced; suspension API (PATCH /tenants/{id}/suspend) + admin UI pending |
-| CC-0206 | Tenant branding engine | P1 | NOT_STARTED | — |
+| CC-0206 | Tenant branding engine | P1 | ✅ COMPLETED | 4 TenantConfigKey branding entries; hex/URL validation; `GET /v1/public/branding` (no auth); `useBranding` hook applies CSS vars + favicon; SchoolAdminLayout shows tenant logo (E85) |
 | CC-0207 | Tenant configuration engine | P0 | ✅ COMPLETED | `TenantConfig` entity + `TenantConfigKey` enum (6 keys with defaults); `GET`/`PUT` config endpoints; inline-editable config section on `TenantDetailPage` (E82) |
 | CC-0208 | Tenant theme management | P2 | NOT_STARTED | — |
 | CC-0209 | Tenant feature mapping | P0 | 🔄 IN_PROGRESS | `tenant_features` table (V3) + 13 seed features done; feature toggle API + service layer pending |
