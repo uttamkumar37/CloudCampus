@@ -4,14 +4,28 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E85 Tenant Branding Engine)
+## Progress Summary (as of 2026-05-15 — E86 Tenant Analytics Dashboard)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~157 (81%) |
+| **Completed** | ~158 (82%) |
 | **In Progress** | 1 |
-| **Not Started** | ~35 |
+| **Not Started** | ~34 |
+
+### E86 Completions — Tenant Analytics Dashboard (CC-0309) (2026-05-15)
+
+| Task | What was built |
+|------|---------------|
+| Native analytics queries ✅ | `StudentRepository`: `countActiveGlobal()` + `countActiveGroupedByTenant()`; `StaffRepository`: same pattern; `SchoolRepository`: same; `StudentFeeRecordRepository`: `sumAmountDueGlobal()`, `sumAmountPaidGlobal()`, `sumAmountsGroupedByTenant()` — all `nativeQuery=true` to bypass Hibernate tenant filter |
+| `PlatformAnalyticsResponse` DTO ✅ | Global totals: `totalTenants`, `activeTenants`, `totalStudents`, `totalStaff`, `totalSchools`, `totalFeeDue`, `totalFeePaid`, `feeCollectionRate` + embedded `List<TenantAnalyticsSummary>` |
+| `TenantAnalyticsSummary` DTO ✅ | Per-tenant row: id, name, code, status, activeStudents, activeStaff, activeSchools, totalFeeDue, totalFeePaid, feeCollectionRate |
+| `AnalyticsServiceImpl` ✅ | Loads native group-by results into `Map<UUID, Long>` / `Map<UUID, BigDecimal[]>`; iterates all tenants; computes per-tenant metrics; sorts by `activeStudents DESC` |
+| `GET /v1/super-admin/analytics` ✅ | `AnalyticsController` — `@PreAuthorize("hasRole('SUPER_ADMIN')")`, `@RateLimit`; returns full platform snapshot in one call |
+| `analyticsApi.ts` ✅ | `getPlatformAnalytics()` via authenticated axiosInstance |
+| `TenantAnalyticsPage.tsx` ✅ | 6-card summary strip (tenants, students, staff, schools, fee due, collection %); sortable per-tenant table with status badges + color-coded collection rate badges (green ≥80%, amber ≥50%, red <50%) |
+| Router + nav ✅ | `/super-admin/analytics` route wired; "Analytics" nav item added to `SuperAdminLayout` between Tenants and Comparison |
+| Frontend build ✅ | 329 modules, 0 errors |
 
 ### E85 Completions — Tenant Branding Engine (CC-0206) (2026-05-15)
 
@@ -691,7 +705,7 @@ Notes/Risks:
 | CC-0306 | Feature catalog engine | P0 | ✅ COMPLETED | `FeatureAdminController` + `features` table; CORE/OPTIONAL/PREMIUM/BETA types seeded in V3 migration (reconciled E82) |
 | CC-0307 | Feature dependency engine | P0 | ✅ COMPLETED | `FeatureDependencies` static graph; cascade-enable deps on toggle-on; blocker check on toggle-off; `dependencies[]` in `FeatureResponse`; "Requires:" chips + error banner in frontend (E84) |
 | CC-0308 | Subscription management UI | P1 | NOT_STARTED | — |
-| CC-0309 | Tenant analytics dashboard | P1 | NOT_STARTED | — |
+| CC-0309 | Tenant analytics dashboard | P1 | ✅ COMPLETED | Native cross-tenant queries; `AnalyticsService`; `GET /v1/super-admin/analytics`; `TenantAnalyticsPage` with 6-card summary strip + per-tenant table (E86) |
 | CC-0310 | Global monitoring dashboard | P2 | NOT_STARTED | — |
 | CC-0311 | Tenant merge/migration admin tool | P2 | NOT_STARTED | — |
 | CC-0312 | Usage metering + limit enforcement | P1 | ✅ COMPLETED | `UsageLimitEnforcer` gates `admit()` + `create()` against `MAX_STUDENTS_PER_SCHOOL` / `MAX_STAFF_PER_SCHOOL`; 422 `UsageLimitExceededException`; `SchoolRepository.countByTenantIdAndStatus` for `MAX_SCHOOLS` (E83) |

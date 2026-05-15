@@ -27,4 +27,12 @@ public interface SchoolRepository extends JpaRepository<School, UUID> {
      */
     @Query("SELECT s FROM School s WHERE s.id = :id")
     Optional<School> findByIdFiltered(@Param("id") UUID id);
+
+    // ── Super Admin analytics (native — bypasses tenant filter) ───────────────
+
+    @Query(value = "SELECT COUNT(*) FROM schools WHERE status = 'ACTIVE'", nativeQuery = true)
+    long countActiveGlobal();
+
+    @Query(value = "SELECT tenant_id::text, COUNT(*) FROM schools WHERE status = 'ACTIVE' GROUP BY tenant_id", nativeQuery = true)
+    List<Object[]> countActiveGroupedByTenant();
 }
