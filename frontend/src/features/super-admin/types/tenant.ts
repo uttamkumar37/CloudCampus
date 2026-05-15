@@ -58,3 +58,13 @@ export interface ComparisonResponse {
   totalSchools: number;
   schools: SchoolComparisonRow[];
 }
+
+export interface TenantConfigEntry {
+  value: string;
+  defaultValue: string;
+  description: string;
+}
+
+export interface TenantConfigResponse {
+  config: Record<string, TenantConfigEntry>;
+}

@@ -4,9 +4,13 @@ import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.common.web.Pagination;
+import com.cloudcampus.tenant.dto.ConfigValueRequest;
 import com.cloudcampus.tenant.dto.SuperAdminStatsResponse;
+import com.cloudcampus.tenant.dto.TenantConfigResponse;
 import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.TenantResponse;
+import com.cloudcampus.tenant.entity.TenantConfigKey;
+import com.cloudcampus.tenant.service.TenantConfigService;
 import com.cloudcampus.tenant.service.TenantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,10 +36,13 @@ import java.util.UUID;
 @Validated
 @Tag(name = "Super Admin — Tenants", description = "Tenant lifecycle management (Super Admin only)")
 public class SuperAdminTenantController {
-    private final TenantService tenantService;
+    private final TenantService       tenantService;
+    private final TenantConfigService configService;
 
-    public SuperAdminTenantController(TenantService tenantService) {
+    public SuperAdminTenantController(TenantService tenantService,
+                                      TenantConfigService configService) {
         this.tenantService = tenantService;
+        this.configService = configService;
     }
 
     @Operation(summary = "Create tenant", description = "Provision a new tenant. Auto-creates the default MAIN school.")
@@ -74,6 +82,22 @@ public class SuperAdminTenantController {
     @PatchMapping("/{id}/activate")
     public ApiResponse<TenantResponse> activate(@PathVariable UUID id) {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), tenantService.activate(id));
+    }
+
+    @Operation(summary = "Get tenant config", description = "Returns all configuration keys with their current values (or defaults if not set).")
+    @GetMapping("/{id}/config")
+    public ApiResponse<TenantConfigResponse> getConfig(@PathVariable UUID id) {
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), configService.getAll(id));
+    }
+
+    @Operation(summary = "Set tenant config value", description = "Upserts a single configuration key for the tenant. Value is validated per key rules.")
+    @PutMapping("/{id}/config/{key}")
+    public ApiResponse<TenantConfigResponse> setConfig(
+            @PathVariable UUID id,
+            @PathVariable TenantConfigKey key,
+            @Valid @RequestBody ConfigValueRequest request
+    ) {
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), configService.set(id, key, request.value()));
     }
 }
 
