@@ -4,14 +4,27 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E86 Tenant Analytics Dashboard)
+## Progress Summary (as of 2026-05-15 — E87 Demo Seed + Bug Fixes)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~158 (82%) |
-| **In Progress** | 1 |
+| **Completed** | ~159 (82%) |
+| **In Progress** | 0 |
 | **Not Started** | ~34 |
+
+### E87 Completions — JNV Demo Seed + Systemic Bug Fixes (2026-05-15)
+
+| Task | What was built |
+|------|---------------|
+| V42 JNV Lucknow seed migration ✅ | Flyway `V42__jnv_lucknow_seed.sql` — idempotent `ON CONFLICT DO NOTHING` inserts: tenant `jnv-lucknow`, school JNV Lucknow, 7 classes (VI–XII), 14 sections (A/B each), 560 students (27 boys + 13 girls per section), 23 staff (principal, vice-principal, 20 teachers, 1 lab assistant), April 2026 attendance sessions (14/day × 30 days), fee records, 9 notices, 4 exams, 11 subjects, 6 departments, 5 user accounts (superadmin/schooladmin/teacher1/student1/parent1 — all `Admin@123`) |
+| `TenantContextFilter` root-cause fix ✅ | `TenantContextFilter` ran after `JwtAuthenticationFilter` in the Spring filter chain and overwrote the JWT-derived tenant UUID with the raw `X-Tenant-Id` header slug (`jnv-lucknow`). Downstream code doing `UUID.fromString(RequestContext.getTenantId())` threw `IllegalArgumentException` in 40+ call sites across controllers and services. Fix: only set from header if `RequestContext.getTenantId()` is not already populated by the JWT filter |
+| `CacheConfig` serializer fix ✅ | Default `GenericJackson2JsonRedisSerializer()` uses `EVERYTHING` Jackson default typing, conflicting with Java records containing `Instant` fields (from `jackson-datatype-jsr310`). All `@Cacheable` endpoints returned `INTERNAL_ERROR`. Fix: inject Spring `ObjectMapper`, copy with `NON_FINAL` typing and explicit `PolymorphicTypeValidator` allowing `com.cloudcampus.*`, `java.util.*`, `java.time.*` subtypes |
+| `SchoolDashboardController` fix ✅ | `validateSchool()` called `UUID.fromString(RequestContext.getTenantId())` directly then did `findByTenantIdAndCode(tenantId, "MAIN")`. After TenantContextFilter fix this UUID parse would work, but the approach is fragile. Simplified to `findById(schoolId).orElseThrow(NotFoundException)` |
+| Postman collection rebuild ✅ | Replaced sparse 2-folder collection with 8-folder comprehensive collection (~80 requests): `0.Health`, `1.Auth` (5 logins with auto-token-save scripts), `2.Super Admin`, `3.School Admin` (11 sub-folders), `4.Teacher`, `5.Student`, `6.Parent`, `7.Mobile`, `8.Public`. Login test scripts: `pm.environment.set('schoolAdminToken', j.data.accessToken)` etc. |
+| Postman environment rebuild ✅ | Replaced 5-variable environment with 73-variable environment containing all JNV UUIDs: `apiRoot`, `baseUrl`, `tenantId`, `schoolId`, `academicYearId`, 5 token variables (all secret type), 7 class IDs, 14 section IDs, staff IDs, student IDs, department IDs, subject IDs, exam IDs, fee IDs, session IDs, notice/homework IDs |
+| URL fixes in collection ✅ | Timetable (added 3 required params), attendance sessions (school-level `?date=`, class-level `?from=&to=`), student/parent attendance (added date range), teacher "My Sessions" → correct endpoint `GET /teacher/attendance/students?classId=&sectionId=` |
+| End-to-end smoke test ✅ | All 5 logins verified; 30+ endpoints across all roles return `success:true` on clean Redis; parent child endpoints verified with correct student record UUID (`77777777-...`) not user UUID |
 
 ### E86 Completions — Tenant Analytics Dashboard (CC-0309) (2026-05-15)
 
