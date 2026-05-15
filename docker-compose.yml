@@ -16,6 +16,7 @@
 #   redis       → localhost:6379
 #   minio       → localhost:9000 (API) + localhost:9001 (Console)
 #   mailhog     → localhost:8025 (Web UI) — captures all outbound emails in dev
+#   rabbitmq    → localhost:5672 (AMQP) + localhost:15672 (management UI — cloudcampus/cloudcampus_dev)
 #   prometheus  → localhost:9090 — scrapes /actuator/prometheus
 #   grafana     → localhost:3100 — pre-provisioned dashboard (admin/admin)
 
@@ -168,9 +169,31 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # ── RabbitMQ 3 — durable notification queue (CC-1504) ─────────────────
+  # Management UI: http://localhost:15672  (guest / guest)
+  # AMQP:          localhost:5672
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: cloudcampus-rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: cloudcampus
+      RABBITMQ_DEFAULT_PASS: cloudcampus_dev
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
   minio_data:
   prometheus_data:
   grafana_data:
+  rabbitmq_data:

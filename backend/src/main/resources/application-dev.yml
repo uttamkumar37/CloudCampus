@@ -9,19 +9,22 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: cloudcampus
     password: cloudcampus_dev
+
     # C-20: Simulate realistic pool pressure even in dev.
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
-      connection-timeout: 3000    # 3 seconds — fail fast if pool is exhausted
-      idle-timeout: 300000        # 5 minutes
-      max-lifetime: 1200000       # 20 minutes
+      connection-timeout: 3000
+      idle-timeout: 300000
+      max-lifetime: 1200000
       pool-name: cloudcampus-dev-pool
 
   jpa:
     open-in-view: false
+
     hibernate:
       ddl-auto: validate
+
     properties:
       hibernate:
         jdbc:
@@ -30,8 +33,14 @@ spring:
   flyway:
     enabled: true
 
-  # Redis — connect to local Docker Redis (see docker-compose.yml).
-  # If Redis is not running, app starts in degraded mode (caches miss-through to DB).
+  # RabbitMQ — Docker Compose instance (CC-1504)
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: cloudcampus
+    password: cloudcampus_dev
+
+  # Redis — connect to local Docker Redis
   data:
     redis:
       host: localhost
@@ -39,27 +48,37 @@ spring:
       connect-timeout: 1s
       timeout: 500ms
 
-  # ── Mail — MailHog SMTP catcher (docker-compose localhost:1025) ─────────────
+  # ── Mail — MailHog SMTP catcher ───────────────────────────────────────
   mail:
     host: localhost
     port: 1025
+
     properties:
       mail:
         smtp:
           auth: false
+
           starttls:
             enable: false
 
+# ── Application Config ───────────────────────────────────────────────────
 app:
   # Dev overrides — use fixed keys so empty env vars don't shadow the base defaults.
   encryption:
     secret: "dev-aes-key-for-local-only-do-not-use-in-production-32+"
+
   retention:
     soft-delete-retention-days: 90
 
-# ── OpenAPI / Swagger UI — enabled in dev only ────────────────────────────────
+  bootstrap:
+    admin:
+      username: superadmin
+      password: admin123
+
+# ── OpenAPI / Swagger UI — enabled in dev only ──────────────────────────
 springdoc:
   api-docs:
     enabled: true
+
   swagger-ui:
     enabled: true

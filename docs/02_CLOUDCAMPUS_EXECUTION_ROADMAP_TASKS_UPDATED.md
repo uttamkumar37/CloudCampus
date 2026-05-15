@@ -4,14 +4,27 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E77 Load & Stress Testing)
+## Progress Summary (as of 2026-05-15 — E78 RabbitMQ Queue Integration)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~135 (69.9%) |
+| **Completed** | ~136 (70.5%) |
 | **In Progress** | 0 |
-| **Not Started** | ~58 |
+| **Not Started** | ~57 |
+
+### E78 Completions — RabbitMQ Queue Integration (CC-1504) (2026-05-15)
+
+| Task | What was built |
+|------|---------------|
+| `spring-boot-starter-amqp` ✅ | Added to pom.xml |
+| `rabbitmq` Docker Compose service ✅ | `rabbitmq:3-management-alpine` — AMQP :5672, UI :15672, cloudcampus/cloudcampus_dev |
+| `NotificationMessage` record ✅ | JSON-serialisable queue payload — messageId, tenantId, schoolId, channel, templateCode, recipient, variables, publishedAt |
+| `NotificationQueueConfig` ✅ | Topic exchange `cc.notifications`; queues `cc.notifications.email` + `.sms` with DLX backing; dead-letter queue `cc.notifications.dead`; `Jackson2JsonMessageConverter`; `RabbitTemplate`; `SimpleRabbitListenerContainerFactory` with `defaultRequeueRejected=false` |
+| `NotificationQueuePublisher` ✅ | `publishEmail()` + `publishSms()` — publish to exchange with routing key; fails open on `AmqpException` |
+| `NotificationQueueConsumer` ✅ | `@RabbitListener` on email + SMS queues; delegates to existing `NotificationService`; nack-without-requeue routes to DLQ on exception |
+| `application.yml` ✅ | `spring.rabbitmq.*` with env-var overrides for prod; `listener.simple.concurrency: 1–3` |
+| Test exclusion ✅ | `RabbitAutoConfiguration` excluded in test profile — tests load without a broker |
 
 ### E77 Completions — Load & Stress Testing (CC-1703 / CC-1704) (2026-05-15)
 
@@ -737,7 +750,7 @@ Notes/Risks:
 | CC-1501 | Docker setup | P0 | ✅ COMPLETED | `docker-compose.yml` — PostgreSQL 16, Redis 7, MinIO, MailHog with health checks |
 | CC-1502 | CI/CD pipeline | P1 | ✅ COMPLETED | 4-job GitHub Actions: backend / frontend / mobile / docker (E72) |
 | CC-1503 | Redis integration | P1 | ✅ COMPLETED | `RedisCacheManager` + `RedisTemplate` rate-limiter; `@Cacheable` on reference data (E71) |
-| CC-1504 | Queue integration | P1 | NOT_STARTED | RabbitMQ planned |
+| CC-1504 | Queue integration | P1 | ✅ COMPLETED | RabbitMQ topic exchange + DLQ; `NotificationQueuePublisher` + `NotificationQueueConsumer` (E78) |
 
 ---
 

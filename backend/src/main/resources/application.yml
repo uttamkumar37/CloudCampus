@@ -28,6 +28,21 @@ spring:
             log:
               LOG_QUERIES_SLOWER_THAN_MS: 200
 
+  # ── RABBITMQ ─────────────────────────────────────────────────────────────
+  # CC-1504: Durable notification queue. Connection details via env vars in prod.
+  # Dev: overridden in application-dev.yml to point at Docker Compose RabbitMQ.
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:cloudcampus}
+    password: ${RABBITMQ_PASSWORD:cloudcampus_dev}
+    virtual-host: /
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 3
+        acknowledge-mode: auto    # auto-ack on success; nack on exception
+
   # ── REDIS ────────────────────────────────────────────────────────────────
   # C-20: App starts even if Redis is temporarily unavailable (lazy-connect).
   # Feature flags and permission cache fall back to DB until Redis reconnects.

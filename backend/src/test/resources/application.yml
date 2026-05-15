@@ -40,6 +40,12 @@ spring:
             enable: false
             required: false
 
+spring:
+  # Disable RabbitMQ auto-configuration in tests — no broker available.
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+
 app:
   retention:
     soft-delete-retention-days: 1
