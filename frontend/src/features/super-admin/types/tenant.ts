@@ -28,6 +28,7 @@ export interface FeatureResponse {
   name: string;
   type: FeatureType;
   description: string;
+  dependencies: string[];
   createdAt: string;
   updatedAt: string;
 }

@@ -34,7 +34,7 @@ export function ChangePasswordPage() {
     },
   });
 
-  const logout = useAuthStore((s) => s.logout);
+  const logout = useAuthStore((s) => s.clearAuth);
   const { mutate: revokeAll, isPending: isRevoking, isSuccess: revoked } = useMutation({
     mutationFn: revokeAllSessionsApi,
     onSuccess: () => {

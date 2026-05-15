@@ -4,14 +4,28 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E83 Usage Limit Enforcement)
+## Progress Summary (as of 2026-05-15 — E84 Feature Dependency Engine)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~155 (80%) |
+| **Completed** | ~156 (81%) |
 | **In Progress** | 1 |
-| **Not Started** | ~37 |
+| **Not Started** | ~36 |
+
+### E84 Completions — Feature Dependency Engine (CC-0307) (2026-05-15)
+
+| Task | What was built |
+|------|---------------|
+| `FeatureDependencies` ✅ | `public final class` with static `REQUIRES` map: `ATTENDANCE_QR/GPS → ATTENDANCE_MANUAL`, `AI_COPILOT → ANALYTICS_ADVANCED`; `getRequired(key)` + `getDependents(key)` helpers |
+| `FeatureFlagServiceImpl.enable()` ✅ | Before enabling feature F, iterates `FeatureDependencies.getRequired(F)` and auto-upserts each non-CORE dependency as enabled; full cache invalidation after |
+| `FeatureFlagServiceImpl.disable()` ✅ | Before disabling feature F, calls `FeatureDependencies.getDependents(F)`, filters for those currently enabled in DB via `isEnabledInDb()`; throws `BadRequestException` with named blockers if any exist |
+| `isEnabledInDb()` helper ✅ | Private method on `FeatureFlagServiceImpl` — looks up `TenantFeatureId` directly, returns `false` if row absent |
+| `FeatureResponse` DTO ✅ | Added `List<String> dependencies` field; `from()` populates via `FeatureDependencies.getRequired()` |
+| Frontend `FeatureResponse` type ✅ | Added `dependencies: string[]` to `tenant.ts` interface |
+| Frontend `TenantDetailPage` ✅ | "Requires: X" amber chip row shown under feature description; `featureError` state captures blocker messages; dismissible red error banner above feature list; `onError` handlers on both `enableMutation` and `disableMutation` extract `error.response.data.error.message` |
+| `ChangePasswordPage` fix ✅ | Fixed pre-existing `s.logout` → `s.clearAuth` mismatch (AuthStore has `clearAuth`, not `logout`) |
+| Frontend build ✅ | 325 modules, 0 errors |
 
 ### E83 Completions — Usage Limit Enforcement + Roadmap Reconciliation (CC-0312 + CC-0107/0108/0109/0115/0116/0507/0508) (2026-05-15)
 
@@ -662,7 +676,7 @@ Notes/Risks:
 | CC-0304 | Tenant create wizard | P0 | ✅ COMPLETED | `TenantCreatePage` — code + name form, navigates to detail on success (reconciled E82) |
 | CC-0305 | Tenant feature access UI | P0 | ✅ COMPLETED | Feature toggle switches on `TenantDetailPage`; CORE locked, OPTIONAL/PREMIUM/BETA togglable (reconciled E82) |
 | CC-0306 | Feature catalog engine | P0 | ✅ COMPLETED | `FeatureAdminController` + `features` table; CORE/OPTIONAL/PREMIUM/BETA types seeded in V3 migration (reconciled E82) |
-| CC-0307 | Feature dependency engine | P0 | NOT_STARTED | Feature dependency graph (enable feature A requires feature B) |
+| CC-0307 | Feature dependency engine | P0 | ✅ COMPLETED | `FeatureDependencies` static graph; cascade-enable deps on toggle-on; blocker check on toggle-off; `dependencies[]` in `FeatureResponse`; "Requires:" chips + error banner in frontend (E84) |
 | CC-0308 | Subscription management UI | P1 | NOT_STARTED | — |
 | CC-0309 | Tenant analytics dashboard | P1 | NOT_STARTED | — |
 | CC-0310 | Global monitoring dashboard | P2 | NOT_STARTED | — |
