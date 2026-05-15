@@ -4,6 +4,7 @@ import type {
   ComparisonResponse,
   FeatureResponse,
   SuperAdminStatsResponse,
+  TenantConfigResponse,
   TenantCreateRequest,
   TenantFeatureResponse,
   TenantResponse,
@@ -61,6 +62,25 @@ export async function enableFeature(tenantId: string, featureKey: string): Promi
 
 export async function disableFeature(tenantId: string, featureKey: string): Promise<void> {
   await axiosInstance.delete(`${BASE}/${tenantId}/features/${featureKey}`);
+}
+
+export async function getTenantConfig(tenantId: string): Promise<TenantConfigResponse> {
+  const { data } = await axiosInstance.get<ApiResponse<TenantConfigResponse>>(
+    `${BASE}/${tenantId}/config`,
+  );
+  return data.data!;
+}
+
+export async function setTenantConfig(
+  tenantId: string,
+  key: string,
+  value: string,
+): Promise<TenantConfigResponse> {
+  const { data } = await axiosInstance.put<ApiResponse<TenantConfigResponse>>(
+    `${BASE}/${tenantId}/config/${key}`,
+    { value },
+  );
+  return data.data!;
 }
 
 export async function getComparisonReport(tenantId: string): Promise<ComparisonResponse> {

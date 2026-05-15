@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -8,6 +9,8 @@ import {
   listTenantFeatures,
   enableFeature,
   disableFeature,
+  getTenantConfig,
+  setTenantConfig,
 } from '../api/tenantApi';
 import type { FeatureType, TenantStatus } from '../types/tenant';
 
@@ -47,6 +50,21 @@ export function TenantDetailPage() {
   });
 
   const featureMap = new Map(tenantFeatures.map((tf) => [tf.featureKey, tf]));
+
+  const { data: configData, refetch: refetchConfig } = useQuery({
+    queryKey: ['tenant-config', id],
+    queryFn: () => getTenantConfig(id!),
+    enabled: !!id,
+  });
+
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue]   = useState('');
+
+  const configMutation = useMutation({
+    mutationFn: ({ key, value }: { key: string; value: string }) =>
+      setTenantConfig(id!, key, value),
+    onSuccess: () => { refetchConfig(); setEditingKey(null); },
+  });
 
   const invalidateTenant = () => {
     queryClient.invalidateQueries({ queryKey: ['tenant', id] });
@@ -125,6 +143,57 @@ export function TenantDetailPage() {
           </div>
         </dl>
       </div>
+
+      {/* Configuration */}
+      {configData && (
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white">
+          <div className="border-b border-gray-100 px-4 py-3">
+            <h2 className="text-sm font-semibold text-gray-700">Configuration</h2>
+            <p className="mt-0.5 text-xs text-gray-400">Per-tenant settings. Click a value to edit.</p>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {Object.entries(configData.config).map(([key, entry]) => (
+              <div key={key} className="flex items-start gap-3 px-4 py-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-500">{key}</p>
+                  <p className="mt-0.5 text-xs text-gray-400">{entry.description}</p>
+                </div>
+                {editingKey === key ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      autoFocus
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="w-48 rounded border border-blue-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => configMutation.mutate({ key, value: editValue })}
+                      disabled={configMutation.isPending}
+                      className="rounded bg-blue-600 px-2 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingKey(null)}
+                      className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setEditingKey(key); setEditValue(entry.value); }}
+                    className="min-w-[6rem] rounded border border-gray-200 px-2 py-1 text-left text-sm text-gray-700 hover:bg-gray-50"
+                    title="Click to edit"
+                  >
+                    {entry.value || <span className="text-gray-400 italic">not set</span>}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Feature toggles */}
       <div className="rounded-xl border border-gray-200 bg-white">

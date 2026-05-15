@@ -4,14 +4,28 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E81 Session Revocation Strategy)
+## Progress Summary (as of 2026-05-15 — E82 Tenant Configuration Engine)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~140 (72.5%) |
+| **Completed** | ~148 (76.5%) |
 | **In Progress** | 0 |
-| **Not Started** | ~53 |
+| **Not Started** | ~45 |
+
+### E82 Completions — Tenant Configuration Engine + Roadmap Reconciliation (CC-0207 + CC-0301–CC-0306) (2026-05-15)
+
+| Task | What was built / reconciled |
+|------|---------------------------|
+| `V41__tenant_configs.sql` ✅ | `tenant_configs(tenant_id, config_key, config_value, updated_at)` — composite PK; index on tenant_id |
+| `TenantConfigKey` enum ✅ | 6 predefined keys with defaults + descriptions: `MAX_SCHOOLS` (5), `MAX_STUDENTS_PER_SCHOOL` (2000), `MAX_STAFF_PER_SCHOOL` (200), `SUPPORT_EMAIL` (""), `TIMEZONE` (UTC), `DEFAULT_LANGUAGE` (en) |
+| `TenantConfig` entity ✅ | `@IdClass(PK)` composite-key JPA entity; `@PreUpdate` timestamps |
+| `TenantConfigRepository` ✅ | `findAllByTenantId` + `findByTenantIdAndConfigKey` |
+| `TenantConfigService` + `TenantConfigServiceImpl` ✅ | `getAll()` merges stored values with defaults; `set()` upserts with per-key validation (integer range, email regex, `ZoneId.of`, language code) |
+| `GET /v1/super-admin/tenants/{id}/config` ✅ | Returns all keys with current value + default + description |
+| `PUT /v1/super-admin/tenants/{id}/config/{key}` ✅ | Upserts a single key; validates value; returns updated full config |
+| Frontend `TenantDetailPage` config section ✅ | Inline-editable config table: click value → edit input + Save/Cancel; renders all keys with description tooltips |
+| CC-0301–CC-0306 ✅ (reconciled) | All were already implemented in earlier epics — `SuperAdminDashboardPage`, `TenantListPage`, `TenantCreatePage`, `TenantDetailPage` (suspend/activate), feature toggles UI, `FeatureAdminController` + feature catalog |
 
 ### E81 Completions — Session Revocation Strategy (CC-0117) (2026-05-15)
 
@@ -610,7 +624,7 @@ Notes/Risks:
 | CC-0204 | Tenant onboarding flow | P0 | 🔄 IN_PROGRESS | `SuperAdminTenantController` + `TenantServiceImpl` done; full onboarding wizard + validation pending |
 | CC-0205 | Tenant suspension system | P1 | 🔄 IN_PROGRESS | `TenantSuspensionFilter` (Redis-cached, fail-open) + `TenantSuspendedException` enforced; suspension API (PATCH /tenants/{id}/suspend) + admin UI pending |
 | CC-0206 | Tenant branding engine | P1 | NOT_STARTED | — |
-| CC-0207 | Tenant configuration engine | P0 | NOT_STARTED | — |
+| CC-0207 | Tenant configuration engine | P0 | ✅ COMPLETED | `TenantConfig` entity + `TenantConfigKey` enum (6 keys with defaults); `GET`/`PUT` config endpoints; inline-editable config section on `TenantDetailPage` (E82) |
 | CC-0208 | Tenant theme management | P2 | NOT_STARTED | — |
 | CC-0209 | Tenant feature mapping | P0 | 🔄 IN_PROGRESS | `tenant_features` table (V3) + 13 seed features done; feature toggle API + service layer pending |
 | CC-0210 | Tenant isolation automated test suite | P0 | ✅ COMPLETED | `TenantIsolationTest` — 6 Testcontainers tests (PostgreSQL 16 + Redis 7); all pass; `findByIdFiltered()` JPQL added to `SchoolRepository` |
@@ -625,13 +639,13 @@ Notes/Risks:
 
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
-| CC-0301 | Super admin dashboard | P0 | NOT_STARTED | — |
-| CC-0302 | Tenant listing page | P0 | NOT_STARTED | — |
-| CC-0303 | Tenant profile management | P0 | NOT_STARTED | — |
-| CC-0304 | Tenant create wizard | P0 | NOT_STARTED | — |
-| CC-0305 | Tenant feature access UI | P0 | NOT_STARTED | — |
-| CC-0306 | Feature catalog engine | P0 | NOT_STARTED | — |
-| CC-0307 | Feature dependency engine | P0 | NOT_STARTED | — |
+| CC-0301 | Super admin dashboard | P0 | ✅ COMPLETED | `SuperAdminDashboardPage` — stat cards (total/active/suspended/new), links to create + list tenants (reconciled E82) |
+| CC-0302 | Tenant listing page | P0 | ✅ COMPLETED | `TenantListPage` — paginated table with status badges, search, link to detail (reconciled E82) |
+| CC-0303 | Tenant profile management | P0 | ✅ COMPLETED | `TenantDetailPage` — suspend/activate, info card, config section, feature toggles (reconciled E82) |
+| CC-0304 | Tenant create wizard | P0 | ✅ COMPLETED | `TenantCreatePage` — code + name form, navigates to detail on success (reconciled E82) |
+| CC-0305 | Tenant feature access UI | P0 | ✅ COMPLETED | Feature toggle switches on `TenantDetailPage`; CORE locked, OPTIONAL/PREMIUM/BETA togglable (reconciled E82) |
+| CC-0306 | Feature catalog engine | P0 | ✅ COMPLETED | `FeatureAdminController` + `features` table; CORE/OPTIONAL/PREMIUM/BETA types seeded in V3 migration (reconciled E82) |
+| CC-0307 | Feature dependency engine | P0 | NOT_STARTED | Feature dependency graph (enable feature A requires feature B) |
 | CC-0308 | Subscription management UI | P1 | NOT_STARTED | — |
 | CC-0309 | Tenant analytics dashboard | P1 | NOT_STARTED | — |
 | CC-0310 | Global monitoring dashboard | P2 | NOT_STARTED | — |
