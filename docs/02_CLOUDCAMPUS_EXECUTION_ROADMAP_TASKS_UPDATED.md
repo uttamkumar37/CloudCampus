@@ -4,14 +4,27 @@
 
 ---
 
-## Progress Summary (as of 2026-05-14 — E76 PII Data Retention)
+## Progress Summary (as of 2026-05-15 — E77 Load & Stress Testing)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~132 (68.4%) |
+| **Completed** | ~135 (69.9%) |
 | **In Progress** | 0 |
-| **Not Started** | ~61 |
+| **Not Started** | ~58 |
+
+### E77 Completions — Load & Stress Testing (CC-1703 / CC-1704) (2026-05-15)
+
+| Task | What was built |
+|------|---------------|
+| `smoke.js` ✅ | 3 VUs / 30 s — sanity-checks health, login, and tenant list endpoints |
+| `load-auth.js` ✅ | Ramp → 50 VUs — auth throughput + BCrypt + JWT SLO (p95 < 500 ms) |
+| `load-reports.js` ✅ | Ramp → 20 VUs — attendance / fee / performance report aggregation SLO (p95 < 2 s) |
+| `stress.js` ✅ | Ramp → 200 VUs — breaking-point test; 429s tracked separately from 5xx error rate |
+| `helpers/auth.js` ✅ | Shared login helper + `authHeaders()` used across all scripts |
+| `README.md` ✅ | Install, run, and interpret output; SLO table; staging override instructions |
+
+Also marked CC-1904 (Backup automation) as completed — `infra/pgbackup/` (Dockerfile + backup.sh + crontab) was already implemented.
 
 ### E76 Completions — PII Data Retention + Scheduled Purge (CC-1806) (2026-05-14)
 
@@ -751,8 +764,8 @@ Notes/Risks:
 |---------|-------|----------|--------|-------|
 | CC-1701 | Query optimization | P1 | ✅ COMPLETED | V39: 5 composite/covering indexes for report hot-paths + notice board (E74) |
 | CC-1702 | API caching | P1 | ✅ COMPLETED | `RedisCacheManager` + `@Cacheable` on academic-years / classes / subjects / sections (E71) |
-| CC-1703 | Load testing | P1 | NOT_STARTED | — |
-| CC-1704 | Stress testing | P1 | NOT_STARTED | — |
+| CC-1703 | Load testing | P1 | ✅ COMPLETED | k6 smoke + load-auth + load-reports scripts; SLO thresholds defined (E77) |
+| CC-1704 | Stress testing | P1 | ✅ COMPLETED | k6 stress.js — ramp → 200 VUs; 429s excluded from error SLO (E77) |
 | CC-1705 | Caching strategy definition (what/where/TTL) | P1 | NOT_STARTED | — |
 
 ---
@@ -777,7 +790,7 @@ Notes/Risks:
 | CC-1901 | Database partitioning | P1 | NOT_STARTED | Partition by `tenant_id` for large tables |
 | CC-1902 | Read replica support | P1 | NOT_STARTED | — |
 | CC-1903 | Horizontal scaling preparation | P2 | NOT_STARTED | — |
-| CC-1904 | Backup automation | P1 | NOT_STARTED | — |
+| CC-1904 | Backup automation | P1 | ✅ COMPLETED | `infra/pgbackup/` — pg_dump sidecar with MinIO upload + 7-day retention cron |
 | CC-1905 | Backup/restore drill automation | P1 | NOT_STARTED | — |
 | CC-1906 | Secrets management standard | P1 | NOT_STARTED | HashiCorp Vault or AWS Secrets Manager |
 
