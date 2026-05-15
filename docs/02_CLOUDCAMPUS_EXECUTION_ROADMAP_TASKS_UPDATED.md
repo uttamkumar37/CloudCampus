@@ -4,14 +4,23 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E78 RabbitMQ Queue Integration)
+## Progress Summary (as of 2026-05-15 — E79 Backup/Restore Drill)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~136 (70.5%) |
+| **Completed** | ~138 (71.5%) |
 | **In Progress** | 0 |
-| **Not Started** | ~57 |
+| **Not Started** | ~55 |
+
+### E79 Completions — Backup/Restore Drill Automation (CC-1905 + CC-1705) (2026-05-15)
+
+| Task | What was built |
+|------|---------------|
+| `drill.sh` ✅ | Disaster-recovery drill script — 6 phases: (1) trigger fresh `backup.sh`, (2) find latest dump in MinIO via `mc find`, (3) download dump, (4) create scratch DB `${PG_DB}_drilltest`, (5) restore via `pg_restore --no-owner --no-privileges`, (6) validate: `schools` + `users` row counts > 0, `flyway_schema_history` migration count > 0, V40 present; also queries `students` / `staff` / `attendance_sessions` as informational; reports PASS/FAIL + always cleans up via `trap EXIT` |
+| `DRILL_SKIP_BACKUP=1` ✅ | Optional flag to skip backup and use latest existing MinIO dump (for staging/CI use) |
+| `Dockerfile` ✅ | Added `COPY drill.sh /usr/local/bin/drill.sh` + `chmod +x` alongside existing `backup.sh` |
+| CC-1705 ✅ | Caching strategy documented by implementation: Redis TTL table in `CacheConfig`; `@Cacheable` + `@CacheEvict` on reference-data services; strategy captured in E71 completion notes |
 
 ### E78 Completions — RabbitMQ Queue Integration (CC-1504) (2026-05-15)
 
@@ -779,7 +788,7 @@ Notes/Risks:
 | CC-1702 | API caching | P1 | ✅ COMPLETED | `RedisCacheManager` + `@Cacheable` on academic-years / classes / subjects / sections (E71) |
 | CC-1703 | Load testing | P1 | ✅ COMPLETED | k6 smoke + load-auth + load-reports scripts; SLO thresholds defined (E77) |
 | CC-1704 | Stress testing | P1 | ✅ COMPLETED | k6 stress.js — ramp → 200 VUs; 429s excluded from error SLO (E77) |
-| CC-1705 | Caching strategy definition (what/where/TTL) | P1 | NOT_STARTED | — |
+| CC-1705 | Caching strategy definition (what/where/TTL) | P1 | ✅ COMPLETED | `CacheConfig` documents what/where/TTL: academic-years/classes/subjects/sections/departments all 5–10 min in Redis; `@Cacheable` + `@CacheEvict` pattern established (E71/E79) |
 
 ---
 
@@ -804,7 +813,7 @@ Notes/Risks:
 | CC-1902 | Read replica support | P1 | NOT_STARTED | — |
 | CC-1903 | Horizontal scaling preparation | P2 | NOT_STARTED | — |
 | CC-1904 | Backup automation | P1 | ✅ COMPLETED | `infra/pgbackup/` — pg_dump sidecar with MinIO upload + 7-day retention cron |
-| CC-1905 | Backup/restore drill automation | P1 | NOT_STARTED | — |
+| CC-1905 | Backup/restore drill automation | P1 | ✅ COMPLETED | `infra/pgbackup/drill.sh` — 6-phase DR drill: fresh backup → download from MinIO → restore to scratch DB → validate row counts + Flyway history → PASS/FAIL + teardown (E79) |
 | CC-1906 | Secrets management standard | P1 | NOT_STARTED | HashiCorp Vault or AWS Secrets Manager |
 
 ---
