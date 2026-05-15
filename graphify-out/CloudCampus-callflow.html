@@ -1,0 +1,2390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudCampus — Complete Call Flow &amp; Architecture Documentation</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+:root {
+  --bg: #0f172a; --surface: #1e293b; --border: #334155;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8;
+  --warn: #fbbf24; --err: #f87171; --ok: #34d399;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+.container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+h1 { font-size: 2.4rem; margin-bottom: 8px; background: linear-gradient(135deg, var(--accent), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+h2 { font-size: 1.7rem; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
+h3 { font-size: 1.25rem; margin: 32px 0 12px; color: var(--accent); }
+h4 { font-size: 1.05rem; margin: 20px 0 8px; color: var(--warn); }
+p { margin: 8px 0; color: var(--muted); }
+.subtitle { color: var(--muted); font-size: 1.1rem; margin-bottom: 32px; }
+.mermaid { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 20px 0; overflow-x: auto; position: relative; }
+.mermaid.is-enhanced { padding: 0; overflow: hidden; min-height: 260px; }
+.mermaid-viewport { padding: 54px 24px 24px; overflow: hidden; cursor: grab; touch-action: none; min-height: 260px; }
+.mermaid-viewport.is-dragging { cursor: grabbing; }
+.mermaid-viewport svg { max-width: none !important; height: auto; transform-origin: 0 0; transition: transform 120ms ease; }
+.mermaid-toolbar { position: absolute; top: 10px; right: 10px; z-index: 3; display: flex; align-items: center; gap: 6px; padding: 6px; background: rgba(15,23,42,0.92); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.28); }
+.mermaid-toolbar button, .mermaid-toolbar .zoom-level { height: 28px; min-width: 32px; border: 1px solid var(--border); border-radius: 6px; background: #1e293b; color: var(--text); font: 600 0.78rem system-ui, sans-serif; display: inline-flex; align-items: center; justify-content: center; }
+.mermaid-toolbar button { cursor: pointer; }
+.mermaid-toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+.mermaid-toolbar .zoom-level { min-width: 52px; color: var(--muted); background: transparent; }
+.call-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.92rem; }
+.call-table th { background: #1a2744; color: var(--accent); text-align: left; padding: 10px 14px; border: 1px solid var(--border); }
+.call-table td { padding: 8px 14px; border: 1px solid var(--border); vertical-align: top; }
+.call-table tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+.tag-async { background: #7c3aed33; color: #a78bfa; }
+.tag-class { background: #05966933; color: var(--ok); }
+.tag-func { background: #2563eb33; color: var(--accent); }
+.tag-cmd { background: #d9770633; color: var(--warn); }
+.tag-endpoint { background: #dc262633; color: var(--err); }
+.tag-hook { background: #db277733; color: #f472b6; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin: 16px 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 16px 0; }
+.arrow-chain { font-family: 'Fira Code', monospace; font-size: 0.85rem; color: var(--accent); padding: 10px; background: rgba(56,189,248,0.06); border-radius: 6px; }
+code { font-family: 'Fira Code', 'Cascadia Code', monospace; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 3px; font-size: 0.88em; }
+ul, ol { margin: 8px 0 8px 24px; color: var(--muted); }
+li { margin: 4px 0; }
+a { color: var(--accent); }
+hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+.nav { position: sticky; top: 0; background: var(--bg); z-index: 10; padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.9rem; }
+.nav a { text-decoration: none; }
+.nav a:hover { text-decoration: underline; }
+@media (max-width: 768px) { .container { padding: 16px; } h1 { font-size: 1.8rem; } }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>CloudCampus — Complete Call Flow &amp; Architecture Documentation</h1>
+<p class="subtitle">Generated from graphify knowledge graph: 1791 nodes, 4013 edges, 150 communities. Commit: 76e3842</p>
+
+<div class="nav">
+    <a href="#overview">Architecture Overview</a>
+    <a href="#extract-pipeline">Extraction Pipeline</a>
+    <a href="#build-graph">Graph Build</a>
+    <a href="#cli-skills">CLI &amp; Skill Installers</a>
+    <a href="#serve-api">Serving API</a>
+    <a href="#tests-fixtures">Tests &amp; Fixtures</a>
+    <a href="#mobile-offline-sync">Mobile Offline Sync</a>
+    <a href="#frontend-features-pages">Frontend Features Pages</a>
+    <a href="#envts-frontend-config">Envts Frontend Config</a>
+    <a href="#planupgradepage-frontend-features">Planupgradepage Frontend Features</a>
+    <a href="#babelconfigjs-mobile">Babelconfigjs Mobile</a>
+    <a href="#eslintconfigjs-frontend">Eslintconfigjs Frontend</a>
+    <a href="#viteconfigts-frontend">Viteconfigts Frontend</a>
+    <a href="#forbiddenpage-frontend-features">Forbiddenpage Frontend Features</a>
+</div>
+
+<!-- ====== Architecture Overview ====== -->
+<h2 id="overview">1. Architecture Overview</h2>
+
+<div class="mermaid">
+
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    EXTRACT_PIPELINE_5F350230("Extraction Pipeline<br/><small>1045 nodes</small>")
+    class EXTRACT_PIPELINE_5F350230 module;
+    BUILD_GRAPH_321CBB04("Graph Build<br/><small>120 nodes</small>")
+    class BUILD_GRAPH_321CBB04 module;
+    CLI_SKILLS_9964CBB8("CLI &amp; Skill Installers<br/><small>1 nodes</small>")
+    class CLI_SKILLS_9964CBB8 module;
+    SERVE_API_35EC8E86("Serving API<br/><small>542 nodes</small>")
+    class SERVE_API_35EC8E86 module;
+    TESTS_FIXTURES_B84B1DCC("Tests &amp; Fixtures<br/><small>63 nodes</small>")
+    class TESTS_FIXTURES_B84B1DCC module;
+    MOBILE_OFFLINE_SYNC_C580054F("Mobile Offline Sync<br/><small>9 nodes</small>")
+    class MOBILE_OFFLINE_SYNC_C580054F module;
+    FRONTEND_FEATURES_PAGES_FF007DB5("Frontend Features Pages<br/><small>4 nodes</small>")
+    class FRONTEND_FEATURES_PAGES_FF007DB5 module;
+    ENVTS_FRONTEND_CONFIG_0EA042B1("Envts Frontend Config<br/><small>2 nodes</small>")
+    class ENVTS_FRONTEND_CONFIG_0EA042B1 module;
+    PLANUPGRADEPAGE_FRONTEND_FEATURES_EA5B2B66("Planupgradepage Frontend Features<br/><small>1 nodes</small>")
+    class PLANUPGRADEPAGE_FRONTEND_FEATURES_EA5B2B66 module;
+    BABELCONFIGJS_MOBILE_C33EB90C("Babelconfigjs Mobile<br/><small>1 nodes</small>")
+    class BABELCONFIGJS_MOBILE_C33EB90C module;
+    ESLINTCONFIGJS_FRONTEND_8C56339E("Eslintconfigjs Frontend<br/><small>1 nodes</small>")
+    class ESLINTCONFIGJS_FRONTEND_8C56339E module;
+    VITECONFIGTS_FRONTEND_8369E5D1("Viteconfigts Frontend<br/><small>1 nodes</small>")
+    class VITECONFIGTS_FRONTEND_8369E5D1 module;
+    FORBIDDENPAGE_FRONTEND_FEATURES_B4360EB3("Forbiddenpage Frontend Features<br/><small>1 nodes</small>")
+    class FORBIDDENPAGE_FRONTEND_FEATURES_B4360EB3 module;
+    EXTRACT_PIPELINE_5F350230 -->|contains x128| SERVE_API_35EC8E86
+    SERVE_API_35EC8E86 -->|contains x113| EXTRACT_PIPELINE_5F350230
+    BUILD_GRAPH_321CBB04 -->|contains x9| EXTRACT_PIPELINE_5F350230
+    SERVE_API_35EC8E86 -->|imports x9| MOBILE_OFFLINE_SYNC_C580054F
+    SERVE_API_35EC8E86 -->|imports x8| TESTS_FIXTURES_B84B1DCC
+    TESTS_FIXTURES_B84B1DCC -->|contains x7| SERVE_API_35EC8E86
+    TESTS_FIXTURES_B84B1DCC -->|contains x6| EXTRACT_PIPELINE_5F350230
+    FRONTEND_FEATURES_PAGES_FF007DB5 -->|contains x5| SERVE_API_35EC8E86
+    EXTRACT_PIPELINE_5F350230 -->|contains x3| BUILD_GRAPH_321CBB04
+    EXTRACT_PIPELINE_5F350230 -->|imports x2| FRONTEND_FEATURES_PAGES_FF007DB5
+    EXTRACT_PIPELINE_5F350230 -->|contains x2| MOBILE_OFFLINE_SYNC_C580054F
+    TESTS_FIXTURES_B84B1DCC -->|contains| BUILD_GRAPH_321CBB04
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h4>Architecture Layers</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>Layer</th><th>Nodes</th><th>Communities</th></tr>
+      <tr><td>Extraction Pipeline</td><td>1045</td><td><code>0, 1, 2, 3, 4, 6, 8, 12, 15, 21, 22, 23, 24, 26, 27, 30, 31, 34, 35, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 50, 54, 55, 56, 58, 59, 60, 63, 65, 66, 71, 72, 73, 74, 78, 80, 82, 84, 85, 86, 88, 90, 91, 92, 93, 94, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148</code></td></tr><tr><td>Graph Build</td><td>120</td><td><code>18, 28, 32, 53, 61, 67, 68, 75, 87</code></td></tr><tr><td>CLI &amp; Skill Installers</td><td>1</td><td><code>97</code></td></tr><tr><td>Serving API</td><td>542</td><td><code>5, 7, 9, 10, 11, 13, 14, 16, 17, 19, 25, 29, 33, 36, 37, 38, 51, 57, 62, 70, 76, 77, 79, 81</code></td></tr><tr><td>Tests &amp; Fixtures</td><td>63</td><td><code>20, 48, 52, 69, 98</code></td></tr><tr><td>Mobile Offline Sync</td><td>9</td><td><code>64</code></td></tr><tr><td>Frontend Features Pages</td><td>4</td><td><code>83</code></td></tr><tr><td>Envts Frontend Config</td><td>2</td><td><code>89</code></td></tr><tr><td>Planupgradepage Frontend Features</td><td>1</td><td><code>100</code></td></tr><tr><td>Babelconfigjs Mobile</td><td>1</td><td><code>149</code></td></tr><tr><td>Eslintconfigjs Frontend</td><td>1</td><td><code>95</code></td></tr><tr><td>Viteconfigts Frontend</td><td>1</td><td><code>96</code></td></tr><tr><td>Forbiddenpage Frontend Features</td><td>1</td><td><code>99</code></td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Core Flow</h4>
+    <div class="arrow-chain">CLI &amp; Skill Installers -&gt; Extraction Pipeline -&gt; Serving API -&gt; Mobile Offline Sync -&gt; Graph Build -&gt; Tests &amp; Fixtures -&gt; Frontend Features Pages</div>
+  </div>
+</div>
+<hr>
+<!-- ====== 2. Extraction Pipeline ====== -->
+<h2 id="extract-pipeline">2. Extraction Pipeline</h2>
+<p>Extraction Pipeline groups implementation around cloudcampus, backend, com, entity, mostly in staff/entity/Staff.java, exam/entity/Exam.java, audit/entity/AuditLog.java. This section covers 1045 nodes and 2299 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Extraction Pipeline (1045 nodes, 2299 edges)
+    subgraph extract_pipeline_External_generated_e23197dc["External / generated"]
+        authservice_3755d579("AuthService")
+        attendanceservice_88a585dc("AttendanceService")
+    end
+    subgraph extract_pipeline_attendance_api_attendanceApi_ts_a5b86285["attendance/api/attendanceApi.ts"]
+        api_attendanceapi_opensession_9d7e6dde("openSession()<br/><small>attendance/api/attendanceApi.ts</small>")
+        api_attendanceapi_markattendance_41c1b74a("markAttendance()<br/><small>attendance/api/attendanceApi.ts</small>")
+    end
+    subgraph extract_pipeline_auth_controller_AuthController_9f9b79fd["auth/controller/AuthController.java"]
+        controller_authcontroller_authcontroller_76e0780d("AuthController<br/><small>auth/controller/AuthController.java</small>")
+        controller_authcontroller_authcontroller_extract_5a02bf6a("extractClientIp()<br/><small>auth/controller/AuthController.java</small>")
+    end
+    subgraph extract_pipeline_auth_service_AuthServiceImpl_ja_d9deed00["auth/service/AuthServiceImpl.java"]
+        service_authserviceimpl_authserviceimpl_850caf9d("AuthServiceImpl<br/><small>auth/service/AuthServiceImpl.java</small>")
+        service_authserviceimpl_authserviceimpl_issueref_ca79a392("issueRefreshToken()<br/><small>auth/service/AuthServiceImpl.java</small>")
+    end
+    types_assignment_assignment_9b5fd737("Assignment<br/><small>assignments/types/assignment.ts</small>")
+    controller_attendancecontroller_attendancecontro_9d2b8f4f("AttendanceController<br/><small>attendance/controller/AttendanceController.java</small>")
+    entity_attendancesession_attendancesession_a5af1d3e("AttendanceSession<br/><small>attendance/entity/AttendanceSession.java</small>")
+    service_attendanceserviceimpl_attendanceservicei_156d7e3b("findSessionOrThrow()<br/><small>attendance/service/AttendanceServiceImpl.java</small>")
+    dashboards_cloudcampus_backend_refresh_e10fed09("refresh<br/><small>grafana/dashboards/cloudcampus-backend.json</small>")
+    types_homework_homeworkassignment_62764eaf("HomeworkAssignment<br/><small>homework/types/homework.ts</small>")
+    helpers_auth_login_2b54c41a("login()<br/><small>load-tests/helpers/auth.js</small>")
+    api_studentportalapi_studentfeerecord_2b436c4a("StudentFeeRecord<br/><small>student/api/studentPortalApi.ts</small>")
+    entity_student_student_abc45282("Student<br/><small>student/entity/Student.java</small>")
+    types_timetable_timetableslot_730a6aa1("TimetableSlot<br/><small>timetable/types/timetable.ts</small>")
+    dashboards_cloudcampus_backend_refresh_e10fed09 -->|method| controller_authcontroller_authcontroller_76e0780d
+    dashboards_cloudcampus_backend_refresh_e10fed09 -->|method| authservice_3755d579
+    dashboards_cloudcampus_backend_refresh_e10fed09 -->|method| service_authserviceimpl_authserviceimpl_850caf9d
+    dashboards_cloudcampus_backend_refresh_e10fed09 -->|calls| service_authserviceimpl_authserviceimpl_issueref_ca79a392
+    helpers_auth_login_2b54c41a -->|method| controller_authcontroller_authcontroller_76e0780d
+    helpers_auth_login_2b54c41a -->|calls| controller_authcontroller_authcontroller_extract_5a02bf6a
+    helpers_auth_login_2b54c41a -->|method| authservice_3755d579
+    helpers_auth_login_2b54c41a -->|method| service_authserviceimpl_authserviceimpl_850caf9d
+    helpers_auth_login_2b54c41a -->|calls| service_authserviceimpl_authserviceimpl_issueref_ca79a392
+    api_attendanceapi_opensession_9d7e6dde -->|method| controller_attendancecontroller_attendancecontro_9d2b8f4f
+    api_attendanceapi_opensession_9d7e6dde -->|method| attendanceservice_88a585dc
+    api_attendanceapi_markattendance_41c1b74a -->|method| controller_attendancecontroller_attendancecontro_9d2b8f4f
+    api_attendanceapi_markattendance_41c1b74a -->|method| attendanceservice_88a585dc
+    api_attendanceapi_markattendance_41c1b74a -->|calls| service_attendanceserviceimpl_attendanceservicei_156d7e3b
+    attendanceservice_88a585dc -->|method| service_attendanceserviceimpl_attendanceservicei_156d7e3b
+    controller_authcontroller_authcontroller_76e0780d -->|method| controller_authcontroller_authcontroller_extract_5a02bf6a
+    service_authserviceimpl_authserviceimpl_850caf9d -->|method| service_authserviceimpl_authserviceimpl_issueref_ca79a392
+    controller_attendancecontroller_attendancecontro_9d2b8f4f -->|imports| attendanceservice_88a585dc
+    controller_authcontroller_authcontroller_76e0780d -->|imports| authservice_3755d579
+    %% Omitted for readability: 1027 nodes, 0 edges
+    class authservice_3755d579 klass;
+    class attendanceservice_88a585dc klass;
+    class api_attendanceapi_opensession_9d7e6dde function;
+    class api_attendanceapi_markattendance_41c1b74a function;
+    class controller_authcontroller_authcontroller_76e0780d klass;
+    class controller_authcontroller_authcontroller_extract_5a02bf6a entry;
+    class service_authserviceimpl_authserviceimpl_850caf9d klass;
+    class service_authserviceimpl_authserviceimpl_issueref_ca79a392 function;
+    class types_assignment_assignment_9b5fd737 klass;
+    class controller_attendancecontroller_attendancecontro_9d2b8f4f klass;
+    class entity_attendancesession_attendancesession_a5af1d3e klass;
+    class service_attendanceserviceimpl_attendanceservicei_156d7e3b function;
+    class dashboards_cloudcampus_backend_refresh_e10fed09 function;
+    class types_homework_homeworkassignment_62764eaf klass;
+    class helpers_auth_login_2b54c41a test;
+    class api_studentportalapi_studentfeerecord_2b436c4a klass;
+    class entity_student_student_abc45282 klass;
+    class types_timetable_timetableslot_730a6aa1 klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>FeeStatus</code><br><small style="color:var(--muted)">parent/api/parentApi.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small><br><code>StudentFeeDetailPage()</code><br><small style="color:var(--muted)">finance/pages/StudentFeeDetailPage.tsx</small></td>
+  <td>FeeStatus node in parent/api/parentApi.ts.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>finance.ts</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>FeeCollectionPage()</code><br><small style="color:var(--muted)">finance/pages/FeeCollectionPage.tsx</small><br><code>FeeStructureCreatePage()</code><br><small style="color:var(--muted)">finance/pages/FeeStructureCreatePage.tsx</small><br><code>FeeStructureListPage()</code><br><small style="color:var(--muted)">finance/pages/FeeStructureListPage.tsx</small><br>+2 more</td>
+  <td>Module file in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>FeeFrequency</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>FeeFrequency node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>PaymentMode</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>recordPayment()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td>PaymentMode node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>FeeCategoryResponse</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td>FeeCategoryResponse node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>CreateFeeCategoryRequest</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>FeeStructureListPage()</code><br><small style="color:var(--muted)">finance/pages/FeeStructureListPage.tsx</small><br><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td>CreateFeeCategoryRequest node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>FeeStructureResponse</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td>FeeStructureResponse node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>CreateFeeStructureRequest</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>FeeStructureCreatePage()</code><br><small style="color:var(--muted)">finance/pages/FeeStructureCreatePage.tsx</small><br><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td>CreateFeeStructureRequest node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>StudentFeeRecordResponse</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td>StudentFeeRecordResponse node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>CreateStudentFeeRecordRequest</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>FeePaymentResponse</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td>FeePaymentResponse node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>RecordPaymentRequest</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small><br><code>StudentFeeDetailPage()</code><br><small style="color:var(--muted)">finance/pages/StudentFeeDetailPage.tsx</small></td>
+  <td>RecordPaymentRequest node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>FeeReceiptPaymentLine</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>FeeReceiptPaymentLine node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>FeeReceiptResponse</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td>FeeReceiptResponse node in finance/types/finance.ts.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-endpoint">API</span></td>
+  <td><code>CreateFeeCategoryRequest</code><br><small style="color:var(--muted)">finance/types/finance.ts</small><br><code>CreateFeeStructureRequest</code><br><small style="color:var(--muted)">finance/types/finance.ts</small><br><code>CreateStudentFeeRecordRequest</code><br><small style="color:var(--muted)">finance/types/finance.ts</small><br>+8 more</td>
+  <td><code>FeeCollectionPage()</code><br><small style="color:var(--muted)">finance/pages/FeeCollectionPage.tsx</small><br><code>FeeStructureCreatePage()</code><br><small style="color:var(--muted)">finance/pages/FeeStructureCreatePage.tsx</small><br><code>FeeStructureListPage()</code><br><small style="color:var(--muted)">finance/pages/FeeStructureListPage.tsx</small><br>+1 more</td>
+  <td>Module file in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>listCategories()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>FeeController</code><br><small style="color:var(--muted)">finance/controller/FeeController.java</small><br><code>FeeService</code><br><code>FeeServiceImpl</code><br><small style="color:var(--muted)">finance/service/FeeServiceImpl.java</small><br>+3 more</td>
+  <td>listCategories() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>createCategory()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>FeeController</code><br><small style="color:var(--muted)">finance/controller/FeeController.java</small><br><code>FeeService</code><br><code>FeeServiceImpl</code><br><small style="color:var(--muted)">finance/service/FeeServiceImpl.java</small><br>+1 more</td>
+  <td>createCategory() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>deactivateCategory()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>FeeController</code><br><small style="color:var(--muted)">finance/controller/FeeController.java</small><br><code>FeeService</code><br><code>FeeServiceImpl</code><br><small style="color:var(--muted)">finance/service/FeeServiceImpl.java</small><br>+1 more</td>
+  <td>deactivateCategory() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>listStructures()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>FeeController</code><br><small style="color:var(--muted)">finance/controller/FeeController.java</small><br><code>FeeService</code><br><code>FeeServiceImpl</code><br><small style="color:var(--muted)">finance/service/FeeServiceImpl.java</small><br>+2 more</td>
+  <td>listStructures() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>createStructure()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>existsBySchoolIdAndAcademicYearIdAndClassIdAndFeeCategoryId()</code><br><small style="color:var(--muted)">finance/repository/FeeStructureRepository.java</small><br><code>FeeController</code><br><small style="color:var(--muted)">finance/controller/FeeController.java</small><br><code>FeeService</code><br>+2 more</td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>listRecordsByStudent()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>enrichRecords()</code><br><small style="color:var(--muted)">finance/service/FeeServiceImpl.java</small><br><code>FeeController</code><br><small style="color:var(--muted)">finance/controller/FeeController.java</small><br><code>FeeService</code><br>+3 more</td>
+  <td>listRecordsByStudent() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>listRecordsBySchool()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>enrichRecords()</code><br><small style="color:var(--muted)">finance/service/FeeServiceImpl.java</small><br><code>FeeCollectionPage()</code><br><small style="color:var(--muted)">finance/pages/FeeCollectionPage.tsx</small><br><code>FeeController</code><br><small style="color:var(--muted)">finance/controller/FeeController.java</small><br>+4 more</td>
+  <td>listRecordsBySchool() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>getFeeRecord()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentFeeDetailPage()</code><br><small style="color:var(--muted)">finance/pages/StudentFeeDetailPage.tsx</small></td>
+  <td>getFeeRecord() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>createFeeRecord()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>existsByStudentIdAndFeeStructureId()</code><br><small style="color:var(--muted)">finance/repository/StudentFeeRecordRepository.java</small><br><code>FeeController</code><br><small style="color:var(--muted)">finance/controller/FeeController.java</small><br><code>FeeService</code><br>+2 more</td>
+  <td>createFeeRecord() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>waiveFeeRecord()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>FeeController</code><br><small style="color:var(--muted)">finance/controller/FeeController.java</small><br><code>FeeService</code><br><code>FeeServiceImpl</code><br><small style="color:var(--muted)">finance/service/FeeServiceImpl.java</small><br>+4 more</td>
+  <td>waiveFeeRecord() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>recordPayment()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>PaymentMode</code><br><small style="color:var(--muted)">finance/types/finance.ts</small></td>
+  <td><code>applyPayment()</code><br><small style="color:var(--muted)">finance/entity/StudentFeeRecord.java</small><br><code>FeeController</code><br><small style="color:var(--muted)">finance/controller/FeeController.java</small><br><code>FeeService</code><br>+4 more</td>
+  <td>recordPayment() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>getFeeReceipt()</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentFeeDetailPage()</code><br><small style="color:var(--muted)">finance/pages/StudentFeeDetailPage.tsx</small></td>
+  <td>getFeeReceipt() node in finance/api/financeApi.ts.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>paymentSchema</code><br><small style="color:var(--muted)">finance/pages/StudentFeeDetailPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>paymentSchema node in finance/pages/StudentFeeDetailPage.tsx.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>PaymentForm</code><br><small style="color:var(--muted)">finance/pages/StudentFeeDetailPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>PaymentForm node in finance/pages/StudentFeeDetailPage.tsx.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>StudentFeeDetailPage()</code><br><small style="color:var(--muted)">finance/pages/StudentFeeDetailPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>FeeStatus</code><br><small style="color:var(--muted)">parent/api/parentApi.ts</small><br><code>finance.ts</code><br><small style="color:var(--muted)">finance/types/finance.ts</small><br><code>financeApi.ts</code><br><small style="color:var(--muted)">finance/api/financeApi.ts</small><br>+5 more</td>
+  <td><code>register()</code><br><small style="color:var(--muted)">notification/controller/DeviceController.java</small></td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>staff/entity/Staff.java</code></td><td>23 nodes</td></tr>
+<tr><td><code>audit/entity/AuditLog.java</code></td><td>22 nodes</td></tr>
+<tr><td><code>exam/entity/Exam.java</code></td><td>22 nodes</td></tr>
+<tr><td><code>auth/entity/User.java</code></td><td>18 nodes</td></tr>
+<tr><td><code>school/entity/SchoolSettings.java</code></td><td>17 nodes</td></tr>
+<tr><td><code>staff/repository/StaffRepository.java</code></td><td>14 nodes</td></tr>
+<tr><td><code>audit/service/AuditLogService.java</code></td><td>13 nodes</td></tr>
+<tr><td><code>common/web/RestExceptionHandler.java</code></td><td>13 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: method x1306, calls x194, contains x168, imports x92. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 3. Graph Build ====== -->
+<h2 id="build-graph">3. Graph Build</h2>
+<p>Graph Build groups implementation around mobile, packagejson, frontend, appjson, mostly in frontend/package.json, mobile/package.json, mobile/app.json. This section covers 120 nodes and 124 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Graph Build (120 nodes, 124 edges)
+    subgraph build_graph_grafana_dashboards_cloudcampus_backe_8a1b2dbd["grafana/dashboards/cloudcampus-backend.json"]
+        infra_grafana_dashboards_cloudcampus_backend_jso_b70717e1("cloudcampus-backend.json")
+        dashboards_cloudcampus_backend_uid_a815a0ea("uid<br/><small>grafana/dashboards/cloudcampus-backend.json</small>")
+        dashboards_cloudcampus_backend_title_1088e389("title<br/><small>grafana/dashboards/cloudcampus-backend.json</small>")
+        dashboards_cloudcampus_backend_tags_628e7fb2("tags<br/><small>grafana/dashboards/cloudcampus-backend.json</small>")
+        dashboards_cloudcampus_backend_timezone_4f12d9aa("timezone<br/><small>grafana/dashboards/cloudcampus-backend.json</small>")
+        dashboards_cloudcampus_backend_schemaversion_ddb4903d("schemaVersion<br/><small>grafana/dashboards/cloudcampus-backend.json</small>")
+        dashboards_cloudcampus_backend_panels_45d2361b("panels<br/><small>grafana/dashboards/cloudcampus-backend.json</small>")
+        dashboards_cloudcampus_backend_templating_5d40ca4d("templating<br/><small>grafana/dashboards/cloudcampus-backend.json</small>")
+    end
+    subgraph build_graph_frontend_tsconfig_app_json_9121cb27["frontend/tsconfig.app.json"]
+        frontend_tsconfig_app_json_ccf32ba7("tsconfig.app.json")
+        frontend_tsconfig_app_compileroptions_tsbuildinf_89760df3("tsBuildInfoFile<br/><small>frontend/tsconfig.app.json</small>")
+    end
+    subgraph build_graph_mobile_app_json_c5af4d09["mobile/app.json"]
+        mobile_app_expo_d926f820("expo<br/><small>mobile/app.json</small>")
+        mobile_app_expo_android_8a8fe273("android<br/><small>mobile/app.json</small>")
+    end
+    subgraph build_graph_mobile_package_json_808dc0df["mobile/package.json"]
+        mobile_package_json_cd8dcdcd("package.json")
+        mobile_package_dependencies_f3fac889("dependencies<br/><small>mobile/package.json</small>")
+    end
+    subgraph build_graph_mobile_tsconfig_json_72cb9772["mobile/tsconfig.json"]
+        mobile_tsconfig_compileroptions_ec8fc7dc("compilerOptions<br/><small>mobile/tsconfig.json</small>")
+        mobile_tsconfig_include_960d8c88("include<br/><small>mobile/tsconfig.json</small>")
+    end
+    docs_postman_cloudcampus_local_postman_environme_21f2fd25("CloudCampus.local.postman environment.json<br/><small>docs/postman/CloudCampus.local.postman_environment.json</small>")
+    frontend_tsconfig_node_json_f50cbb01("tsconfig.node.json")
+    infra_grafana_dashboards_cloudcampus_backend_jso_b70717e1 -->|contains| dashboards_cloudcampus_backend_uid_a815a0ea
+    infra_grafana_dashboards_cloudcampus_backend_jso_b70717e1 -->|contains| dashboards_cloudcampus_backend_title_1088e389
+    infra_grafana_dashboards_cloudcampus_backend_jso_b70717e1 -->|contains| dashboards_cloudcampus_backend_tags_628e7fb2
+    infra_grafana_dashboards_cloudcampus_backend_jso_b70717e1 -->|contains| dashboards_cloudcampus_backend_timezone_4f12d9aa
+    infra_grafana_dashboards_cloudcampus_backend_jso_b70717e1 -->|contains| dashboards_cloudcampus_backend_schemaversion_ddb4903d
+    infra_grafana_dashboards_cloudcampus_backend_jso_b70717e1 -->|contains| dashboards_cloudcampus_backend_panels_45d2361b
+    infra_grafana_dashboards_cloudcampus_backend_jso_b70717e1 -->|contains| dashboards_cloudcampus_backend_templating_5d40ca4d
+    frontend_tsconfig_node_json_f50cbb01 -->|contains| mobile_tsconfig_compileroptions_ec8fc7dc
+    frontend_tsconfig_node_json_f50cbb01 -->|contains| mobile_tsconfig_include_960d8c88
+    frontend_tsconfig_app_json_ccf32ba7 -->|contains| mobile_tsconfig_compileroptions_ec8fc7dc
+    frontend_tsconfig_app_json_ccf32ba7 -->|contains| mobile_tsconfig_include_960d8c88
+    frontend_tsconfig_app_compileroptions_tsbuildinf_89760df3 -->|contains| mobile_tsconfig_compileroptions_ec8fc7dc
+    mobile_app_expo_d926f820 -->|contains| mobile_app_expo_android_8a8fe273
+    mobile_app_expo_d926f820 -->|contains| mobile_package_dependencies_f3fac889
+    mobile_package_json_cd8dcdcd -->|contains| mobile_package_dependencies_f3fac889
+    %% Omitted for readability: 102 nodes, 0 edges
+    class infra_grafana_dashboards_cloudcampus_backend_jso_b70717e1 function;
+    class dashboards_cloudcampus_backend_uid_a815a0ea function;
+    class dashboards_cloudcampus_backend_title_1088e389 function;
+    class dashboards_cloudcampus_backend_tags_628e7fb2 function;
+    class dashboards_cloudcampus_backend_timezone_4f12d9aa function;
+    class dashboards_cloudcampus_backend_schemaversion_ddb4903d function;
+    class dashboards_cloudcampus_backend_panels_45d2361b function;
+    class dashboards_cloudcampus_backend_templating_5d40ca4d function;
+    class frontend_tsconfig_app_json_ccf32ba7 function;
+    class frontend_tsconfig_app_compileroptions_tsbuildinf_89760df3 function;
+    class mobile_app_expo_d926f820 function;
+    class mobile_app_expo_android_8a8fe273 function;
+    class mobile_package_json_cd8dcdcd function;
+    class mobile_package_dependencies_f3fac889 function;
+    class mobile_tsconfig_compileroptions_ec8fc7dc function;
+    class mobile_tsconfig_include_960d8c88 function;
+    class docs_postman_cloudcampus_local_postman_environme_21f2fd25 klass;
+    class frontend_tsconfig_node_json_f50cbb01 function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>tsconfig.node.json</code><br><small style="color:var(--muted)">frontend/tsconfig.node.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Reads, resolves, or persists project configuration.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>tsconfig.app.json</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Reads, resolves, or persists project configuration.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>tsBuildInfoFile</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>tsBuildInfoFile node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>target</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>target node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>lib</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>lib node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>module</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>module node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>types</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>types node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>skipLibCheck</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>skipLibCheck node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>moduleResolution</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>moduleResolution node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>allowImportingTsExtensions</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>allowImportingTsExtensions node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>verbatimModuleSyntax</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>verbatimModuleSyntax node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>moduleDetection</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>moduleDetection node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>noEmit</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>noEmit node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>jsx</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>jsx node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>noUnusedLocals</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>noUnusedLocals node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>noUnusedParameters</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>noUnusedParameters node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>erasableSyntaxOnly</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>erasableSyntaxOnly node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>noFallthroughCasesInSwitch</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>noFallthroughCasesInSwitch node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>@/*</code><br><small style="color:var(--muted)">frontend/tsconfig.app.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>@/* node in frontend/tsconfig.app.json.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>files</code><br><small style="color:var(--muted)">frontend/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>files node in frontend/tsconfig.json.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>references</code><br><small style="color:var(--muted)">frontend/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>references node in frontend/tsconfig.json.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>tsconfig.json</code><br><small style="color:var(--muted)">mobile/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Reads, resolves, or persists project configuration.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>extends</code><br><small style="color:var(--muted)">mobile/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>extends node in mobile/tsconfig.json.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>compilerOptions</code><br><small style="color:var(--muted)">mobile/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>compilerOptions node in mobile/tsconfig.json.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>strict</code><br><small style="color:var(--muted)">mobile/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>strict node in mobile/tsconfig.json.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>experimentalDecorators</code><br><small style="color:var(--muted)">mobile/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>experimentalDecorators node in mobile/tsconfig.json.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>baseUrl</code><br><small style="color:var(--muted)">mobile/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>baseUrl node in mobile/tsconfig.json.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>paths</code><br><small style="color:var(--muted)">mobile/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>paths node in mobile/tsconfig.json.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>@/*</code><br><small style="color:var(--muted)">mobile/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>@/* node in mobile/tsconfig.json.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>include</code><br><small style="color:var(--muted)">mobile/tsconfig.json</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>include node in mobile/tsconfig.json.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>frontend/package.json</code></td><td>29 nodes</td></tr>
+<tr><td><code>mobile/package.json</code></td><td>23 nodes</td></tr>
+<tr><td><code>mobile/app.json</code></td><td>21 nodes</td></tr>
+<tr><td><code>frontend/tsconfig.app.json</code></td><td>18 nodes</td></tr>
+<tr><td><code>mobile/tsconfig.json</code></td><td>9 nodes</td></tr>
+<tr><td><code>grafana/dashboards/cloudcampus-backend.json</code></td><td>8 nodes</td></tr>
+<tr><td><code>docs/postman/CloudCampus.local.postman_environment.json</code></td><td>3 nodes</td></tr>
+<tr><td><code>docs/postman/CloudCampus.postman_collection.json</code></td><td>3 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x122. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 4. CLI & Skill Installers ====== -->
+<h2 id="cli-skills">4. CLI &amp; Skill Installers</h2>
+<p>CLI &amp; Skill Installers groups implementation around maintsx, frontend, mostly in frontend/src/main.tsx. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: CLI &amp; Skill Installers (1 nodes, 0 edges)
+    frontend_src_main_tsx_b540b758("main.tsx")
+    class frontend_src_main_tsx_b540b758 ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>main.tsx</code><br><small style="color:var(--muted)">frontend/src/main.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Module file in frontend/src/main.tsx.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>frontend/src/main.tsx</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 5. Serving API ====== -->
+<h2 id="serve-api">5. Serving API</h2>
+<p>Serving API groups implementation around features, frontend, api, mobile, mostly in student/api/studentApi.ts, parent/api/parentApi.ts, student/api/studentApi.ts. This section covers 542 nodes and 1160 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Serving API (542 nodes, 1160 edges)
+    subgraph serve_api_assignments_api_assignmentApi_ts_b5ad2eaa["assignments/api/assignmentApi.ts"]
+        api_assignmentapi_createassignment_4d1e9d6b("createAssignment()<br/><small>assignments/api/assignmentApi.ts</small>")
+        api_assignmentapi_listassignments_49685d45("listAssignments()<br/><small>assignments/api/assignmentApi.ts</small>")
+        api_assignmentapi_getassignment_8452e079("getAssignment()<br/><small>assignments/api/assignmentApi.ts</small>")
+        api_assignmentapi_updateassignmentstatus_7302d0e9("updateAssignmentStatus()<br/><small>assignments/api/assignmentApi.ts</small>")
+        api_assignmentapi_deleteassignment_03d45c03("deleteAssignment()<br/><small>assignments/api/assignmentApi.ts</small>")
+    end
+    subgraph serve_api_notice_board_api_noticeApi_ts_d9b6fb77["notice-board/api/noticeApi.ts"]
+        api_noticeapi_listnotices_be55bbcb("listNotices()<br/><small>notice-board/api/noticeApi.ts</small>")
+        api_noticeapi_createnotice_56aacf67("createNotice()<br/><small>notice-board/api/noticeApi.ts</small>")
+        api_noticeapi_publishnotice_85d8794d("publishNotice()<br/><small>notice-board/api/noticeApi.ts</small>")
+        api_noticeapi_deletenotice_58cfb045("deleteNotice()<br/><small>notice-board/api/noticeApi.ts</small>")
+    end
+    mobile_app_app_index_tsx_5cfbcf96("index.tsx")
+    pages_assignmentcreatepage_assignmentcreatepage_e7ac9edc("AssignmentCreatePage()<br/><small>assignments/pages/AssignmentCreatePage.tsx</small>")
+    screens_attendancescreen_attendancescreen_c0660df6("AttendanceScreen()<br/><small>attendance/screens/AttendanceScreen.tsx</small>")
+    store_useauthstore_useauthstore_f6491e02("useAuthStore<br/><small>auth/store/useAuthStore.ts</small>")
+    api_marksapi_base_951439da("base()<br/><small>exam/api/marksApi.ts</small>")
+    pages_homeworkcreatepage_tomorrow_1f6f87d3("tomorrow()<br/><small>homework/pages/HomeworkCreatePage.tsx</small>")
+    api_classapi_byid_5afda3f8("byId()<br/><small>school-admin/api/classApi.ts</small>")
+    types_api_apiresponse_b137eafa("ApiResponse<br/><small>shared/types/api.ts</small>")
+    frontend_src_features_student_api_studentportala_b611675e("studentPortalApi.ts")
+    api_noticeapi_listnotices_be55bbcb -->|calls| api_marksapi_base_951439da
+    api_noticeapi_createnotice_56aacf67 -->|calls| api_marksapi_base_951439da
+    api_noticeapi_publishnotice_85d8794d -->|calls| api_marksapi_base_951439da
+    api_noticeapi_deletenotice_58cfb045 -->|calls| api_marksapi_base_951439da
+    api_assignmentapi_createassignment_4d1e9d6b -->|calls| api_marksapi_base_951439da
+    api_assignmentapi_listassignments_49685d45 -->|calls| api_marksapi_base_951439da
+    api_assignmentapi_getassignment_8452e079 -->|calls| api_marksapi_base_951439da
+    api_assignmentapi_updateassignmentstatus_7302d0e9 -->|calls| api_marksapi_base_951439da
+    api_assignmentapi_deleteassignment_03d45c03 -->|calls| api_marksapi_base_951439da
+    pages_assignmentcreatepage_assignmentcreatepage_e7ac9edc -->|calls| pages_homeworkcreatepage_tomorrow_1f6f87d3
+    api_noticeapi_listnotices_be55bbcb -->|imports| mobile_app_app_index_tsx_5cfbcf96
+    api_assignmentapi_createassignment_4d1e9d6b -->|imports| pages_assignmentcreatepage_assignmentcreatepage_e7ac9edc
+    store_useauthstore_useauthstore_f6491e02 -->|imports| mobile_app_app_index_tsx_5cfbcf96
+    store_useauthstore_useauthstore_f6491e02 -->|imports| screens_attendancescreen_attendancescreen_c0660df6
+    types_api_apiresponse_b137eafa -->|imports| mobile_app_app_index_tsx_5cfbcf96
+    types_api_apiresponse_b137eafa -->|imports| screens_attendancescreen_attendancescreen_c0660df6
+    %% Omitted for readability: 524 nodes, 0 edges
+    class api_assignmentapi_createassignment_4d1e9d6b function;
+    class api_assignmentapi_listassignments_49685d45 function;
+    class api_assignmentapi_getassignment_8452e079 function;
+    class api_assignmentapi_updateassignmentstatus_7302d0e9 function;
+    class api_assignmentapi_deleteassignment_03d45c03 function;
+    class api_noticeapi_listnotices_be55bbcb function;
+    class api_noticeapi_createnotice_56aacf67 function;
+    class api_noticeapi_publishnotice_85d8794d function;
+    class api_noticeapi_deletenotice_58cfb045 function;
+    class mobile_app_app_index_tsx_5cfbcf96 ui;
+    class pages_assignmentcreatepage_assignmentcreatepage_e7ac9edc ui;
+    class screens_attendancescreen_attendancescreen_c0660df6 ui;
+    class store_useauthstore_useauthstore_f6491e02 ui;
+    class api_marksapi_base_951439da function;
+    class pages_homeworkcreatepage_tomorrow_1f6f87d3 ui;
+    class api_classapi_byid_5afda3f8 function;
+    class types_api_apiresponse_b137eafa api;
+    class frontend_src_features_student_api_studentportala_b611675e api;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>StudentStatus</code><br><small style="color:var(--muted)">student/types/student.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>studentApi.ts</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br><code>StudentListPage()</code><br><small style="color:var(--muted)">student/pages/StudentListPage.tsx</small><br><code>StudentProfilePage()</code><br><small style="color:var(--muted)">student/pages/StudentProfilePage.tsx</small></td>
+  <td>StudentStatus node in student/types/student.ts.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>StudentSummaryResponse</code><br><small style="color:var(--muted)">student/types/student.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>studentApi.ts</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td>StudentSummaryResponse node in student/types/student.ts.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>StudentResponse</code><br><small style="color:var(--muted)">student/types/student.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>marksApi.ts</code><br><small style="color:var(--muted)">exam/api/marksApi.ts</small><br><code>studentApi.ts</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br><code>StudentProfilePage()</code><br><small style="color:var(--muted)">student/pages/StudentProfilePage.tsx</small></td>
+  <td>StudentResponse node in student/types/student.ts.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>AdmitStudentRequest</code><br><small style="color:var(--muted)">student/types/student.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>studentApi.ts</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td>AdmitStudentRequest node in student/types/student.ts.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>listStudents()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>bySchool()</code><br><small style="color:var(--muted)">school-admin/api/classApi.ts</small></td>
+  <td><code>StudentListPage()</code><br><small style="color:var(--muted)">student/pages/StudentListPage.tsx</small></td>
+  <td>listStudents() node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>listStudentsByClass()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentListPage()</code><br><small style="color:var(--muted)">student/pages/StudentListPage.tsx</small><br><code>StudentPromotionPage()</code><br><small style="color:var(--muted)">student/pages/StudentPromotionPage.tsx</small></td>
+  <td>listStudentsByClass() node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>listStudentsBySection()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentListPage()</code><br><small style="color:var(--muted)">student/pages/StudentListPage.tsx</small><br><code>StudentPromotionPage()</code><br><small style="color:var(--muted)">student/pages/StudentPromotionPage.tsx</small></td>
+  <td>listStudentsBySection() node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>getStudent()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>byId()</code><br><small style="color:var(--muted)">school-admin/api/classApi.ts</small></td>
+  <td><code>attendance.tsx</code><br><small style="color:var(--muted)">app/(app)/attendance.tsx</small><br><code>StudentProfilePage()</code><br><small style="color:var(--muted)">student/pages/StudentProfilePage.tsx</small></td>
+  <td>getStudent() node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>updateStudent()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>byId()</code><br><small style="color:var(--muted)">school-admin/api/classApi.ts</small></td>
+  <td><code>StudentProfilePage()</code><br><small style="color:var(--muted)">student/pages/StudentProfilePage.tsx</small></td>
+  <td>Verifies imports, entry points, or version behavior.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>BulkStudentRow</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentBulkImportPage()</code><br><small style="color:var(--muted)">student/pages/StudentBulkImportPage.tsx</small></td>
+  <td>BulkStudentRow node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>RowError</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>RowError node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>BulkImportResult</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentBulkImportPage()</code><br><small style="color:var(--muted)">student/pages/StudentBulkImportPage.tsx</small></td>
+  <td>BulkImportResult node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>bulkImportStudents()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>bySchool()</code><br><small style="color:var(--muted)">school-admin/api/classApi.ts</small></td>
+  <td><code>StudentBulkImportPage()</code><br><small style="color:var(--muted)">student/pages/StudentBulkImportPage.tsx</small></td>
+  <td>bulkImportStudents() node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>Relationship</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Relationship node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>ParentLinkResponse</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentProfilePage()</code><br><small style="color:var(--muted)">student/pages/StudentProfilePage.tsx</small></td>
+  <td>ParentLinkResponse node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>ParentLinkRequest</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>ParentLinkRequest node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>listParentLinks()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentProfilePage()</code><br><small style="color:var(--muted)">student/pages/StudentProfilePage.tsx</small></td>
+  <td>listParentLinks() node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>addParentLink()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentProfilePage()</code><br><small style="color:var(--muted)">student/pages/StudentProfilePage.tsx</small></td>
+  <td>addParentLink() node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>removeParentLink()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentProfilePage()</code><br><small style="color:var(--muted)">student/pages/StudentProfilePage.tsx</small></td>
+  <td>removeParentLink() node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>StudentPromotionRequest</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>StudentPromotionRequest node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>PromotionResult</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>StudentPromotionPage()</code><br><small style="color:var(--muted)">student/pages/StudentPromotionPage.tsx</small></td>
+  <td>PromotionResult node in student/api/studentApi.ts.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>StudentListPage()</code><br><small style="color:var(--muted)">student/pages/StudentListPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>listStudents()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br><code>listStudentsByClass()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br><code>listStudentsBySection()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br>+1 more</td>
+  <td><code>Student.ts</code><br><small style="color:var(--muted)">offline/models/Student.ts</small><br><code>studentApi.ts</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>StudentPromotionPage()</code><br><small style="color:var(--muted)">student/pages/StudentPromotionPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>listStudentsByClass()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br><code>listStudentsBySection()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br><code>PromotionResult</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><code>studentApi.ts</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>CSV_HEADERS</code><br><small style="color:var(--muted)">student/pages/StudentBulkImportPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>CSV_HEADERS node in student/pages/StudentBulkImportPage.tsx.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>TEMPLATE_CSV</code><br><small style="color:var(--muted)">student/pages/StudentBulkImportPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>TEMPLATE_CSV node in student/pages/StudentBulkImportPage.tsx.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>downloadTemplate()</code><br><small style="color:var(--muted)">student/pages/StudentBulkImportPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>downloadTemplate() node in student/pages/StudentBulkImportPage.tsx.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>parseCSV()</code><br><small style="color:var(--muted)">student/pages/StudentBulkImportPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>parseCSV() node in student/pages/StudentBulkImportPage.tsx.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>StudentBulkImportPage()</code><br><small style="color:var(--muted)">student/pages/StudentBulkImportPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>BulkImportResult</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br><code>bulkImportStudents()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br><code>BulkStudentRow</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td><code>studentApi.ts</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>ParentLinksSection()</code><br><small style="color:var(--muted)">student/pages/StudentProfilePage.tsx</small></td>
+  <td><span class="tag tag-async">Async</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>ParentLinksSection() node in student/pages/StudentProfilePage.tsx.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>StudentProfilePage()</code><br><small style="color:var(--muted)">student/pages/StudentProfilePage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>addParentLink()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br><code>getStudent()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br><code>graduateStudent()</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small><br>+9 more</td>
+  <td><code>Student.ts</code><br><small style="color:var(--muted)">offline/models/Student.ts</small><br><code>studentApi.ts</code><br><small style="color:var(--muted)">student/api/studentApi.ts</small></td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>student/api/studentApi.ts</code></td><td>21 nodes</td></tr>
+<tr><td><code>parent/api/parentApi.ts</code></td><td>13 nodes</td></tr>
+<tr><td><code>school-admin/types/academic.ts</code></td><td>10 nodes</td></tr>
+<tr><td><code>student/api/studentPortalApi.ts</code></td><td>10 nodes</td></tr>
+<tr><td><code>super-admin/api/tenantApi.ts</code></td><td>10 nodes</td></tr>
+<tr><td><code>super-admin/types/tenant.ts</code></td><td>10 nodes</td></tr>
+<tr><td><code>student/api/studentApi.ts</code></td><td>10 nodes</td></tr>
+<tr><td><code>teacher/api/teacherApi.ts</code></td><td>10 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x591, imports x321, imports x153, calls x84. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 6. Tests & Fixtures ====== -->
+<h2 id="tests-fixtures">6. Tests &amp; Fixtures</h2>
+<p>Tests &amp; Fixtures groups implementation around frontend, infra, load, features, mostly in infra/pgbackup/drill.sh, infra/load-tests/load-auth.js, infra/load-tests/smoke.js. This section covers 63 nodes and 83 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Tests &amp; Fixtures (63 nodes, 83 edges)
+    subgraph tests_fixtures_infra_pgbackup_drill_sh_28d4e5ef["infra/pgbackup/drill.sh"]
+        pgbackup_drill_err_e6ab124a("err()<br/><small>infra/pgbackup/drill.sh</small>")
+        pgbackup_drill_ok_f0b65661("ok()<br/><small>infra/pgbackup/drill.sh</small>")
+        pgbackup_drill_log_08612b01("log()<br/><small>infra/pgbackup/drill.sh</small>")
+        pgbackup_drill_cleanup_74a39b53("cleanup()<br/><small>infra/pgbackup/drill.sh</small>")
+        pgbackup_drill_check_table_nonempty_07cbfa12("check_table_nonempty()<br/><small>infra/pgbackup/drill.sh</small>")
+        pgbackup_drill_check_flyway_5168d91d("check_flyway()<br/><small>infra/pgbackup/drill.sh</small>")
+        pgbackup_drill_fail_e6af5285("fail()<br/><small>infra/pgbackup/drill.sh</small>")
+    end
+    subgraph tests_fixtures_load_tests_helpers_auth_js_8e0b2013["load-tests/helpers/auth.js"]
+        infra_load_tests_helpers_auth_js_6cf48971("auth.js")
+        helpers_auth_authheaders_15dd0957("authHeaders()<br/><small>load-tests/helpers/auth.js</small>")
+    end
+    subgraph tests_fixtures_super_admin_pages_TenantListPage_6bed6141["super-admin/pages/TenantListPage.test.tsx"]
+        pages_tenantlistpage_test_makeclient_2ede89cd("makeClient()<br/><small>super-admin/pages/TenantListPage.test.tsx</small>")
+        pages_tenantlistpage_test_renderpage_e83dd8d5("renderPage()<br/><small>super-admin/pages/TenantListPage.test.tsx</small>")
+    end
+    infra_load_tests_load_auth_js_b23ebb73("load-auth.js")
+    infra_load_tests_load_reports_js_8481bc25("load-reports.js")
+    infra_load_tests_smoke_js_9ccf64a4("smoke.js")
+    infra_load_tests_stress_js_03c413f6("stress.js")
+    layouts_schooladminlayout_test_rendershell_5cec29e5("renderShell()<br/><small>school-admin/layouts/SchoolAdminLayout.test.tsx</small>")
+    api_tenantapi_createtenant_7b54d486("createTenant()<br/><small>super-admin/api/tenantApi.ts</small>")
+    types_tenant_tenantresponse_355bd26c("TenantResponse<br/><small>super-admin/types/tenant.ts</small>")
+    pgbackup_drill_log_08612b01 -->|calls| pgbackup_drill_cleanup_74a39b53
+    pgbackup_drill_ok_f0b65661 -->|calls| pgbackup_drill_check_table_nonempty_07cbfa12
+    pgbackup_drill_ok_f0b65661 -->|calls| pgbackup_drill_check_flyway_5168d91d
+    pgbackup_drill_err_e6ab124a -->|calls| pgbackup_drill_fail_e6af5285
+    pgbackup_drill_err_e6ab124a -->|calls| pgbackup_drill_check_table_nonempty_07cbfa12
+    pgbackup_drill_err_e6ab124a -->|calls| pgbackup_drill_check_flyway_5168d91d
+    pgbackup_drill_fail_e6af5285 -->|calls| pgbackup_drill_cleanup_74a39b53
+    layouts_schooladminlayout_test_rendershell_5cec29e5 -->|calls| pages_tenantlistpage_test_makeclient_2ede89cd
+    pages_tenantlistpage_test_makeclient_2ede89cd -->|calls| pages_tenantlistpage_test_renderpage_e83dd8d5
+    infra_load_tests_load_auth_js_b23ebb73 -->|imports| infra_load_tests_helpers_auth_js_6cf48971
+    infra_load_tests_load_reports_js_8481bc25 -->|imports| infra_load_tests_helpers_auth_js_6cf48971
+    infra_load_tests_load_reports_js_8481bc25 -->|imports| helpers_auth_authheaders_15dd0957
+    infra_load_tests_smoke_js_9ccf64a4 -->|imports| infra_load_tests_helpers_auth_js_6cf48971
+    infra_load_tests_smoke_js_9ccf64a4 -->|imports| helpers_auth_authheaders_15dd0957
+    infra_load_tests_stress_js_03c413f6 -->|imports| infra_load_tests_helpers_auth_js_6cf48971
+    %% Omitted for readability: 45 nodes, 0 edges
+    class pgbackup_drill_err_e6ab124a function;
+    class pgbackup_drill_ok_f0b65661 function;
+    class pgbackup_drill_log_08612b01 function;
+    class pgbackup_drill_cleanup_74a39b53 function;
+    class pgbackup_drill_check_table_nonempty_07cbfa12 function;
+    class pgbackup_drill_check_flyway_5168d91d function;
+    class pgbackup_drill_fail_e6af5285 function;
+    class infra_load_tests_helpers_auth_js_6cf48971 test;
+    class helpers_auth_authheaders_15dd0957 test;
+    class pages_tenantlistpage_test_makeclient_2ede89cd test;
+    class pages_tenantlistpage_test_renderpage_e83dd8d5 test;
+    class infra_load_tests_load_auth_js_b23ebb73 test;
+    class infra_load_tests_load_reports_js_8481bc25 test;
+    class infra_load_tests_smoke_js_9ccf64a4 test;
+    class infra_load_tests_stress_js_03c413f6 test;
+    class layouts_schooladminlayout_test_rendershell_5cec29e5 test;
+    class api_tenantapi_createtenant_7b54d486 function;
+    class types_tenant_tenantresponse_355bd26c klass;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>vault-local.sh</code><br><small style="color:var(--muted)">infra/secrets/vault-local.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>vault-local.sh node in infra/secrets/vault-local.sh.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>drill.sh</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>drill.sh node in infra/pgbackup/drill.sh.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>log()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>cleanup()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td>log() node in infra/pgbackup/drill.sh.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>ok()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>check_flyway()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small><br><code>check_table_nonempty()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td>ok() node in infra/pgbackup/drill.sh.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>err()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>check_flyway()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small><br><code>check_table_nonempty()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small><br><code>fail()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td>err() node in infra/pgbackup/drill.sh.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>fail()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>err()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td><code>cleanup()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td>fail() node in infra/pgbackup/drill.sh.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>cleanup()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>fail()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small><br><code>log()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td>No direct outbound edge</td>
+  <td>cleanup() node in infra/pgbackup/drill.sh.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>check_table_nonempty()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>err()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small><br><code>ok()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td>No direct outbound edge</td>
+  <td>check_table_nonempty() node in infra/pgbackup/drill.sh.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>check_flyway()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td><code>err()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small><br><code>ok()</code><br><small style="color:var(--muted)">infra/pgbackup/drill.sh</small></td>
+  <td>No direct outbound edge</td>
+  <td>check_flyway() node in infra/pgbackup/drill.sh.</td>
+</tr>
+<tr>
+  <td>10</td>
+  <td><code>backup.sh</code><br><small style="color:var(--muted)">infra/pgbackup/backup.sh</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>backup.sh node in infra/pgbackup/backup.sh.</td>
+</tr>
+<tr>
+  <td>11</td>
+  <td><code>load-auth.js</code><br><small style="color:var(--muted)">infra/load-tests/load-auth.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>auth.js</code><br><small style="color:var(--muted)">load-tests/helpers/auth.js</small></td>
+  <td>load-auth.js node in infra/load-tests/load-auth.js.</td>
+</tr>
+<tr>
+  <td>12</td>
+  <td><code>loginDuration</code><br><small style="color:var(--muted)">infra/load-tests/load-auth.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>loginDuration node in infra/load-tests/load-auth.js.</td>
+</tr>
+<tr>
+  <td>13</td>
+  <td><code>loginFailed</code><br><small style="color:var(--muted)">infra/load-tests/load-auth.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>loginFailed node in infra/load-tests/load-auth.js.</td>
+</tr>
+<tr>
+  <td>14</td>
+  <td><code>CREDENTIALS</code><br><small style="color:var(--muted)">infra/load-tests/load-auth.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>CREDENTIALS node in infra/load-tests/load-auth.js.</td>
+</tr>
+<tr>
+  <td>15</td>
+  <td><code>res</code><br><small style="color:var(--muted)">infra/load-tests/load-auth.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>res node in infra/load-tests/load-auth.js.</td>
+</tr>
+<tr>
+  <td>16</td>
+  <td><code>load-reports.js</code><br><small style="color:var(--muted)">infra/load-tests/load-reports.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>auth.js</code><br><small style="color:var(--muted)">load-tests/helpers/auth.js</small><br><code>authHeaders()</code><br><small style="color:var(--muted)">load-tests/helpers/auth.js</small></td>
+  <td>load-reports.js node in infra/load-tests/load-reports.js.</td>
+</tr>
+<tr>
+  <td>17</td>
+  <td><code>reportDuration</code><br><small style="color:var(--muted)">infra/load-tests/load-reports.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>reportDuration node in infra/load-tests/load-reports.js.</td>
+</tr>
+<tr>
+  <td>18</td>
+  <td><code>reportFailed</code><br><small style="color:var(--muted)">infra/load-tests/load-reports.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>reportFailed node in infra/load-tests/load-reports.js.</td>
+</tr>
+<tr>
+  <td>19</td>
+  <td><code>smoke.js</code><br><small style="color:var(--muted)">infra/load-tests/smoke.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>auth.js</code><br><small style="color:var(--muted)">load-tests/helpers/auth.js</small><br><code>authHeaders()</code><br><small style="color:var(--muted)">load-tests/helpers/auth.js</small></td>
+  <td>smoke.js node in infra/load-tests/smoke.js.</td>
+</tr>
+<tr>
+  <td>20</td>
+  <td><code>options</code><br><small style="color:var(--muted)">infra/load-tests/smoke.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>options node in infra/load-tests/smoke.js.</td>
+</tr>
+<tr>
+  <td>21</td>
+  <td><code>setup()</code><br><small style="color:var(--muted)">infra/load-tests/smoke.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>setup() node in infra/load-tests/smoke.js.</td>
+</tr>
+<tr>
+  <td>22</td>
+  <td><code>headers</code><br><small style="color:var(--muted)">infra/load-tests/smoke.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>headers node in infra/load-tests/smoke.js.</td>
+</tr>
+<tr>
+  <td>23</td>
+  <td><code>r</code><br><small style="color:var(--muted)">infra/load-tests/smoke.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>r node in infra/load-tests/smoke.js.</td>
+</tr>
+<tr>
+  <td>24</td>
+  <td><code>stress.js</code><br><small style="color:var(--muted)">infra/load-tests/stress.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>auth.js</code><br><small style="color:var(--muted)">load-tests/helpers/auth.js</small></td>
+  <td>stress.js node in infra/load-tests/stress.js.</td>
+</tr>
+<tr>
+  <td>25</td>
+  <td><code>latency</code><br><small style="color:var(--muted)">infra/load-tests/stress.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>latency node in infra/load-tests/stress.js.</td>
+</tr>
+<tr>
+  <td>26</td>
+  <td><code>errorRate</code><br><small style="color:var(--muted)">infra/load-tests/stress.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>errorRate node in infra/load-tests/stress.js.</td>
+</tr>
+<tr>
+  <td>27</td>
+  <td><code>rateLimited</code><br><small style="color:var(--muted)">infra/load-tests/stress.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>rateLimited node in infra/load-tests/stress.js.</td>
+</tr>
+<tr>
+  <td>28</td>
+  <td><code>start</code><br><small style="color:var(--muted)">infra/load-tests/stress.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>start node in infra/load-tests/stress.js.</td>
+</tr>
+<tr>
+  <td>29</td>
+  <td><code>auth.js</code><br><small style="color:var(--muted)">load-tests/helpers/auth.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td><code>load-auth.js</code><br><small style="color:var(--muted)">infra/load-tests/load-auth.js</small><br><code>load-reports.js</code><br><small style="color:var(--muted)">infra/load-tests/load-reports.js</small><br><code>smoke.js</code><br><small style="color:var(--muted)">infra/load-tests/smoke.js</small><br>+1 more</td>
+  <td>No direct outbound edge</td>
+  <td>auth.js node in load-tests/helpers/auth.js.</td>
+</tr>
+<tr>
+  <td>30</td>
+  <td><code>authHeaders()</code><br><small style="color:var(--muted)">load-tests/helpers/auth.js</small></td>
+  <td><span class="tag tag-func">Test</span></td>
+  <td><code>load-reports.js</code><br><small style="color:var(--muted)">infra/load-tests/load-reports.js</small><br><code>smoke.js</code><br><small style="color:var(--muted)">infra/load-tests/smoke.js</small></td>
+  <td>No direct outbound edge</td>
+  <td>authHeaders() node in load-tests/helpers/auth.js.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>infra/pgbackup/drill.sh</code></td><td>8 nodes</td></tr>
+<tr><td><code>super-admin/pages/TenantListPage.test.tsx</code></td><td>5 nodes</td></tr>
+<tr><td><code>infra/load-tests/load-auth.js</code></td><td>5 nodes</td></tr>
+<tr><td><code>infra/load-tests/smoke.js</code></td><td>5 nodes</td></tr>
+<tr><td><code>infra/load-tests/stress.js</code></td><td>5 nodes</td></tr>
+<tr><td><code>parent/layouts/ParentLayout.tsx</code></td><td>3 nodes</td></tr>
+<tr><td><code>school-admin/layouts/SchoolAdminLayout.tsx</code></td><td>3 nodes</td></tr>
+<tr><td><code>super-admin/pages/TenantCreatePage.test.tsx</code></td><td>3 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x52, defines x9, calls x9, imports x6. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 7. Mobile Offline Sync ====== -->
+<h2 id="mobile-offline-sync">7. Mobile Offline Sync</h2>
+<p>Mobile Offline Sync groups implementation around mobile, offline, sync, syncenginets, mostly in offline/sync/syncEngine.ts, offline/sync/syncQueue.ts, mobile/offline/database.ts. This section covers 9 nodes and 10 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Mobile Offline Sync (9 nodes, 10 edges)
+    subgraph mobile_offline_sync_offline_sync_syncEngine_ts_16dcb0e5["offline/sync/syncEngine.ts"]
+        sync_syncengine_flushattendancesync_6070aef8("flushAttendanceSync()<br/><small>offline/sync/syncEngine.ts</small>")
+        mobile_offline_sync_syncengine_ts_253408cf("syncEngine.ts")
+        sync_syncengine_syncbatchrequest_e7e5a432("SyncBatchRequest<br/><small>offline/sync/syncEngine.ts</small>")
+        sync_syncengine_syncbatchresult_03eab863("SyncBatchResult<br/><small>offline/sync/syncEngine.ts</small>")
+    end
+    subgraph mobile_offline_sync_offline_sync_syncQueue_ts_3b54119a["offline/sync/syncQueue.ts"]
+        sync_syncqueue_attendancesyncitem_65cc0920("AttendanceSyncItem<br/><small>offline/sync/syncQueue.ts</small>")
+        sync_syncqueue_syncqueue_1da40ee6("syncQueue<br/><small>offline/sync/syncQueue.ts</small>")
+        sync_syncqueue_storage_3e51ec09("storage<br/><small>offline/sync/syncQueue.ts</small>")
+    end
+    offline_database_database_9daf2497("database<br/><small>mobile/offline/database.ts</small>")
+    sync_usesynctrigger_usesynctrigger_a19d5d22("useSyncTrigger()<br/><small>offline/sync/useSyncTrigger.ts</small>")
+    offline_database_database_9daf2497 -->|imports| mobile_offline_sync_syncengine_ts_253408cf
+    sync_syncqueue_attendancesyncitem_65cc0920 -->|imports| mobile_offline_sync_syncengine_ts_253408cf
+    sync_syncqueue_syncqueue_1da40ee6 -->|imports| mobile_offline_sync_syncengine_ts_253408cf
+    mobile_offline_sync_syncengine_ts_253408cf -->|imports| sync_usesynctrigger_usesynctrigger_a19d5d22
+    sync_syncengine_flushattendancesync_6070aef8 -->|imports| sync_usesynctrigger_usesynctrigger_a19d5d22
+    class sync_syncengine_flushattendancesync_6070aef8 function;
+    class mobile_offline_sync_syncengine_ts_253408cf module;
+    class sync_syncengine_syncbatchrequest_e7e5a432 klass;
+    class sync_syncengine_syncbatchresult_03eab863 klass;
+    class sync_syncqueue_attendancesyncitem_65cc0920 klass;
+    class sync_syncqueue_syncqueue_1da40ee6 function;
+    class sync_syncqueue_storage_3e51ec09 function;
+    class offline_database_database_9daf2497 function;
+    class sync_usesynctrigger_usesynctrigger_a19d5d22 ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>database</code><br><small style="color:var(--muted)">mobile/offline/database.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>syncEngine.ts</code><br><small style="color:var(--muted)">offline/sync/syncEngine.ts</small></td>
+  <td>database node in mobile/offline/database.ts.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>storage</code><br><small style="color:var(--muted)">offline/sync/syncQueue.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Supports retrieval-augmented Q&amp;A or streaming chat.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>AttendanceSyncItem</code><br><small style="color:var(--muted)">offline/sync/syncQueue.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>syncEngine.ts</code><br><small style="color:var(--muted)">offline/sync/syncEngine.ts</small></td>
+  <td>AttendanceSyncItem node in offline/sync/syncQueue.ts.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>syncQueue</code><br><small style="color:var(--muted)">offline/sync/syncQueue.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>syncEngine.ts</code><br><small style="color:var(--muted)">offline/sync/syncEngine.ts</small></td>
+  <td>syncQueue node in offline/sync/syncQueue.ts.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td><code>syncEngine.ts</code><br><small style="color:var(--muted)">offline/sync/syncEngine.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td><code>AttendanceSyncItem</code><br><small style="color:var(--muted)">offline/sync/syncQueue.ts</small><br><code>database</code><br><small style="color:var(--muted)">mobile/offline/database.ts</small><br><code>syncQueue</code><br><small style="color:var(--muted)">offline/sync/syncQueue.ts</small></td>
+  <td><code>useSyncTrigger()</code><br><small style="color:var(--muted)">offline/sync/useSyncTrigger.ts</small></td>
+  <td>Module file in offline/sync/syncEngine.ts.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td><code>SyncBatchRequest</code><br><small style="color:var(--muted)">offline/sync/syncEngine.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>SyncBatchRequest node in offline/sync/syncEngine.ts.</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>SyncBatchResult</code><br><small style="color:var(--muted)">offline/sync/syncEngine.ts</small></td>
+  <td><span class="tag tag-class">Class</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>SyncBatchResult node in offline/sync/syncEngine.ts.</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>flushAttendanceSync()</code><br><small style="color:var(--muted)">offline/sync/syncEngine.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>useSyncTrigger()</code><br><small style="color:var(--muted)">offline/sync/useSyncTrigger.ts</small></td>
+  <td>flushAttendanceSync() node in offline/sync/syncEngine.ts.</td>
+</tr>
+<tr>
+  <td>9</td>
+  <td><code>useSyncTrigger()</code><br><small style="color:var(--muted)">offline/sync/useSyncTrigger.ts</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>flushAttendanceSync()</code><br><small style="color:var(--muted)">offline/sync/syncEngine.ts</small><br><code>syncEngine.ts</code><br><small style="color:var(--muted)">offline/sync/syncEngine.ts</small></td>
+  <td>No direct outbound edge</td>
+  <td>useSyncTrigger() node in offline/sync/useSyncTrigger.ts.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>offline/sync/syncEngine.ts</code></td><td>4 nodes</td></tr>
+<tr><td><code>offline/sync/syncQueue.ts</code></td><td>3 nodes</td></tr>
+<tr><td><code>mobile/offline/database.ts</code></td><td>1 nodes</td></tr>
+<tr><td><code>offline/sync/useSyncTrigger.ts</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x5, imports x4, imports x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 8. Frontend Features Pages ====== -->
+<h2 id="frontend-features-pages">8. Frontend Features Pages</h2>
+<p>Frontend Features Pages groups implementation around frontend, features, pages, attendance, mostly in attendance/pages/AttendanceMarkPage.tsx, exam/pages/MarksEntryPage.tsx, staff/pages/StaffListPage.tsx. This section covers 4 nodes and 3 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Frontend Features Pages (4 nodes, 3 edges)
+    subgraph frontend_features_pages_attendance_pages_Attenda_0a54332f["attendance/pages/AttendanceMarkPage.tsx"]
+        pages_attendancemarkpage_periodlabel_2177083b("periodLabel()<br/><small>attendance/pages/AttendanceMarkPage.tsx</small>")
+        pages_attendancemarkpage_attendancemarkpage_2bf45632("AttendanceMarkPage()<br/><small>attendance/pages/AttendanceMarkPage.tsx</small>")
+    end
+    pages_marksentrypage_rowstate_c48d8f86("RowState<br/><small>exam/pages/MarksEntryPage.tsx</small>")
+    pages_stafflistpage_status_options_3c2cedd4("STATUS_OPTIONS<br/><small>staff/pages/StaffListPage.tsx</small>")
+    pages_attendancemarkpage_periodlabel_2177083b -->|calls| pages_attendancemarkpage_attendancemarkpage_2bf45632
+    class pages_attendancemarkpage_periodlabel_2177083b ui;
+    class pages_attendancemarkpage_attendancemarkpage_2bf45632 ui;
+    class pages_marksentrypage_rowstate_c48d8f86 ui;
+    class pages_stafflistpage_status_options_3c2cedd4 ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>periodLabel()</code><br><small style="color:var(--muted)">attendance/pages/AttendanceMarkPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td><code>AttendanceMarkPage()</code><br><small style="color:var(--muted)">attendance/pages/AttendanceMarkPage.tsx</small></td>
+  <td>periodLabel() node in attendance/pages/AttendanceMarkPage.tsx.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>AttendanceMarkPage()</code><br><small style="color:var(--muted)">attendance/pages/AttendanceMarkPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td><code>periodLabel()</code><br><small style="color:var(--muted)">attendance/pages/AttendanceMarkPage.tsx</small></td>
+  <td>No direct outbound edge</td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>RowState</code><br><small style="color:var(--muted)">exam/pages/MarksEntryPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>RowState node in exam/pages/MarksEntryPage.tsx.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>STATUS_OPTIONS</code><br><small style="color:var(--muted)">staff/pages/StaffListPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>STATUS_OPTIONS node in staff/pages/StaffListPage.tsx.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>attendance/pages/AttendanceMarkPage.tsx</code></td><td>2 nodes</td></tr>
+<tr><td><code>exam/pages/MarksEntryPage.tsx</code></td><td>1 nodes</td></tr>
+<tr><td><code>staff/pages/StaffListPage.tsx</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x2, calls x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 9. Envts Frontend Config ====== -->
+<h2 id="envts-frontend-config">9. Envts Frontend Config</h2>
+<p>Envts Frontend Config groups implementation around envts, frontend, config, env, mostly in src/config/env.ts. This section covers 2 nodes and 1 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Envts Frontend Config (2 nodes, 1 edges)
+    frontend_src_config_env_ts_13b39e5c("env.ts")
+    config_env_env_573706d4("env<br/><small>src/config/env.ts</small>")
+    frontend_src_config_env_ts_13b39e5c -->|contains| config_env_env_573706d4
+    class frontend_src_config_env_ts_13b39e5c module;
+    class config_env_env_573706d4 function;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>env.ts</code><br><small style="color:var(--muted)">src/config/env.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Module file in src/config/env.ts.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>env</code><br><small style="color:var(--muted)">src/config/env.ts</small></td>
+  <td><span class="tag tag-func">Function</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>env node in src/config/env.ts.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>src/config/env.ts</code></td><td>2 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: contains x1. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 10. Planupgradepage Frontend Features ====== -->
+<h2 id="planupgradepage-frontend-features">10. Planupgradepage Frontend Features</h2>
+<p>Planupgradepage Frontend Features groups implementation around planupgradepage, frontend, features, auth, mostly in auth/pages/PlanUpgradePage.tsx. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Planupgradepage Frontend Features (1 nodes, 0 edges)
+    pages_planupgradepage_planupgradepage_db0f9676("PlanUpgradePage()<br/><small>auth/pages/PlanUpgradePage.tsx</small>")
+    class pages_planupgradepage_planupgradepage_db0f9676 ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>PlanUpgradePage()</code><br><small style="color:var(--muted)">auth/pages/PlanUpgradePage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>auth/pages/PlanUpgradePage.tsx</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 11. Babelconfigjs Mobile ====== -->
+<h2 id="babelconfigjs-mobile">11. Babelconfigjs Mobile</h2>
+<p>Babelconfigjs Mobile groups implementation around babelconfigjs, mobile, mostly in mobile/babel.config.js. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Babelconfigjs Mobile (1 nodes, 0 edges)
+    mobile_babel_config_js_eb924f1d("babel.config.js")
+    class mobile_babel_config_js_eb924f1d module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>babel.config.js</code><br><small style="color:var(--muted)">mobile/babel.config.js</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Reads, resolves, or persists project configuration.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>mobile/babel.config.js</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 12. Eslintconfigjs Frontend ====== -->
+<h2 id="eslintconfigjs-frontend">12. Eslintconfigjs Frontend</h2>
+<p>Eslintconfigjs Frontend groups implementation around eslintconfigjs, frontend, mostly in frontend/eslint.config.js. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Eslintconfigjs Frontend (1 nodes, 0 edges)
+    frontend_eslint_config_js_7bb9359d("eslint.config.js")
+    class frontend_eslint_config_js_7bb9359d module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>eslint.config.js</code><br><small style="color:var(--muted)">frontend/eslint.config.js</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Reads, resolves, or persists project configuration.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>frontend/eslint.config.js</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 13. Viteconfigts Frontend ====== -->
+<h2 id="viteconfigts-frontend">13. Viteconfigts Frontend</h2>
+<p>Viteconfigts Frontend groups implementation around viteconfigts, frontend, mostly in frontend/vite.config.ts. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Viteconfigts Frontend (1 nodes, 0 edges)
+    frontend_vite_config_ts_594883b6("vite.config.ts")
+    class frontend_vite_config_ts_594883b6 module;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>vite.config.ts</code><br><small style="color:var(--muted)">frontend/vite.config.ts</small></td>
+  <td><span class="tag tag-class">Module</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Module file in frontend/vite.config.ts.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>frontend/vite.config.ts</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<!-- ====== 14. Forbiddenpage Frontend Features ====== -->
+<h2 id="forbiddenpage-frontend-features">14. Forbiddenpage Frontend Features</h2>
+<p>Forbiddenpage Frontend Features groups implementation around forbiddenpage, frontend, features, auth, mostly in auth/pages/ForbiddenPage.tsx. This section covers 1 nodes and 0 internal edges; the diagram shows only representative relationships to stay readable.</p>
+
+<div class="mermaid">
+%%{init: {"theme": "dark", "themeVariables": {"fontSize": "15.0px", "fontFamily": "Segoe UI, system-ui, sans-serif", "primaryColor": "#1e293b", "primaryTextColor": "#e2e8f0", "primaryBorderColor": "#38bdf8", "secondaryColor": "#0f172a", "tertiaryColor": "#334155", "lineColor": "#64748b", "textColor": "#e2e8f0"}, "flowchart": {"htmlLabels": true, "curve": "basis", "nodeSpacing": 48, "rankSpacing": 64, "padding": 14, "diagramPadding": 10, "useMaxWidth": true}}}%%
+flowchart LR
+    %% Section: Forbiddenpage Frontend Features (1 nodes, 0 edges)
+    pages_forbiddenpage_forbiddenpage_9cac0c45("ForbiddenPage()<br/><small>auth/pages/ForbiddenPage.tsx</small>")
+    class pages_forbiddenpage_forbiddenpage_9cac0c45 ui;
+    classDef entry fill:#422006,stroke:#fbbf24,color:#fde68a,stroke-width:1px;
+    classDef api fill:#450a0a,stroke:#f87171,color:#fee2e2,stroke-width:1px;
+    classDef async fill:#2e1065,stroke:#a78bfa,color:#ede9fe,stroke-width:1px;
+    classDef klass fill:#064e3b,stroke:#34d399,color:#d1fae5,stroke-width:1px;
+    classDef ui fill:#831843,stroke:#f472b6,color:#fce7f3,stroke-width:1px;
+    classDef module fill:#172554,stroke:#60a5fa,color:#dbeafe,stroke-width:1px;
+    classDef test fill:#3f3f46,stroke:#a1a1aa,color:#f4f4f5,stroke-width:1px;
+    classDef concept fill:#292524,stroke:#a8a29e,color:#fafaf9,stroke-dasharray:4 3;
+    classDef function fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px;
+</div>
+
+<h3>Call Details</h3>
+<table class="call-table">
+<tr>
+  <th style="width:5%">#</th>
+  <th style="width:28%">Node</th>
+  <th style="width:10%">Type</th>
+  <th style="width:17%">Caller</th>
+  <th style="width:20%">Callees</th>
+  <th style="width:20%">Description</th>
+</tr>
+<tr>
+  <td>1</td>
+  <td><code>ForbiddenPage()</code><br><small style="color:var(--muted)">auth/pages/ForbiddenPage.tsx</small></td>
+  <td><span class="tag tag-hook">UI</span></td>
+  <td>External entry / no inbound edge</td>
+  <td>No direct outbound edge</td>
+  <td>Organizes documentation pages, navigation, or content lookup.</td>
+</tr>
+</table>
+
+<div class="grid">
+  <div class="card">
+    <h4>Key Files</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><th>File</th><th>Coverage</th></tr>
+      <tr><td><code>auth/pages/ForbiddenPage.tsx</code></td><td>1 nodes</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Design Notes</h4>
+    <p>This section comes from graphify community clustering. Relationship summary: No high-confidence call edges detected. The diagram prioritizes high-confidence calls or usage relationships; the table keeps the broader node inventory.</p>
+  </div>
+</div>
+<hr>
+
+<h2 id="stats">Project Statistics</h2>
+
+<div class="grid">
+  <div class="card">
+    <h4>Graph</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><td>Nodes</td><td>1791</td></tr>
+      <tr><td>Edges</td><td>4013</td></tr>
+      <tr><td>Hyperedges</td><td>0</td></tr>
+      <tr><td>Communities</td><td>150</td></tr>
+      <tr><td>Documented Sections</td><td>13</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h4>Edge Confidence</h4>
+    <table style="width:100%;font-size:0.85rem;">
+      <tr><td>EXTRACTED</td><td>3474</td></tr>
+      <tr><td>INFERRED</td><td>539</td></tr>
+      <tr><td>AMBIGUOUS</td><td>0</td></tr>
+    </table>
+  </div>
+</div>
+
+<div style="text-align:center; padding:40px 0; color: var(--muted); font-size:0.9rem;">
+  <p>CloudCampus — Architecture Documentation</p>
+  <p>Generated: 2026-05-15 05:24 UTC · graphify callflow-html</p>
+</div>
+
+</div><!-- .container -->
+
+<script>
+(function () {
+  const mermaidConfig = {
+    startOnLoad: false,
+    theme: 'dark',
+    securityLevel: 'loose',
+    flowchart: { htmlLabels: true, useMaxWidth: true },
+    themeVariables: {
+      primaryColor: '#1e293b',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#38bdf8',
+      secondaryColor: '#0f172a',
+      tertiaryColor: '#334155',
+      lineColor: '#64748b',
+      textColor: '#e2e8f0',
+    }
+  };
+
+  mermaid.initialize(mermaidConfig);
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function enhanceMermaidDiagrams() {
+    document.querySelectorAll('.mermaid').forEach((container) => {
+      if (container.dataset.zoomReady === 'true') return;
+      const svg = container.querySelector('svg');
+      if (!svg) return;
+
+      container.dataset.zoomReady = 'true';
+      container.classList.add('is-enhanced');
+
+      const viewport = document.createElement('div');
+      viewport.className = 'mermaid-viewport';
+      svg.parentNode.insertBefore(viewport, svg);
+      viewport.appendChild(svg);
+
+      const toolbar = document.createElement('div');
+      toolbar.className = 'mermaid-toolbar';
+      toolbar.innerHTML = [
+        '<button type="button" data-action="zoom-out" title="Zoom out">-</button>',
+        '<span class="zoom-level" data-role="level">100%</span>',
+        '<button type="button" data-action="zoom-in" title="Zoom in">+</button>',
+        '<button type="button" data-action="fit" title="Fit width">Fit</button>',
+        '<button type="button" data-action="reset" title="Reset view">Reset</button>'
+      ].join('');
+      container.insertBefore(toolbar, viewport);
+
+      const state = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0, originX: 0, originY: 0 };
+      const level = toolbar.querySelector('[data-role="level"]');
+
+      function applyTransform() {
+        svg.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+        level.textContent = `${Math.round(state.scale * 100)}%`;
+      }
+
+      function zoomBy(delta) {
+        state.scale = clamp(state.scale + delta, 0.25, 3);
+        applyTransform();
+      }
+
+      function reset() {
+        state.scale = 1;
+        state.x = 0;
+        state.y = 0;
+        applyTransform();
+      }
+
+      function fitWidth() {
+        const rawWidth = svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width
+          ? svg.viewBox.baseVal.width
+          : svg.getBoundingClientRect().width / state.scale;
+        if (!rawWidth) {
+          reset();
+          return;
+        }
+        state.scale = clamp((viewport.clientWidth - 48) / rawWidth, 0.25, 1.4);
+        state.x = 0;
+        state.y = 0;
+        applyTransform();
+      }
+
+      toolbar.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) return;
+        const action = button.dataset.action;
+        if (action === 'zoom-in') zoomBy(0.15);
+        if (action === 'zoom-out') zoomBy(-0.15);
+        if (action === 'fit') fitWidth();
+        if (action === 'reset') reset();
+      });
+
+      viewport.addEventListener('wheel', (event) => {
+        if (!event.ctrlKey && !event.metaKey) return;
+        event.preventDefault();
+        zoomBy(event.deltaY < 0 ? 0.1 : -0.1);
+      }, { passive: false });
+
+      viewport.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        state.dragging = true;
+        state.startX = event.clientX;
+        state.startY = event.clientY;
+        state.originX = state.x;
+        state.originY = state.y;
+        viewport.classList.add('is-dragging');
+        viewport.setPointerCapture(event.pointerId);
+      });
+
+      viewport.addEventListener('pointermove', (event) => {
+        if (!state.dragging) return;
+        state.x = state.originX + event.clientX - state.startX;
+        state.y = state.originY + event.clientY - state.startY;
+        applyTransform();
+      });
+
+      function endDrag(event) {
+        if (!state.dragging) return;
+        state.dragging = false;
+        viewport.classList.remove('is-dragging');
+        if (viewport.hasPointerCapture(event.pointerId)) {
+          viewport.releasePointerCapture(event.pointerId);
+        }
+      }
+
+      viewport.addEventListener('pointerup', endDrag);
+      viewport.addEventListener('pointercancel', endDrag);
+      applyTransform();
+    });
+  }
+
+  function renderMermaid() {
+    const result = mermaid.run
+      ? mermaid.run({ querySelector: '.mermaid' })
+      : Promise.resolve();
+    Promise.resolve(result)
+      .then(enhanceMermaidDiagrams)
+      .catch((error) => {
+        console.error('Mermaid render failed:', error);
+        enhanceMermaidDiagrams();
+      });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderMermaid);
+  } else {
+    renderMermaid();
+  }
+})();
+</script>
+
+</body>
+</html>

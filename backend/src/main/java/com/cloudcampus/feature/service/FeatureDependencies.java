@@ -25,7 +25,7 @@ public final class FeatureDependencies {
     );
 
     /** Features that {@code featureKey} requires (may be empty). */
-    static List<String> getRequired(String featureKey) {
+    public static List<String> getRequired(String featureKey) {
         return REQUIRES.getOrDefault(featureKey, List.of());
     }
 
@@ -33,7 +33,7 @@ public final class FeatureDependencies {
      * Features that declare {@code featureKey} as a dependency —
      * i.e. features that would break if {@code featureKey} were disabled.
      */
-    static List<String> getDependents(String featureKey) {
+    public static List<String> getDependents(String featureKey) {
         return REQUIRES.entrySet().stream()
                 .filter(e -> e.getValue().contains(featureKey))
                 .map(Map.Entry::getKey)
