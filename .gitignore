@@ -55,3 +55,12 @@ Thumbs.db
 samples/*.xlsx
 samples/*.xls
 scripts/generate_dummy_data.py
+
+
+# ── Graphify ───────────────────────────────────────────────────
+.graphify_cache/
+graphify-out/memory/
+graphify-out/.graphify_analysis.json
+
+# macOS
+.DS_Store

@@ -3,7 +3,6 @@ package com.cloudcampus.school.controller;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.CorrelationId;
-import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.finance.entity.FeeStatus;
 import com.cloudcampus.finance.repository.StudentFeeRecordRepository;
 import com.cloudcampus.leave.entity.LeaveStatus;
@@ -95,9 +94,7 @@ public class SchoolDashboardController {
     }
 
     private void validateSchool(UUID schoolId) {
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
-        schoolRepo.findByTenantIdAndCode(tenantId, "MAIN")
-                .filter(s -> s.getId().equals(schoolId))
+        schoolRepo.findById(schoolId)
                 .orElseThrow(() -> new NotFoundException("School not found"));
     }
 }

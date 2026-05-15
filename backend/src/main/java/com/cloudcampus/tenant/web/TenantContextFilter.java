@@ -28,8 +28,20 @@ public class TenantContextFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            tenantResolver.resolveTenantId(request).ifPresent(RequestContext::setTenantId);
-            tenantResolver.resolveSchoolId(request).ifPresent(RequestContext::setSchoolId);
+            // The Spring Security filter chain (JwtAuthenticationFilter) runs before this
+            // filter and may have already populated RequestContext with the UUID from the JWT
+            // tenant_id claim. Only fall back to the raw header value when the JWT filter
+            // didn't set anything (e.g. unauthenticated requests like login).
+            tenantResolver.resolveTenantId(request).ifPresent(headerTenantId -> {
+                if (RequestContext.getTenantId() == null) {
+                    RequestContext.setTenantId(headerTenantId);
+                }
+            });
+            tenantResolver.resolveSchoolId(request).ifPresent(headerSchoolId -> {
+                if (RequestContext.getSchoolId() == null) {
+                    RequestContext.setSchoolId(headerSchoolId);
+                }
+            });
             filterChain.doFilter(request, response);
         } finally {
             RequestContext.clearAll();

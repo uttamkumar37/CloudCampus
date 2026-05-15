@@ -3284,6 +3284,11 @@
     "ast_hash": "7995a1ab8c509ed15b542f3bfb77597a",
     "semantic_hash": "7995a1ab8c509ed15b542f3bfb77597a"
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/CLAUDE.md": {
+    "mtime": 1778824499.832573,
+    "ast_hash": "da79aa9343cd2b362206f03762160abc",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/grafana/provisioning/datasources/prometheus.yml": {
     "mtime": 1778658528.2277522,
     "ast_hash": "f67996e3d859908c0d20f0d41c5b5b48",
@@ -3373,6 +3378,11 @@
     "mtime": 1778658528.1936917,
     "ast_hash": "ac3f69366ba668a7be06e0dde9967088",
     "semantic_hash": "ac3f69366ba668a7be06e0dde9967088"
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/graphify-out/memory/query_20260515_052244_how_login_flow_works.md": {
+    "mtime": 1778822564.6259909,
+    "ast_hash": "cd7180147d436d78b51aca1f22274499",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/public/icons.svg": {
     "mtime": 1778562483.7807798,
