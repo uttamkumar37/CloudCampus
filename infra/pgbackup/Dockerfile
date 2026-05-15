@@ -30,9 +30,10 @@ RUN apk add --no-cache curl ca-certificates \
     && mc --version \
     && supercronic --version || true
 
-# ── Copy backup script and crontab ───────────────────────────────────────────
+# ── Copy backup scripts and crontab ──────────────────────────────────────────
 COPY backup.sh /usr/local/bin/backup.sh
-RUN chmod +x /usr/local/bin/backup.sh
+COPY drill.sh  /usr/local/bin/drill.sh
+RUN chmod +x /usr/local/bin/backup.sh /usr/local/bin/drill.sh
 
 COPY crontab /etc/supercronic/crontab
 
