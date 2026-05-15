@@ -72,7 +72,8 @@ function PeriodCard({
       style={[styles.periodCard, selected && styles.periodCardSelected]}
     >
       <Text style={[styles.periodNum, selected && styles.periodNumSelected]}>
-        Period {slot.periodNumber}
+        P{slot.periodNumber}{' '}
+        {slot.subjectName ?? slot.subjectCode ?? ''}
       </Text>
       {slot.startTime ? (
         <Text style={styles.periodTime}>{slot.startTime.slice(0, 5)}</Text>

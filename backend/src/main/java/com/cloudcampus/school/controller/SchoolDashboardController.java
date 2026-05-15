@@ -84,9 +84,7 @@ public class SchoolDashboardController {
         long pendingFees   = feeRecordRepo.countBySchoolIdAndStatus(schoolId, FeeStatus.PENDING);
         long partialFees   = feeRecordRepo.countBySchoolIdAndStatus(schoolId, FeeStatus.PARTIAL);
 
-        // count published notices using page size = 0 trick isn't available; use repo count query
-        long notices = noticeRepo.findFiltered(schoolId, null, true,
-                org.springframework.data.domain.PageRequest.of(0, 1)).getTotalElements();
+        long notices = noticeRepo.countBySchoolIdAndPublished(schoolId, true);
 
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
                 new DashboardStats(students, staff, classes, pendingLeave,

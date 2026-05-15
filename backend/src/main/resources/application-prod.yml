@@ -7,13 +7,24 @@
 # from AWS Secrets Manager, HashiCorp Vault, or equivalent.
 #
 # Required environment variables:
-#   DATABASE_URL          e.g. jdbc:postgresql://prod-rds.region.rds.amazonaws.com:5432/cloudcampus
-#   DATABASE_USERNAME     prod DB user (least-privilege — no DROP/CREATE privileges)
-#   DATABASE_PASSWORD     strong random password, rotated quarterly
-#   REDIS_HOST            ElastiCache primary endpoint
-#   REDIS_PORT            6379
-#   JWT_SECRET            >= 64 chars, rotated per security policy
+#   DATABASE_URL               e.g. jdbc:postgresql://prod-rds.region.rds.amazonaws.com:5432/cloudcampus
+#   DATABASE_USERNAME          prod DB user (least-privilege — no DROP/CREATE privileges)
+#   DATABASE_PASSWORD          strong random password, rotated quarterly
+#   REDIS_HOST                 ElastiCache primary endpoint
+#   REDIS_PORT                 6379
+#   JWT_SECRET                 >= 64 chars, rotated per security policy
+#   ENCRYPTION_SECRET          >= 32 chars — AES-256-GCM key for PII fields (phone, address)
+#                              CRITICAL: store in AWS Secrets Manager / Vault; never commit
+#   MINIO_ENDPOINT             e.g. https://s3.amazonaws.com or MinIO cluster endpoint
+#   MINIO_ACCESS_KEY           S3/MinIO access key
+#   MINIO_SECRET_KEY           S3/MinIO secret key
+#   MINIO_BUCKET               (optional) defaults to cloudcampus-documents
+#   RABBITMQ_HOST              e.g. prod-rabbitmq.internal or AmazonMQ endpoint
+#   RABBITMQ_PORT              5672
+#   RABBITMQ_USERNAME          RabbitMQ user
+#   RABBITMQ_PASSWORD          RabbitMQ password
 #   MAIL_HOST / MAIL_PORT / MAIL_USERNAME / MAIL_PASSWORD   (SES, SendGrid, etc.)
+#   CORS_ALLOWED_ORIGINS       (optional) comma-separated additional origins beyond *.cloudcampus.io
 #   BOOTSTRAP_ADMIN_PASSWORD   first-boot only; remove after initial setup
 #   BOOTSTRAP_ADMIN_EMAIL
 
@@ -107,6 +118,12 @@ management:
   endpoint:
     health:
       show-details: never           # SECURITY: never expose DB/Redis status externally
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:0.1}
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT}
   server:
     # SECURITY: bind actuator to internal port so it is not reachable from the
     # public load balancer. Configure your ECS task / K8s service to expose 8081
@@ -127,6 +144,18 @@ app:
     secret: ${JWT_SECRET}            # no default — deployment fails if unset
     access-token-expiry-seconds: 900         # 15 min
     refresh-token-expiry-seconds: 2592000    # 30 days
+  encryption:
+    # CRITICAL: no fallback — app refuses to start if unset. Load from Secrets Manager.
+    secret: ${ENCRYPTION_SECRET}
+  minio:
+    endpoint:   ${MINIO_ENDPOINT}
+    access-key: ${MINIO_ACCESS_KEY}
+    secret-key: ${MINIO_SECRET_KEY}
+    bucket:     ${MINIO_BUCKET:cloudcampus-documents}
+    presign-expiry-minutes: 60
   bootstrap:
     admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
     admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:}

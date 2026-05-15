@@ -29,6 +29,8 @@ public interface SchoolNoticeRepository extends JpaRepository<SchoolNotice, UUID
 
     Optional<SchoolNotice> findBySchoolIdAndId(UUID schoolId, UUID id);
 
+    long countBySchoolIdAndPublished(UUID schoolId, boolean published);
+
     @Query("""
            SELECT n FROM SchoolNotice n
            WHERE n.schoolId = :schoolId

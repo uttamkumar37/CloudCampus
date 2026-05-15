@@ -44,6 +44,22 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     /** Total attendance records for a student (denominator for percentage). */
     long countByStudentId(UUID studentId);
 
+    // ── Super Admin analytics (native — bypasses tenant filter) ───────────────
+
+    /**
+     * Returns [total_records, present_records] for all sessions belonging to a school.
+     * Used by the school comparison report to compute the attendance rate.
+     */
+    @Query(value = """
+           SELECT COUNT(*),
+                  SUM(CASE WHEN ar.status = 'PRESENT' THEN 1 ELSE 0 END)
+           FROM attendance_records ar
+           WHERE ar.session_id IN (
+               SELECT id FROM attendance_sessions WHERE school_id = :schoolId
+           )
+           """, nativeQuery = true)
+    Object[] countTotalAndPresentBySchool(@Param("schoolId") UUID schoolId);
+
     /** Per-record history for a student joined with session date and period, newest first. */
     @Query("""
            SELECT r.status, s.sessionDate, s.periodNumber

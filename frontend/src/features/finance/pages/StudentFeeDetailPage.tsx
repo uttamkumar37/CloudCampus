@@ -9,6 +9,7 @@ import {
   getFeeReceipt,
   recordPayment,
   waiveFeeRecord,
+  downloadFeeInvoicePdf,
 } from '../api/financeApi';
 import type { FeeStatus, PaymentMode, RecordPaymentRequest } from '../types/finance';
 
@@ -117,6 +118,10 @@ export default function StudentFeeDetailPage() {
     },
   });
 
+  const invoiceMutation = useMutation({
+    mutationFn: () => downloadFeeInvoicePdf(recordId!),
+  });
+
   function onSubmit(values: PaymentForm) {
     const amount = parseFloat(values.amount);
     if (isNaN(amount) || amount <= 0) {
@@ -205,8 +210,8 @@ export default function StudentFeeDetailPage() {
         </div>
 
         {/* Actions */}
-        {!isClosed && (
-          <div className="mt-4 flex gap-3">
+        <div className="mt-4 flex flex-wrap gap-3">
+          {!isClosed && (
             <button
               onClick={() => {
                 if (window.confirm('Waive this fee record? This cannot be undone.')) {
@@ -218,8 +223,18 @@ export default function StudentFeeDetailPage() {
             >
               Waive Fee
             </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={() => invoiceMutation.mutate()}
+            disabled={invoiceMutation.isPending}
+            className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+          >
+            {invoiceMutation.isPending ? 'Generating…' : 'Download Invoice PDF'}
+          </button>
+          {invoiceMutation.isError && (
+            <span className="self-center text-xs text-red-600">Failed to generate PDF.</span>
+          )}
+        </div>
       </div>
 
       {/* ── Record Payment ─────────────────────────────────────────────────── */}

@@ -4,8 +4,11 @@ import com.cloudcampus.finance.entity.FeeStatus;
 import com.cloudcampus.finance.entity.StudentFeeRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +31,11 @@ public interface StudentFeeRecordRepository extends JpaRepository<StudentFeeReco
 
     long countBySchoolIdAndStatus(UUID schoolId, FeeStatus status);
 
+    // ── Fee reminder scheduler (CC-0903) ──────────────────────────────────────
+
+    List<StudentFeeRecord> findByStatusInAndDueDateBetween(
+            Collection<FeeStatus> statuses, LocalDate from, LocalDate to);
+
     // ── Super Admin analytics (native — bypasses tenant filter) ───────────────
 
     @Query(value = "SELECT COALESCE(SUM(amount_due), 0) FROM student_fee_records", nativeQuery = true)
@@ -44,4 +52,9 @@ public interface StudentFeeRecordRepository extends JpaRepository<StudentFeeReco
            GROUP BY tenant_id
            """, nativeQuery = true)
     List<Object[]> sumAmountsGroupedByTenant();
+
+    /** Returns [sum_due, sum_paid] for a single school (school comparison report). */
+    @Query(value = "SELECT COALESCE(SUM(amount_due), 0), COALESCE(SUM(amount_paid), 0) FROM student_fee_records WHERE school_id = :schoolId",
+           nativeQuery = true)
+    Object[] sumAmountsBySchool(@Param("schoolId") UUID schoolId);
 }

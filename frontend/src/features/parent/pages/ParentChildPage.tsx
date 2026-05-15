@@ -229,7 +229,7 @@ function TimetableTab({ studentId }: { studentId: string }) {
                     {slot ? (
                       <div className="inline-flex min-w-[80px] flex-col rounded-lg bg-emerald-50 px-2 py-1.5 text-left">
                         <span className="text-[11px] font-semibold text-emerald-800">
-                          {slot.subjectId.slice(0, 8)}
+                          {slot.subjectName ?? slot.subjectCode ?? slot.subjectId.slice(0, 8)}
                         </span>
                         {slot.startTime && (
                           <span className="text-[10px] text-emerald-400">

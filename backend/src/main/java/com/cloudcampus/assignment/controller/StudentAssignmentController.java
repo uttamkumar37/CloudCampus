@@ -36,7 +36,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Student self-service assignment endpoints (CC-0703).
@@ -101,8 +103,13 @@ public class StudentAssignmentController {
                 PageRequest.of(0, 50)
         ).getContent();
 
+        List<UUID> ids = assignments.stream().map(Assignment::getId).toList();
+        Map<UUID, AssignmentSubmission> submissionByAssignment = ids.isEmpty() ? Map.of()
+                : submissionRepo.findByAssignmentIdInAndStudentId(ids, student.getId()).stream()
+                        .collect(Collectors.toMap(AssignmentSubmission::getAssignmentId, s -> s));
+
         List<AssignmentView> views = assignments.stream().map(a -> {
-            var sub = submissionRepo.findByAssignmentIdAndStudentId(a.getId(), student.getId()).orElse(null);
+            AssignmentSubmission sub = submissionByAssignment.get(a.getId());
             return new AssignmentView(
                     a.getId(), a.getTitle(), a.getDescription(), a.getDueDate(), a.getMaxMarks(),
                     a.getStatus(),

@@ -7,7 +7,23 @@
 -- Staff            : 22 employees (principal, vice-principal, 18 teachers, 3 support)
 -- Data month       : April 2026 (attendance, exam, homework, notices)
 -- Idempotent       : every INSERT uses ON CONFLICT … DO NOTHING
+--
+-- Guard: this whole script is a no-op in fresh databases (Testcontainers / CI)
+--        where the seed tenant does not exist.  Dev/staging environments that
+--        were bootstrapped with the initial admin setup will already have the
+--        tenant row and will execute the full seed as intended.
 -- ─────────────────────────────────────────────────────────────────────────────
+
+DO $v42$
+BEGIN
+
+-- ── Guard ─────────────────────────────────────────────────────────────────────
+IF NOT EXISTS (
+    SELECT 1 FROM tenants WHERE id = 'aaaaaaaa-0000-0000-0000-000000000001'
+) THEN
+    RAISE NOTICE 'V42 seed: seed tenant not found — skipping (clean/test env).';
+    RETURN;
+END IF;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 1. Update school to JNV Lucknow
@@ -181,6 +197,7 @@ ON CONFLICT DO NOTHING;
 -- DO BLOCK 1 : 560 students  (27 boys + 13 girls per section)
 -- UUID scheme : {class_hex_2}{section_a_or_b}{student_num_hex_5}-0000-0000-0000-000000000000
 -- ─────────────────────────────────────────────────────────────────────────────
+EXECUTE $b1$
 DO $$
 DECLARE
   v_tenant UUID := 'aaaaaaaa-0000-0000-0000-000000000001';
@@ -263,10 +280,12 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+$b1$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- DO BLOCK 2 : Student fee records (Tuition) + payments for 70 % students
 -- ─────────────────────────────────────────────────────────────────────────────
+EXECUTE $b2$
 DO $$
 DECLARE
   v_tenant UUID := 'aaaaaaaa-0000-0000-0000-000000000001';
@@ -326,6 +345,7 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+$b2$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- DO BLOCK 3 : Timetable slots (14 sections × 6 days × 6 periods = 504 slots)
@@ -333,6 +353,7 @@ END $$;
 -- ─────────────────────────────────────────────────────────────────────────────
 DELETE FROM timetable_slots WHERE school_id = 'bbbbbbbb-0000-0000-0000-000000000001';
 
+EXECUTE $b3$
 DO $$
 DECLARE
   v_tenant UUID := 'aaaaaaaa-0000-0000-0000-000000000001';
@@ -448,11 +469,13 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+$b3$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- DO BLOCK 4 : Attendance — April 2026 (25 working days, no 14 Apr)
 -- Session UUID: a{section_idx_3}{day_idx_2}00-0000-0000-0000-000000000000
 -- ─────────────────────────────────────────────────────────────────────────────
+EXECUTE $b4$
 DO $$
 DECLARE
   v_tenant UUID := 'aaaaaaaa-0000-0000-0000-000000000001';
@@ -532,12 +555,14 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+$b4$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- DO BLOCK 5 : Exam subjects + student marks for existing Mid-Term exam
 -- Exam: 88888888-0000-0000-0000-000000000001 (Apr 1–10 2026, COMPLETED)
 -- Exam subject UUID: e{class_hex_2}{subj_idx_2}00-0000-0000-0000-000000000001
 -- ─────────────────────────────────────────────────────────────────────────────
+EXECUTE $b5$
 DO $$
 DECLARE
   v_tenant UUID := 'aaaaaaaa-0000-0000-0000-000000000001';
@@ -620,3 +645,6 @@ BEGIN
     END LOOP;
   END LOOP;
 END $$;
+$b5$;
+
+END $v42$;

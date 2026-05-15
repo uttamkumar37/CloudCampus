@@ -6,6 +6,7 @@ import com.cloudcampus.attendance.dto.CreateSessionRequest;
 import com.cloudcampus.attendance.dto.MarkAttendanceRequest;
 import com.cloudcampus.attendance.entity.AttendanceStatus;
 import com.cloudcampus.attendance.service.AttendanceService;
+import com.cloudcampus.attendance.service.QrAttendanceService;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.CorrelationId;
@@ -25,6 +26,7 @@ import org.slf4j.MDC;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -77,20 +79,23 @@ public class TeacherAttendanceController {
             @NotNull List<@Valid @NotNull StudentMark> marks
     ) {}
 
-    private final SchoolRepository  schoolRepo;
-    private final StaffRepository   staffRepo;
-    private final StudentRepository studentRepo;
-    private final AttendanceService attendanceService;
+    private final SchoolRepository    schoolRepo;
+    private final StaffRepository     staffRepo;
+    private final StudentRepository   studentRepo;
+    private final AttendanceService   attendanceService;
+    private final QrAttendanceService qrService;
 
     public TeacherAttendanceController(
-            SchoolRepository  schoolRepo,
-            StaffRepository   staffRepo,
-            StudentRepository studentRepo,
-            AttendanceService attendanceService) {
-        this.schoolRepo       = schoolRepo;
-        this.staffRepo        = staffRepo;
-        this.studentRepo      = studentRepo;
+            SchoolRepository    schoolRepo,
+            StaffRepository     staffRepo,
+            StudentRepository   studentRepo,
+            AttendanceService   attendanceService,
+            QrAttendanceService qrService) {
+        this.schoolRepo        = schoolRepo;
+        this.staffRepo         = staffRepo;
+        this.studentRepo       = studentRepo;
         this.attendanceService = attendanceService;
+        this.qrService         = qrService;
     }
 
     @Operation(summary = "List active students for attendance",
@@ -135,6 +140,15 @@ public class TeacherAttendanceController {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
                 attendanceService.markAttendance(session.id(),
                         new MarkAttendanceRequest(entries, true)));
+    }
+
+    @Operation(summary = "Generate QR code for a session",
+               description = "Creates a short-lived token (5 min) and returns a base64 QR PNG "
+                             + "that students scan to self-mark present (CC-0802).")
+    @PostMapping("/sessions/{sessionId}/qr")
+    public ApiResponse<QrAttendanceService.QrResponse> generateQr(
+            @PathVariable UUID sessionId) {
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), qrService.generate(sessionId));
     }
 
     private School resolveSchool() {

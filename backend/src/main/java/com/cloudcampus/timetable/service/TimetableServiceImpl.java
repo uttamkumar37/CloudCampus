@@ -3,6 +3,8 @@ package com.cloudcampus.timetable.service;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.school.entity.Subject;
+import com.cloudcampus.school.repository.SubjectRepository;
 import com.cloudcampus.timetable.dto.TimetableSlotCreateRequest;
 import com.cloudcampus.timetable.dto.TimetableSlotResponse;
 import com.cloudcampus.timetable.entity.TimetableSlot;
@@ -11,16 +13,39 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 public class TimetableServiceImpl implements TimetableService {
 
     private final TimetableRepository timetableRepository;
+    private final SubjectRepository   subjectRepository;
 
-    public TimetableServiceImpl(TimetableRepository timetableRepository) {
+    public TimetableServiceImpl(TimetableRepository timetableRepository,
+                                SubjectRepository   subjectRepository) {
         this.timetableRepository = timetableRepository;
+        this.subjectRepository   = subjectRepository;
+    }
+
+    private List<TimetableSlotResponse> enrich(List<TimetableSlot> slots) {
+        Set<UUID> subjectIds = slots.stream()
+                .map(TimetableSlot::getSubjectId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+        Map<UUID, Subject> subjectMap = subjectRepository.findAllById(subjectIds)
+                .stream().collect(Collectors.toMap(Subject::getId, s -> s));
+        return slots.stream()
+                .map(s -> {
+                    Subject sub = s.getSubjectId() != null ? subjectMap.get(s.getSubjectId()) : null;
+                    return TimetableSlotResponse.from(s,
+                            sub != null ? sub.getName() : null,
+                            sub != null ? sub.getCode() : null);
+                })
+                .toList();
     }
 
     @Override
@@ -62,20 +87,14 @@ public class TimetableServiceImpl implements TimetableService {
 
     @Override
     public List<TimetableSlotResponse> listSlots(UUID schoolId, UUID academicYearId, UUID classId, UUID sectionId) {
-        return timetableRepository
-                .findBySchoolIdAndAcademicYearIdAndClassIdAndSectionId(schoolId, academicYearId, classId, sectionId)
-                .stream()
-                .map(TimetableSlotResponse::from)
-                .toList();
+        return enrich(timetableRepository
+                .findBySchoolIdAndAcademicYearIdAndClassIdAndSectionId(schoolId, academicYearId, classId, sectionId));
     }
 
     @Override
     public List<TimetableSlotResponse> listSlotsByStaff(UUID schoolId, UUID academicYearId, UUID staffId) {
-        return timetableRepository
-                .findBySchoolIdAndAcademicYearIdAndStaffId(schoolId, academicYearId, staffId)
-                .stream()
-                .map(TimetableSlotResponse::from)
-                .toList();
+        return enrich(timetableRepository
+                .findBySchoolIdAndAcademicYearIdAndStaffId(schoolId, academicYearId, staffId));
     }
 
     @Override

@@ -47,4 +47,9 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     @Query("SELECT s.id FROM AttendanceSession s WHERE s.schoolId = :schoolId AND s.academicYearId = :academicYearId")
     List<UUID> findSessionIdsBySchoolAndYear(@Param("schoolId") UUID schoolId,
                                              @Param("academicYearId") UUID academicYearId);
+
+    // ── Super Admin analytics ─────────────────────────────────────────────────
+
+    /** Total session count for a school (filter is OFF in super-admin context). */
+    long countBySchoolId(UUID schoolId);
 }

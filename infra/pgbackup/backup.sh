@@ -66,9 +66,6 @@ log "Upload complete"
 
 # ── 5. Prune old dumps (retention) ───────────────────────────────────────────
 log "Pruning dumps older than ${RETENTION_DAYS} days"
-CUTOFF="$(date -u -d "-${RETENTION_DAYS} days" +%Y-%m-%dT%H:%M:%S 2>/dev/null \
-          || date -u -v "-${RETENTION_DAYS}d" +%Y-%m-%dT%H:%M:%S)"  # GNU / BSD date
-
 mc find "${MINIO_ALIAS}/${MINIO_BUCKET}/pg/${PG_DB}/" \
   --older-than "${RETENTION_DAYS}d" \
   --name "*.dump" \

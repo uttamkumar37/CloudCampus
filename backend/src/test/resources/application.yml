@@ -40,7 +40,6 @@ spring:
             enable: false
             required: false
 
-spring:
   # Disable RabbitMQ auto-configuration in tests — no broker available.
   autoconfigure:
     exclude:

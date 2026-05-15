@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSession, markAttendance } from '../api/attendanceApi';
+import { getSession, markAttendance, generateSessionQr, type QrResponse } from '../api/attendanceApi';
 import { listStudentsBySection } from '@/features/student/api/studentApi';
 import { listStudentsByClass } from '@/features/student/api/studentApi';
 import type { AttendanceStatus } from '../types/attendance';
@@ -100,6 +100,30 @@ export function AttendanceMarkPage() {
     },
   });
 
+  // ── QR code state ─────────────────────────────────────────────────────────
+
+  const [qrData, setQrData]       = useState<QrResponse | null>(null);
+  const [qrSecondsLeft, setLeft]  = useState(0);
+  const timerRef                  = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const qrMutation = useMutation({
+    mutationFn: () => generateSessionQr(sessionId!),
+    onSuccess: (res) => {
+      setQrData(res);
+      const remaining = Math.floor((new Date(res.expiresAt).getTime() - Date.now()) / 1000);
+      setLeft(Math.max(0, remaining));
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        setLeft((s) => {
+          if (s <= 1) { clearInterval(timerRef.current!); setQrData(null); return 0; }
+          return s - 1;
+        });
+      }, 1000);
+    },
+  });
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   function setRowStatus(studentId: string, status: AttendanceStatus) {
@@ -182,6 +206,47 @@ export function AttendanceMarkPage() {
           </div>
         ))}
       </div>
+
+      {/* ── QR code panel (teacher — only if not finalised) ──────────── */}
+      {!finalized && (
+        <div className="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Student Self-Check-in via QR</p>
+              <p className="text-xs text-gray-400">
+                Students scan the QR code to mark themselves present.
+              </p>
+            </div>
+            <button
+              onClick={() => qrMutation.mutate()}
+              disabled={qrMutation.isPending}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {qrMutation.isPending ? 'Generating…' : qrData ? 'Refresh QR' : 'Show QR Code'}
+            </button>
+          </div>
+
+          {qrData && (
+            <div className="mt-4 flex flex-col items-center gap-3">
+              <img
+                src={`data:image/png;base64,${qrData.qrBase64}`}
+                alt="Attendance QR code"
+                className="h-52 w-52 rounded-lg border border-gray-200"
+              />
+              <p className="text-sm font-semibold text-gray-700">
+                {qrSecondsLeft > 0
+                  ? `Expires in ${qrSecondsLeft}s`
+                  : 'QR expired — click Refresh QR'}
+              </p>
+              <p className="font-mono text-xs text-gray-400 break-all">{qrData.token}</p>
+            </div>
+          )}
+
+          {qrMutation.isError && (
+            <p className="mt-2 text-xs text-red-600">Failed to generate QR. Please try again.</p>
+          )}
+        </div>
+      )}
 
       {/* ── Bulk actions (only if not finalised) ──────────────────────── */}
       {!finalized && studentList.length > 0 && (

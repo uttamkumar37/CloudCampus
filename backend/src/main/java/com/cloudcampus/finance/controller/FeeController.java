@@ -12,12 +12,16 @@ import com.cloudcampus.finance.dto.FeeStructureResponse;
 import com.cloudcampus.finance.dto.RecordPaymentRequest;
 import com.cloudcampus.finance.dto.StudentFeeRecordResponse;
 import com.cloudcampus.finance.entity.FeeStatus;
+import com.cloudcampus.finance.service.FeeInvoicePdfService;
 import com.cloudcampus.finance.service.FeeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.MDC;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -64,10 +68,12 @@ import java.util.UUID;
      description = "Fee structure engine, fee collection, and receipt generation")
 public class FeeController {
 
-    private final FeeService service;
+    private final FeeService           service;
+    private final FeeInvoicePdfService invoicePdfService;
 
-    public FeeController(FeeService service) {
-        this.service = service;
+    public FeeController(FeeService service, FeeInvoicePdfService invoicePdfService) {
+        this.service           = service;
+        this.invoicePdfService = invoicePdfService;
     }
 
     // ── Fee Categories ───────────────────────────────────────────────────────
@@ -195,5 +201,21 @@ public class FeeController {
             @PathVariable UUID recordId) {
         FeeReceiptResponse body = service.getReceipt(recordId);
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
+    }
+
+    // ── Invoice PDF (CC-0904) ─────────────────────────────────────────────────
+
+    @Operation(summary = "Download fee invoice as PDF",
+               description = "Generates and streams a PDF invoice for the given fee record (CC-0904).")
+    @GetMapping(value = "/fee-records/{recordId}/invoice", produces = "application/pdf")
+    public ResponseEntity<byte[]> downloadInvoice(@PathVariable UUID recordId) {
+        byte[] pdf = invoicePdfService.generate(recordId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(
+                ContentDisposition.attachment()
+                        .filename("invoice-" + recordId + ".pdf")
+                        .build());
+        return ResponseEntity.ok().headers(headers).body(pdf);
     }
 }

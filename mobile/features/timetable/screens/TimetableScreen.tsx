@@ -106,7 +106,9 @@ export default function TimetableScreen() {
                   <Text style={styles.periodText}>P{period}</Text>
                 </View>
                 <View style={styles.slotInfo}>
-                  <Text style={styles.subjectText}>Subject: {shortId(slot.subjectId)}</Text>
+                  <Text style={styles.subjectText}>
+                    {slot.subjectName ?? slot.subjectCode ?? shortId(slot.subjectId)}
+                  </Text>
                   <Text style={styles.classText}>
                     Class {shortId(slot.classId)} · Sec {shortId(slot.sectionId)}
                   </Text>

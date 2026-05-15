@@ -654,7 +654,7 @@ Notes/Risks:
 | CC-0014 | Global error schema standardization | P0 | ✅ COMPLETED | `ApiError` with `correlationId`, `status`, `code`, `message`, `timestamp` |
 | CC-0015 | Request correlation IDs + structured logs | P0 | ✅ COMPLETED | `CorrelationIdFilter` with sanitization (`^[a-zA-Z0-9\-]{1,64}$`), MDC propagation |
 | CC-0016 | Health/readiness endpoints + probes | P0 | ✅ COMPLETED | `/actuator/health/liveness`, `/actuator/health/readiness` |
-| CC-0017 | Observability baseline (metrics + tracing) | P0 | 🔄 IN_PROGRESS | Prometheus + Micrometer done; OpenTelemetry tracing + Grafana dashboards pending |
+| CC-0017 | Observability baseline (metrics + tracing) | P0 | ✅ COMPLETED | Prometheus + Micrometer + OTLP tracing exporter + local Tempo + Grafana Tempo datasource provisioning complete |
 | CC-0018 | DB migrations strategy (Flyway/Liquibase) | P0 | ✅ COMPLETED | Flyway 10 with `flyway-database-postgresql`; V1–V5 migrations applied |
 | CC-0019 | Seed data + template bootstrapping | P1 | NOT_STARTED | — |
 
@@ -693,11 +693,11 @@ Notes/Risks:
 | CC-0202 | Tenant resolver middleware | P0 | ✅ COMPLETED | `HeaderTenantResolver`, `TenantContextFilter`, `RequestContext` |
 | CC-0203 | Tenant-aware database filters | P0 | ✅ COMPLETED | `TenantFilter` constants + `TenantFilterAspect` (`@Before` AOP); `@Filter`+`@FilterDef(UUID)` on `User`, `School`, `AuditLog`; `@FilterDef` declared once on `User` (Hibernate 6 constraint) |
 | CC-0204 | Tenant onboarding flow | P0 | 🔄 IN_PROGRESS | `SuperAdminTenantController` + `TenantServiceImpl` done; full onboarding wizard + validation pending |
-| CC-0205 | Tenant suspension system | P1 | 🔄 IN_PROGRESS | `TenantSuspensionFilter` (Redis-cached, fail-open) + `TenantSuspendedException` enforced; suspension API (PATCH /tenants/{id}/suspend) + admin UI pending |
+| CC-0205 | Tenant suspension system | P1 | ✅ COMPLETED | `TenantSuspensionFilter` (Redis-cached, fail-open) + `TenantSuspendedException` enforced; suspension API + activate API + admin UI actions in `TenantDetailPage` complete |
 | CC-0206 | Tenant branding engine | P1 | ✅ COMPLETED | 4 TenantConfigKey branding entries; hex/URL validation; `GET /v1/public/branding` (no auth); `useBranding` hook applies CSS vars + favicon; SchoolAdminLayout shows tenant logo (E85) |
 | CC-0207 | Tenant configuration engine | P0 | ✅ COMPLETED | `TenantConfig` entity + `TenantConfigKey` enum (6 keys with defaults); `GET`/`PUT` config endpoints; inline-editable config section on `TenantDetailPage` (E82) |
 | CC-0208 | Tenant theme management | P2 | NOT_STARTED | — |
-| CC-0209 | Tenant feature mapping | P0 | 🔄 IN_PROGRESS | `tenant_features` table (V3) + 13 seed features done; feature toggle API + service layer pending |
+| CC-0209 | Tenant feature mapping | P0 | ✅ COMPLETED | `tenant_features` table (V3) + 13 seed features + feature dependency engine + toggle API/service + frontend toggle UI complete |
 | CC-0210 | Tenant isolation automated test suite | P0 | ✅ COMPLETED | `TenantIsolationTest` — 6 Testcontainers tests (PostgreSQL 16 + Redis 7); all pass; `findByIdFiltered()` JPQL added to `SchoolRepository` |
 | CC-0211 | Tenant-aware seed data (roles/menus) | P1 | NOT_STARTED | — |
 | CC-0212 | Custom domain verification workflow | P2 | NOT_STARTED | DNS verification + SSL provisioning |

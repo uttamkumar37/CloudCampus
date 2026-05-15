@@ -15,6 +15,8 @@ export interface TimetableSlot {
   periodNumber:   number;
   startTime:      string | null;
   endTime:        string | null;
+  subjectName:    string | null;
+  subjectCode:    string | null;
 }
 
 export async function getTeacherTimetable(academicYearId?: string): Promise<TimetableSlot[]> {

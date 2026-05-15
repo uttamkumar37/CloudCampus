@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -26,9 +28,10 @@ public class NotificationQueuePublisher {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationQueuePublisher.class);
 
+    @Nullable
     private final RabbitTemplate rabbitTemplate;
 
-    NotificationQueuePublisher(RabbitTemplate rabbitTemplate) {
+    NotificationQueuePublisher(@Autowired(required = false) RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
     }
 
@@ -47,6 +50,11 @@ public class NotificationQueuePublisher {
     }
 
     private void publish(NotificationMessage message, String routingKey) {
+        if (rabbitTemplate == null) {
+            log.debug("RabbitMQ not available; notification dropped (no-op): channel={} recipient={}",
+                    message.channel(), message.recipient());
+            return;
+        }
         try {
             rabbitTemplate.convertAndSend(NotificationQueueConfig.EXCHANGE, routingKey, message);
             log.debug("Notification queued: id={} channel={} recipient={}",

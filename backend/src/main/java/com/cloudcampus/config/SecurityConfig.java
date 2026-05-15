@@ -20,6 +20,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.beans.factory.annotation.Value;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -55,6 +59,9 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final TenantSuspensionFilter  tenantSuspensionFilter;
     private final JsonAuthEntryPoint      jsonAuthEntryPoint;
+
+    @Value("${cors.allowed-origins:}")
+    private String corsAllowedOrigins;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
@@ -160,19 +167,26 @@ public class SecurityConfig {
     /**
      * CORS policy.
      *
-     * Current: Dev-permissive (allows localhost origins).
-     * Production: override allowed origins via CORS_ALLOWED_ORIGINS environment variable.
+     * Default patterns cover local dev and *.cloudcampus.io.
+     * Override via cors.allowed-origins (comma-separated) or the
+     * CORS_ALLOWED_ORIGINS environment variable for staging/production.
      * Never use allowedOrigins("*") for authenticated APIs.
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // TODO: Replace with environment-variable-driven origin list before production.
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",      // local dev
-                "https://*.cloudcampus.io" // production domains
+        List<String> patterns = new ArrayList<>(List.of(
+                "http://localhost:*",
+                "https://*.cloudcampus.io"
         ));
+        if (corsAllowedOrigins != null && !corsAllowedOrigins.isBlank()) {
+            Arrays.stream(corsAllowedOrigins.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .forEach(patterns::add);
+        }
+        config.setAllowedOriginPatterns(patterns);
         config.setAllowedMethods(List.of(
                 HttpMethod.GET.name(),
                 HttpMethod.POST.name(),

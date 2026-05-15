@@ -1,16 +1,16 @@
-# Graph Report - CloudCampus  (2026-05-15)
+# Graph Report - CloudCampus  (2026-05-16)
 
 ## Corpus Check
-- 665 files · ~213,081 words
+- 691 files · ~240,174 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4269 nodes · 8137 edges · 365 communities (280 shown, 85 thin omitted)
-- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 962 edges (avg confidence: 0.8)
+- 4547 nodes · 8557 edges · 379 communities (304 shown, 75 thin omitted)
+- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 1016 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d0a936ca`
+- Built from commit: `2b7decaa`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -265,139 +265,148 @@
 - [[_COMMUNITY_Community 301|Community 301]]
 - [[_COMMUNITY_Community 302|Community 302]]
 - [[_COMMUNITY_Community 309|Community 309]]
+- [[_COMMUNITY_Community 365|Community 365]]
+- [[_COMMUNITY_Community 366|Community 366]]
+- [[_COMMUNITY_Community 367|Community 367]]
+- [[_COMMUNITY_Community 368|Community 368]]
+- [[_COMMUNITY_Community 369|Community 369]]
+- [[_COMMUNITY_Community 370|Community 370]]
+- [[_COMMUNITY_Community 371|Community 371]]
+- [[_COMMUNITY_Community 372|Community 372]]
+- [[_COMMUNITY_Community 373|Community 373]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `from()` - 129 edges
 2. `Student` - 81 edges
-3. `Progress Summary (as of 2026-05-15 — E86 Tenant Analytics Dashboard)` - 57 edges
-4. `Staff` - 51 edges
-5. `base()` - 48 edges
-6. `AcademicYear` - 48 edges
-7. `Assignment` - 45 edges
-8. `NotificationLog` - 45 edges
-9. `AttendanceSession` - 42 edges
-10. `ExamSubject` - 41 edges
+3. `Progress Summary (as of 2026-05-15 — E87 Demo Seed + Bug Fixes)` - 58 edges
+4. `Progress Summary (as of 2026-05-15 — E86 Tenant Analytics Dashboard)` - 57 edges
+5. `Staff` - 51 edges
+6. `base()` - 48 edges
+7. `AcademicYear` - 48 edges
+8. `Assignment` - 45 edges
+9. `NotificationLog` - 45 edges
+10. `AttendanceSession` - 42 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `refresh` --calls--> `info`  [INFERRED]
-  infra/grafana/dashboards/cloudcampus-backend.json → docs/postman/CloudCampus.postman_collection.json
-- `login()` --calls--> `info`  [INFERRED]
-  infra/load-tests/helpers/auth.js → docs/postman/CloudCampus.postman_collection.json
+- `sendEmail()` --calls--> `to`  [INFERRED]
+  frontend/src/features/notification/api/notificationApi.ts → infra/grafana/dashboards/cloudcampus-backend.json
 - `resetPasswordApi()` --calls--> `info`  [INFERRED]
   mobile/features/auth/api/authApi.ts → docs/postman/CloudCampus.postman_collection.json
 - `changePasswordApi()` --calls--> `info`  [INFERRED]
   frontend/src/features/auth/api/authApi.ts → docs/postman/CloudCampus.postman_collection.json
 - `revokeAllSessionsApi()` --calls--> `info`  [INFERRED]
   frontend/src/features/auth/api/authApi.ts → docs/postman/CloudCampus.postman_collection.json
+- `from()` --calls--> `values`  [INFERRED]
+  backend/src/main/java/com/cloudcampus/exam/dto/ExamResponse.java → docs/postman/CloudCampus.local.postman_environment.json
 
-## Communities (365 total, 85 thin omitted)
+## Communities (379 total, 75 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.15
-Nodes (4): createStructure(), waiveFeeRecord(), FeePaymentRepository, FeeServiceImpl
+Cohesion: 0.14
+Nodes (4): createFeeRecord(), waiveFeeRecord(), FeePaymentRepository, FeeServiceImpl
 
 ### Community 1 - "Community 1"
-Cohesion: 0.27
-Nodes (17): AttendanceReportRow, base(), downloadBlob(), exportFeesCsv(), exportPerformanceCsv(), getAttendanceReport(), getFeeReport(), getPerformanceReport() (+9 more)
+Cohesion: 0.28
+Nodes (17): base(), AttendanceReportRow, base(), downloadBlob(), exportFeesCsv(), getAttendanceReport(), getFeeReport(), getPerformanceReport() (+9 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.06
-Nodes (4): LeaveRequestRepository, SchoolRepository, StaffRepository, StudentRepository
+Cohesion: 0.07
+Nodes (3): SchoolRepository, StaffRepository, StudentRepository
 
 ### Community 3 - "Community 3"
-Cohesion: 0.13
-Nodes (5): from(), from(), from(), from(), email()
+Cohesion: 0.12
+Nodes (37): addParentLink(), byId(), getStudent(), graduateStudent(), listParentLinks(), listStudents(), listStudentsByClass(), listStudentsBySection() (+29 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.16
-Nodes (3): AssignmentRepository, HomeworkRepository, SchoolNoticeRepository
+Cohesion: 0.09
+Nodes (5): AcademicYearRepository, AssignmentRepository, HomeworkRepository, LeaveRequestRepository, SchoolNoticeRepository
 
 ### Community 5 - "Community 5"
-Cohesion: 0.14
-Nodes (36): addParentLink(), byId(), getStudent(), graduateStudent(), listParentLinks(), listStudents(), listStudentsByClass(), listStudentsBySection() (+28 more)
+Cohesion: 0.25
+Nodes (4): listMyResults(), MobileResult, ResultCard(), styles
 
 ### Community 7 - "Community 7"
 Cohesion: 0.19
 Nodes (15): loginApi(), styles, LoginFormValues, LoginPage(), loginSchema, passwordInput, renderLoginPage(), profileStore (+7 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.12
-Nodes (9): HomeworkSubmission, LeaveRequest, ExamResult, StudentFeeRecord, FeeStructure, Assignment, AssignmentSubmission, HomeworkAssignment (+1 more)
+Cohesion: 0.04
+Nodes (6): HomeworkSubmission, StudentFeeRecord, Assignment, FeeStructure, SchoolNotice, HomeworkAssignment
 
 ### Community 9 - "Community 9"
-Cohesion: 0.18
-Nodes (21): AttendanceSummary, ChildFeeRecord, ChildHomework, ChildResult, ChildSummary, getChildAttendance(), getChildFees(), getChildHomework() (+13 more)
+Cohesion: 0.09
+Nodes (32): AttendanceSummary, ChildFeeRecord, ChildHomework, ChildResult, ChildSummary, getChildAttendance(), getChildFees(), getChildHomework() (+24 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.27
 Nodes (16): base(), createNotice(), deleteNotice(), listNotices(), NoticeCategory, NoticeCreateRequest, NoticeResponse, NoticeTarget (+8 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.1
-Nodes (39): base(), byId(), closeAcademicYear(), createAcademicYear(), listAcademicYears(), setCurrentAcademicYear(), byYear(), createClass() (+31 more)
+Cohesion: 0.06
+Nodes (43): base(), byId(), closeAcademicYear(), createAcademicYear(), listAcademicYears(), setCurrentAcademicYear(), byYear(), createClass() (+35 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.08
 Nodes (4): ExamController, ExamService, ExamService, ExamServiceImpl
 
 ### Community 13 - "Community 13"
-Cohesion: 0.08
-Nodes (54): approveLeave(), getLeaveRequests(), rejectLeave(), approveLeave(), base(), cancelLeave(), CreateLeaveRequest, getMyLeave() (+46 more)
+Cohesion: 0.29
+Nodes (15): approveLeave(), base(), cancelLeave(), CreateLeaveRequest, LeaveRequestResponse, LeaveType, listLeaveRequests(), rejectLeave() (+7 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.27
-Nodes (12): DayOfWeek, getStudentTimetable(), getTeacherTimetable(), TimetableSlot, DAY_LABEL, DAYS, PERIODS, slotAt() (+4 more)
+Cohesion: 0.18
+Nodes (22): addTimetableSlot(), DayOfWeek, deleteTimetableSlot(), getStudentTimetable(), listTimetableSlots(), TimetableSlot, StudentTimetablePage(), DAY_LABELS (+14 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.06
-Nodes (11): RequiresFeatureAspect, FirebaseConfig, FirebaseProperties, FeatureAdminController, from(), FeatureFlagService, FeatureRepository, TenantFeatureRepository (+3 more)
+Nodes (12): RequiresFeatureAspect, listTenantFeatures(), FirebaseConfig, FirebaseProperties, FeatureAdminController, from(), FeatureFlagService, FeatureRepository (+4 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.14
-Nodes (27): base(), createHomework(), deleteHomework(), getHomework(), HomeworkStatus, listHomework(), listMyHomework(), MobileHomework (+19 more)
+Cohesion: 0.22
+Nodes (15): createHomework(), HomeworkStatus, listMyHomework(), MobileHomework, SubmissionStatus, submitHomework(), EMPTY, FormState (+7 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.12
-Nodes (21): AssignmentStatus, AssignmentView, AttendanceRecord, getMyAssignments(), getMyHomework(), getMyNotices(), HomeworkResponse, HomeworkStatus (+13 more)
+Cohesion: 0.09
+Nodes (31): AssignmentStatus, AssignmentView, AttendanceRecord, AttendanceStatus, FeeStatus, getMyAssignments(), getMyAttendance(), getMyFees() (+23 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.05
 Nodes (47): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, jsx, lib, module, moduleDetection, moduleResolution (+39 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.13
-Nodes (33): addExamSubject(), createExam(), getExam(), listExams(), removeExamSubject(), updateExamStatus(), bulkSaveMarks(), listMarks() (+25 more)
+Cohesion: 0.14
+Nodes (30): addExamSubject(), createExam(), listExams(), removeExamSubject(), updateExamStatus(), EXAM_TYPES, ExamCreatePage(), FormValues (+22 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.07
-Nodes (31): authHeaders(), CREDENTIALS, loginDuration, loginFailed, ok, options, res, start (+23 more)
+Cohesion: 0.13
+Nodes (17): authHeaders(), headers, ok, options, r, reportDuration, reportFailed, start (+9 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.03
-Nodes (5): Department, Subject, Tenant, TenantFeature, User
+Cohesion: 0.04
+Nodes (5): Department, Feature, FeeCategory, Subject, getDescription()
 
 ### Community 22 - "Community 22"
-Cohesion: 0.21
-Nodes (3): MarksService, MarksService, MarksServiceImpl
+Cohesion: 0.14
+Nodes (4): MarksController, MarksService, MarksService, MarksServiceImpl
 
 ### Community 23 - "Community 23"
-Cohesion: 0.05
-Nodes (30): AttendanceEntry, base(), BulkMarkRequest, getStaffAttendance(), getStaffAttendanceHistory(), listStaffAttendance(), markStaffAttendance(), StaffAttendanceResponse (+22 more)
+Cohesion: 0.14
+Nodes (23): AttendanceEntry, base(), BulkMarkRequest, getStaffAttendance(), getStaffAttendanceHistory(), listStaffAttendance(), markStaffAttendance(), StaffAttendanceResponse (+15 more)
 
 ### Community 24 - "Community 24"
 Cohesion: 0.03
-Nodes (6): from(), from(), from(), from(), Staff, Student
+Nodes (6): from(), from(), from(), School, Staff, Student
 
 ### Community 25 - "Community 25"
-Cohesion: 0.23
-Nodes (11): getStudentsForAttendance(), submitTeacherAttendance(), TeacherStudentRow, DOW, PeriodCard(), STATUS_COLORS, STATUS_LABELS, styles (+3 more)
+Cohesion: 0.12
+Nodes (23): AttendanceStatus, getStudentsForAttendance(), getTeacherHomework(), HomeworkStatus, StudentMark, submitTeacherAttendance(), TakeAttendancePayload, TeacherHomework (+15 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.08
-Nodes (4): StaffController, StaffService, StaffServiceImpl, StaffService
+Nodes (5): StaffController, StaffService, StaffServiceImpl, StaffService, StudentService
 
 ### Community 27 - "Community 27"
-Cohesion: 0.15
+Cohesion: 0.14
 Nodes (6): OncePerRequestFilter, TenantSuspensionFilter, CorrelationId, CorrelationIdFilter, SecurityHeadersFilter, TenantContextFilter
 
 ### Community 28 - "Community 28"
@@ -406,11 +415,11 @@ Nodes (30): dependencies, axios, date-fns, @hookform/resolvers, i18next, react, 
 
 ### Community 29 - "Community 29"
 Cohesion: 0.2
-Nodes (21): activateTenant(), disableFeature(), enableFeature(), getTenant(), getTenantConfig(), listAllFeatures(), listTenantFeatures(), setTenantConfig() (+13 more)
+Nodes (20): activateTenant(), disableFeature(), enableFeature(), getTenant(), getTenantConfig(), listAllFeatures(), setTenantConfig(), suspendTenant() (+12 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.14
-Nodes (5): getSession(), markAttendance(), AttendanceService, AttendanceRecordRepository, AttendanceServiceImpl
+Cohesion: 0.09
+Nodes (5): getSession(), AttendanceService, AttendanceController, AttendanceService, AttendanceServiceImpl
 
 ### Community 32 - "Community 32"
 Cohesion: 0.13
@@ -421,32 +430,36 @@ Cohesion: 0.35
 Nodes (12): activateDepartment(), byId(), bySchool(), createDepartment(), deactivateDepartment(), DepartmentRequest, DepartmentResponse, listDepartments() (+4 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.19
-Nodes (18): ClassAttendanceSummary, ClassPickerItem, fetchClassesForSchool(), fetchSectionsForClass(), fetchStudentsByClass(), SectionPickerItem, StudentDto, AttendanceStatus (+10 more)
+Cohesion: 0.12
+Nodes (24): ClassAttendanceSummary, ClassPickerItem, fetchClassesForSchool(), fetchSectionsForClass(), fetchStudentsByClass(), SectionPickerItem, StudentDto, AttendanceRecord (+16 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.14
-Nodes (16): TeacherAssignment, AssignmentStatus, AssignmentSubmission, AssignmentSummary, GradeRequest, gradeSubmission(), listAssignmentSubmissions(), listMyAssignments() (+8 more)
+Cohesion: 0.15
+Nodes (14): SubmissionStatus, TeacherAssignment, AssignmentStatus, AssignmentSubmission, AssignmentSummary, GradeRequest, gradeSubmission(), listAssignmentSubmissions() (+6 more)
 
 ### Community 38 - "Community 38"
-Cohesion: 0.13
-Nodes (36): byId(), byId(), bySchool(), createStaff(), getStaff(), listStaff(), listStaffByDepartment(), markOnLeave() (+28 more)
+Cohesion: 0.16
+Nodes (30): byId(), byId(), getStaff(), listStaff(), listStaffByDepartment(), markOnLeave(), resignStaff(), returnFromLeave() (+22 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.16
-Nodes (4): PushService, DeviceTokenRepository, PushService, PushServiceImpl
+Cohesion: 0.2
+Nodes (16): SubmitLeavePayload, cancelLeave(), getMyLeave(), LeaveStatus, LeaveType, submitLeave(), SubmitLeavePayload, TeacherLeaveRecord (+8 more)
 
 ### Community 40 - "Community 40"
 Cohesion: 0.19
 Nodes (5): ApplicationRunner, SuperAdminBootstrap, CloudCampusApplication, AsyncConfig, main
 
+### Community 41 - "Community 41"
+Cohesion: 0.11
+Nodes (3): LeaveRequest, from(), LeaveRequest
+
 ### Community 42 - "Community 42"
-Cohesion: 0.14
-Nodes (13): admitStudent(), bySchool(), CreateForm(), AttendanceCreateSessionPage(), DepartmentForm(), CreateForm(), FormValues, schema (+5 more)
+Cohesion: 0.13
+Nodes (15): bySchool(), createStaff(), admitStudent(), bySchool(), CreateForm(), DepartmentForm(), Field(), FormValues (+7 more)
 
 ### Community 43 - "Community 43"
-Cohesion: 0.12
-Nodes (13): listNotificationLogs(), NotificationLog, CHANNEL_BADGE, EmailFormValues, emailSchema, PushFormValues, pushSchema, STATUS_BADGE (+5 more)
+Cohesion: 0.11
+Nodes (16): listNotificationLogs(), sendEmail(), safeVariables(), NotificationLog, CHANNEL_BADGE, EmailFormValues, emailSchema, PushFormValues (+8 more)
 
 ### Community 45 - "Community 45"
 Cohesion: 0.09
@@ -454,35 +467,31 @@ Nodes (6): ParentController, ParentLinkController, ParentLinkService, StudentPar
 
 ### Community 46 - "Community 46"
 Cohesion: 0.2
-Nodes (5): AuthService, refresh, login(), JwtUtil, AuthServiceImpl
-
-### Community 47 - "Community 47"
-Cohesion: 0.17
-Nodes (3): StudentFeesController, StudentResultsController, TeacherHomeworkController
+Nodes (8): AuthService, refresh, login(), info, description, name, schema, AuthServiceImpl
 
 ### Community 48 - "Community 48"
 Cohesion: 0.36
 Nodes (7): STATUS_BADGE, TenantListPage(), link, makeClient(), makePageResponse(), mockTenant, renderPage()
 
-### Community 49 - "Community 49"
-Cohesion: 0.12
-Nodes (5): sendEmail(), to, safeVariables(), NotificationQueueConfig, SendEmailRequest
-
 ### Community 50 - "Community 50"
-Cohesion: 0.18
-Nodes (3): TeacherAssignmentController, from(), SubmissionRepository
+Cohesion: 0.08
+Nodes (7): listSubmissions(), AssignmentService, AssignmentController, StudentAssignmentController, TeacherAssignmentController, SubmitForm(), SubmissionRepository
 
 ### Community 51 - "Community 51"
-Cohesion: 0.12
-Nodes (13): changePasswordApi(), forgotPasswordApi(), LoginRequestData, LoginResponseData, logoutApi(), resetPasswordApi(), revokeAllSessionsApi(), styles (+5 more)
+Cohesion: 0.15
+Nodes (11): changePasswordApi(), forgotPasswordApi(), LoginRequestData, LoginResponseData, logoutApi(), resetPasswordApi(), revokeAllSessionsApi(), isStrongPassword() (+3 more)
 
 ### Community 52 - "Community 52"
 Cohesion: 0.13
 Nodes (17): getSchoolDashboard(), SchoolDashboardStats, useBranding(), NAV_ITEMS, NavItem, NavItemLink(), SchoolAdminLayout(), main (+9 more)
 
 ### Community 53 - "Community 53"
-Cohesion: 0.2
-Nodes (9): panels, schemaVersion, tags, templating, list, time, from, timezone (+1 more)
+Cohesion: 0.25
+Nodes (7): panels, schemaVersion, tags, time, from, timezone, uid
+
+### Community 54 - "Community 54"
+Cohesion: 0.17
+Nodes (4): templating, list, ExamRepository, ExamResultRepository
 
 ### Community 56 - "Community 56"
 Cohesion: 0.09
@@ -493,8 +502,8 @@ Cohesion: 0.2
 Nodes (13): authClient, api, axiosInstance, { data }, drainQueue(), failedQueue, original, QueueEntry (+5 more)
 
 ### Community 59 - "Community 59"
-Cohesion: 0.11
-Nodes (3): SectionController, SectionService, SectionServiceImpl
+Cohesion: 0.19
+Nodes (3): from(), from(), FeeInvoicePdfService
 
 ### Community 61 - "Community 61"
 Cohesion: 0.1
@@ -505,16 +514,20 @@ Cohesion: 0.24
 Nodes (12): AcademicCalendarType, getSchoolSettings(), GradingScheme, SchoolSettingsRequest, SchoolSettingsResponse, updateSchoolSettings(), url(), DayPicker() (+4 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.04
-Nodes (57): E10 Completions — Attendance Frontend, E11 Completions — Finance & Fees (CC-0901, CC-0902, CC-0905), E12–E14 Completions — Communication System (CC-1001–CC-1004), E15 Completions — Examination System (CC-1101), E16 Completions — Marks Entry System (CC-1102), E18 Completions — Timetable Management (CC-0701), E19 Completions — Homework Management (CC-0702), E1–E6 Completions — Backend: Academic, Student, Staff, Attendance (+49 more)
+Cohesion: 0.07
+Nodes (59): E10 Completions — Attendance Frontend, E11 Completions — Finance & Fees (CC-0901, CC-0902, CC-0905), E12–E14 Completions — Communication System (CC-1001–CC-1004), E15 Completions — Examination System (CC-1101), E16 Completions — Marks Entry System (CC-1102), E18 Completions — Timetable Management (CC-0701), E19 Completions — Homework Management (CC-0702), E1–E6 Completions — Backend: Academic, Student, Staff, Attendance (+51 more)
 
 ### Community 64 - "Community 64"
 Cohesion: 0.3
 Nodes (8): AttendanceStatus, flushAttendanceSync(), SyncBatchRequest, SyncBatchResult, AttendanceSyncItem, storage, syncQueue, useSyncTrigger()
 
+### Community 65 - "Community 65"
+Cohesion: 0.1
+Nodes (3): TeacherHomeworkController, from(), HomeworkSubmission
+
 ### Community 66 - "Community 66"
-Cohesion: 0.19
-Nodes (3): PK, TenantConfig, Serializable
+Cohesion: 0.14
+Nodes (4): PK, TenantConfig, TenantFeatureId, Serializable
 
 ### Community 67 - "Community 67"
 Cohesion: 0.2
@@ -524,101 +537,97 @@ Nodes (12): scripts, build, dev, lint, preview, ios, supportsTablet, scripts (+4
 Cohesion: 0.2
 Nodes (8): ProtectedRoute(), ProtectedRouteProps, { container }, mockUser(), renderGuard(), NO_FEATURES, useFeatureFlag(), { container }
 
-### Community 70 - "Community 70"
-Cohesion: 0.67
-Nodes (3): getTenantStats(), STAT_CARDS, SuperAdminDashboardPage()
-
 ### Community 71 - "Community 71"
-Cohesion: 0.13
-Nodes (4): safeLanguageCode(), NotificationService, NotificationServiceImpl, TemplateRenderer
+Cohesion: 0.12
+Nodes (5): NotificationService, NotificationQueueConsumer, NotificationService, NotificationServiceImpl, TemplateRenderer
 
 ### Community 73 - "Community 73"
-Cohesion: 0.12
-Nodes (5): NoticeController, NoticeService, sms(), NotificationQueuePublisher, ExamRepository
+Cohesion: 0.06
+Nodes (9): AttendanceAlertService, NoticeController, from(), NoticeService, sms(), NotificationQueuePublisher, FeeReminderScheduler, AttendanceAlertServiceImpl (+1 more)
 
-### Community 75 - "Community 75"
-Cohesion: 0.22
-Nodes (5): from(), getDefaultValue(), name, name, values
+### Community 74 - "Community 74"
+Cohesion: 0.12
+Nodes (17): code:bash (graphify tree), code:bash (open graphify-out/GRAPH_TREE.html), code:bash (graphify export callflow-html), code:bash (open graphify-out/CloudCampus-callflow.html), code:bash (graphify explain "JwtUtil"), code:bash (graphify path "LoginPage()" "JwtUtil"), code:bash (graphify extract . --backend gemini --max-concurrency 2), code:bash (graphify update .) (+9 more)
 
 ### Community 76 - "Community 76"
 Cohesion: 0.35
 Nodes (8): getPlatformAnalytics(), PlatformAnalyticsResponse, TenantAnalyticsSummary, fmt(), fmtCurrency(), RateBadge(), StatCard(), TenantAnalyticsPage()
 
 ### Community 77 - "Community 77"
-Cohesion: 0.33
-Nodes (8): listWhatsAppLogs(), sendWhatsApp(), SendWhatsAppRequest, WhatsAppMessageLogResponse, WhatsAppStatus, sendSchema, STATUS_BADGE, WhatsAppPage()
+Cohesion: 0.25
+Nodes (12): getMyLeave(), submitLeave(), addDays(), formatDate(), FormState, LEAVE_TYPES, LeaveCard(), LeaveScreen() (+4 more)
 
 ### Community 78 - "Community 78"
-Cohesion: 0.23
+Cohesion: 0.21
 Nodes (4): WhatsAppController, WhatsAppService, WhatsAppServiceImpl, WhatsAppService
 
 ### Community 79 - "Community 79"
-Cohesion: 0.16
-Nodes (26): base(), createAssignment(), deleteAssignment(), getAssignment(), gradeSubmission(), listAssignments(), listSubmissions(), updateAssignmentStatus() (+18 more)
+Cohesion: 0.17
+Nodes (26): base(), createAssignment(), deleteAssignment(), getAssignment(), gradeSubmission(), listAssignments(), updateAssignmentStatus(), AssignmentStatus (+18 more)
 
 ### Community 80 - "Community 80"
-Cohesion: 0.4
-Nodes (3): License, OpenApiConfig, scheme
+Cohesion: 0.27
+Nodes (11): approveLeave(), getLeaveRequests(), rejectLeave(), LeaveStatus, AdminLeaveScreen(), FILTER_TABS, fmt(), RequestCard() (+3 more)
 
 ### Community 81 - "Community 81"
 Cohesion: 0.43
 Nodes (4): getTeacherDashboard(), TeacherDashboardData, formatTime(), SlotCard()
 
 ### Community 82 - "Community 82"
-Cohesion: 0.08
-Nodes (5): DepartmentController, SubjectController, DepartmentService, SubjectService, SubjectService
-
-### Community 83 - "Community 83"
-Cohesion: 0.08
-Nodes (3): StudentController, StudentService, StudentService
+Cohesion: 0.11
+Nodes (4): DepartmentController, SubjectController, DepartmentService, SubjectService
 
 ### Community 87 - "Community 87"
-Cohesion: 0.15
-Nodes (9): PasswordResetService, info, description, name, schema, item, variable, PasswordResetService (+1 more)
+Cohesion: 0.16
+Nodes (4): safeLanguageCode(), PasswordResetService, PasswordResetService, PasswordResetServiceImpl
 
 ### Community 88 - "Community 88"
-Cohesion: 0.1
-Nodes (23): of(), getClassAttendanceReport(), getStudentAttendanceReport(), listSessionsByClassDateRange(), listSessionsByDate(), AttendanceMarkPage(), PERIOD_LABEL, periodLabel() (+15 more)
+Cohesion: 0.11
+Nodes (20): of(), generateSessionQr(), getClassAttendanceReport(), getStudentAttendanceReport(), listSessionsByClassDateRange(), QrResponse, AttendanceMarkPage(), PERIOD_LABEL (+12 more)
 
 ### Community 151 - "Community 151"
-Cohesion: 0.07
-Nodes (29): 1 — Start local services, 2 — Run the backend, 3 — Run the web frontend, 4 — Run the mobile app, API Reference, Architecture, Backend (Java / Spring Boot), Branch Strategy (+21 more)
+Cohesion: 0.06
+Nodes (35): 1 — Start local services, 2 — Run the backend, 3 — Run the web frontend, 4 — Run the mobile app, Actuator, API Reference, Architecture, Auth (+27 more)
 
 ### Community 152 - "Community 152"
 Cohesion: 0.07
 Nodes (30): code:java (.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAu), code:block13 (POST /v1/auth/forgot-password  → sends OTP to email, stores ), code:java (@Service), code:java (@Component), code:java (@Repository), code:java (@SQLDelete(sql = "UPDATE students SET deleted_at = NOW() WHE), code:sql (-- Tenant queries), code:block2 (POST /v1/auth/login) (+22 more)
 
 ### Community 154 - "Community 154"
-Cohesion: 0.15
-Nodes (4): PerformanceReport, from(), fromWithSubjects(), ExamResult
+Cohesion: 0.13
+Nodes (6): ExamResult, PerformanceReport, StudentResultsController, from(), fromWithSubjects(), ExamResult
 
 ### Community 155 - "Community 155"
 Cohesion: 0.07
 Nodes (27): CloudCampus — Enterprise Execution Roadmap, code:block1 (CC-XXXX | Title | P0/P1/P2/P3 | STATUS), Execution Phases, Final Goal, Phase 10 — Finance & Fees, Phase 11 — Communication System, Phase 12 — Examination System, Phase 13 — Online Learning (+19 more)
 
 ### Community 156 - "Community 156"
-Cohesion: 0.08
-Nodes (3): Feature, FeeCategory, getDescription()
+Cohesion: 0.16
+Nodes (3): MinioConfig, MinioProperties, CREDENTIALS
+
+### Community 157 - "Community 157"
+Cohesion: 0.28
+Nodes (11): base(), deleteHomework(), getHomework(), listHomework(), updateHomeworkStatus(), HomeworkListPage(), isPastDue(), NEXT_LABEL (+3 more)
+
+### Community 158 - "Community 158"
+Cohesion: 0.04
+Nodes (4): AttendanceSession, ExamSubject, TimetableSlot, TimetableSlot
 
 ### Community 159 - "Community 159"
-Cohesion: 0.14
+Cohesion: 0.15
 Nodes (4): ResultController, ResultService, ResultService, ResultServiceImpl
 
 ### Community 160 - "Community 160"
-Cohesion: 0.1
+Cohesion: 0.11
 Nodes (3): AcademicYearService, AcademicYearController, AcademicYearService
 
 ### Community 161 - "Community 161"
 Cohesion: 0.13
 Nodes (7): AttendanceReport, FeeReport, getComparisonReport(), SuperAdminReportController, from(), ReportService, ReportServiceImpl
 
-### Community 162 - "Community 162"
-Cohesion: 0.13
-Nodes (17): AssignmentStatus, getTeacherAssignments(), getTeacherHomework(), HomeworkStatus, StudentMark, TakeAttendancePayload, TeacherHomework, AssignmentCard() (+9 more)
-
 ### Community 163 - "Community 163"
 Cohesion: 0.17
-Nodes (17): FeeStatus, FEE_STATUSES, FeeCollectionPage(), STATUS_BADGE, FeeStructureCreatePage(), FormValues, schema, CreateFeeStructureRequest (+9 more)
+Nodes (18): listRecordsBySchool(), FeeStatus, FEE_STATUSES, FeeCollectionPage(), STATUS_BADGE, FeeStructureCreatePage(), FormValues, schema (+10 more)
 
 ### Community 165 - "Community 165"
 Cohesion: 0.18
@@ -633,11 +642,11 @@ Cohesion: 0.18
 Nodes (17): createNotice(), CreateNoticePayload, deleteNotice(), listNoticesAdmin(), publishNotice(), AdminNoticesScreen(), cardStyles, CATEGORIES (+9 more)
 
 ### Community 170 - "Community 170"
-Cohesion: 0.1
-Nodes (7): BadRequestException, ConflictException, NotFoundException, TenantSuspendedException, TooManyRequestsException, UnauthorizedException, RuntimeException
+Cohesion: 0.09
+Nodes (7): BadRequestException, ConflictException, FeatureNotEnabledException, NotFoundException, TenantSuspendedException, TooManyRequestsException, RuntimeException
 
 ### Community 171 - "Community 171"
-Cohesion: 0.14
+Cohesion: 0.16
 Nodes (3): from(), from(), FeePayment
 
 ### Community 172 - "Community 172"
@@ -645,116 +654,140 @@ Cohesion: 0.1
 Nodes (19): Against staging, Auth load test, CloudCampus Load & Stress Tests, code:bash (brew install k6          # macOS), code:bash (docker compose up -d     # local stack), code:bash (k6 run infra/load-tests/smoke.js), code:bash (k6 run infra/load-tests/load-auth.js), code:bash (k6 run \) (+11 more)
 
 ### Community 173 - "Community 173"
-Cohesion: 0.21
-Nodes (4): AnalyticsService, AnalyticsController, AnalyticsService, AnalyticsServiceImpl
+Cohesion: 0.09
+Nodes (7): AnalyticsService, AnalyticsController, SuperAdminAnalyticsController, AnalyticsService, AnalyticsServiceImpl, SuperAdminAnalyticsServiceImpl, SuperAdminAnalyticsService
 
 ### Community 174 - "Community 174"
-Cohesion: 0.13
-Nodes (7): sendPush(), NotificationController, title, safeData(), NotificationService, NotificationQueueConsumer, PushNotificationRequest
+Cohesion: 0.12
+Nodes (5): NotificationController, PushService, DeviceTokenRepository, PushService, PushServiceImpl
+
+### Community 175 - "Community 175"
+Cohesion: 0.16
+Nodes (7): openSession(), from(), from(), AttendanceCreateSessionPage(), FormValues, schema, schema
 
 ### Community 176 - "Community 176"
-Cohesion: 0.13
-Nodes (4): ClassRoomService, ClassRoomController, HomeworkController, HomeworkService
+Cohesion: 0.11
+Nodes (3): SectionController, SectionService, SectionServiceImpl
 
 ### Community 177 - "Community 177"
-Cohesion: 0.12
-Nodes (3): DepartmentRepository, SectionRepository, SubjectRepository
+Cohesion: 0.05
+Nodes (8): ClassRoomService, ClassRoomController, ClassRoomRepository, DepartmentRepository, SectionRepository, SubjectRepository, ClassRoomService, ClassRoomServiceImpl
 
 ### Community 178 - "Community 178"
-Cohesion: 0.11
-Nodes (18): CloudCampus — Login Credentials, code:bash (# Option 1 — Docker PostgreSQL + Redis (recommended)), code:block2 (POST /v1/auth/login), code:bash (POST /v1/super-admin/tenants), Create tenant + school (run once), Database (Local/Docker), Demo Tenant & School (seeded via onboarding API), Environment Variables Reference (+10 more)
+Cohesion: 0.07
+Nodes (35): All Login Credentials, CloudCampus — Login Credentials, CloudCampus — Login Credentials & Local Dev Guide, code:bash (# 1. Start infrastructure (PostgreSQL, Redis, MinIO, MailHog), code:block2 (POST /v1/auth/login), code:bash (PGPASSWORD=cloudcampus_dev psql -U cloudcampus -d cloudcampu), code:bash (# Flush all caches (useful after config changes)), Create tenant + school (run once) (+27 more)
 
 ### Community 179 - "Community 179"
-Cohesion: 0.17
-Nodes (12): HomeworkStatus, HomeworkSubmission, HomeworkSummary, listMyHomework(), listSubmissions(), reviewSubmission(), SubmissionStatus, STATUS_BADGE (+4 more)
+Cohesion: 0.16
+Nodes (13): HomeworkStatus, HomeworkSubmission, HomeworkSummary, listMyHomework(), listSubmissions(), reviewSubmission(), SubmissionStatus, STATUS_BADGE (+5 more)
+
+### Community 180 - "Community 180"
+Cohesion: 0.18
+Nodes (4): License, OpenApiConfig, scheme, email()
+
+### Community 181 - "Community 181"
+Cohesion: 0.35
+Nodes (11): bySchool(), activateSubject(), byId(), bySchool(), createSubject(), deactivateSubject(), listSubjects(), CreateFormProps (+3 more)
 
 ### Community 183 - "Community 183"
 Cohesion: 0.13
 Nodes (4): SchoolSettingsController, SchoolSettingsService, SchoolSettingsService, SchoolSettingsServiceImpl
 
+### Community 185 - "Community 185"
+Cohesion: 0.05
+Nodes (4): ClassRoom, Tenant, TenantFeature, User
+
 ### Community 186 - "Community 186"
-Cohesion: 0.21
-Nodes (4): TenantConfigService, TenantConfigServiceImpl, TenantConfigService, TenantService
+Cohesion: 0.13
+Nodes (4): SecretsGuardConfig, TenantConfigService, TenantConfigServiceImpl, TenantConfigService
+
+### Community 187 - "Community 187"
+Cohesion: 0.15
+Nodes (4): TenantRepository, TenantService, TenantServiceImpl, TenantService
 
 ### Community 188 - "Community 188"
 Cohesion: 0.17
 Nodes (4): AccessDeniedHandler, AuthenticationEntryPoint, SecurityConfig, JsonAuthEntryPoint
 
 ### Community 189 - "Community 189"
-Cohesion: 0.23
-Nodes (13): FeeStatus, MobileFeeRecord, FeeStatus, getMyFees(), FeeRow(), fmt(), statusClass(), statusLabel() (+5 more)
-
-### Community 190 - "Community 190"
-Cohesion: 0.15
-Nodes (3): periodNumber(), TimetableRepository, TimetableServiceImpl
-
-### Community 192 - "Community 192"
-Cohesion: 0.28
-Nodes (13): bySchool(), activateSubject(), byId(), bySchool(), createSubject(), deactivateSubject(), listSubjects(), CreateFormProps (+5 more)
-
-### Community 194 - "Community 194"
-Cohesion: 0.13
-Nodes (3): ExamResultRepository, ExamSubjectRepository, StudentMarkRepository
+Cohesion: 0.26
+Nodes (11): downloadFeeInvoicePdf(), getFeeReceipt(), getFeeRecord(), recordPayment(), PAYMENT_MODES, PaymentForm, paymentSchema, STATUS_BADGE (+3 more)
 
 ### Community 196 - "Community 196"
-Cohesion: 0.21
-Nodes (3): TimetableController, TimetableService, TimetableService
+Cohesion: 0.1
+Nodes (6): StudentTimetableController, TeacherDashboardController, TeacherTimetableController, TimetableController, TimetableService, TimetableService
+
+### Community 197 - "Community 197"
+Cohesion: 0.07
+Nodes (9): from(), from(), from(), from(), from(), from(), from(), from() (+1 more)
+
+### Community 198 - "Community 198"
+Cohesion: 0.3
+Nodes (9): listWhatsAppLogs(), sendWhatsApp(), SendWhatsAppRequest, WhatsAppMessageLogResponse, WhatsAppStatus, FormValues, sendSchema, STATUS_BADGE (+1 more)
 
 ### Community 199 - "Community 199"
 Cohesion: 0.13
 Nodes (14): 11. Pricing & Cost Control, 1. Vision & Product Principles, 2. Actors & Boundaries, 5. Layer 2 — Tenant / School Admin ERP, 9. Performance Targets, Actors, Boundaries, CloudCampus — Full Product Specification (+6 more)
 
 ### Community 200 - "Community 200"
-Cohesion: 0.13
-Nodes (14): Background Jobs & Messaging, CloudCampus — Enterprise Master Architecture, code:bash (# Start all services), code:bash (# Run backend), Core Product Philosophy, Delivery Semantics, Event Publishing Consistency, File / Media Pipeline (+6 more)
+Cohesion: 0.14
+Nodes (13): Backend Domain Packages (`com.cloudcampus.*`), CloudCampus — Enterprise Master Architecture, code:bash (# Start all services), code:bash (# Run backend), Core Product Philosophy, File / Media Pipeline, Frontend (`React 19 + TypeScript + Vite`), Implementation Status (as of 2026-05-13 — E28 complete, all APIs verified) (+5 more)
 
 ### Community 201 - "Community 201"
 Cohesion: 0.13
 Nodes (14): CloudCampus — Enterprise Full-Stack Upgrade Master Plan, code:json ({), code:block39 (Plan), code:java (// In each service method that writes data:), Current Codebase Inventory (2026-05-12), EUP-080 · Website Builder Architecture Decision, EUP-090 · Subscription System Architecture, EUP-100 · Demo Tenant Strategy (+6 more)
 
-### Community 202 - "Community 202"
-Cohesion: 0.21
-Nodes (3): listRecordsBySchool(), listRecordsByStudent(), StudentFeeRecordRepository
-
 ### Community 203 - "Community 203"
 Cohesion: 0.38
 Nodes (10): base(), generateResults(), getStudentResult(), listResults(), GRADE_COLOURS, ReportCardPage(), GRADE_COLOURS, ResultsPage() (+2 more)
+
+### Community 205 - "Community 205"
+Cohesion: 0.27
+Nodes (7): check_flyway(), check_table_nonempty(), cleanup(), err(), fail(), log(), ok()
+
+### Community 206 - "Community 206"
+Cohesion: 0.27
+Nodes (7): getMyTimetable(), getMyTimetable(), DAY_LABELS, PERIODS, DAY_LABELS, PERIODS, TeacherTimetablePage()
 
 ### Community 207 - "Community 207"
 Cohesion: 0.14
 Nodes (14): 7. Technical Architecture (As-Built — 2026-05-12), Backend Stack, Background Jobs Standard, Cache Layer, code:bash (# Start all local services), code:bash (# Run backend with dev profile), Database Migrations (Flyway), Database Strategy — **Option A (Implemented)** (+6 more)
 
 ### Community 208 - "Community 208"
-Cohesion: 0.15
-Nodes (7): currency(), DAY_LABELS, FEE_STATUS_BADGE, FeesTab(), PERIODS, Tab, TABS
+Cohesion: 0.47
+Nodes (8): createCategory(), deactivateCategory(), listCategories(), listStructures(), FeeService, FeeStructureListPage(), FREQ_LABEL, CreateFeeCategoryRequest
 
 ### Community 209 - "Community 209"
-Cohesion: 0.36
-Nodes (10): addTimetableSlot(), deleteTimetableSlot(), listTimetableSlots(), DAY_LABELS, EMPTY_FORM, PERIODS, SlotForm, TimetablePage() (+2 more)
+Cohesion: 0.18
+Nodes (10): AssignmentStatus, getTeacherAssignments(), styles, styles, AssignmentCard(), dueBadgeColor(), GradeProgress(), STATUS_COLOR (+2 more)
 
 ### Community 211 - "Community 211"
 Cohesion: 0.15
 Nodes (13): API Contract, Audit Logging Contract, Authorization Contract, Backend Stack (as-built), Cache Layer, code:yaml (jpa:), code:yaml (spring.data.redis:), Database Migrations (V1–V36) (+5 more)
 
 ### Community 212 - "Community 212"
-Cohesion: 0.2
-Nodes (5): openSession(), from(), from(), FormValues, schema
+Cohesion: 0.16
+Nodes (3): markAttendance(), AttendanceRecordRepository, QrAttendanceService
 
 ### Community 213 - "Community 213"
-Cohesion: 0.29
-Nodes (10): getFeeReceipt(), getFeeRecord(), recordPayment(), PAYMENT_MODES, PaymentForm, paymentSchema, STATUS_BADGE, StudentFeeDetailPage() (+2 more)
+Cohesion: 0.22
+Nodes (9): After coding, Before coding, code:bash (graphify watch .), code:bash (graphify query "how <feature> works"), code:bash (graphify update .), code:bash (graphify export callflow-html), End of day, Recommended Daily Workflow (+1 more)
 
 ### Community 214 - "Community 214"
 Cohesion: 0.21
 Nodes (7): getNotice(), getNotices(), ParentNoticesPage(), PRIORITY_BADGE, priorityLabel(), PRIORITY_BADGE, StudentNoticesPage()
 
 ### Community 215 - "Community 215"
-Cohesion: 0.29
-Nodes (10): AttendanceStatus, AttendanceStudent, getAttendanceStudents(), StudentMark, TakeAttendanceRequest, ALL_STATUSES, DOW_MAP, STATUS_STYLES (+2 more)
+Cohesion: 0.16
+Nodes (14): AttendanceStatus, AttendanceStudent, getAttendanceStudents(), StudentMark, takeAttendance(), TakeAttendanceRequest, TeacherAttendanceController, periodNumber() (+6 more)
 
 ### Community 216 - "Community 216"
 Cohesion: 0.27
 Nodes (10): createTenant(), FormValues, schema, TenantCreatePage(), alert, makeClient(), mockCreated, mockNavigate (+2 more)
+
+### Community 219 - "Community 219"
+Cohesion: 0.29
+Nodes (4): sendPush(), title, safeData(), PushNotificationRequest
 
 ### Community 220 - "Community 220"
 Cohesion: 0.17
@@ -764,13 +797,21 @@ Nodes (12): 1. Global Overview Dashboard, 2. Tenant Management System, 3. Featur
 Cohesion: 0.17
 Nodes (12): 1. Global Overview Dashboard, 2. Tenant Management System, 3. Feature Catalog Engine, 4. Subscription Management, 5. Template Marketplace, 6. Infrastructure Monitoring, 7. Global Analytics Engine, 8. Enterprise Audit System (+4 more)
 
+### Community 222 - "Community 222"
+Cohesion: 0.35
+Nodes (3): exportAttendanceCsv(), exportPerformanceCsv(), ReportController
+
 ### Community 223 - "Community 223"
-Cohesion: 0.31
-Nodes (9): listMyAssignments(), MobileAssignment, SubmissionStatus, submitAssignment(), AssignmentCard(), AssignmentsScreen(), dueBadgeColor(), STATUS_COLOR (+1 more)
+Cohesion: 0.33
+Nodes (8): listMyAssignments(), MobileAssignment, submitAssignment(), AssignmentCard(), AssignmentsScreen(), dueBadgeColor(), STATUS_COLOR, styles
 
 ### Community 224 - "Community 224"
-Cohesion: 0.25
-Nodes (8): getMyTimetable(), getMyTimetable(), DAY_LABELS, PERIODS, StudentTimetablePage(), DAY_LABELS, PERIODS, TeacherTimetablePage()
+Cohesion: 0.22
+Nodes (9): API Layer, Avoid infinite API loops, code:tsx (useEffect(() => {), code:tsx (retry: false), code:text (features/*/api/), Frontend Development Rules, RBAC UI, React Query (+1 more)
+
+### Community 225 - "Community 225"
+Cohesion: 0.15
+Nodes (3): HomeworkController, HomeworkService, HomeworkServiceImpl
 
 ### Community 229 - "Community 229"
 Cohesion: 0.18
@@ -783,6 +824,10 @@ Nodes (11): 1. AI Gateway Service (CC-1600), 2. Prompt & Policy Registry (CC-160
 ### Community 231 - "Community 231"
 Cohesion: 0.18
 Nodes (11): Backend Final Architecture, code:block41 (com.cloudcampus/), code:block42 (frontend/), code:block43 (mobile/), DevOps Stack, Final Architecture Summary, Final Production Readiness Score (Current State), Frontend Final Architecture (+3 more)
+
+### Community 233 - "Community 233"
+Cohesion: 0.14
+Nodes (3): createStructure(), FeeCategoryRepository, FeeStructureRepository
 
 ### Community 234 - "Community 234"
 Cohesion: 0.2
@@ -801,8 +846,8 @@ Cohesion: 0.31
 Nodes (3): BrandingResponse, getBrandingApi(), BrandingController
 
 ### Community 238 - "Community 238"
-Cohesion: 0.47
-Nodes (8): createCategory(), deactivateCategory(), listCategories(), listStructures(), FeeService, FeeStructureListPage(), FREQ_LABEL, CreateFeeCategoryRequest
+Cohesion: 0.22
+Nodes (9): Backend, code:text (backend/), code:text (frontend/), code:text (mobile/), code:text (infra/), Frontend, Infrastructure, Mobile (+1 more)
 
 ### Community 239 - "Community 239"
 Cohesion: 0.42
@@ -813,8 +858,8 @@ Cohesion: 0.22
 Nodes (5): listMyFees(), ROLE_LABEL, SchoolDashStats, StudentAtt, TeacherDash
 
 ### Community 241 - "Community 241"
-Cohesion: 0.33
-Nodes (4): takeAttendance(), from(), TeacherAttendanceController, id
+Cohesion: 0.22
+Nodes (5): from(), getDefaultValue(), name, name, values
 
 ### Community 242 - "Community 242"
 Cohesion: 0.42
@@ -832,21 +877,13 @@ Nodes (9): Architecture Decision (CC-2001 — pending), Enterprise Positioning, 
 Cohesion: 0.22
 Nodes (5): NAV, NAV, StudentLayout(), NAV, TeacherLayout()
 
-### Community 250 - "Community 250"
-Cohesion: 0.22
-Nodes (6): AttendanceRow, AttendanceStatus, MyAttendance, RecordRow(), STATUS_COLOR, styles
-
 ### Community 252 - "Community 252"
 Cohesion: 0.43
 Nodes (6): MobileNotice, CATEGORY_COLOR, formatDate(), NoticeCard(), NoticesScreen(), styles
 
-### Community 253 - "Community 253"
-Cohesion: 0.25
-Nodes (4): listMyResults(), MobileResult, ResultCard(), styles
-
 ### Community 255 - "Community 255"
-Cohesion: 0.29
-Nodes (3): TenantResolver, HeaderTenantResolver, TenantResolver
+Cohesion: 0.19
+Nodes (4): StudentFeesController, TenantResolver, HeaderTenantResolver, TenantResolver
 
 ### Community 257 - "Community 257"
 Cohesion: 0.25
@@ -865,16 +902,28 @@ Cohesion: 0.25
 Nodes (6): name, private, type, version, private, version
 
 ### Community 261 - "Community 261"
-Cohesion: 0.43
-Nodes (5): deleteMark(), updateMark(), BulkMarksEntryRequest, MarksEntryRequest, StudentMarkResponse
-
-### Community 262 - "Community 262"
-Cohesion: 0.33
-Nodes (5): AttendanceStatus, getMyAttendance(), STATUS_STYLE, StudentAttendancePage(), SummaryCard()
+Cohesion: 0.26
+Nodes (11): getExam(), bulkSaveMarks(), deleteMark(), listMarks(), updateMark(), MarksEntryPage(), RowState, ExamSubjectResponse (+3 more)
 
 ### Community 263 - "Community 263"
 Cohesion: 0.52
 Nodes (6): getMyResults(), StudentResultSummary, PassBadge(), pct(), ResultCard(), StudentResultsPage()
+
+### Community 264 - "Community 264"
+Cohesion: 0.29
+Nodes (6): loginDuration, loginFailed, ok, options, res, start
+
+### Community 267 - "Community 267"
+Cohesion: 0.33
+Nodes (5): FeeStatus, MobileFeeRecord, FeesScreen(), fmt(), styles
+
+### Community 268 - "Community 268"
+Cohesion: 0.48
+Nodes (6): base(), deleteStudentDocument(), getPresignedUrl(), listStudentDocuments(), StudentDocumentResponse, uploadStudentDocument()
+
+### Community 270 - "Community 270"
+Cohesion: 0.67
+Nodes (3): getTenantStats(), STAT_CARDS, SuperAdminDashboardPage()
 
 ### Community 273 - "Community 273"
 Cohesion: 0.29
@@ -912,6 +961,14 @@ Nodes (6): 🔴 Phase A — Auth Enforcement (Do First — Blocks Everything), �
 Cohesion: 0.33
 Nodes (5): code:js (export default defineConfig([), code:js (// eslint.config.js), Expanding the ESLint configuration, React Compiler, React + TypeScript + Vite
 
+### Community 286 - "Community 286"
+Cohesion: 0.29
+Nodes (7): Backend Development Rules, Controllers, DTOs, Logging, Repositories, Security, Services
+
+### Community 288 - "Community 288"
+Cohesion: 0.29
+Nodes (7): code:text (http://localhost:8080), code:text (http://localhost:5173), code:text (http://localhost:9001), code:text (http://localhost:3100), code:text (http://localhost:9090), code:text (http://localhost:8025), Current Local Development URLs
+
 ### Community 289 - "Community 289"
 Cohesion: 0.4
 Nodes (5): 10. Execution Roadmap Structure, code:block4 (CC-XXXX | Title | P0/P1/P2/P3 | STATUS), MVP Milestones (Thin Slice), Phases, Task ID Convention
@@ -933,44 +990,72 @@ Cohesion: 0.4
 Nodes (5): code:java (@Entity), code:java (@SpringBootTest), EUP-070 · School Entity (Missing — Architecture Gap), EUP-071 · Tenant Isolation Automated Test Suite, Section 7 — Multi-Tenancy
 
 ### Community 294 - "Community 294"
-Cohesion: 0.83
-Nodes (3): getMyChildren(), AttendanceBar(), ParentDashboardPage()
-
-### Community 296 - "Community 296"
-Cohesion: 0.5
-Nodes (4): Backend Domain Packages (`com.cloudcampus.*`), Frontend (`React 19 + TypeScript + Vite`), Implementation Status (as of 2026-05-13 — E28 complete, all APIs verified), Platform & Infrastructure
-
-### Community 297 - "Community 297"
 Cohesion: 0.5
 Nodes (4): Disaster Recovery, Logging Configuration, Mandatory from Day 1, Observability & Reliability Baseline
+
+### Community 295 - "Community 295"
+Cohesion: 0.29
+Nodes (6): info, description, name, schema, item, variable
+
+### Community 297 - "Community 297"
+Cohesion: 0.47
+Nodes (5): listSessionsByDate(), AttendanceSessionListPage(), fmt(), PERIOD_LABEL, todayIso()
 
 ### Community 298 - "Community 298"
 Cohesion: 0.5
 Nodes (4): code:java (public static final ScopedValue<String> TENANT_ID = ScopedVa), code:java (ScopedValue.where(RequestContext.TENANT_ID, tenantId)), code:yaml (# application.yml), EUP-007 · Virtual Thread Migration (RequestContext)
 
-### Community 301 - "Community 301"
+### Community 300 - "Community 300"
 Cohesion: 0.67
 Nodes (3): code:java (@Service), code:java (@RequiresFeature("ATTENDANCE_QR")), EUP-014 · Feature Flag Service Layer (Missing)
 
+### Community 301 - "Community 301"
+Cohesion: 0.4
+Nodes (5): 1. Never break existing functionality, 2. Multi-tenant safety is critical, 3. Security-first development, 4. Production-grade code only, Core Engineering Principles
+
+### Community 309 - "Community 309"
+Cohesion: 0.12
+Nodes (15): AI Agent Expectations, Audit Logging, Authentication Rules, CloudCampus — Claude AI Development Instructions, code:bash (graphify update .), code:bash (graphify export callflow-html), code:text (postgres), Current Graph Stats (+7 more)
+
+### Community 365 - "Community 365"
+Cohesion: 0.4
+Nodes (5): Background Jobs & Messaging, Delivery Semantics, Event Publishing Consistency, Idempotency Requirements, Retry Policy
+
+### Community 366 - "Community 366"
+Cohesion: 0.5
+Nodes (4): ALWAYS perform architecture analysis first, code:bash (graphify query "how <feature> works"), code:bash (graphify query "how authentication works"), Required Workflow Before Coding
+
+### Community 367 - "Community 367"
+Cohesion: 0.5
+Nodes (4): Architecture Analysis Guidelines, code:bash (graphify path "A" "B"), code:bash (graphify query "how <module> works"), code:bash (graphify export callflow-html)
+
+### Community 368 - "Community 368"
+Cohesion: 0.5
+Nodes (4): Avoid destructive migrations, Database Rules, Preserve tenant isolation, Use Flyway migrations only
+
+### Community 373 - "Community 373"
+Cohesion: 0.67
+Nodes (3): code:text (graphify-out/graph.json), code:text (.graphify_cache/), Git Rules
+
 ## Knowledge Gaps
-- **652 isolated node(s):** `uid`, `tags`, `schemaVersion`, `from`, `panels` (+647 more)
+- **668 isolated node(s):** `name`, `description`, `schema`, `variable`, `item` (+663 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **85 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **75 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `from()` connect `Community 3` to `Community 5`, `Community 8`, `Community 10`, `Community 11`, `Community 13`, `Community 15`, `Community 16`, `Community 17`, `Community 19`, `Community 277`, `Community 150`, `Community 23`, `Community 24`, `Community 153`, `Community 154`, `Community 22`, `Community 29`, `Community 158`, `Community 33`, `Community 161`, `Community 163`, `Community 164`, `Community 36`, `Community 38`, `Community 295`, `Community 41`, `Community 43`, `Community 171`, `Community 300`, `Community 50`, `Community 53`, `Community 55`, `Community 184`, `Community 58`, `Community 62`, `Community 192`, `Community 68`, `Community 198`, `Community 203`, `Community 75`, `Community 77`, `Community 204`, `Community 79`, `Community 210`, `Community 212`, `Community 88`, `Community 241`, `Community 251`?**
-  _High betweenness centrality (0.111) - this node is a cross-community bridge._
-- **Why does `info` connect `Community 87` to `Community 71`, `Community 40`, `Community 39`, `Community 42`, `Community 75`, `Community 46`, `Community 15`, `Community 80`, `Community 51`, `Community 54`, `Community 30`, `Community 287`?**
-  _High betweenness centrality (0.047) - this node is a cross-community bridge._
-- **Why does `ApiResponse` connect `Community 36` to `Community 162`, `Community 5`, `Community 6`, `Community 169`, `Community 10`, `Community 9`, `Community 13`, `Community 14`, `Community 240`, `Community 16`, `Community 51`, `Community 20`, `Community 23`, `Community 250`?**
-  _High betweenness centrality (0.044) - this node is a cross-community bridge._
+- **Why does `from()` connect `Community 197` to `Community 0`, `Community 3`, `Community 261`, `Community 8`, `Community 10`, `Community 11`, `Community 13`, `Community 15`, `Community 17`, `Community 19`, `Community 277`, `Community 22`, `Community 23`, `Community 24`, `Community 153`, `Community 154`, `Community 157`, `Community 29`, `Community 33`, `Community 161`, `Community 163`, `Community 164`, `Community 36`, `Community 166`, `Community 38`, `Community 167`, `Community 41`, `Community 43`, `Community 171`, `Community 175`, `Community 50`, `Community 180`, `Community 53`, `Community 55`, `Community 184`, `Community 58`, `Community 60`, `Community 62`, `Community 68`, `Community 198`, `Community 73`, `Community 202`, `Community 203`, `Community 79`, `Community 210`, `Community 212`, `Community 215`, `Community 88`, `Community 232`, `Community 241`?**
+  _High betweenness centrality (0.134) - this node is a cross-community bridge._
+- **Why does `ApiResponse` connect `Community 36` to `Community 3`, `Community 6`, `Community 169`, `Community 10`, `Community 9`, `Community 13`, `Community 14`, `Community 205`, `Community 240`, `Community 16`, `Community 80`, `Community 51`, `Community 23`, `Community 25`, `Community 60`?**
+  _High betweenness centrality (0.071) - this node is a cross-community bridge._
+- **Why does `Student` connect `Community 24` to `Community 2`, `Community 3`, `Community 261`, `Community 8`, `Community 150`, `Community 22`, `Community 25`, `Community 158`, `Community 162`, `Community 34`, `Community 35`, `Community 36`, `Community 167`, `Community 171`, `Community 50`, `Community 55`, `Community 184`, `Community 185`, `Community 59`, `Community 60`, `Community 197`, `Community 215`?**
+  _High betweenness centrality (0.049) - this node is a cross-community bridge._
 - **Are the 92 inferred relationships involving `from()` (e.g. with `.getExamType()` and `.getInstructions()`) actually correct?**
   _`from()` has 92 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 2 inferred relationships involving `Student` (e.g. with `.findAllByClassIdAndStatusOrderByLastNameAscFirstNameAsc()` and `.findAllBySectionIdAndStatusOrderByLastNameAscFirstNameAsc()`) actually correct?**
   _`Student` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `uid`, `tags`, `schemaVersion` to the rest of the system?**
-  _652 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.06 - nodes in this community are weakly interconnected._
+- **What connects `name`, `description`, `schema` to the rest of the system?**
+  _668 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Community 0` be split into smaller, more focused modules?**
+  _Cohesion score 0.14 - nodes in this community are weakly interconnected._

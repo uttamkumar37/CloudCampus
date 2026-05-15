@@ -19,6 +19,7 @@
 #   rabbitmq    → localhost:5672 (AMQP) + localhost:15672 (management UI — cloudcampus/cloudcampus_dev)
 #   prometheus  → localhost:9090 — scrapes /actuator/prometheus
 #   grafana     → localhost:3100 — pre-provisioned dashboard (admin/admin)
+#   tempo       → localhost:3200 (query API) + localhost:4318 (OTLP HTTP ingest)
 
 services:
 
@@ -132,6 +133,21 @@ services:
       - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
+      - tempo
+    restart: unless-stopped
+
+  # ── Tempo (OpenTelemetry traces) ───────────────────────────────────────
+  # Receives OTLP traces from backend and serves trace queries to Grafana.
+  tempo:
+    image: grafana/tempo:2.5.0
+    container_name: cloudcampus-tempo
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    ports:
+      - "3200:3200"  # Tempo query API
+      - "4318:4318"  # OTLP HTTP ingest
+    volumes:
+      - ./infra/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo_data:/var/tempo
     restart: unless-stopped
 
   # ── pg_dump backup sidecar ─────────────────────────────────────────────
@@ -197,3 +213,4 @@ volumes:
   prometheus_data:
   grafana_data:
   rabbitmq_data:
+  tempo_data:

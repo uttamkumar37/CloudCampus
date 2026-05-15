@@ -21,6 +21,10 @@ RUN java -Djarmode=layertools -jar app.jar extract --destination extracted
 # ─────────────────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-jammy AS runtime
 
+# curl needed for HEALTHCHECK; clean apt cache in same layer to keep image small
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
+
 # Non-root user/group
 RUN groupadd --system --gid 1001 appgroup \
  && useradd  --system --uid 1001 --gid appgroup --no-create-home appuser
@@ -36,12 +40,14 @@ COPY --from=builder /builder/extracted/application/           ./
 # Drop to non-root
 USER appuser
 
-# Expose default Spring Boot port
-EXPOSE 8080
+# 8080 — application; 8081 — actuator (prod/staging management.server.port)
+EXPOSE 8080 8081
 
-# Health-check via Spring Boot Actuator
+# Health-check via Spring Boot Actuator.
+# MANAGEMENT_PORT defaults to 8080 (dev/local). Set to 8081 in prod/staging to
+# match management.server.port in application-prod.yml / application-staging.yml.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
+  CMD curl -f "http://localhost:${MANAGEMENT_PORT:-8080}/actuator/health" || exit 1
 
 ENTRYPOINT ["java", \
   "-XX:+UseContainerSupport", \

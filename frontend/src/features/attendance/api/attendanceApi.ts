@@ -95,3 +95,22 @@ export async function getClassAttendanceReport(
   );
   return data.data ?? [];
 }
+
+// ── QR attendance (CC-0802) ───────────────────────────────────────────────────
+
+export interface QrResponse {
+  token:     string;
+  qrBase64:  string;
+  expiresAt: string;
+}
+
+export async function generateSessionQr(sessionId: string): Promise<QrResponse> {
+  const { data } = await axiosInstance.post<ApiResponse<QrResponse>>(
+    `/v1/teacher/attendance/sessions/${sessionId}/qr`,
+  );
+  return data.data!;
+}
+
+export async function qrSelfMark(token: string): Promise<void> {
+  await axiosInstance.post('/v1/student/attendance/qr-mark', { token });
+}

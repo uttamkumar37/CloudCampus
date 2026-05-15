@@ -1,6 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { getMyAttendance } from '../api/studentPortalApi';
 import type { AttendanceStatus } from '../api/studentPortalApi';
+import { qrSelfMark } from '@/features/attendance/api/attendanceApi';
 
 const STATUS_STYLE: Record<AttendanceStatus, string> = {
   PRESENT: 'bg-green-100 text-green-700',
@@ -22,6 +24,18 @@ export default function StudentAttendancePage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['student-attendance'],
     queryFn:  getMyAttendance,
+  });
+
+  const [qrToken, setQrToken] = useState('');
+  const [qrSuccess, setQrSuccess] = useState(false);
+
+  const qrMark = useMutation({
+    mutationFn: () => qrSelfMark(qrToken.trim()),
+    onSuccess: () => {
+      setQrSuccess(true);
+      setQrToken('');
+    },
+    onError: () => setQrSuccess(false),
   });
 
   if (isLoading) {
@@ -73,6 +87,40 @@ export default function StudentAttendancePage() {
         {attendancePct < 75 && (
           <p className="mt-2 text-xs text-red-600">
             Below the 75% attendance requirement.
+          </p>
+        )}
+      </div>
+
+      {/* QR self-check-in */}
+      <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4 shadow-sm">
+        <p className="mb-1 text-sm font-semibold text-indigo-700">Check in via QR Token</p>
+        <p className="mb-3 text-xs text-indigo-500">
+          Enter the token shown on your teacher's screen to mark yourself present.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={qrToken}
+            onChange={(e) => { setQrToken(e.target.value); setQrSuccess(false); }}
+            placeholder="Paste QR token here"
+            className="flex-1 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+          <button
+            onClick={() => qrMark.mutate()}
+            disabled={!qrToken.trim() || qrMark.isPending}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {qrMark.isPending ? 'Marking…' : 'Mark Present'}
+          </button>
+        </div>
+        {qrSuccess && (
+          <p className="mt-2 text-xs font-medium text-green-700">
+            You have been marked present successfully.
+          </p>
+        )}
+        {qrMark.isError && (
+          <p className="mt-2 text-xs font-medium text-red-700">
+            Failed to mark attendance. The token may be expired or invalid.
           </p>
         )}
       </div>

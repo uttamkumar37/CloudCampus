@@ -31,11 +31,14 @@ class AttendanceServiceImpl implements AttendanceService {
 
     private final AttendanceSessionRepository sessionRepo;
     private final AttendanceRecordRepository  recordRepo;
+    private final AttendanceAlertService      alertService;
 
     AttendanceServiceImpl(AttendanceSessionRepository sessionRepo,
-                          AttendanceRecordRepository  recordRepo) {
-        this.sessionRepo = sessionRepo;
-        this.recordRepo  = recordRepo;
+                          AttendanceRecordRepository  recordRepo,
+                          AttendanceAlertService      alertService) {
+        this.sessionRepo  = sessionRepo;
+        this.recordRepo   = recordRepo;
+        this.alertService = alertService;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -103,6 +106,12 @@ class AttendanceServiceImpl implements AttendanceService {
                         tenantId, sessionId, entry.studentId(), entry.status());
                 record.setRemarks(entry.remarks());
                 recordRepo.save(record);
+            }
+
+            if (entry.status() == AttendanceStatus.ABSENT) {
+                alertService.alertParentsAsync(
+                        tenantId, session.getSchoolId(),
+                        entry.studentId(), session.getSessionDate());
             }
         }
 

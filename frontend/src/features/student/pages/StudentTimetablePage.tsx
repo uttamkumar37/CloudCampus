@@ -79,7 +79,7 @@ export default function StudentTimetablePage() {
                         {slot ? (
                           <div className="inline-flex min-w-[90px] flex-col rounded-lg bg-indigo-50 px-3 py-2 text-left">
                             <span className="text-xs font-semibold text-indigo-800">
-                              {slot.subjectId.slice(0, 8)}
+                              {slot.subjectName ?? slot.subjectCode ?? slot.subjectId.slice(0, 8)}
                             </span>
                             {slot.startTime && (
                               <span className="text-[10px] text-indigo-400">

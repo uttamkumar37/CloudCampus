@@ -2,7 +2,7 @@
 
 Enterprise Digital School SaaS — multi-tenant, schema-based architecture.
 
-**Stack:** Java 21 · Spring Boot 3.4.5 · React 19 · Expo (React Native) · PostgreSQL 16 · Redis 7 · MinIO · Prometheus · Grafana
+**Stack:** Java 21 · Spring Boot 3.4.5 · React 19 · Expo (React Native) · PostgreSQL 16 · Redis 7 · MinIO · Prometheus · Grafana · Tempo
 
 ---
 
@@ -58,7 +58,7 @@ Browser / Mobile
 | Mobile | Expo SDK 54 · React Native 0.81.5 (New Architecture) |
 | Offline sync | WatermelonDB + custom sync queue |
 | Push notifications | Expo Notifications + FCM / APNs |
-| Observability | Micrometer · Prometheus · Grafana |
+| Observability | Micrometer · OpenTelemetry (OTLP) · Prometheus · Grafana · Tempo |
 | Local infra | Docker Compose |
 
 ---
@@ -75,7 +75,7 @@ Browser / Mobile
 ### 1 — Start local services
 
 ```bash
-docker compose up -d          # PostgreSQL, Redis, MinIO, MailHog, Prometheus, Grafana
+docker compose up -d          # PostgreSQL, Redis, MinIO, MailHog, Prometheus, Grafana, Tempo
 ```
 
 | Service | URL |
@@ -86,6 +86,7 @@ docker compose up -d          # PostgreSQL, Redis, MinIO, MailHog, Prometheus, G
 | MinIO console | http://localhost:9001 |
 | Prometheus | http://localhost:9090 |
 | Grafana | http://localhost:3100 (admin / admin) |
+| Tempo | http://localhost:3200 |
 
 ### 2 — Run the backend
 
@@ -231,7 +232,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Prometheus scraping + alert rules | ✅ Done |
 | Grafana dashboards (9 panels) | ✅ Done |
 | Staging / production profiles | ✅ Done |
-| pg_dump backup sidecar | ⏳ Pending |
+| pg_dump backup sidecar | ✅ Done |
 | CI/CD pipeline (4-job GitHub Actions: backend / frontend / mobile / docker) | ✅ Done |
 
 ---

@@ -27,7 +27,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Teacher homework portal (CC-0701).
@@ -83,6 +85,11 @@ public class TeacherHomeworkController {
                 .findBySchoolIdAndAssignedByOrderByCreatedAtDesc(
                         school.getId(), userId, PageRequest.of(page, size));
 
+        List<UUID> ids = result.getContent().stream().map(HomeworkAssignment::getId).toList();
+        Map<UUID, Long> counts = ids.isEmpty() ? Map.of()
+                : submissionRepo.countGroupedByHomework(ids).stream()
+                        .collect(Collectors.toMap(r -> (UUID) r[0], r -> ((Number) r[1]).longValue()));
+
         List<HomeworkSummary> items = result.getContent().stream()
                 .map(h -> new HomeworkSummary(
                         h.getId(),
@@ -93,7 +100,7 @@ public class TeacherHomeworkController {
                         h.getClassId(),
                         h.getSectionId(),
                         h.getSubjectId(),
-                        submissionRepo.countByHomeworkId(h.getId())))
+                        counts.getOrDefault(h.getId(), 0L)))
                 .toList();
 
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),

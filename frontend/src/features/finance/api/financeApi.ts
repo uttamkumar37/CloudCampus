@@ -141,3 +141,20 @@ export async function getFeeReceipt(recordId: string): Promise<FeeReceiptRespons
   );
   return data.data!;
 }
+
+// ── Invoice PDF (CC-0904) ─────────────────────────────────────────────────────
+
+export async function downloadFeeInvoicePdf(recordId: string): Promise<void> {
+  const response = await axiosInstance.get(
+    `${base}/fee-records/${recordId}/invoice`,
+    { responseType: 'blob' },
+  );
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `invoice-${recordId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}

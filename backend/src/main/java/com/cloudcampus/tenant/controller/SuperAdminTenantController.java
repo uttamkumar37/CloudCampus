@@ -4,12 +4,14 @@ import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.common.web.Pagination;
+import com.cloudcampus.tenant.dto.ComparisonResponse;
 import com.cloudcampus.tenant.dto.ConfigValueRequest;
 import com.cloudcampus.tenant.dto.SuperAdminStatsResponse;
 import com.cloudcampus.tenant.dto.TenantConfigResponse;
 import com.cloudcampus.tenant.dto.TenantCreateRequest;
 import com.cloudcampus.tenant.dto.TenantResponse;
 import com.cloudcampus.tenant.entity.TenantConfigKey;
+import com.cloudcampus.tenant.service.SuperAdminAnalyticsService;
 import com.cloudcampus.tenant.service.TenantConfigService;
 import com.cloudcampus.tenant.service.TenantService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,13 +38,16 @@ import java.util.UUID;
 @Validated
 @Tag(name = "Super Admin — Tenants", description = "Tenant lifecycle management (Super Admin only)")
 public class SuperAdminTenantController {
-    private final TenantService       tenantService;
-    private final TenantConfigService configService;
+    private final TenantService              tenantService;
+    private final TenantConfigService        configService;
+    private final SuperAdminAnalyticsService analyticsService;
 
     public SuperAdminTenantController(TenantService tenantService,
-                                      TenantConfigService configService) {
-        this.tenantService = tenantService;
-        this.configService = configService;
+                                      TenantConfigService configService,
+                                      SuperAdminAnalyticsService analyticsService) {
+        this.tenantService    = tenantService;
+        this.configService    = configService;
+        this.analyticsService = analyticsService;
     }
 
     @Operation(summary = "Create tenant", description = "Provision a new tenant. Auto-creates the default MAIN school.")
@@ -98,6 +103,15 @@ public class SuperAdminTenantController {
             @Valid @RequestBody ConfigValueRequest request
     ) {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), configService.set(id, key, request.value()));
+    }
+
+    @Operation(
+            summary = "School comparison report",
+            description = "Per-school breakdown of active students, attendance rate, and fee collection for a tenant."
+    )
+    @GetMapping("/{id}/comparison")
+    public ApiResponse<ComparisonResponse> comparison(@PathVariable UUID id) {
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), analyticsService.getComparisonReport(id));
     }
 }
 

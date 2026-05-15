@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -17,6 +17,14 @@ import {
   type Relationship,
   type ParentLinkResponse,
 } from '../api/studentApi';
+import {
+  listStudentDocuments,
+  uploadStudentDocument,
+  getPresignedUrl,
+  deleteStudentDocument,
+  type StudentDocumentResponse,
+} from '../api/studentDocumentApi';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import type { StudentResponse, StudentStatus } from '../types/student';
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
@@ -378,6 +386,158 @@ function ParentLinksSection({ studentId }: { studentId: string }) {
   );
 }
 
+// ── Document types ────────────────────────────────────────────────────────────
+
+const DOCUMENT_TYPES = [
+  'BIRTH_CERTIFICATE',
+  'TRANSFER_CERTIFICATE',
+  'AADHAAR_CARD',
+  'CASTE_CERTIFICATE',
+  'INCOME_CERTIFICATE',
+  'MEDICAL_CERTIFICATE',
+  'PASSPORT',
+  'PHOTOGRAPH',
+  'OTHER',
+];
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// ── Documents section ─────────────────────────────────────────────────────────
+
+function DocumentsSection({ schoolId, studentId }: { schoolId: string; studentId: string }) {
+  const queryClient = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [docType, setDocType] = useState('BIRTH_CERTIFICATE');
+  const [uploadError, setUploadError] = useState('');
+
+  const { data: docs = [], isLoading } = useQuery({
+    queryKey: ['student-docs', studentId],
+    queryFn:  () => listStudentDocuments(schoolId, studentId),
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => uploadStudentDocument(schoolId, studentId, docType, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-docs', studentId] });
+      if (fileRef.current) fileRef.current.value = '';
+      setUploadError('');
+    },
+    onError: () => setUploadError('Upload failed. Check file type and size (max 10 MB).'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (docId: string) => deleteStudentDocument(schoolId, studentId, docId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['student-docs', studentId] }),
+  });
+
+  const downloadMutation = useMutation({
+    mutationFn: (docId: string) => getPresignedUrl(schoolId, studentId, docId),
+    onSuccess: (url) => window.open(url, '_blank', 'noopener,noreferrer'),
+  });
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) uploadMutation.mutate(file);
+  }
+
+  return (
+    <div className="mt-5 rounded-xl border border-gray-200 bg-white p-5">
+      <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        Documents
+      </h3>
+
+      {/* Upload row */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <select
+          value={docType}
+          onChange={(e) => setDocType(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {DOCUMENT_TYPES.map((t) => (
+            <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploadMutation.isPending}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {uploadMutation.isPending ? 'Uploading…' : '+ Upload File'}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          className="hidden"
+          onChange={handleFileChange}
+          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+        />
+        {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
+      </div>
+
+      {isLoading && <p className="text-sm text-gray-400">Loading…</p>}
+
+      {!isLoading && docs.length === 0 && (
+        <p className="text-sm text-gray-400">No documents uploaded yet.</p>
+      )}
+
+      {docs.length > 0 && (
+        <div className="overflow-hidden rounded-xl border border-gray-100">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <tr>
+                <th className="px-4 py-2.5 text-left">Type</th>
+                <th className="px-4 py-2.5 text-left">File</th>
+                <th className="px-4 py-2.5 text-left">Size</th>
+                <th className="px-4 py-2.5 text-left">Uploaded</th>
+                <th className="px-4 py-2.5 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {docs.map((doc: StudentDocumentResponse) => (
+                <tr key={doc.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-xs font-medium text-gray-600">
+                    {doc.documentType.replace(/_/g, ' ')}
+                  </td>
+                  <td className="px-4 py-3 text-gray-800 truncate max-w-[200px]" title={doc.fileName}>
+                    {doc.fileName}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">{formatBytes(doc.sizeBytes)}</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {new Date(doc.uploadedAt).toLocaleDateString('en-IN')}
+                  </td>
+                  <td className="px-4 py-3 flex gap-2">
+                    <button
+                      onClick={() => downloadMutation.mutate(doc.id)}
+                      disabled={downloadMutation.isPending}
+                      className="rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                    >
+                      Download
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm('Delete this document?')) deleteMutation.mutate(doc.id);
+                      }}
+                      disabled={deleteMutation.isPending}
+                      className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function StudentProfilePage() {
@@ -385,6 +545,7 @@ export function StudentProfilePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
 
   const { data: student, isLoading, isError } = useQuery({
     queryKey: ['student', id],
@@ -533,6 +694,9 @@ export function StudentProfilePage() {
 
       {/* Parent links */}
       <ParentLinksSection studentId={student.id} />
+
+      {/* Documents */}
+      {schoolId && <DocumentsSection schoolId={schoolId} studentId={student.id} />}
     </div>
   );
 }

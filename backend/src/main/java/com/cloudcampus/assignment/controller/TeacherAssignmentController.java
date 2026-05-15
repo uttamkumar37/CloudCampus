@@ -29,10 +29,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cloudcampus.assignment.entity.SubmissionStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Teacher assignment portal (CC-0703).
@@ -90,18 +94,21 @@ public class TeacherAssignmentController {
                 .findBySchoolIdAndAssignedByOrderByCreatedAtDesc(
                         school.getId(), userId, PageRequest.of(page, size));
 
+        List<UUID> ids = result.getContent().stream().map(Assignment::getId).toList();
+        Map<UUID, Long> submissionCounts = ids.isEmpty() ? Map.of()
+                : submissionRepo.countGroupedByAssignment(ids).stream()
+                        .collect(Collectors.toMap(r -> (UUID) r[0], r -> ((Number) r[1]).longValue()));
+        Map<UUID, Long> gradedCounts = ids.isEmpty() ? Map.of()
+                : submissionRepo.countByStatusGroupedByAssignment(ids, SubmissionStatus.GRADED).stream()
+                        .collect(Collectors.toMap(r -> (UUID) r[0], r -> ((Number) r[1]).longValue()));
+
         List<AssignmentSummary> items = result.getContent().stream()
-                .map(a -> {
-                    long total  = submissionRepo.countByAssignmentId(a.getId());
-                    long graded = submissionRepo.findByAssignmentId(a.getId()).stream()
-                            .filter(s -> s.getMarksObtained() != null)
-                            .count();
-                    return new AssignmentSummary(
-                            a.getId(), a.getTitle(), a.getDescription(), a.getDueDate(),
-                            a.getMaxMarks(), a.getStatus(),
-                            a.getClassId(), a.getSectionId(), a.getSubjectId(),
-                            total, graded);
-                })
+                .map(a -> new AssignmentSummary(
+                        a.getId(), a.getTitle(), a.getDescription(), a.getDueDate(),
+                        a.getMaxMarks(), a.getStatus(),
+                        a.getClassId(), a.getSectionId(), a.getSubjectId(),
+                        submissionCounts.getOrDefault(a.getId(), 0L),
+                        gradedCounts.getOrDefault(a.getId(), 0L)))
                 .toList();
 
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),

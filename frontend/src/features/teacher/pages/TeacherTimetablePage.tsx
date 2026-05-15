@@ -79,7 +79,7 @@ export default function TeacherTimetablePage() {
                         {slot ? (
                           <div className="inline-flex min-w-[90px] flex-col rounded-lg bg-blue-50 px-3 py-2 text-left">
                             <span className="text-xs font-semibold text-blue-800">
-                              {slot.subjectId.slice(0, 8)}
+                              {slot.subjectName ?? slot.subjectCode ?? slot.subjectId.slice(0, 8)}
                             </span>
                             <span className="mt-0.5 text-[10px] text-blue-500">
                               {slot.classId.slice(0, 8)} / {slot.sectionId.slice(0, 8)}

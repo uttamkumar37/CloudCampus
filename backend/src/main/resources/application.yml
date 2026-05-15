@@ -101,6 +101,15 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+  tracing:
+    enabled: true
+    # Dev defaults to full sampling; staging/prod override below.
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      # Local Tempo OTLP/HTTP endpoint (see docker-compose tempo service).
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
 
 # ── JWT configuration ─────────────────────────────────────────────────────
 # Secret loaded from JWT_SECRET env var. Minimum 32 characters required.
@@ -125,21 +134,6 @@ app:
     enabled: ${APP_FIREBASE_ENABLED:false}
     credentials-path: ${APP_FIREBASE_CREDENTIALS_PATH:}   # absolute path to service-account JSON
     project-id: ${APP_FIREBASE_PROJECT_ID:}               # optional — inferred from JSON when blank
-
-# ── OpenAPI / Swagger UI ─────────────────────────────────────────────────────
-# SECURITY: Disabled in production. Enabled per-profile in application-dev.yml.
-# Docs available at: http://localhost:8080/swagger-ui.html (dev only)
-springdoc:
-  api-docs:
-    enabled: false
-    path: /v3/api-docs
-  swagger-ui:
-    enabled: false
-    path: /swagger-ui.html
-    display-request-duration: true
-    operations-sorter: alpha
-    tags-sorter: alpha
-  show-actuator: false
 
   # ── Bootstrap Super Admin ─────────────────────────────────────────────
   # Runs ONCE on first boot. Idempotent — skips if user already exists.
@@ -179,10 +173,35 @@ springdoc:
   encryption:
     secret: ${ENCRYPTION_SECRET:dev-encryption-key-must-be-at-least-32ch}
 
+  # ── MinIO object storage (CC-0505) ────────────────────────────────────────────
+  # Production: set MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY env vars.
+  # Dev: overridden in application-dev.yml to point at Docker Compose MinIO.
+  minio:
+    endpoint:   ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
+    bucket:     ${MINIO_BUCKET:cloudcampus-documents}
+    presign-expiry-minutes: 60
+
   # ── OTP (password reset) ───────────────────────────────────────────────────────
   # Redis key: cc:otp:{userId}  TTL: 5 min (CC-0108)
   otp:
     ttl-seconds: 300        # 5 minutes
     length: 6
     from-email: ${MAIL_FROM:noreply@cloudcampus.io}
+
+# ── OpenAPI / Swagger UI ─────────────────────────────────────────────────────
+# SECURITY: Disabled in production. Enabled per-profile in application-dev.yml.
+# Docs available at: http://localhost:8080/swagger-ui.html (dev only)
+springdoc:
+  api-docs:
+    enabled: false
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: false
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+  show-actuator: false
 

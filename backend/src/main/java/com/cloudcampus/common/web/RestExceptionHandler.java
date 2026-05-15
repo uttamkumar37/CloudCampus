@@ -11,6 +11,7 @@ import com.cloudcampus.common.exception.TenantSuspendedException;
 import com.cloudcampus.common.exception.TooManyRequestsException;
 import com.cloudcampus.common.exception.UnauthorizedException;
 import com.cloudcampus.common.exception.UsageLimitExceededException;
+import com.cloudcampus.storage.StorageException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,6 +94,12 @@ public class RestExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
         return build(HttpStatus.BAD_REQUEST, ApiError.of("VALIDATION_ERROR", ex.getMessage()));
+    }
+
+    @ExceptionHandler(StorageException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStorage(StorageException ex) {
+        log.error("Storage error", ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, ApiError.of("STORAGE_ERROR", "File operation failed"));
     }
 
     @ExceptionHandler(UsageLimitExceededException.class)

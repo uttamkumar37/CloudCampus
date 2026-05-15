@@ -22,6 +22,8 @@ export interface TimetableSlot {
   classId: string;
   sectionId: string;
   subjectId: string;
+  subjectName: string | null;
+  subjectCode: string | null;
   staffId: string | null;
   dayOfWeek: DayOfWeek;
   periodNumber: number;
