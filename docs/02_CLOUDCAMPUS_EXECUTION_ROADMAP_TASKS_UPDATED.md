@@ -4,14 +4,31 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E82 Tenant Configuration Engine)
+## Progress Summary (as of 2026-05-15 — E83 Usage Limit Enforcement)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~148 (76.5%) |
-| **In Progress** | 0 |
-| **Not Started** | ~45 |
+| **Completed** | ~155 (80%) |
+| **In Progress** | 1 |
+| **Not Started** | ~37 |
+
+### E83 Completions — Usage Limit Enforcement + Roadmap Reconciliation (CC-0312 + CC-0107/0108/0109/0115/0116/0507/0508) (2026-05-15)
+
+| Task | What was built / reconciled |
+|------|---------------------------|
+| `UsageLimitExceededException` ✅ | New exception → 422 Unprocessable Entity; carries `limitKey`, `current`, `limit`; registered in `RestExceptionHandler` |
+| `UsageLimitEnforcer` ✅ | `@Component` with `checkStudentLimit`, `checkStaffLimit`, `checkSchoolLimit`; reads ceiling from `TenantConfigRepository` (falls back to enum default); compares against live count from repo |
+| `SchoolRepository.countByTenantIdAndStatus` ✅ | New derived query for school ceiling check |
+| `StudentServiceImpl.admit()` ✅ | Calls `limitEnforcer.checkStudentLimit(tenantId, schoolId)` before persisting |
+| `StaffServiceImpl.create()` ✅ | Calls `limitEnforcer.checkStaffLimit(tenantId, schoolId)` before persisting |
+| CC-0107 ✅ (reconciled) | Forgot password flow already implemented — `PasswordResetService` + `POST /v1/auth/forgot-password` + `ForgotPasswordPage` (E50) |
+| CC-0108 ✅ (reconciled) | OTP verification already implemented — Redis key `cc:otp:{userId}` TTL 5 min, 6-digit TOTP, `PasswordResetServiceImpl` (E50) |
+| CC-0109 ✅ (reconciled) | Session management = stateless JWT (15 min) + Redis refresh tokens (30 days) + revoke-all (E81) |
+| CC-0115 ✅ (reconciled) | API security middleware already covers: `CorrelationIdFilter` (X-Request-Id MDC), `SecurityHeadersFilter` (7 headers), `TenantContextFilter`, `JwtAuthenticationFilter`, `RateLimitInterceptor`, `TenantSuspensionFilter` |
+| CC-0116 ✅ (reconciled) | Password policy + account lockout fully completed — N-strikes suspend in `AuthServiceImpl` (E47) + `@StrongPassword` Bean Validation (E49) + `ChangePasswordPage` |
+| CC-0507 ✅ (reconciled) | Student ID generation already implemented — `student_number` auto-generated as `{YEAR}-{schoolSeq}-{4-digit-counter}` in `StudentServiceImpl.resolveStudentNumber()` |
+| CC-0508 ✅ (reconciled) | Bulk student import already implemented — `BulkStudentImporter` + `POST /v1/school-admin/schools/{id}/students/bulk` returning `BulkImportResult` with per-row error details |
 
 ### E82 Completions — Tenant Configuration Engine + Roadmap Reconciliation (CC-0207 + CC-0301–CC-0306) (2026-05-15)
 
@@ -599,16 +616,16 @@ Notes/Risks:
 | CC-0104 | Logout API | P0 | ✅ COMPLETED | `POST /v1/auth/logout` — Redis refresh token delete; no-op if already expired |
 | CC-0105 | Refresh token system | P0 | ✅ COMPLETED | `POST /v1/auth/refresh` — opaque UUID tokens stored in Redis (`rt:{uuid}` → userId), 30-day TTL, rotated on every use |
 | CC-0106 | Password encryption | P0 | ✅ COMPLETED | `BCryptPasswordEncoder(12)` bean in `SecurityConfig`; `SuperAdminBootstrap` uses it |
-| CC-0107 | Forgot password flow | P1 | NOT_STARTED | Depends on CC-0103, CC-1002 (email) |
-| CC-0108 | OTP verification | P1 | NOT_STARTED | Redis-backed OTP with TTL |
-| CC-0109 | Session management | P1 | NOT_STARTED | Stateless JWT; Redis for active token tracking |
+| CC-0107 | Forgot password flow | P1 | ✅ COMPLETED | `PasswordResetService` + `POST /v1/auth/forgot-password` + `ForgotPasswordPage`; OWASP-safe always-200 (E50, reconciled E83) |
+| CC-0108 | OTP verification | P1 | ✅ COMPLETED | 6-digit OTP in Redis `cc:otp:{userId}` TTL 5 min; `PasswordResetServiceImpl.verifyAndReset()` (E50, reconciled E83) |
+| CC-0109 | Session management | P1 | ✅ COMPLETED | Stateless JWT 15 min + Redis refresh tokens 30 days + per-user set for revoke-all (E81, reconciled E83) |
 | CC-0110 | Device tracking | P1 | NOT_STARTED | Device fingerprint + session binding |
 | CC-0111 | Multi-device login control | P2 | NOT_STARTED | — |
 | CC-0112 | Login audit logs | P1 | ✅ COMPLETED | `AuditLogService` (`@Async("auditExecutor")`) + `AuditLog` entity + `AuditAction` enum + `AuditLogRepository`; `AsyncConfig` named thread pool; wired for LOGIN_SUCCESS, LOGIN_FAILED, LOGIN_BLOCKED, LOGOUT, TOKEN_REFRESHED |
 | CC-0113 | Role-based authorization | P0 | ✅ COMPLETED | `SecurityConfig` matchers — `/v1/super-admin/**` (SUPER_ADMIN), `/v1/admin/**` (TENANT_ADMIN+), `/v1/school-admin/**` (SCHOOL_ADMIN+), `anyRequest().authenticated()` |
 | CC-0114 | Permission middleware | P0 | ✅ COMPLETED | `JsonAuthEntryPoint` — JSON `ApiResponse` 401/403 for Spring Security rejections |
-| CC-0115 | API security middleware | P0 | NOT_STARTED | Depends on CC-0102, CC-0114 |
-| CC-0116 | Password policy + account lockout | P1 | 🔄 IN_PROGRESS | `LoginRateLimiterService` (Redis sliding window, 429, fail-open) + `RateLimitProperties` done; `POST /v1/auth/change-password` + `ChangePasswordPage` done (E43); full account lockout (N-strikes suspend) + password complexity rules pending |
+| CC-0115 | API security middleware | P0 | ✅ COMPLETED | `CorrelationIdFilter` (X-Request-Id MDC), `SecurityHeadersFilter` (7 headers), `TenantContextFilter`, `JwtAuthenticationFilter`, `RateLimitInterceptor`, `TenantSuspensionFilter` (reconciled E83) |
+| CC-0116 | Password policy + account lockout | P1 | ✅ COMPLETED | `@StrongPassword` Bean Validation (E49) + N-strikes SUSPENDED in `AuthServiceImpl` (E47) + `POST /v1/auth/change-password` + `ChangePasswordPage` (E43) |
 | CC-0117 | Session revocation strategy | P1 | ✅ COMPLETED | Per-user Redis Set tracks all refresh tokens; `POST /v1/auth/revoke-all` bulk-deletes them; "Sign out from all devices" on ChangePasswordPage (E81) |
 | CC-0118 | Security headers + CORS policy | P1 | ✅ COMPLETED | `SecurityHeadersFilter` (7 headers), `SecurityConfig` CORS with origin allowlist |
 
@@ -650,7 +667,7 @@ Notes/Risks:
 | CC-0309 | Tenant analytics dashboard | P1 | NOT_STARTED | — |
 | CC-0310 | Global monitoring dashboard | P2 | NOT_STARTED | — |
 | CC-0311 | Tenant merge/migration admin tool | P2 | NOT_STARTED | — |
-| CC-0312 | Usage metering + limit enforcement | P1 | NOT_STARTED | — |
+| CC-0312 | Usage metering + limit enforcement | P1 | ✅ COMPLETED | `UsageLimitEnforcer` gates `admit()` + `create()` against `MAX_STUDENTS_PER_SCHOOL` / `MAX_STAFF_PER_SCHOOL`; 422 `UsageLimitExceededException`; `SchoolRepository.countByTenantIdAndStatus` for `MAX_SCHOOLS` (E83) |
 
 ---
 
@@ -679,8 +696,8 @@ Notes/Risks:
 | CC-0504 | Student listing filters | P0 | ✅ COMPLETED | Backend API + `StudentListPage` (filterable/searchable by class/section/status) |
 | CC-0505 | Student document upload | P1 | NOT_STARTED | — |
 | CC-0506 | Parent mapping system | P1 | ✅ COMPLETED | `StudentParentLink` entity + V18 migration; parent mapping APIs |
-| CC-0507 | Student ID generation | P1 | NOT_STARTED | — |
-| CC-0508 | Bulk student import | P1 | NOT_STARTED | — |
+| CC-0507 | Student ID generation | P1 | ✅ COMPLETED | `student_number` auto-generated as `{YEAR}-{4-digit}` sequence per school in `StudentServiceImpl.resolveStudentNumber()` (reconciled E83) |
+| CC-0508 | Bulk student import | P1 | ✅ COMPLETED | `BulkStudentImporter` (REQUIRES_NEW per row) + `POST .../students/bulk` → `BulkImportResult` with per-row errors (reconciled E83) |
 
 ---
 

@@ -2,6 +2,7 @@ package com.cloudcampus.staff.service;
 
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.usage.UsageLimitEnforcer;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.staff.dto.CreateStaffRequest;
 import com.cloudcampus.staff.dto.StaffResponse;
@@ -21,10 +22,12 @@ import java.util.UUID;
 @Service
 class StaffServiceImpl implements StaffService {
 
-    private final StaffRepository repo;
+    private final StaffRepository    repo;
+    private final UsageLimitEnforcer limitEnforcer;
 
-    StaffServiceImpl(StaffRepository repo) {
-        this.repo = repo;
+    StaffServiceImpl(StaffRepository repo, UsageLimitEnforcer limitEnforcer) {
+        this.repo          = repo;
+        this.limitEnforcer = limitEnforcer;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -35,6 +38,8 @@ class StaffServiceImpl implements StaffService {
     @Transactional
     public StaffResponse create(UUID schoolId, CreateStaffRequest req) {
         UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+
+        limitEnforcer.checkStaffLimit(tenantId, schoolId);
 
         String empNumber = resolveEmployeeNumber(schoolId, req.employeeNumber());
 
