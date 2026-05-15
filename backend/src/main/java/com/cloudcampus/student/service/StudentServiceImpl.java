@@ -2,6 +2,7 @@ package com.cloudcampus.student.service;
 
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.usage.UsageLimitEnforcer;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.student.dto.AdmitStudentRequest;
 import com.cloudcampus.student.dto.BulkImportResult;
@@ -26,12 +27,16 @@ import java.util.UUID;
 @Service
 class StudentServiceImpl implements StudentService {
 
-    private final StudentRepository    repo;
-    private final BulkStudentImporter  bulkImporter;
+    private final StudentRepository   repo;
+    private final BulkStudentImporter bulkImporter;
+    private final UsageLimitEnforcer  limitEnforcer;
 
-    StudentServiceImpl(StudentRepository repo, BulkStudentImporter bulkImporter) {
-        this.repo         = repo;
-        this.bulkImporter = bulkImporter;
+    StudentServiceImpl(StudentRepository repo,
+                       BulkStudentImporter bulkImporter,
+                       UsageLimitEnforcer limitEnforcer) {
+        this.repo          = repo;
+        this.bulkImporter  = bulkImporter;
+        this.limitEnforcer = limitEnforcer;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -42,6 +47,8 @@ class StudentServiceImpl implements StudentService {
     @Transactional
     public StudentResponse admit(UUID schoolId, AdmitStudentRequest req) {
         UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+
+        limitEnforcer.checkStudentLimit(tenantId, schoolId);
 
         String number = resolveStudentNumber(schoolId, req.studentNumber());
 

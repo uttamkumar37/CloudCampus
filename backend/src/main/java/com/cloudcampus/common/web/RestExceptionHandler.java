@@ -10,6 +10,7 @@ import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.exception.TenantSuspendedException;
 import com.cloudcampus.common.exception.TooManyRequestsException;
 import com.cloudcampus.common.exception.UnauthorizedException;
+import com.cloudcampus.common.exception.UsageLimitExceededException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,6 +93,12 @@ public class RestExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
         return build(HttpStatus.BAD_REQUEST, ApiError.of("VALIDATION_ERROR", ex.getMessage()));
+    }
+
+    @ExceptionHandler(UsageLimitExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUsageLimit(UsageLimitExceededException ex) {
+        log.warn("Usage limit exceeded: key={} current={} limit={}", ex.getLimitKey(), ex.getCurrent(), ex.getLimit());
+        return build(HttpStatus.UNPROCESSABLE_ENTITY, ApiError.of("USAGE_LIMIT_EXCEEDED", ex.getMessage()));
     }
 
     // C-01: Always log the full stack trace for unexpected exceptions so they appear in Loki/Grafana.

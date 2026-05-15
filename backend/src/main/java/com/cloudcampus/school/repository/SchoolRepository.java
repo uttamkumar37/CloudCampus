@@ -1,6 +1,7 @@
 package com.cloudcampus.school.repository;
 
 import com.cloudcampus.school.entity.School;
+import com.cloudcampus.school.entity.SchoolStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +13,8 @@ import java.util.UUID;
 public interface SchoolRepository extends JpaRepository<School, UUID> {
 
     List<School> findAllByTenantId(UUID tenantId);
+
+    long countByTenantIdAndStatus(UUID tenantId, SchoolStatus status);
 
     Optional<School> findByTenantIdAndCode(UUID tenantId, String code);
 
