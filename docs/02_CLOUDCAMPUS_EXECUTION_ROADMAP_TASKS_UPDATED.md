@@ -4,14 +4,22 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E79 Backup/Restore Drill)
+## Progress Summary (as of 2026-05-15 — E80 Secrets Management Standard)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~138 (71.5%) |
+| **Completed** | ~139 (72%) |
 | **In Progress** | 0 |
-| **Not Started** | ~55 |
+| **Not Started** | ~54 |
+
+### E80 Completions — Secrets Management Standard (CC-1906) (2026-05-15)
+
+| Task | What was built |
+|------|---------------|
+| `SecretsGuardConfig` ✅ | `@PostConstruct` startup validator — skips in `dev`/`test` profiles; in all other profiles blocks boot with a formatted error if JWT_SECRET or ENCRYPTION_SECRET match known dev defaults or are shorter than 32 chars; also checks DB password is set and bootstrap password is not a well-known weak value |
+| `.env.example` ✅ | Comprehensive environment variable reference: PostgreSQL, JWT, encryption, bootstrap admin, Redis, RabbitMQ, SMTP, Firebase, MinIO/S3, pgbackup — each with a description and `openssl rand` generation command |
+| `infra/secrets/vault-local.sh` ✅ | Local Vault dev bootstrap: starts `vault server -dev` with root token, writes all CloudCampus secrets to `secret/cloudcampus` KV path; supports `teardown` subcommand; documents Spring Cloud Vault config for local use |
 
 ### E79 Completions — Backup/Restore Drill Automation (CC-1905 + CC-1705) (2026-05-15)
 
@@ -814,7 +822,7 @@ Notes/Risks:
 | CC-1903 | Horizontal scaling preparation | P2 | NOT_STARTED | — |
 | CC-1904 | Backup automation | P1 | ✅ COMPLETED | `infra/pgbackup/` — pg_dump sidecar with MinIO upload + 7-day retention cron |
 | CC-1905 | Backup/restore drill automation | P1 | ✅ COMPLETED | `infra/pgbackup/drill.sh` — 6-phase DR drill: fresh backup → download from MinIO → restore to scratch DB → validate row counts + Flyway history → PASS/FAIL + teardown (E79) |
-| CC-1906 | Secrets management standard | P1 | NOT_STARTED | HashiCorp Vault or AWS Secrets Manager |
+| CC-1906 | Secrets management standard | P1 | ✅ COMPLETED | `SecretsGuardConfig` startup validator; `.env.example` reference; `infra/secrets/vault-local.sh` dev bootstrap; Vault KV path standard documented (E80) |
 
 ---
 
