@@ -54,6 +54,17 @@ public enum TenantConfigKey {
     SECONDARY_COLOR(
             "#1e40af",
             "Secondary brand colour as a CSS hex value (e.g. #1e40af)"
+    ),
+
+    // ── AI usage limits (CC-1605) ─────────────────────────────────────────────
+
+    AI_MONTHLY_TOKEN_BUDGET(
+            "0",
+            "Maximum AI tokens (input + output) per calendar month. 0 = unlimited."
+    ),
+    AI_REQUESTS_PER_DAY(
+            "0",
+            "Maximum AI API calls per calendar day. 0 = unlimited."
     );
 
     private final String defaultValue;

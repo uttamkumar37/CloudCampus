@@ -118,6 +118,14 @@ public class TenantConfigServiceImpl implements TenantConfigService {
                     throw new BadRequestException(key.name() + " must be a CSS hex colour (e.g. #2563EB or #26B)");
                 }
             }
+            case AI_MONTHLY_TOKEN_BUDGET, AI_REQUESTS_PER_DAY -> {
+                try {
+                    int n = Integer.parseInt(value.trim());
+                    if (n < 0) throw new BadRequestException(key.name() + " must be 0 (unlimited) or a positive integer");
+                } catch (NumberFormatException e) {
+                    throw new BadRequestException(key.name() + " must be an integer (0 = unlimited)");
+                }
+            }
         }
     }
 }

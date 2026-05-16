@@ -8,6 +8,7 @@ import com.cloudcampus.auth.dto.RefreshRequest;
 import com.cloudcampus.auth.dto.RefreshResponse;
 import com.cloudcampus.auth.dto.ResetPasswordRequest;
 import com.cloudcampus.auth.service.AuthService;
+import com.cloudcampus.auth.service.DeviceSessionService;
 import com.cloudcampus.auth.service.PasswordResetService;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.web.CorrelationId;
@@ -43,10 +44,13 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+    private final DeviceSessionService deviceSessionService;
 
-    public AuthController(AuthService authService, PasswordResetService passwordResetService) {
-        this.authService = authService;
-        this.passwordResetService = passwordResetService;
+    public AuthController(AuthService authService, PasswordResetService passwordResetService,
+                          DeviceSessionService deviceSessionService) {
+        this.authService           = authService;
+        this.passwordResetService  = passwordResetService;
+        this.deviceSessionService  = deviceSessionService;
     }
 
     /**
@@ -67,8 +71,10 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest
     ) {
-        String clientIp = extractClientIp(httpRequest);
+        String clientIp  = extractClientIp(httpRequest);
+        String userAgent = httpRequest.getHeader("User-Agent");
         LoginResponse body = authService.login(request, clientIp);
+        deviceSessionService.register(body.userId(), body.tenantId(), userAgent, clientIp);
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
     }
 

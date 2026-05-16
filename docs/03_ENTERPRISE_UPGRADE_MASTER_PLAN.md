@@ -30,41 +30,50 @@ This document is the master upgrade plan for CloudCampus. It covers every layer 
 
 ---
 
-## Current Codebase Inventory (2026-05-12)
+## Current Codebase Inventory (2026-05-16 — E88 complete)
 
 | File / Module | Status |
 |---------------|--------|
-| `pom.xml` | ✅ Java 21, SB 3.4.5, all deps declared |
-| `application.yml` | ✅ Hardened — compression, JPA batch, Prometheus |
-| `application-dev.yml` | ✅ H2 + HikariCP + Redis dev overrides |
+| `pom.xml` | ✅ Java 21, SB 3.4.5, Spring AI 1.0.0 BOM, all deps declared |
+| `application.yml` | ✅ Hardened — compression, JPA batch, Prometheus, Spring AI config, `app.frontend.base-url` |
+| `application-dev.yml` | ✅ PostgreSQL + Redis dev overrides; AI mock mode (`APP_AI_ENABLED=false`) |
 | `logback-spring.xml` | ✅ JSON async prod, colored dev |
-| `SecurityConfig.java` | ✅ Phase 1 (permit-all); Phase 2 pending |
-| `JwtUtil.java` | ✅ Generate + validate HS256 tokens |
-| `JwtProperties.java` | ✅ Config binding record |
+| `SecurityConfig.java` | ✅ Full RBAC — super-admin / school-admin / anyRequest().authenticated() |
+| `JwtUtil.java` / `JwtAuthenticationFilter.java` | ✅ HS256 generate + validate; SecurityContext + RequestContext populated |
 | `RequestContext.java` | ✅ ThreadLocal tenant/school/user propagation |
-| `CorrelationIdFilter.java` | ✅ Sanitized correlation ID injection |
-| `SecurityHeadersFilter.java` | ✅ 7 OWASP headers |
+| Security filters (correlation, headers, tenant, suspension) | ✅ All registered in correct chain order |
 | `RestExceptionHandler.java` | ✅ Standardized error responses |
-| `ApiResponse.java` / `ApiError.java` | ✅ Response envelopes |
-| `TenantContextFilter.java` | ✅ Header-based tenant resolution |
-| `Tenant.java` / `TenantRepository.java` | ✅ Entity + repo |
-| `TenantServiceImpl.java` | ✅ CRUD with conflict detection |
-| `User.java` / `UserRepository.java` | ✅ Entity + repo |
-| `UserRole.java` / `UserStatus.java` | ✅ Enums (7 roles, 3 statuses) |
-| `SuperAdminBootstrap.java` | ✅ Idempotent admin creation |
-| V1–V5 Flyway migrations | ✅ Core schema done |
-| `docker-compose.yml` | ✅ PG16, Redis7, MinIO, MailHog |
-| `JwtAuthenticationFilter` | ✅ Built (CC-0102) — registered in SecurityConfig |
-| Login / Auth API | ❌ Not built (CC-0103) |
-| Refresh token system | ❌ Not built (CC-0105) |
-| Feature flag service layer | ❌ Not built (CC-0012) |
-| Tenant-aware JPA query filters | ❌ Not built (CC-0203) |
-| Rate limiting | ❌ Not built (CC-1801) |
-| Audit log writer | ❌ Not built (CC-1802) |
-| Frontend | ❌ Not started |
-| Mobile apps | ❌ Not started |
-| CI/CD | ❌ Not started |
-| OpenAPI / Swagger | ❌ Not configured |
+| `TenantContextFilter.java` | ✅ Fixed (no longer overwrites JWT-derived tenantId with slug) |
+| Tenant / School / User entities + repos | ✅ All done with Hibernate `@Filter` |
+| V1–V46 Flyway migrations | ✅ V1–V40 core schema; V41 tenant configs; V42 JNV seed; V43 subscriptions; V44 payment orders; V45 tenant subscriptions; V46 pgvector + AI tables |
+| `docker-compose.yml` | ✅ pgvector/pgvector:pg16, Redis 7, MinIO, MailHog, Prometheus, Grafana, Tempo, RabbitMQ, pgbackup |
+| Login / Refresh / Logout / Revoke-all API | ✅ Complete (CC-0103, CC-0105, CC-0117) |
+| Password reset (OTP email) + account lockout | ✅ Complete (CC-0107, CC-0108, CC-0116) |
+| Rate limiting (login + per-user/tenant API) | ✅ Redis sliding-window (CC-1801, CC-1805) |
+| Audit log writer (async) | ✅ Complete (CC-1802) |
+| Feature flag service + `@RequiresFeature` AOP | ✅ Complete with dependency engine (CC-0012, CC-0307) |
+| Tenant configuration + branding engines | ✅ Complete (CC-0206, CC-0207) |
+| Subscription plan catalog + assignment + usage limits | ✅ Complete (CC-0308, CC-0312) |
+| Student / Staff / School Admin domain APIs | ✅ Full CRUD + Hibernate tenant filter |
+| Attendance (manual + QR self-mark) | ✅ Complete (CC-0801, CC-0802, CC-0805) |
+| Fee management + student self-view | ✅ Complete (CC-0901) |
+| Timetable / Homework / Assignments / Exams | ✅ Complete |
+| Notifications (RabbitMQ queue, email/SMS/push/WhatsApp) | ✅ Complete (CC-1504) |
+| Reports (attendance, fee, performance — JSON + CSV) | ✅ Complete (CC-1401–CC-1404) |
+| Platform analytics + cross-school comparison | ✅ Complete (CC-0309) |
+| PII encryption (AES-256-GCM) + GDPR retention | ✅ Complete (CC-1803, CC-1806) |
+| Secrets guard (`SecretsGuardConfig`) | ✅ Complete (CC-1906) |
+| **AI Foundation** — Spring AI 1.0.0, Anthropic chat, OpenAI embeddings | ✅ Complete (CC-1600) |
+| **AI Prompt Registry** — versioned templates, activate/deactivate, render | ✅ Complete (CC-1601) |
+| **AI Embedding Service** — pgvector, tenant-scoped similarity search | ✅ Complete (CC-1602) |
+| **QR Attendance** — Redis token, deep-link QR, student self-mark | ✅ Complete (CC-0802) |
+| Frontend (React 19 + TypeScript) | ✅ Full ERP UI across all portals |
+| Mobile (Expo SDK 54 + React Native) | ✅ Full app with offline sync + push |
+| CI/CD (GitHub Actions 4-job pipeline) | ✅ Complete (CC-1502) |
+| OpenAPI / Swagger | ✅ Enabled in dev profile only |
+| Razorpay payment gateway | ⏳ Config scaffolded; flow not built (CC-0903) |
+| AI Copilot school-admin UI | ❌ Not started (CC-1603) |
+| Website builder | ❌ Not started (CC-2001 — Phase 3) |
 
 ---
 
@@ -1647,20 +1656,21 @@ TanStack Query (online state)
 
 ---
 
-### Final Production Readiness Score (Current State)
+### Final Production Readiness Score (Current State — 2026-05-16)
 
 | Area | Score | Notes |
 |------|-------|-------|
-| Backend foundation | 9/10 | Auth, RBAC, brute-force, audit log, school entity, feature flags all done |
-| Database | 8/10 | Indexes, soft delete, Flyway V1–V10; missing: archival/partitioning, backup |
-| Security | 8/10 | JWT enforcement, RBAC, rate limiting, brute-force, HTTPS config in prod profile |
-| Auth | 9/10 | Login, refresh, logout, password reset, token rotation all complete |
-| Frontend | 7/10 | React + TanStack; auth, tenant CRUD, route guard — 31/31 tests passing |
-| Mobile | 7/10 | Expo RN; offline attendance, push notifications, secure storage all done |
-| DevOps | 7/10 | Dockerfile, GitHub Actions CI, Prometheus, Grafana, staging/prod profiles |
-| Observability | 7/10 | Phase 1 dashboards + alert rules done; Phase 2 (Loki/Tempo) pending |
-| Multi-tenancy | 8/10 | Hibernate @Filter isolation, tenant isolation tests, school entity done |
-| **Overall** | **7.5/10** | Core platform complete; production hardening and observability phase 2 pending |
+| Backend foundation | 10/10 | Auth, RBAC, brute-force, audit log, school entity, feature flags, AI gateway, QR attendance, subscriptions all done |
+| Database | 9/10 | Flyway V1–V46 (incl. pgvector); indexes, soft delete, PII encryption; missing: table partitioning / archival |
+| Security | 9/10 | JWT, RBAC, rate limiting, brute-force, PII encryption, GDPR retention, secrets guard all done |
+| Auth | 10/10 | Login, refresh, logout, change/reset password, revoke-all sessions, account lockout all complete |
+| AI layer | 8/10 | Spring AI 1.0.0; Anthropic chat + OpenAI embeddings; pgvector; prompt registry; mock mode for dev; AI Copilot UI pending |
+| Frontend | 9/10 | Full school ERP UI; wizard onboarding; subscription management; AI prompt registry; QR attendance panel |
+| Mobile | 8/10 | Expo RN; offline attendance, push, secure storage; QR scan screen not yet built for mobile |
+| DevOps | 8/10 | Dockerfile, GitHub Actions CI (4 jobs), Prometheus, Grafana, backup drill, staging/prod profiles |
+| Observability | 7/10 | Phase 1 dashboards + alert rules + OTLP config; Phase 2 (Loki/Tempo full setup) pending |
+| Multi-tenancy | 9/10 | Hibernate @Filter, tenant isolation tests, branding engine, config engine, subscription plan limits |
+| **Overall** | **8.7/10** | Full-featured school ERP; AI foundation complete; Razorpay + AI Copilot UI + mobile QR are the main remaining items |
 
 ---
 
@@ -1716,7 +1726,7 @@ TanStack Query (online state)
 | D4 | Staging + production environment profiles | EUP-063 | ✅ COMPLETED |
 | D5 | Backup strategy (dev: `pg_dump` cron sidecar) | EUP-021 | ✅ COMPLETED |
 
-### 🔵 Phase E — School Admin Domain (Backend + Frontend)
+### ✅ Phase E — School Admin Domain (Backend + Frontend)
 
 | # | Task | ID | Status |
 |---|------|----|---------|
@@ -1724,10 +1734,27 @@ TanStack Query (online state)
 | E2 | Department entity + school settings service | CC-0406–CC-0407 | ✅ COMPLETED |
 | E3 | School Admin backend APIs (CRUD for all entities above) | CC-0401 | ✅ COMPLETED |
 | E4 | Student entity + admission + listing + parent mapping | CC-0501–CC-0504, CC-0506 | ✅ COMPLETED |
-| E5 | Staff / Teacher entity + profile management | CC-0601–CC-0602 | ⏳ PENDING |
-| E6 | Manual attendance backend (mark, list, report) | CC-0801, CC-0805 | ⏳ PENDING |
-| E7 | School Admin frontend: dashboard, academic year, class/section/subject UI | EUP-040–EUP-044 | ⏳ PENDING |
-| E8 | Student frontend: admission form, listing, profile page | CC-0502–CC-0503 | ⏳ PENDING |
+| E5 | Staff / Teacher entity + profile management | CC-0601–CC-0602 | ✅ COMPLETED |
+| E6 | Manual attendance backend (mark, list, report) | CC-0801, CC-0805 | ✅ COMPLETED |
+| E7 | School Admin frontend: dashboard, academic year, class/section/subject UI | EUP-040–EUP-044 | ✅ COMPLETED |
+| E8 | Student frontend: admission form, listing, profile page | CC-0502–CC-0503 | ✅ COMPLETED |
+| E9 | Fee management (structures, collection, receipts, student self-view) | CC-0901–CC-0902 | ✅ COMPLETED |
+| E10 | Timetable, homework, assignment, exam, marks, results | CC-1101–CC-1201 | ✅ COMPLETED |
+| E11 | Notifications (WhatsApp, SMS, email, push) + notice board | CC-1401–CC-1501 | ✅ COMPLETED |
+| E12 | Teacher + parent + student portals (web + mobile) | CC-0701–CC-0703 | ✅ COMPLETED |
+| E13 | Reports (attendance / fee / performance, CSV) + cross-school comparison | CC-1401–CC-1404 | ✅ COMPLETED |
+| E14 | Platform analytics dashboard | CC-0309 | ✅ COMPLETED |
+| E15 | Tenant configuration + branding + feature dependency engines | CC-0206, CC-0207, CC-0307 | ✅ COMPLETED |
+| E16 | Tenant onboarding wizard — 3-step (Identity → Plan → Review) | CC-0204 | ✅ COMPLETED |
+| E17 | Subscription plan management — catalog, assign plan, usage limits | CC-0308 | ✅ COMPLETED |
+| E18 | AI Foundation — Spring AI 1.0.0, pgvector, Anthropic/OpenAI, mock mode | CC-1600 | ✅ COMPLETED |
+| E19 | AI Prompt Registry — versioned templates, activate/deactivate, playground | CC-1601 | ✅ COMPLETED |
+| E20 | AI Embedding Service — tenant-scoped pgvector similarity search | CC-1602 | ✅ COMPLETED |
+| E21 | QR Attendance — deep-link QR (5-min token), student self-mark, scan page | CC-0802 | ✅ COMPLETED |
+| E22 | Student document upload (MinIO presigned URLs) | CC-0505 | ✅ COMPLETED |
+| E23 | Razorpay online payment gateway | CC-0903 | ⏳ PENDING |
+| E24 | AI Copilot school-admin UI (consume prompt registry) | CC-1603 | ⏳ PENDING |
+| E25 | Website builder | CC-2001 | ⏳ PENDING (Phase 3) |
 
 
 ---

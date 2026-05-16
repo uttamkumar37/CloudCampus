@@ -54,8 +54,12 @@ import { SchoolComparisonPage } from '@/features/super-admin/pages/SchoolCompari
 import { TenantAnalyticsPage } from '@/features/super-admin/pages/TenantAnalyticsPage';
 import { PromptListPage } from '@/features/super-admin/pages/PromptListPage';
 import { PromptDetailPage } from '@/features/super-admin/pages/PromptDetailPage';
+import { KnowledgeBasePage } from '@/features/super-admin/pages/KnowledgeBasePage';
+import { AiUsagePage } from '@/features/super-admin/pages/AiUsagePage';
 import { SchoolSettingsPage } from '@/features/school-admin/pages/SchoolSettingsPage';
 import { DepartmentListPage } from '@/features/school-admin/pages/DepartmentListPage';
+import { WebsiteBuilderPage } from '@/features/school-admin/pages/WebsiteBuilderPage';
+import { PublicSitePage } from '@/features/public-site/pages/PublicSitePage';
 import { TeacherLayout } from '@/features/teacher/layouts/TeacherLayout';
 import TeacherDashboardPage from '@/features/teacher/pages/TeacherDashboardPage';
 import TeacherTimetablePage from '@/features/teacher/pages/TeacherTimetablePage';
@@ -125,8 +129,10 @@ export function AppRouter() {
           <Route path="tenants/:id" element={<TenantDetailPage />} />
           <Route path="comparison" element={<SchoolComparisonPage />} />
           <Route path="analytics"  element={<TenantAnalyticsPage />} />
-          <Route path="ai/prompts"    element={<PromptListPage />} />
-          <Route path="ai/prompts/:id" element={<PromptDetailPage />} />
+          <Route path="ai/prompts"       element={<PromptListPage />} />
+          <Route path="ai/prompts/:id"   element={<PromptDetailPage />} />
+          <Route path="ai/knowledge"     element={<KnowledgeBasePage />} />
+          <Route path="ai/usage"         element={<AiUsagePage />} />
         </Route>
 
         {/* School Admin portal — SCHOOL_ADMIN role required */}
@@ -178,6 +184,7 @@ export function AppRouter() {
           <Route path="reports" element={<ReportsPage />} />
           <Route path="notices" element={<NoticeBoardPage />} />
           <Route path="departments" element={<DepartmentListPage />} />
+          <Route path="website" element={<WebsiteBuilderPage />} />
           <Route path="settings" element={<SchoolSettingsPage />} />
         </Route>
 
@@ -247,6 +254,10 @@ export function AppRouter() {
             </ProtectedRoute>
           }
         />
+
+        {/* Public school website — no auth required */}
+        <Route path="/sites/:tenantCode" element={<PublicSitePage />} />
+        <Route path="/sites/:tenantCode/pages/:slug" element={<PublicSitePage />} />
 
         {/* Root and catch-all */}
         <Route path="/" element={<Navigate to="/login" replace />} />

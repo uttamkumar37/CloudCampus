@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { changePasswordApi, revokeAllSessionsApi } from '../api/authApi';
+import { listDevicesApi, revokeDeviceApi } from '../api/deviceApi';
 
 function isStrongPassword(pw: string): boolean {
   return pw.length >= 8
@@ -32,6 +33,19 @@ export function ChangePasswordPage() {
         user: s.user ? { ...s.user, requiresPasswordChange: false } : s.user,
       }));
     },
+  });
+
+  const qc = useQueryClient();
+
+  const { data: devices, isLoading: devicesLoading } = useQuery({
+    queryKey: ['my-devices'],
+    queryFn:  listDevicesApi,
+    enabled:  !isForced,
+  });
+
+  const { mutate: revokeDevice } = useMutation({
+    mutationFn: revokeDeviceApi,
+    onSuccess:  () => qc.invalidateQueries({ queryKey: ['my-devices'] }),
   });
 
   const logout = useAuthStore((s) => s.clearAuth);
@@ -177,6 +191,32 @@ export function ChangePasswordPage() {
               </p>
             )}
           </>
+        )}
+
+        {!isForced && !done && devices && devices.length > 0 && (
+          <div className="mt-8 border-t border-gray-200 pt-6">
+            <h2 className="mb-3 text-sm font-semibold text-gray-900">Active devices</h2>
+            {devicesLoading ? (
+              <p className="text-xs text-gray-400">Loading…</p>
+            ) : (
+              <ul className="space-y-2">
+                {devices.map((d) => (
+                  <li key={d.id} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{d.deviceName}</p>
+                      <p className="text-xs text-gray-400">{d.ipAddress} · last seen {new Date(d.lastSeenAt).toLocaleDateString('en-IN')}</p>
+                    </div>
+                    <button
+                      onClick={() => revokeDevice(d.id)}
+                      className="ml-3 rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                    >
+                      Revoke
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
 
         {!isForced && !done && (

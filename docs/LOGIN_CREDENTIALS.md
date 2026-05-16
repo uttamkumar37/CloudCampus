@@ -7,10 +7,14 @@
 ## Quick Start
 
 ```bash
-# 1. Start infrastructure (PostgreSQL, Redis, MinIO, MailHog, Prometheus, Grafana)
+# 1. Start infrastructure (pgvector/pgvector:pg16, Redis, MinIO, MailHog, Prometheus, Grafana, Tempo, RabbitMQ)
 docker compose up -d
 
-# 2. Run the backend (dev profile — PostgreSQL, Flyway auto-applies V1–V42)
+# NOTE: postgres image is pgvector/pgvector:pg16 (NOT postgres:16-alpine).
+# If upgrading from the old image: docker compose down && docker compose up -d
+
+# 2. Run the backend (dev profile — PostgreSQL, Flyway auto-applies V1–V46)
+#    AI runs in mock mode by default (no API keys needed, no external calls)
 cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
@@ -195,6 +199,9 @@ All endpoints below are smoke-tested and confirmed working after the latest fixe
 | `GET` | `/v1/teacher/dashboard` | Teacher stats |
 | `GET` | `/v1/teacher/timetable` | 12 slots |
 | `GET` | `/v1/teacher/attendance/students?classId=...&sectionId=...` | Students for marking |
+| `POST` | `/v1/teacher/attendance/sessions` | Create session + bulk mark |
+| `POST` | `/v1/teacher/attendance/sessions/with-qr` | Create session + generate QR in one call (CC-0802) |
+| `POST` | `/v1/teacher/attendance/sessions/{id}/qr` | Refresh QR for existing session |
 | `GET` | `/v1/teacher/homework` | Homework list |
 | `GET` | `/v1/teacher/assignments` | Assignment list |
 | `GET` | `/v1/teacher/leave` | Leave requests |
@@ -206,6 +213,7 @@ All endpoints below are smoke-tested and confirmed working after the latest fixe
 | `GET` | `/v1/student/fees` | Fee records |
 | `GET` | `/v1/student/timetable` | 36 slots |
 | `GET` | `/v1/student/attendance?from=...&to=...` | Date range required |
+| `POST` | `/v1/student/attendance/qr-mark` | Self-mark PRESENT via QR token `{ "token": "..." }` (CC-0802) |
 | `GET` | `/v1/student/homework` | Homework |
 | `GET` | `/v1/student/results` | Exam results |
 
@@ -269,6 +277,8 @@ redis-cli FLUSHALL
 | MinIO | http://localhost:9001 | minioadmin / minioadmin |
 | Prometheus | http://localhost:9090 | — |
 | Grafana | http://localhost:3100 | admin / admin |
+| Tempo | http://localhost:3200 | — |
+| RabbitMQ management | http://localhost:15672 | cloudcampus / cloudcampus_dev |
 
 ---
 
@@ -284,6 +294,10 @@ redis-cli FLUSHALL
 | `REDIS_HOST` / `REDIS_PORT` | `localhost` / `6379` | Redis connection |
 | `MAIL_HOST` / `MAIL_PORT` | `localhost` / `1025` (MailHog) | SMTP server |
 | `APP_FIREBASE_ENABLED` | `false` | Enable Firebase push notifications |
+| `APP_AI_ENABLED` | `false` | Enable real AI (Anthropic + OpenAI); `false` = mock mode |
+| `ANTHROPIC_API_KEY` | `dev-placeholder` | Claude API key (only needed when `APP_AI_ENABLED=true`) |
+| `OPENAI_API_KEY` | `dev-placeholder` | OpenAI embeddings key (only needed when `APP_AI_ENABLED=true`) |
+| `FRONTEND_BASE_URL` | `http://localhost:5173` | Origin for QR deep-links in `StudentQrScanPage` |
 
 ---
 
@@ -295,3 +309,6 @@ redis-cli FLUSHALL
 | `@Cacheable` endpoints fail after restart | Stale Redis data with old serializer format | Run `redis-cli FLUSHALL` then retry |
 | Parent child endpoints return "not linked" | Using user ID instead of student ID | Use student record UUID (e.g. `77777777-...`) |
 | Timetable returns empty | No timetable slots seeded in V42 | Create slots via `POST /v1/school-admin/schools/{id}/timetable` |
+| V46 migration fails — `extension "vector" does not exist` | Using `postgres:16-alpine` image which lacks pgvector | Change docker-compose to `pgvector/pgvector:pg16`; run `docker compose down && docker compose up -d` |
+| QR scan page shows "Invalid QR Code" | Token expired (5-min TTL) or malformed URL | Teacher must generate a fresh QR; ensure `FRONTEND_BASE_URL` matches the actual frontend origin |
+| AI render playground returns mock response | `APP_AI_ENABLED=false` (default) → MockChatModel active | Set `APP_AI_ENABLED=true` + provide real `ANTHROPIC_API_KEY` to call real AI |

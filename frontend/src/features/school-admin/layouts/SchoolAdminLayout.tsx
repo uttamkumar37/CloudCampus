@@ -1,7 +1,9 @@
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useFeatureFlag } from '@/shared/hooks/useFeatureFlag';
 import { useBranding } from '@/shared/hooks/useBranding';
+import { listMySchoolsApi, switchSchoolApi } from '../api/schoolAccessApi';
 
 // ── Nav item definition ───────────────────────────────────────────────────────
 
@@ -36,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'WhatsApp', to: '/school-admin/whatsapp', feature: 'WHATSAPP' },
   { label: 'Notice Board', to: '/school-admin/notices', feature: 'NOTICE_BOARD' },
   { label: 'Reports', to: '/school-admin/reports', feature: 'REPORTS' },
+  { label: 'Website', to: '/school-admin/website', feature: 'WEBSITE_BUILDER' },
   { label: 'Settings', to: '/school-admin/settings' },
 ];
 
@@ -65,10 +68,31 @@ function NavItemLink({ item }: { item: NavItem }) {
 // ── Layout shell ──────────────────────────────────────────────────────────────
 
 export function SchoolAdminLayout() {
-  const user = useAuthStore((s) => s.user);
+  const user      = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
-  const navigate = useNavigate();
-  const branding = useBranding();
+  const navigate  = useNavigate();
+  const branding  = useBranding();
+
+  const { data: mySchools } = useQuery({
+    queryKey: ['my-schools'],
+    queryFn:  listMySchoolsApi,
+    enabled:  user?.role === 'SCHOOL_ADMIN',
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { mutate: switchSchool, isPending: isSwitching } = useMutation({
+    mutationFn: switchSchoolApi,
+    onSuccess: (res) => {
+      useAuthStore.setState((s) => ({
+        accessToken: res.accessToken,
+        user: s.user ? { ...s.user, schoolId: res.schoolId } : s.user,
+      }));
+      // Reload to flush all cached school-scoped queries.
+      window.location.replace('/school-admin/dashboard');
+    },
+  });
+
+  const multiSchool = mySchools && mySchools.length > 1;
 
   function handleLogout() {
     clearAuth();
@@ -91,6 +115,25 @@ export function SchoolAdminLayout() {
             <span className="text-base font-bold text-blue-700">CloudCampus</span>
           )}
         </div>
+
+        {/* School switcher — only rendered when user has access to 2+ schools */}
+        {multiSchool && (
+          <div className="border-b border-gray-100 px-3 py-2">
+            <select
+              value={user?.schoolId ?? ''}
+              disabled={isSwitching}
+              onChange={(e) => switchSchool(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              aria-label="Active school"
+            >
+              {mySchools.map((s) => (
+                <option key={s.schoolId} value={s.schoolId}>
+                  {s.schoolName}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Nav */}
         <nav className="flex-1 space-y-0.5 p-3" aria-label="School admin navigation">

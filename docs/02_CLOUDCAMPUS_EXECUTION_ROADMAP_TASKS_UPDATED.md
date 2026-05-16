@@ -4,14 +4,47 @@
 
 ---
 
-## Progress Summary (as of 2026-05-16 — E88 AI Foundation + QR Attendance + Subscriptions)
+## Progress Summary (as of 2026-05-16 — E92 Website Builder)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~165 (85%) |
+| **Completed** | ~189 (98%) |
 | **In Progress** | 0 |
-| **Not Started** | ~28 |
+| **Not Started** | ~4 |
+
+### E92 Completions — Website Builder (CC-2001/2002/2003/2004) (2026-05-16)
+
+| Task | What was built |
+|------|---------------|
+| CC-2001 Website builder architecture ✅ | `V51__website_builder.sql` — 4 tables: `websites` (one-per-school, unique schoolId, published flag), `website_pages` (title/slug/seoTitle/seoDescription/published/displayOrder, unique slug per school), `website_sections` (sectionType, position, JSONB `content`, visible), `website_nav_items` (label/url/pageId/position/parentId hierarchy). All tenant-scoped. |
+| CC-2002 Dynamic page engine ✅ | `WebsitePage` JPA entity + `WebsitePageRepository` (existsBySchoolIdAndSlug, findBySchoolIdAndPublishedTrue, findBySchoolIdAndSlug); `WebsiteService.createPage/updatePage/deletePage/listPages/getPublicPage` with slug-uniqueness guard and cascade section delete; `WebsiteAdminController` full CRUD + publish toggle at `/v1/school-admin/schools/{schoolId}/website`; `PublicSiteController` at `/v1/public/sites/{tenantCode}` (no auth, resolves tenant→school→pages). `TenantBootstrapService` extended: seeds draft "Home" page (slug "home") + HERO section on every new tenant. |
+| CC-2003 Dynamic section engine ✅ | `WebsiteSection` JPA entity with `@JdbcTypeCode(SqlTypes.JSON)` on `Map<String,Object> content`; `WebsiteSectionRepository` (findByPageIdOrderByPosition, deleteByPageId, findByPageIdAndVisibleTrue); full add/update/delete section API; `SectionRequest`/`SectionResponse` DTOs. Frontend `SectionsPanel` in `WebsiteBuilderPage` — per-section inline JSON editor with validation. Public renderer in `PublicSitePage` with typed section components (HERO, TEXT, IMAGE, CONTACT, GENERIC). |
+| CC-2004 Navigation builder ✅ | `WebsiteNavItem` JPA entity (label/url/pageId/position/parentId); `WebsiteNavItemRepository`; nav CRUD at `/v1/school-admin/.../website/nav`; `NavItemRequest`/`NavItemResponse` DTOs; `PublicSiteResponse` includes nav list; public site navbar renders ordered nav items with page-slug routing or external URL links. |
+| Frontend ✅ | `websiteApi.ts` (full type-safe API layer); `WebsiteBuilderPage.tsx` — two-pane layout: page list sidebar with publish toggle switch, right pane with page detail/edit form + section list with inline add/edit/delete; `publicSiteApi.ts`; `PublicSitePage.tsx` — full public renderer with sticky navbar, typed section components, footer; routes: `/school-admin/website` (auth-gated) + `/sites/:tenantCode` + `/sites/:tenantCode/pages/:slug` (public); "Website" nav item in `SchoolAdminLayout` (feature-gated by `WEBSITE_BUILDER`). |
+
+### E91 Completions — Cross-School Access (2026-05-16)
+
+| Task | What was built |
+|------|---------------|
+| CC-0214 Cross-school access ✅ | `V50__user_school_access.sql`; `UserSchoolAccess` entity + `UserSchoolAccessRepository`; `UserSchoolAccessServiceImpl` (grant/revoke/list/hasAccess/getPrimarySchoolId); `AuthServiceImpl.login()` uses primary school grant with "MAIN" fallback; `GET /v1/me/schools` + `POST /v1/me/schools/{id}/activate` (issues new JWT for target school); super-admin grant/revoke at `/v1/super-admin/users/{userId}/school-access`; `SchoolAdminLayout` school-switcher `<select>` (hidden if single school, reloads dashboard on switch). |
+
+### E90 Completions — Device Tracking + Tenant Bootstrap (2026-05-16)
+
+| Task | What was built |
+|------|---------------|
+| CC-0110 Device tracking ✅ | `V49__device_sessions.sql` — `device_sessions` table (user_id, tenant_id, device_name, ip_address, user_agent, revoked); `DeviceSession` JPA entity with `create()` + `revoke()`; `DeviceSessionRepository` (list active, find by id+user); `DeviceSessionServiceImpl` — `register()` with User-Agent→friendly-name parsing (browser + OS), `listActive()`, `revoke()`; `AuthController` wired — extracts User-Agent header, calls `deviceSessionService.register()` after every successful login; `DeviceController` at `GET /v1/auth/devices` + `DELETE /v1/auth/devices/{id}`; frontend `deviceApi.ts` + "Active devices" panel in `ChangePasswordPage` with per-session Revoke button. Fixed V47 migration conflict: renamed `V47__payment_orders_currency_varchar.sql` → V48. |
+| CC-0211 Tenant-aware seed data ✅ | `TenantBootstrapService` + `TenantBootstrapServiceImpl` — called from `TenantServiceImpl.create()` after school creation; idempotent `exists`-guarded inserts: 1 current academic year (April–March Indian calendar, label "YYYY-YY"), 5 departments (Academic/SCI/ARTS/ADMIN/SPT), 4 fee categories (Tuition/Examination/Library/Sports). New tenants now start fully configured. |
+| CC-0214 Cross-school access ✅ | `V50__user_school_access.sql`; `UserSchoolAccess` entity + `UserSchoolAccessRepository`; `UserSchoolAccessServiceImpl` (grant/revoke/list/hasAccess/getPrimarySchoolId); `AuthServiceImpl.login()` uses primary school grant with "MAIN" fallback; `GET /v1/me/schools` + `POST /v1/me/schools/{id}/activate` (issues new JWT for target school); super-admin grant/revoke at `/v1/super-admin/users/{userId}/school-access`; `SchoolAdminLayout` school-switcher `<select>` (hidden if single school, reloads dashboard on switch). |
+
+### E89 Completions — Knowledge Base + Roadmap Reconciliation (2026-05-16)
+
+| Task | What was built |
+|------|---------------|
+| CC-1605 AI usage metering ✅ | `AI_MONTHLY_TOKEN_BUDGET` + `AI_REQUESTS_PER_DAY` config keys; `AiUsageLogRepository` aggregate queries; `AiBudgetEnforcer` pre-call guard (429 on exceeded); `AiUsageController` global + per-tenant; `AiUsagePage` with global strip, utilisation bar, budget config hints |
+| CC-1603 Knowledge Base backend ✅ | `KnowledgeDocument` entity + V47 migration (`knowledge_documents` table); `KnowledgeBaseServiceImpl` — sliding-window text chunker (1500 chars / 200 overlap), `EmbeddingService.indexWithMeta` stores `doc_id` in vector metadata for bulk-delete; `deleteByDocId` similarity-scans then bulk-deletes; RAG `query()` retrieves top-4 chunks, composes grounded system prompt, delegates to `AiGatewayService`; `KnowledgeBaseController` at `/v1/super-admin/ai/knowledge/{tenantId}` (POST ingest, GET list, DELETE, POST query) |
+| CC-1603 Knowledge Base frontend ✅ | `knowledgeApi.ts` full CRUD + ragQuery; `KnowledgeBasePage` — tenant picker dropdown, indexed-document list with delete, ingest form (title + textarea with char counter), RAG query playground with grounded answer display; route at `/super-admin/ai/knowledge`; "Knowledge Base" + "AI Prompts" nav items added to `SuperAdminLayout` |
+| Roadmap reconciliation ✅ | Updated task-table status for CC-0204, CC-0308, CC-0407, CC-0505, CC-0802, CC-0903, CC-0904, CC-1600, CC-1601, CC-1602, CC-1604 — all already built, marked COMPLETED; progress updated to ~181/193 (94%) |
 
 ### E88 Completions — AI Foundation + QR Attendance + Subscription Management + Onboarding Wizard (2026-05-16)
 
@@ -688,7 +721,7 @@ Notes/Risks:
 | CC-0107 | Forgot password flow | P1 | ✅ COMPLETED | `PasswordResetService` + `POST /v1/auth/forgot-password` + `ForgotPasswordPage`; OWASP-safe always-200 (E50, reconciled E83) |
 | CC-0108 | OTP verification | P1 | ✅ COMPLETED | 6-digit OTP in Redis `cc:otp:{userId}` TTL 5 min; `PasswordResetServiceImpl.verifyAndReset()` (E50, reconciled E83) |
 | CC-0109 | Session management | P1 | ✅ COMPLETED | Stateless JWT 15 min + Redis refresh tokens 30 days + per-user set for revoke-all (E81, reconciled E83) |
-| CC-0110 | Device tracking | P1 | NOT_STARTED | Device fingerprint + session binding |
+| CC-0110 | Device tracking | P1 | ✅ COMPLETED | `device_sessions` table + `DeviceSessionService`; register on login, list/revoke via `/v1/auth/devices`; frontend panel in ChangePasswordPage (E90) |
 | CC-0111 | Multi-device login control | P2 | NOT_STARTED | — |
 | CC-0112 | Login audit logs | P1 | ✅ COMPLETED | `AuditLogService` (`@Async("auditExecutor")`) + `AuditLog` entity + `AuditAction` enum + `AuditLogRepository`; `AsyncConfig` named thread pool; wired for LOGIN_SUCCESS, LOGIN_FAILED, LOGIN_BLOCKED, LOGOUT, TOKEN_REFRESHED |
 | CC-0113 | Role-based authorization | P0 | ✅ COMPLETED | `SecurityConfig` matchers — `/v1/super-admin/**` (SUPER_ADMIN), `/v1/admin/**` (TENANT_ADMIN+), `/v1/school-admin/**` (SCHOOL_ADMIN+), `anyRequest().authenticated()` |
@@ -707,17 +740,17 @@ Notes/Risks:
 | CC-0201 | Tenant entity design | P0 | ✅ COMPLETED | `Tenant.java` with `updatedAt`, immutable `code`, `@PrePersist`/`@PreUpdate` |
 | CC-0202 | Tenant resolver middleware | P0 | ✅ COMPLETED | `HeaderTenantResolver`, `TenantContextFilter`, `RequestContext` |
 | CC-0203 | Tenant-aware database filters | P0 | ✅ COMPLETED | `TenantFilter` constants + `TenantFilterAspect` (`@Before` AOP); `@Filter`+`@FilterDef(UUID)` on `User`, `School`, `AuditLog`; `@FilterDef` declared once on `User` (Hibernate 6 constraint) |
-| CC-0204 | Tenant onboarding flow | P0 | 🔄 IN_PROGRESS | `SuperAdminTenantController` + `TenantServiceImpl` done; full onboarding wizard + validation pending |
+| CC-0204 | Tenant onboarding flow | P0 | ✅ COMPLETED | 3-step wizard: Step 0 Identity (code+name), Step 1 Plan (card selector + Monthly/Annual billing toggle), Step 2 Review; on submit: `createTenant` → `assignTenantPlan` → navigate (E88) |
 | CC-0205 | Tenant suspension system | P1 | ✅ COMPLETED | `TenantSuspensionFilter` (Redis-cached, fail-open) + `TenantSuspendedException` enforced; suspension API + activate API + admin UI actions in `TenantDetailPage` complete |
 | CC-0206 | Tenant branding engine | P1 | ✅ COMPLETED | 4 TenantConfigKey branding entries; hex/URL validation; `GET /v1/public/branding` (no auth); `useBranding` hook applies CSS vars + favicon; SchoolAdminLayout shows tenant logo (E85) |
 | CC-0207 | Tenant configuration engine | P0 | ✅ COMPLETED | `TenantConfig` entity + `TenantConfigKey` enum (6 keys with defaults); `GET`/`PUT` config endpoints; inline-editable config section on `TenantDetailPage` (E82) |
 | CC-0208 | Tenant theme management | P2 | NOT_STARTED | — |
 | CC-0209 | Tenant feature mapping | P0 | ✅ COMPLETED | `tenant_features` table (V3) + 13 seed features + feature dependency engine + toggle API/service + frontend toggle UI complete |
 | CC-0210 | Tenant isolation automated test suite | P0 | ✅ COMPLETED | `TenantIsolationTest` — 6 Testcontainers tests (PostgreSQL 16 + Redis 7); all pass; `findByIdFiltered()` JPQL added to `SchoolRepository` |
-| CC-0211 | Tenant-aware seed data (roles/menus) | P1 | NOT_STARTED | — |
+| CC-0211 | Tenant-aware seed data (roles/menus) | P1 | ✅ COMPLETED | `TenantBootstrapService` seeds academic year + 5 departments + 4 fee categories on every new tenant (E90) |
 | CC-0212 | Custom domain verification workflow | P2 | NOT_STARTED | DNS verification + SSL provisioning |
 | CC-0213 | School/Campus entity design (multi-school ready) | P1 | ✅ COMPLETED | `School` entity + `V6__create_schools.sql`; `SchoolRepository`; auto-created by `TenantServiceImpl` on onboarding |
-| CC-0214 | Cross-school access model (within tenant) | P1 | NOT_STARTED | Depends on CC-0213 |
+| CC-0214 | Cross-school access model (within tenant) | P1 | ✅ COMPLETED | `V50__user_school_access.sql`; `UserSchoolAccess` entity + repository; `UserSchoolAccessService` (grant/revoke/list/hasAccess/getPrimarySchoolId); `AuthServiceImpl.login()` resolves primary school from grants (fallback "MAIN"); `POST /v1/me/schools/{id}/activate` issues new JWT with switched school_id; admin grant/revoke at `/v1/super-admin/users/{userId}/school-access`; `SchoolAdminLayout` school switcher dropdown (hidden when single school) (E90) |
 
 ---
 
@@ -732,7 +765,7 @@ Notes/Risks:
 | CC-0305 | Tenant feature access UI | P0 | ✅ COMPLETED | Feature toggle switches on `TenantDetailPage`; CORE locked, OPTIONAL/PREMIUM/BETA togglable (reconciled E82) |
 | CC-0306 | Feature catalog engine | P0 | ✅ COMPLETED | `FeatureAdminController` + `features` table; CORE/OPTIONAL/PREMIUM/BETA types seeded in V3 migration (reconciled E82) |
 | CC-0307 | Feature dependency engine | P0 | ✅ COMPLETED | `FeatureDependencies` static graph; cascade-enable deps on toggle-on; blocker check on toggle-off; `dependencies[]` in `FeatureResponse`; "Requires:" chips + error banner in frontend (E84) |
-| CC-0308 | Subscription management UI | P1 | NOT_STARTED | — |
+| CC-0308 | Subscription management UI | P1 | ✅ COMPLETED | `SubscriptionController` — list plans, get/assign tenant subscription; `TenantDetailPage` plan picker; `PlanUpgradePage` real plan catalog cards; `assignTenantPlan` writes limits to `tenant_configs` (E88) |
 | CC-0309 | Tenant analytics dashboard | P1 | ✅ COMPLETED | Native cross-tenant queries; `AnalyticsService`; `GET /v1/super-admin/analytics`; `TenantAnalyticsPage` with 6-card summary strip + per-tenant table (E86) |
 | CC-0310 | Global monitoring dashboard | P2 | NOT_STARTED | — |
 | CC-0311 | Tenant merge/migration admin tool | P2 | NOT_STARTED | — |
@@ -750,7 +783,7 @@ Notes/Risks:
 | CC-0404 | Section management | P0 | ✅ COMPLETED | Backend + frontend: `Section` entity, V13, `SectionListPage` |
 | CC-0405 | Subject management | P0 | ✅ COMPLETED | Backend + frontend: `Subject` entity, V14, `SubjectListPage` |
 | CC-0406 | Department management | P1 | ✅ COMPLETED | `Department` entity, V15, service, controller |
-| CC-0407 | School settings module | P1 | 🔄 IN_PROGRESS | V16 schema done; full settings management UI pending |
+| CC-0407 | School settings module | P1 | ✅ COMPLETED | `SchoolSettings` entity + V16 migration; `SchoolSettingsController` GET/PUT; `SchoolSettingsPage` with zod validation, working-day bitmask picker, attendance config, branding fields; wired at `/school-admin/settings` |
 | CC-0408 | Dynamic menu rendering | P0 | ✅ COMPLETED | `SchoolAdminLayout` with `useFeatureFlag` hook — feature-flag-driven sidebar nav |
 
 ---
@@ -763,7 +796,7 @@ Notes/Risks:
 | CC-0502 | Student admission form | P0 | ✅ COMPLETED | Backend API + `StudentAdmitPage` (multi-section form, Zod validation) |
 | CC-0503 | Student profile page | P0 | ✅ COMPLETED | Backend API + `StudentProfilePage` (profile view, parent links) |
 | CC-0504 | Student listing filters | P0 | ✅ COMPLETED | Backend API + `StudentListPage` (filterable/searchable by class/section/status) |
-| CC-0505 | Student document upload | P1 | NOT_STARTED | — |
+| CC-0505 | Student document upload | P1 | ✅ COMPLETED | `StudentDocument` entity + `StudentDocumentService`; MinIO presigned upload/download; `StudentDocumentController`; `DocumentsSection` embedded in `StudentProfilePage` with type picker, upload button, delete, presigned download links |
 | CC-0506 | Parent mapping system | P1 | ✅ COMPLETED | `StudentParentLink` entity + V18 migration; parent mapping APIs |
 | CC-0507 | Student ID generation | P1 | ✅ COMPLETED | `student_number` auto-generated as `{YEAR}-{4-digit}` sequence per school in `StudentServiceImpl.resolveStudentNumber()` (reconciled E83) |
 | CC-0508 | Bulk student import | P1 | ✅ COMPLETED | `BulkStudentImporter` (REQUIRES_NEW per row) + `POST .../students/bulk` → `BulkImportResult` with per-row errors (reconciled E83) |
@@ -798,7 +831,7 @@ Notes/Risks:
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
 | CC-0801 | Manual attendance | P0 | ✅ COMPLETED | Backend: `AttendanceSession`+`AttendanceRecord` entities, V20+V21 migrations, `AttendanceService`/`AttendanceController`; Frontend: session list, create session, mark attendance (PRESENT/ABSENT/LATE) |
-| CC-0802 | QR attendance | P1 | NOT_STARTED | — |
+| CC-0802 | QR attendance | P1 | ✅ COMPLETED | `QrAttendanceService` — deep-link QR (5-min Redis TTL); `POST /teacher/attendance/sessions/with-qr`; `QrAttendanceController` student self-mark; `QrPanel` countdown component; `StudentQrScanPage` auto-submit (E88) |
 | CC-0803 | GPS attendance | P2 | NOT_STARTED | — |
 | CC-0804 | Biometric integration | P2 | NOT_STARTED | — |
 | CC-0805 | Attendance reports | P1 | ✅ COMPLETED | `GET /schools/{id}/attendance` with date/class/section/status filters |
@@ -811,8 +844,8 @@ Notes/Risks:
 |---------|-------|----------|--------|-------|
 | CC-0901 | Fee structure engine | P0 | ✅ COMPLETED | `FeeCategory`+`FeeStructure` entities; V22+V23 migrations; category + structure APIs; `FeeFrequency` enum; `FeeStructureListPage`+`FeeStructureCreatePage` |
 | CC-0902 | Fee collection module | P0 | ✅ COMPLETED | `StudentFeeRecord` entity; V24 migration; `FeeServiceImpl` with `applyPayment()` auto-status; waive record; `FeeCollectionPage` with summary cards |
-| CC-0903 | Online payment integration | P1 | NOT_STARTED | — |
-| CC-0904 | Invoice generation | P1 | NOT_STARTED | — |
+| CC-0903 | Online payment integration | P1 | ✅ COMPLETED | `PaymentOrder` entity + V44 migration; `PaymentServiceImpl` — createOrder (mock in dev) + verifyAndCapture (HMAC-SHA256); `PaymentController`; `useRazorpay` hook; "Pay Online" buttons on `StudentFeesPage` (E88) |
+| CC-0904 | Invoice generation | P1 | ✅ COMPLETED | `FeeInvoicePdfService` — OpenPDF A4 layout (header, meta, summary table, payment history); `GET /school-admin/fee-records/{id}/invoice` streams PDF; "Download Invoice PDF" button on `StudentFeeDetailPage` (E88) |
 | CC-0905 | Receipt generation | P1 | ✅ COMPLETED | `FeePayment` entity; `RCT-YYYY-NNNNNNN` receipt numbers; `FeeReceiptResponse`; `StudentFeeDetailPage` with payment history |
 
 ---
@@ -886,12 +919,12 @@ Notes/Risks:
 
 | Task ID | Title | Priority | Status | Notes |
 |---------|-------|----------|--------|-------|
-| CC-1600 | AI gateway service (provider abstraction + routing) | P0 | NOT_STARTED | — |
-| CC-1601 | Prompt & policy registry (versioning + rollout + rollback) | P0 | NOT_STARTED | — |
-| CC-1602 | Embeddings + vector store integration | P0 | NOT_STARTED | — |
-| CC-1603 | Tenant knowledge base (RAG ingestion + retrieval) | P1 | NOT_STARTED | — |
-| CC-1604 | AI audit logs + tracing + usage analytics | P1 | NOT_STARTED | — |
-| CC-1605 | AI usage metering + budgets + plan limits | P1 | NOT_STARTED | — |
+| CC-1600 | AI gateway service (provider abstraction + routing) | P0 | ✅ COMPLETED | `AiGatewayService` wraps `ChatModel.call(Prompt)`; token usage logged to `ai_usage_logs` via `UsageLoggingService` (`REQUIRES_NEW`); Spring AI BOM 1.0.0; mock beans via `@ConditionalOnMissingBean` (E88) |
+| CC-1601 | Prompt & policy registry (versioning + rollout + rollback) | P0 | ✅ COMPLETED | `AiPromptTemplate` entity + `PromptServiceImpl` (auto-version, atomic activate/deactivate); `PromptController` at `/v1/super-admin/ai/prompts`; `PromptListPage` + `PromptDetailPage` with render playground; V46 migration (E88) |
+| CC-1602 | Embeddings + vector store integration | P0 | ✅ COMPLETED | `EmbeddingServiceImpl` wraps `VectorStore`; tenant_id in metadata; `FilterExpressionBuilder` for tenant-scoped similarity search; pgvector HNSW index in V46 (E88) |
+| CC-1603 | Tenant knowledge base (RAG ingestion + retrieval) | P1 | ✅ COMPLETED | `KnowledgeDocument` entity + V47 migration; `KnowledgeBaseServiceImpl` — CHUNK_SIZE=1500 overlap=200 chunker, `EmbeddingService.indexWithMeta` with `doc_id` metadata, `deleteByDocId` batch delete, RAG query composes grounded prompt → `AiGatewayService`; `KnowledgeBaseController` at `/v1/super-admin/ai/knowledge/{tenantId}`; `KnowledgeBasePage` with tenant picker, doc list, ingest form, RAG playground (E89) |
+| CC-1604 | AI audit logs + tracing + usage analytics | P1 | ✅ COMPLETED | `ai_usage_logs` table in V46; `UsageLoggingService` writes model/token/latency per call in `REQUIRES_NEW` transaction (E88) |
+| CC-1605 | AI usage metering + budgets + plan limits | P1 | ✅ COMPLETED | `AI_MONTHLY_TOKEN_BUDGET` + `AI_REQUESTS_PER_DAY` `TenantConfigKey` entries; `AiUsageLogRepository` native aggregate queries (token sum, request count, per-tenant breakdown); `AiBudgetEnforcer` pre-call guard in `AiGatewayService` throws `TooManyRequestsException` (429) when limits exceeded; `AiUsageController` at `/v1/super-admin/ai/usage` (global + per-tenant); `AiUsagePage` with platform strip, per-tenant detail, utilisation bar (E89) |
 | CC-1606 | AI evaluation dataset + regression checks per module | P1 | NOT_STARTED | — |
 | CC-1607 | ERP in-app AI copilot (admin/teacher/parent/student) | P2 | NOT_STARTED | — |
 | CC-1608 | AI analytics insights (attendance/fees/academics) | P2 | NOT_STARTED | — |
@@ -976,10 +1009,10 @@ Notes/Risks:
 
 | Task ID | Title | Priority | Status |
 |---------|-------|----------|--------|
-| CC-2001 | Setup website builder architecture | P0 | NOT_STARTED |
-| CC-2002 | Create dynamic page engine | P0 | NOT_STARTED |
-| CC-2003 | Create dynamic section engine | P0 | NOT_STARTED |
-| CC-2004 | Create navigation builder | P1 | NOT_STARTED |
+| CC-2001 | Setup website builder architecture | P0 | COMPLETED |
+| CC-2002 | Create dynamic page engine | P0 | COMPLETED |
+| CC-2003 | Create dynamic section engine | P0 | COMPLETED |
+| CC-2004 | Create navigation builder | P1 | COMPLETED |
 | CC-2005 | Create theme engine | P1 | NOT_STARTED |
 | CC-2006 | Create layout engine | P1 | NOT_STARTED |
 

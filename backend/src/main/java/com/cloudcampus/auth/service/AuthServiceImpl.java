@@ -17,6 +17,7 @@ import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.exception.TooManyRequestsException;
 import com.cloudcampus.common.exception.UnauthorizedException;
 import com.cloudcampus.school.repository.SchoolRepository;
+import com.cloudcampus.school.service.UserSchoolAccessService;
 import org.springframework.transaction.annotation.Transactional;
 import com.cloudcampus.config.JwtProperties;
 import org.slf4j.Logger;
@@ -83,6 +84,7 @@ public class AuthServiceImpl implements AuthService {
     private final LoginRateLimiterService rateLimiter;
     private final AuditLogService auditLog;
     private final SchoolRepository schoolRepository;
+    private final UserSchoolAccessService userSchoolAccessService;
 
     public AuthServiceImpl(
             UserRepository userRepository,
@@ -92,16 +94,18 @@ public class AuthServiceImpl implements AuthService {
             RedisTemplate<String, String> redisTemplate,
             LoginRateLimiterService rateLimiter,
             AuditLogService auditLog,
-            SchoolRepository schoolRepository
+            SchoolRepository schoolRepository,
+            UserSchoolAccessService userSchoolAccessService
     ) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtil         = jwtUtil;
-        this.jwtProperties   = jwtProperties;
-        this.redisTemplate   = redisTemplate;
-        this.rateLimiter     = rateLimiter;
-        this.auditLog        = auditLog;
-        this.schoolRepository = schoolRepository;
+        this.userRepository          = userRepository;
+        this.passwordEncoder         = passwordEncoder;
+        this.jwtUtil                 = jwtUtil;
+        this.jwtProperties           = jwtProperties;
+        this.redisTemplate           = redisTemplate;
+        this.rateLimiter             = rateLimiter;
+        this.auditLog                = auditLog;
+        this.schoolRepository        = schoolRepository;
+        this.userSchoolAccessService = userSchoolAccessService;
     }
 
     // ── Login ────────────────────────────────────────────────────────────────
@@ -168,14 +172,17 @@ public class AuthServiceImpl implements AuthService {
                 user.getId(), user.getTenantId(), null, user.getRole().name());
         String refreshToken = issueRefreshToken(user.getId());
 
-        // Step 5: Resolve schoolId for SCHOOL_ADMIN so the client can call
-        // school-scoped endpoints without a separate lookup (Notice Board, etc.).
+        // Step 5: Resolve schoolId for SCHOOL_ADMIN.
+        // Prefer the user's primary school from user_school_access (CC-0214).
+        // Fall back to the tenant's "MAIN" school for backward compatibility
+        // with accounts that pre-date the cross-school access model.
         UUID schoolId = null;
         if (user.getRole() == UserRole.SCHOOL_ADMIN && user.getTenantId() != null) {
-            schoolId = schoolRepository
-                    .findByTenantIdAndCode(user.getTenantId(), "MAIN")
-                    .map(s -> s.getId())
-                    .orElse(null);
+            schoolId = userSchoolAccessService.getPrimarySchoolId(user.getId())
+                    .orElseGet(() -> schoolRepository
+                            .findByTenantIdAndCode(user.getTenantId(), "MAIN")
+                            .map(s -> s.getId())
+                            .orElse(null));
         }
 
         auditLog.logLoginSuccess(user.getId(), user.getTenantId(), user.getUsername(), clientIp);

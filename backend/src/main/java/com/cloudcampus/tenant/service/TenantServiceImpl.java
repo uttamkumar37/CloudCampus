@@ -32,12 +32,15 @@ public class TenantServiceImpl implements TenantService {
     private final TenantRepository tenantRepository;
     private final SchoolRepository schoolRepository;
     private final SchoolSettingsService schoolSettingsService;
+    private final TenantBootstrapService tenantBootstrapService;
 
     public TenantServiceImpl(TenantRepository tenantRepository, SchoolRepository schoolRepository,
-                             SchoolSettingsService schoolSettingsService) {
-        this.tenantRepository = tenantRepository;
-        this.schoolRepository = schoolRepository;
-        this.schoolSettingsService = schoolSettingsService;
+                             SchoolSettingsService schoolSettingsService,
+                             TenantBootstrapService tenantBootstrapService) {
+        this.tenantRepository       = tenantRepository;
+        this.schoolRepository       = schoolRepository;
+        this.schoolSettingsService  = schoolSettingsService;
+        this.tenantBootstrapService = tenantBootstrapService;
     }
 
     @Override
@@ -81,6 +84,7 @@ public class TenantServiceImpl implements TenantService {
         );
         schoolRepository.save(defaultSchool);
         schoolSettingsService.initDefaults(tenant.getId(), defaultSchool.getId());
+        tenantBootstrapService.bootstrap(tenant.getId(), defaultSchool.getId());
 
         return toResponse(tenant);
     }
