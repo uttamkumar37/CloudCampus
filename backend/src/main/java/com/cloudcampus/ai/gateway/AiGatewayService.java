@@ -1,5 +1,6 @@
 package com.cloudcampus.ai.gateway;
 
+import com.cloudcampus.ai.usage.service.AiBudgetEnforcer;
 import com.cloudcampus.ai.usage.service.UsageLoggingService;
 import com.cloudcampus.common.web.RequestContext;
 import org.springframework.ai.chat.model.ChatModel;
@@ -8,6 +9,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -24,13 +26,29 @@ public class AiGatewayService {
 
     private final ChatModel           chatModel;
     private final UsageLoggingService usageLogging;
+    private final AiBudgetEnforcer    budgetEnforcer;
 
     @Value("${app.ai.chat-model:claude-haiku-4-5-20251001}")
     private String chatModelName;
 
-    public AiGatewayService(ChatModel chatModel, UsageLoggingService usageLogging) {
-        this.chatModel    = chatModel;
-        this.usageLogging = usageLogging;
+    public AiGatewayService(Map<String, ChatModel> chatModels,
+                            UsageLoggingService usageLogging,
+                            AiBudgetEnforcer    budgetEnforcer,
+                            @Value("${app.ai.chat-provider-bean:openAiChatModel}") String preferredChatBean) {
+        this.chatModel      = resolveChatModel(chatModels, preferredChatBean);
+        this.usageLogging   = usageLogging;
+        this.budgetEnforcer = budgetEnforcer;
+    }
+
+    private ChatModel resolveChatModel(Map<String, ChatModel> chatModels, String preferredChatBean) {
+        ChatModel preferred = chatModels.get(preferredChatBean);
+        if (preferred != null) return preferred;
+
+        if (chatModels.containsKey("openAiChatModel")) return chatModels.get("openAiChatModel");
+        if (chatModels.containsKey("anthropicChatModel")) return chatModels.get("anthropicChatModel");
+        if (chatModels.containsKey("mockChatModel")) return chatModels.get("mockChatModel");
+
+        throw new IllegalStateException("No ChatModel bean available for AI gateway");
     }
 
     /**
@@ -38,6 +56,7 @@ public class AiGatewayService {
      * Usage is logged regardless of success/failure.
      */
     public String complete(String renderedPrompt, String promptKey, UUID tenantId) {
+        budgetEnforcer.enforce(tenantId);
         long start = System.currentTimeMillis();
         try {
             ChatResponse response  = chatModel.call(new Prompt(renderedPrompt));
