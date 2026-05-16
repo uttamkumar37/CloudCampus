@@ -69,6 +69,32 @@ spring:
             enable: true
             required: true
 
+  # ── Spring AI (CC-1600/1601/1602) ─────────────────────────────────────────
+  # Set APP_AI_ENABLED=true + real API keys in staging/production.
+  # In dev, APP_AI_ENABLED=false → no API calls, no cost.
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:dev-placeholder}
+      chat:
+        enabled: ${APP_AI_ENABLED:false}
+        options:
+          model: ${AI_CHAT_MODEL:claude-haiku-4-5-20251001}
+          max-tokens: 2048
+    openai:
+      api-key: ${OPENAI_API_KEY:dev-placeholder}
+      embedding:
+        enabled: ${APP_AI_ENABLED:false}
+        options:
+          model: ${AI_EMBEDDING_MODEL:text-embedding-3-small}
+    vectorstore:
+      pgvector:
+        initialize-schema: false
+        dimensions: 1536
+        distance-type: COSINE_DISTANCE
+        index-type: HNSW
+        schema-name: public
+        table-name: vector_store
+
 server:
   port: 8080
 
@@ -210,33 +236,6 @@ app:
     key-id:     ${RAZORPAY_KEY_ID:rzp_test_placeholder}
     key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
     enabled:    ${RAZORPAY_ENABLED:false}
-
-# ── OpenAPI / Swagger UI ─────────────────────────────────────────────────────
-# SECURITY: Disabled in production. Enabled per-profile in application-dev.yml.
-# Docs available at: http://localhost:8080/swagger-ui.html (dev only)
-spring:
-  ai:
-    anthropic:
-      api-key: ${ANTHROPIC_API_KEY:dev-placeholder}
-      chat:
-        enabled: ${APP_AI_ENABLED:false}
-        options:
-          model: ${AI_CHAT_MODEL:claude-haiku-4-5-20251001}
-          max-tokens: 2048
-    openai:
-      api-key: ${OPENAI_API_KEY:dev-placeholder}
-      embedding:
-        enabled: ${APP_AI_ENABLED:false}
-        options:
-          model: ${AI_EMBEDDING_MODEL:text-embedding-3-small}
-    vectorstore:
-      pgvector:
-        initialize-schema: false
-        dimensions: 1536
-        distance-type: COSINE_DISTANCE
-        index-type: HNSW
-        schema-name: public
-        table-name: vector_store
 
 springdoc:
   api-docs:

@@ -2,7 +2,6 @@ package com.cloudcampus.student.controller;
 
 import com.cloudcampus.attendance.entity.AttendanceStatus;
 import com.cloudcampus.attendance.repository.AttendanceRecordRepository;
-import com.cloudcampus.attendance.service.QrAttendanceService;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.CorrelationId;
@@ -13,13 +12,10 @@ import com.cloudcampus.student.entity.Student;
 import com.cloudcampus.student.repository.StudentRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.NotBlank;
 import org.slf4j.MDC;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -50,22 +46,17 @@ public class StudentAttendanceController {
             List<AttendanceRecord> recent
     ) {}
 
-    public record QrMarkRequest(@NotBlank String token) {}
-
     private final SchoolRepository           schoolRepo;
     private final StudentRepository          studentRepo;
     private final AttendanceRecordRepository recordRepo;
-    private final QrAttendanceService        qrService;
 
     public StudentAttendanceController(
             SchoolRepository           schoolRepo,
             StudentRepository          studentRepo,
-            AttendanceRecordRepository recordRepo,
-            QrAttendanceService        qrService) {
+                        AttendanceRecordRepository recordRepo) {
         this.schoolRepo  = schoolRepo;
         this.studentRepo = studentRepo;
         this.recordRepo  = recordRepo;
-        this.qrService   = qrService;
     }
 
     @Operation(summary = "My attendance",
@@ -94,15 +85,6 @@ public class StudentAttendanceController {
 
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
                 new MyAttendanceResponse(total, present, absent, late, excused, pct, recent));
-    }
-
-    @Operation(summary = "Self-mark attendance via QR token",
-               description = "Student submits the token from the teacher's QR code to mark themselves PRESENT (CC-0802).")
-    @PostMapping("/qr-mark")
-    public ApiResponse<Void> qrMark(@RequestBody QrMarkRequest req) {
-        Student student = resolveStudent(resolveSchool().getId());
-        qrService.selfMark(req.token(), student.getId());
-        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), null);
     }
 
     private School resolveSchool() {
