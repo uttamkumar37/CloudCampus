@@ -78,6 +78,9 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     /** Look up the student profile linked to a login account (for student self-service). */
     Optional<Student> findBySchoolIdAndUserId(UUID schoolId, UUID userId);
 
+    /** Look up the student profile by login account across any school (tenant-filtered by Hibernate). */
+    Optional<Student> findByUserId(UUID userId);
+
     // ── Super Admin analytics (native — bypasses tenant filter) ───────────────
 
     @Query(value = "SELECT COUNT(*) FROM students WHERE status = 'ACTIVE'", nativeQuery = true)

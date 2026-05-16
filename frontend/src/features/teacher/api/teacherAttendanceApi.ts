@@ -42,3 +42,37 @@ export async function getAttendanceStudents(
 export async function takeAttendance(req: TakeAttendanceRequest): Promise<void> {
   await axiosInstance.post('/v1/teacher/attendance/sessions', req);
 }
+
+export interface QrCodeResponse {
+  token:     string;
+  qrBase64:  string;
+  expiresAt: string;
+}
+
+export interface SessionWithQrResponse extends QrCodeResponse {
+  sessionId: string;
+}
+
+export interface OpenWithQrRequest {
+  classId:       string;
+  sectionId?:    string;
+  academicYearId: string;
+  subjectId?:    string;
+  sessionDate:   string;
+  periodNumber:  number;
+}
+
+export async function openSessionWithQr(req: OpenWithQrRequest): Promise<SessionWithQrResponse> {
+  const { data } = await axiosInstance.post<ApiResponse<SessionWithQrResponse>>(
+    '/v1/teacher/attendance/sessions/with-qr',
+    req,
+  );
+  return data.data!;
+}
+
+export async function generateSessionQr(sessionId: string): Promise<QrCodeResponse> {
+  const { data } = await axiosInstance.post<ApiResponse<QrCodeResponse>>(
+    `/v1/teacher/attendance/sessions/${sessionId}/qr`,
+  );
+  return data.data!;
+}

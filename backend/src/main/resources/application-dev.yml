@@ -21,10 +21,8 @@ spring:
 
   jpa:
     open-in-view: false
-
     hibernate:
       ddl-auto: validate
-
     properties:
       hibernate:
         jdbc:
@@ -52,19 +50,27 @@ spring:
   mail:
     host: localhost
     port: 1025
-
     properties:
       mail:
         smtp:
           auth: false
-
           starttls:
             enable: false
             required: false
 
+  # ── AI — disable real providers in dev (mock beans handle all calls) ──
+  ai:
+    anthropic:
+      api-key: dev-placeholder
+      chat:
+        enabled: false
+    openai:
+      api-key: dev-placeholder
+      embedding:
+        enabled: false
+
 # ── Application Config ───────────────────────────────────────────────────
 app:
-  # Dev overrides — use fixed keys so empty env vars don't shadow the base defaults.
   encryption:
     secret: "dev-aes-key-for-local-only-do-not-use-in-production-32+"
 
@@ -76,10 +82,17 @@ app:
       username: superadmin
       password: admin123
 
+  razorpay:
+    key-id: rzp_test_dev_placeholder
+    key-secret: dev_secret_placeholder
+    enabled: false
+
+  ai:
+    enabled: false   # mock mode — set to true + real API keys for live AI
+
 # ── OpenAPI / Swagger UI — enabled in dev only ──────────────────────────
 springdoc:
   api-docs:
     enabled: true
-
   swagger-ui:
     enabled: true

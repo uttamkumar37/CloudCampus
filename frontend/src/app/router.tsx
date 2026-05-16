@@ -52,6 +52,8 @@ import { SuperAdminDashboardPage } from '@/features/super-admin/pages/SuperAdmin
 import { TenantDetailPage } from '@/features/super-admin/pages/TenantDetailPage';
 import { SchoolComparisonPage } from '@/features/super-admin/pages/SchoolComparisonPage';
 import { TenantAnalyticsPage } from '@/features/super-admin/pages/TenantAnalyticsPage';
+import { PromptListPage } from '@/features/super-admin/pages/PromptListPage';
+import { PromptDetailPage } from '@/features/super-admin/pages/PromptDetailPage';
 import { SchoolSettingsPage } from '@/features/school-admin/pages/SchoolSettingsPage';
 import { DepartmentListPage } from '@/features/school-admin/pages/DepartmentListPage';
 import { TeacherLayout } from '@/features/teacher/layouts/TeacherLayout';
@@ -73,6 +75,7 @@ import StudentNoticesPage from '@/features/student/pages/StudentNoticesPage';
 import StudentResultsPage from '@/features/student/pages/StudentResultsPage';
 import StudentFeesPage from '@/features/student/pages/StudentFeesPage';
 import StudentAttendancePage from '@/features/student/pages/StudentAttendancePage';
+import StudentQrScanPage from '@/features/student/pages/StudentQrScanPage';
 import { ParentLayout } from '@/features/parent/layouts/ParentLayout';
 import ParentDashboardPage from '@/features/parent/pages/ParentDashboardPage';
 import ParentChildPage from '@/features/parent/pages/ParentChildPage';
@@ -122,6 +125,8 @@ export function AppRouter() {
           <Route path="tenants/:id" element={<TenantDetailPage />} />
           <Route path="comparison" element={<SchoolComparisonPage />} />
           <Route path="analytics"  element={<TenantAnalyticsPage />} />
+          <Route path="ai/prompts"    element={<PromptListPage />} />
+          <Route path="ai/prompts/:id" element={<PromptDetailPage />} />
         </Route>
 
         {/* School Admin portal — SCHOOL_ADMIN role required */}
@@ -214,6 +219,7 @@ export function AppRouter() {
           <Route path="results" element={<StudentResultsPage />} />
           <Route path="fees" element={<StudentFeesPage />} />
           <Route path="attendance" element={<StudentAttendancePage />} />
+          <Route path="attendance/scan" element={<StudentQrScanPage />} />
           <Route path="notices" element={<StudentNoticesPage />} />
         </Route>
 

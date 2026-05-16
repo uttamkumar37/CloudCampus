@@ -23,6 +23,18 @@
         <springdoc.version>2.8.6</springdoc.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>1.0.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!-- ===== WEB ===== -->
         <dependency>
@@ -181,6 +193,30 @@
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>8.5.12</version>
+        </dependency>
+
+        <!-- Razorpay Java SDK — online payment gateway integration (CC-0903) -->
+        <dependency>
+            <groupId>com.razorpay</groupId>
+            <artifactId>razorpay-java</artifactId>
+            <version>1.4.5</version>
+        </dependency>
+
+        <!-- ===== AI — Spring AI 1.0.0 ===== -->
+        <!-- Anthropic Claude — chat completions (CC-1600) -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-anthropic</artifactId>
+        </dependency>
+        <!-- OpenAI — text embeddings (CC-1602) -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
+        </dependency>
+        <!-- pgvector store — vector similarity search (CC-1602) -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
         </dependency>
 
         <!-- ===== LOGGING ===== -->

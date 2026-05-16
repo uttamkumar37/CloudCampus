@@ -53,7 +53,8 @@ import java.util.List;
 @EnableConfigurationProperties({JwtProperties.class, RateLimitProperties.class, OtpProperties.class,
         com.cloudcampus.common.ratelimit.ApiRateLimitProperties.class,
         com.cloudcampus.common.crypto.EncryptionProperties.class,
-        com.cloudcampus.common.retention.RetentionProperties.class})
+        com.cloudcampus.common.retention.RetentionProperties.class,
+        com.cloudcampus.payment.config.RazorpayProperties.class})
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;

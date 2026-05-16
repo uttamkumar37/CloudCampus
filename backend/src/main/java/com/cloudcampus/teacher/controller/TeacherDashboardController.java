@@ -9,10 +9,7 @@ import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.homework.repository.HomeworkRepository;
 import com.cloudcampus.homework.repository.HomeworkSubmissionRepository;
-import com.cloudcampus.school.entity.AcademicYear;
-import com.cloudcampus.school.entity.School;
 import com.cloudcampus.school.repository.AcademicYearRepository;
-import com.cloudcampus.school.repository.SchoolRepository;
 import com.cloudcampus.staff.entity.Staff;
 import com.cloudcampus.staff.repository.StaffRepository;
 import com.cloudcampus.timetable.dto.TimetableSlotResponse;
@@ -50,7 +47,6 @@ public class TeacherDashboardController {
             long totalAssignmentsPosted
     ) {}
 
-    private final SchoolRepository             schoolRepo;
     private final AcademicYearRepository       academicYearRepo;
     private final StaffRepository              staffRepo;
     private final TimetableService             timetableService;
@@ -60,7 +56,6 @@ public class TeacherDashboardController {
     private final SubmissionRepository         assignSubmissionRepo;
 
     public TeacherDashboardController(
-            SchoolRepository             schoolRepo,
             AcademicYearRepository       academicYearRepo,
             StaffRepository              staffRepo,
             TimetableService             timetableService,
@@ -68,7 +63,6 @@ public class TeacherDashboardController {
             HomeworkSubmissionRepository hwSubmissionRepo,
             AssignmentRepository         assignmentRepo,
             SubmissionRepository         assignSubmissionRepo) {
-        this.schoolRepo           = schoolRepo;
         this.academicYearRepo     = academicYearRepo;
         this.staffRepo            = staffRepo;
         this.timetableService     = timetableService;
@@ -82,32 +76,30 @@ public class TeacherDashboardController {
                description = "Returns today's timetable slots and pending review/grading counts.")
     @GetMapping
     public ApiResponse<DashboardResponse> dashboard() {
-        UUID userId   = RequestContext.getUserId();
-        School school = resolveSchool();
-        UUID schoolId = school.getId();
+        UUID userId = RequestContext.getUserId();
+
+        // Resolve staff via tenant filter — schoolId comes from the staff record itself.
+        Staff staff = staffRepo.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundException("Staff profile not found for current user"));
+        UUID schoolId = staff.getSchoolId();
 
         // ── Today's timetable ─────────────────────────────────────────────────
         List<TimetableSlotResponse> todaySlots = List.of();
-        AcademicYear activeYear = academicYearRepo
-                .findBySchoolIdAndIsCurrent(schoolId, true)
-                .orElse(null);
 
+        var activeYear = academicYearRepo.findBySchoolIdAndIsCurrent(schoolId, true).orElse(null);
         if (activeYear != null) {
-            Staff staff = staffRepo.findBySchoolIdAndUserId(schoolId, userId).orElse(null);
-            if (staff != null) {
-                DayOfWeek today = null;
-                try {
-                    today = DayOfWeek.valueOf(LocalDate.now().getDayOfWeek().name());
-                } catch (IllegalArgumentException ignored) { /* SUNDAY not in school timetable */ }
+            DayOfWeek today = null;
+            try {
+                today = DayOfWeek.valueOf(LocalDate.now().getDayOfWeek().name());
+            } catch (IllegalArgumentException ignored) { /* SUNDAY not in school timetable */ }
 
-                if (today != null) {
-                    final DayOfWeek finalToday = today;
-                    todaySlots = timetableService
-                            .listSlotsByStaff(schoolId, activeYear.getId(), staff.getId())
-                            .stream()
-                            .filter(s -> s.dayOfWeek() == finalToday)
-                            .toList();
-                }
+            if (today != null) {
+                final DayOfWeek finalToday = today;
+                todaySlots = timetableService
+                        .listSlotsByStaff(schoolId, activeYear.getId(), staff.getId())
+                        .stream()
+                        .filter(s -> s.dayOfWeek() == finalToday)
+                        .toList();
             }
         }
 
@@ -126,11 +118,5 @@ public class TeacherDashboardController {
 
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
                 new DashboardResponse(todaySlots, pendingHw, pendingAssign, totalHw, totalAssign));
-    }
-
-    private School resolveSchool() {
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
-        return schoolRepo.findByTenantIdAndCode(tenantId, "MAIN")
-                .orElseThrow(() -> new NotFoundException("School not found"));
     }
 }

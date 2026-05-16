@@ -4,14 +4,29 @@
 
 ---
 
-## Progress Summary (as of 2026-05-15 — E87 Demo Seed + Bug Fixes)
+## Progress Summary (as of 2026-05-16 — E88 AI Foundation + QR Attendance + Subscriptions)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~159 (82%) |
+| **Completed** | ~165 (85%) |
 | **In Progress** | 0 |
-| **Not Started** | ~34 |
+| **Not Started** | ~28 |
+
+### E88 Completions — AI Foundation + QR Attendance + Subscription Management + Onboarding Wizard (2026-05-16)
+
+| Task | What was built |
+|------|---------------|
+| CC-0308 Subscription controller ✅ | `SubscriptionController` — `GET /v1/super-admin/subscription-plans`, `GET /v1/super-admin/tenants/{id}/subscription`, `PUT /v1/super-admin/tenants/{id}/subscription`; `assignPlan()` writes limits to `tenant_configs` so `UsageLimitEnforcer` picks them up immediately |
+| CC-0308 Subscription frontend ✅ | `subscriptionApi.ts` with `listSubscriptionPlans`, `getTenantSubscription`, `assignTenantPlan`; `TenantDetailPage` subscription section with plan picker dropdown and billing cycle radio; `PlanUpgradePage` replaced with real plan catalog cards |
+| CC-0204 Onboarding wizard ✅ | `TenantCreatePage` full rewrite — 3-step wizard: Step 0 (Identity: code+name via react-hook-form+zod), Step 1 (Plan: card-based selector + Monthly/Annual billing toggle with 17% annual discount), Step 2 (Review: summary table → Create); on submit: `createTenant` → `assignTenantPlan` → navigate to detail |
+| CC-1600 AI Gateway ✅ | `AiGatewayService` wraps `ChatModel.call(Prompt)`, extracts token counts from `ChatResponseMetadata.getUsage()`, writes to `ai_usage_logs` via `UsageLoggingService` (`@Transactional(REQUIRES_NEW)` for best-effort logging) |
+| CC-1601 AI Prompt Registry ✅ | `AiPromptTemplate` JPA entity + `AiPromptTemplateRepository` (with `deactivateAllByPromptKey` JPQL + `findMaxVersionByPromptKey`); `PromptServiceImpl` — `create()` auto-increments version, `activate()` atomically deactivates all others for same key, `render()` uses Spring AI `PromptTemplate.render(vars)`; `PromptController` at `/v1/super-admin/ai/prompts` (CRUD + activate/deactivate/render); `V46__ai_foundation.sql` — pgvector extension, `ai_prompt_templates` (unique partial index `WHERE is_active = true`), `ai_usage_logs`, `vector_store` with HNSW index |
+| CC-1601 Prompt Registry frontend ✅ | `promptApi.ts` full CRUD + renderPrompt; `PromptListPage` — groups by promptKey, shows all versions with activate/deactivate buttons; `PromptDetailPage` — dual export (CreatePromptForm for `/new`, PromptDetail with render playground otherwise); routes wired at `/super-admin/ai/prompts` and `/super-admin/ai/prompts/:id` |
+| CC-1602 AI Embedding Service ✅ | `EmbeddingServiceImpl` wraps `VectorStore`, stores `tenant_id` in metadata, uses `FilterExpressionBuilder` for tenant-scoped similarity search |
+| CC-1600 Spring AI config ✅ | Spring AI BOM 1.0.0 in `pom.xml`; `spring-ai-starter-model-anthropic`, `spring-ai-starter-model-openai`, `spring-ai-starter-vector-store-pgvector`; `AiConfiguration` with `@ConditionalOnMissingBean` `MockChatModel` + `MockEmbeddingModel`; `application-dev.yml` — `spring.ai.anthropic.chat.enabled: false`, `spring.ai.openai.embedding.enabled: false`; `docker-compose.yml` postgres image switched to `pgvector/pgvector:pg16` |
+| CC-0802 QR Attendance backend ✅ | `QrAttendanceService` updated — QR now encodes full deep-link URL (`{FRONTEND_BASE_URL}/student/attendance/scan?token=…`); `selfMark` takes `userId` and resolves student via `StudentRepository.findByUserId(UUID)`; `app.frontend.base-url` added to `application.yml`; `QrAttendanceController` for student self-mark (`POST /v1/student/attendance/qr-mark`); `TeacherAttendanceController.openSessionWithQr` — `POST /v1/teacher/attendance/sessions/with-qr` creates session + generates QR in one round-trip |
+| CC-0802 QR Attendance frontend ✅ | `QrPanel` component in `TeacherAttendancePage` — calls `openSessionWithQr` with slot params, displays base64 QR image with live countdown (green → amber ≤30s → red expired), refresh button; `StudentQrScanPage` — reads `?token=` from URL, auto-submits on mount, shows spinner/success/error/no-token states; `/student/attendance/scan` route wired in router; `qrMarkAttendance` added to `studentPortalApi.ts` |
 
 ### E87 Completions — JNV Demo Seed + Systemic Bug Fixes (2026-05-15)
 

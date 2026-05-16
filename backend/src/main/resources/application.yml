@@ -190,9 +190,54 @@ app:
     length: 6
     from-email: ${MAIL_FROM:noreply@cloudcampus.io}
 
+  # ── Frontend base URL (used for QR deep-links CC-0802) ───────────────────
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+
+  # ── AI Foundation (CC-1600/1601/1602) ────────────────────────────────────
+  # Set APP_AI_ENABLED=true + real API keys in staging/production.
+  # In dev, APP_AI_ENABLED=false → mock beans kick in (no API calls, no cost).
+  ai:
+    enabled: ${APP_AI_ENABLED:false}
+    embedding-dimensions: 1536
+    chat-model: ${AI_CHAT_MODEL:claude-haiku-4-5-20251001}
+    embedding-model: ${AI_EMBEDDING_MODEL:text-embedding-3-small}
+
+  # ── Razorpay — online payment gateway (CC-0903) ───────────────────────────
+  # Set RAZORPAY_ENABLED=true and provide real keys in staging/production.
+  # In dev/test, enabled=false generates mock order IDs without calling Razorpay.
+  razorpay:
+    key-id:     ${RAZORPAY_KEY_ID:rzp_test_placeholder}
+    key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
+    enabled:    ${RAZORPAY_ENABLED:false}
+
 # ── OpenAPI / Swagger UI ─────────────────────────────────────────────────────
 # SECURITY: Disabled in production. Enabled per-profile in application-dev.yml.
 # Docs available at: http://localhost:8080/swagger-ui.html (dev only)
+spring:
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:dev-placeholder}
+      chat:
+        enabled: ${APP_AI_ENABLED:false}
+        options:
+          model: ${AI_CHAT_MODEL:claude-haiku-4-5-20251001}
+          max-tokens: 2048
+    openai:
+      api-key: ${OPENAI_API_KEY:dev-placeholder}
+      embedding:
+        enabled: ${APP_AI_ENABLED:false}
+        options:
+          model: ${AI_EMBEDDING_MODEL:text-embedding-3-small}
+    vectorstore:
+      pgvector:
+        initialize-schema: false
+        dimensions: 1536
+        distance-type: COSINE_DISTANCE
+        index-type: HNSW
+        schema-name: public
+        table-name: vector_store
+
 springdoc:
   api-docs:
     enabled: false

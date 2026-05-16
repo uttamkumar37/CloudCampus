@@ -1,0 +1,99 @@
+package com.cloudcampus.ai.prompt.service;
+
+import com.cloudcampus.ai.gateway.AiGatewayService;
+import com.cloudcampus.ai.prompt.dto.CreatePromptRequest;
+import com.cloudcampus.ai.prompt.dto.PromptRenderRequest;
+import com.cloudcampus.ai.prompt.dto.PromptRenderResponse;
+import com.cloudcampus.ai.prompt.dto.PromptTemplateResponse;
+import com.cloudcampus.ai.prompt.entity.AiPromptTemplate;
+import com.cloudcampus.ai.prompt.repository.AiPromptTemplateRepository;
+import com.cloudcampus.common.exception.NotFoundException;
+import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@Service
+class PromptServiceImpl implements PromptService {
+
+    private final AiPromptTemplateRepository repo;
+    private final AiGatewayService           gateway;
+
+    PromptServiceImpl(AiPromptTemplateRepository repo, AiGatewayService gateway) {
+        this.repo    = repo;
+        this.gateway = gateway;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromptTemplateResponse> listAll() {
+        return repo.findAllByOrderByPromptKeyAscVersionDesc()
+                .stream().map(PromptTemplateResponse::from).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromptTemplateResponse> listByKey(String promptKey) {
+        return repo.findByPromptKeyOrderByVersionDesc(promptKey)
+                .stream().map(PromptTemplateResponse::from).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PromptTemplateResponse getById(UUID id) {
+        return PromptTemplateResponse.from(load(id));
+    }
+
+    @Override
+    @Transactional
+    public PromptTemplateResponse create(CreatePromptRequest request, UUID createdBy) {
+        int nextVersion = repo.findMaxVersionByPromptKey(request.promptKey())
+                .map(v -> v + 1)
+                .orElse(1);
+
+        AiPromptTemplate template = AiPromptTemplate.create(
+                request.promptKey(), request.name(), request.description(),
+                request.template(), request.variables(), nextVersion, createdBy);
+
+        return PromptTemplateResponse.from(repo.save(template));
+    }
+
+    @Override
+    @Transactional
+    public PromptTemplateResponse activate(UUID id) {
+        AiPromptTemplate template = load(id);
+        repo.deactivateAllByPromptKey(template.getPromptKey());
+        template.activate();
+        return PromptTemplateResponse.from(repo.save(template));
+    }
+
+    @Override
+    @Transactional
+    public PromptTemplateResponse deactivate(UUID id) {
+        AiPromptTemplate template = load(id);
+        template.deactivate();
+        return PromptTemplateResponse.from(repo.save(template));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PromptRenderResponse render(UUID id, PromptRenderRequest request) {
+        AiPromptTemplate template = load(id);
+
+        Map<String, Object> vars = request.variables() != null ? request.variables() : Map.of();
+        String rendered = vars.isEmpty()
+                ? template.getTemplate()
+                : new PromptTemplate(template.getTemplate()).render(vars);
+
+        String aiResponse = gateway.complete(rendered, template.getPromptKey(), request.tenantId());
+        return new PromptRenderResponse(rendered, aiResponse);
+    }
+
+    private AiPromptTemplate load(UUID id) {
+        return repo.findById(id)
+                .orElseThrow(() -> new NotFoundException("Prompt template not found: " + id));
+    }
+}

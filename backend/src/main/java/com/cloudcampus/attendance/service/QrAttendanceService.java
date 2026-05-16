@@ -6,6 +6,7 @@ import com.cloudcampus.attendance.repository.AttendanceRecordRepository;
 import com.cloudcampus.attendance.repository.AttendanceSessionRepository;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.student.repository.StudentRepository;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
 import com.google.zxing.WriterException;
@@ -14,6 +15,7 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,15 +47,21 @@ public class QrAttendanceService {
     private static final int    QR_SIZE         = 280;
     private static final long   TTL_MINUTES     = 5;
 
-    private final AttendanceSessionRepository sessionRepo;
-    private final AttendanceRecordRepository  recordRepo;
+    private final AttendanceSessionRepository   sessionRepo;
+    private final AttendanceRecordRepository    recordRepo;
+    private final StudentRepository             studentRepo;
     private final RedisTemplate<String, String> redis;
+
+    @Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
 
     public QrAttendanceService(AttendanceSessionRepository sessionRepo,
                                 AttendanceRecordRepository recordRepo,
+                                StudentRepository studentRepo,
                                 @Qualifier("redisTemplate") RedisTemplate<String, String> redis) {
         this.sessionRepo = sessionRepo;
         this.recordRepo  = recordRepo;
+        this.studentRepo = studentRepo;
         this.redis       = redis;
     }
 
@@ -65,21 +73,26 @@ public class QrAttendanceService {
         sessionRepo.findById(sessionId)
                 .orElseThrow(() -> new NotFoundException("Attendance session not found"));
 
-        String token     = UUID.randomUUID().toString();
-        String redisKey  = REDIS_PREFIX + token;
+        String token      = UUID.randomUUID().toString();
+        String redisKey   = REDIS_PREFIX + token;
         Instant expiresAt = Instant.now().plusSeconds(TTL_MINUTES * 60);
 
         redis.opsForValue().set(redisKey, sessionId.toString(), TTL_MINUTES, TimeUnit.MINUTES);
 
-        String qrBase64 = generateQrPngBase64(token);
+        String deepLink  = frontendBaseUrl + "/student/attendance/scan?token=" + token;
+        String qrBase64  = generateQrPngBase64(deepLink);
         return new QrResponse(token, qrBase64, expiresAt);
     }
 
     // ── Student: self-mark via token ──────────────────────────────────────────
 
+    /**
+     * Called by the student after scanning the QR. Resolves their student profile
+     * from their JWT userId (tenant-filtered by Hibernate) then marks them PRESENT.
+     */
     @Transactional
-    public void selfMark(String token, UUID studentId) {
-        String redisKey   = REDIS_PREFIX + token;
+    public void selfMark(String token, UUID userId) {
+        String redisKey     = REDIS_PREFIX + token;
         String sessionIdStr = redis.opsForValue().get(redisKey);
 
         if (sessionIdStr == null) {
@@ -94,14 +107,16 @@ public class QrAttendanceService {
             throw new BadRequestException("This attendance session is already closed");
         }
 
-        var existing = recordRepo.findBySessionIdAndStudentId(sessionId, studentId);
+        var student = studentRepo.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundException("Student profile not found for this account"));
+
+        var existing = recordRepo.findBySessionIdAndStudentId(sessionId, student.getId());
         if (existing.isPresent()) {
-            // Already marked — silently accept (idempotent)
-            return;
+            return; // idempotent
         }
 
         AttendanceRecord record = AttendanceRecord.create(
-                session.getTenantId(), sessionId, studentId, AttendanceStatus.PRESENT);
+                session.getTenantId(), sessionId, student.getId(), AttendanceStatus.PRESENT);
         record.setRemarks("Self-marked via QR");
         recordRepo.save(record);
     }

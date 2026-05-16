@@ -79,6 +79,22 @@ public class TeacherAttendanceController {
             @NotNull List<@Valid @NotNull StudentMark> marks
     ) {}
 
+    public record OpenWithQrRequest(
+            @NotNull UUID      classId,
+                     UUID      sectionId,
+            @NotNull UUID      academicYearId,
+                     UUID      subjectId,
+            @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate sessionDate,
+                     int       periodNumber
+    ) {}
+
+    public record SessionWithQrResponse(
+            UUID   sessionId,
+            String token,
+            String qrBase64,
+            String expiresAt
+    ) {}
+
     private final SchoolRepository    schoolRepo;
     private final StaffRepository     staffRepo;
     private final StudentRepository   studentRepo;
@@ -149,6 +165,33 @@ public class TeacherAttendanceController {
     public ApiResponse<QrAttendanceService.QrResponse> generateQr(
             @PathVariable UUID sessionId) {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), qrService.generate(sessionId));
+    }
+
+    @Operation(summary = "Open an attendance session and immediately generate a QR code",
+               description = "Creates the session (without marking students) and returns "
+                             + "the session ID plus a 5-min QR code in one round-trip (CC-0802).")
+    @PostMapping("/sessions/with-qr")
+    public ApiResponse<SessionWithQrResponse> openSessionWithQr(
+            @Valid @RequestBody OpenWithQrRequest req) {
+
+        School school = resolveSchool();
+        Staff  staff  = resolveStaff(school.getId());
+
+        AttendanceSessionResponse session = attendanceService.openSession(
+                school.getId(),
+                new CreateSessionRequest(
+                        req.classId(), req.sectionId(), req.academicYearId(),
+                        req.subjectId(), staff.getId(),
+                        req.sessionDate(), req.periodNumber()));
+
+        QrAttendanceService.QrResponse qr = qrService.generate(session.id());
+
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                new SessionWithQrResponse(
+                        session.id(),
+                        qr.token(),
+                        qr.qrBase64(),
+                        qr.expiresAt().toString()));
     }
 
     private School resolveSchool() {

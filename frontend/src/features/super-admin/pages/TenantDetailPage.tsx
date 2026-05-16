@@ -12,6 +12,12 @@ import {
   getTenantConfig,
   setTenantConfig,
 } from '../api/tenantApi';
+import {
+  getTenantSubscription,
+  listSubscriptionPlans,
+  assignTenantPlan,
+} from '../api/subscriptionApi';
+import type { AssignPlanRequest } from '../api/subscriptionApi';
 import type { FeatureType, TenantStatus } from '../types/tenant';
 
 const STATUS_BADGE: Record<TenantStatus, string> = {
@@ -55,6 +61,34 @@ export function TenantDetailPage() {
     queryKey: ['tenant-config', id],
     queryFn: () => getTenantConfig(id!),
     enabled: !!id,
+  });
+
+  const { data: subscription, refetch: refetchSub } = useQuery({
+    queryKey: ['tenant-subscription', id],
+    queryFn:  () => getTenantSubscription(id!),
+    enabled:  !!id,
+  });
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ['subscription-plans'],
+    queryFn:  listSubscriptionPlans,
+  });
+
+  const [subPlanCode, setSubPlanCode]       = useState('');
+  const [subBilling, setSubBilling]         = useState<'MONTHLY' | 'ANNUAL'>('MONTHLY');
+  const [subNotes, setSubNotes]             = useState('');
+  const [subEditing, setSubEditing]         = useState(false);
+  const [subError, setSubError]             = useState<string | null>(null);
+
+  const assignPlanMutation = useMutation({
+    mutationFn: (req: AssignPlanRequest) => assignTenantPlan(id!, req),
+    onSuccess: () => { refetchSub(); setSubEditing(false); setSubError(null); },
+    onError: (err: unknown) => {
+      setSubError(
+        (err as { response?: { data?: { error?: { message?: string } } } })
+          ?.response?.data?.error?.message ?? 'Failed to assign plan',
+      );
+    },
   });
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -164,6 +198,141 @@ export function TenantDetailPage() {
           </div>
         </dl>
       </div>
+
+      {/* Subscription */}
+      {subscription && (
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white">
+          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-700">Subscription</h2>
+              <p className="mt-0.5 text-xs text-gray-400">Current plan and billing details.</p>
+            </div>
+            {!subEditing && (
+              <button
+                onClick={() => {
+                  setSubPlanCode(subscription.plan.code);
+                  setSubBilling(subscription.billingCycle);
+                  setSubNotes(subscription.notes ?? '');
+                  setSubEditing(true);
+                  setSubError(null);
+                }}
+                className="rounded-lg border border-blue-200 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+              >
+                Change Plan
+              </button>
+            )}
+          </div>
+
+          {subError && (
+            <div className="mx-4 mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+              {subError}
+              <button className="ml-2 font-semibold underline" onClick={() => setSubError(null)}>Dismiss</button>
+            </div>
+          )}
+
+          {subEditing ? (
+            <div className="space-y-4 p-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Plan</label>
+                <select
+                  value={subPlanCode}
+                  onChange={(e) => setSubPlanCode(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  {plans.map((p) => (
+                    <option key={p.code} value={p.code}>
+                      {p.displayName} — ₹{(p.priceMonthlyPaise / 100).toLocaleString('en-IN')}/mo
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Billing Cycle</label>
+                <div className="flex gap-3">
+                  {(['MONTHLY', 'ANNUAL'] as const).map((cycle) => (
+                    <label key={cycle} className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        name="billing"
+                        value={cycle}
+                        checked={subBilling === cycle}
+                        onChange={() => setSubBilling(cycle)}
+                        className="accent-blue-600"
+                      />
+                      {cycle === 'MONTHLY' ? 'Monthly' : 'Annual (save ~17%)'}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Notes (optional)</label>
+                <input
+                  value={subNotes}
+                  onChange={(e) => setSubNotes(e.target.value)}
+                  placeholder="e.g. Promotional pricing, trial extension…"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => assignPlanMutation.mutate({ planCode: subPlanCode, billingCycle: subBilling, notes: subNotes || undefined })}
+                  disabled={assignPlanMutation.isPending || !subPlanCode}
+                  className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {assignPlanMutation.isPending ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  onClick={() => setSubEditing(false)}
+                  className="rounded-lg border border-gray-200 px-4 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <dl className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-4">
+              <div>
+                <dt className="text-xs font-medium text-gray-400">Plan</dt>
+                <dd className="mt-0.5 text-sm font-semibold text-gray-800">{subscription.plan.displayName}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-gray-400">Status</dt>
+                <dd className={`mt-0.5 text-sm font-semibold ${subscription.status === 'ACTIVE' ? 'text-green-600' : 'text-yellow-600'}`}>
+                  {subscription.status}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-gray-400">Billing</dt>
+                <dd className="mt-0.5 text-sm text-gray-700">{subscription.billingCycle}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-gray-400">Monthly Price</dt>
+                <dd className="mt-0.5 text-sm text-gray-700">
+                  ₹{(subscription.plan.priceMonthlyPaise / 100).toLocaleString('en-IN')}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-gray-400">Max Students / School</dt>
+                <dd className="mt-0.5 text-sm text-gray-700">{subscription.plan.maxStudentsPerSchool.toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-gray-400">Max Staff / School</dt>
+                <dd className="mt-0.5 text-sm text-gray-700">{subscription.plan.maxStaffPerSchool.toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-medium text-gray-400">Max Schools</dt>
+                <dd className="mt-0.5 text-sm text-gray-700">{subscription.plan.maxSchools}</dd>
+              </div>
+              {subscription.notes && (
+                <div className="col-span-2 sm:col-span-1">
+                  <dt className="text-xs font-medium text-gray-400">Notes</dt>
+                  <dd className="mt-0.5 text-xs text-gray-500">{subscription.notes}</dd>
+                </div>
+              )}
+            </dl>
+          )}
+        </div>
+      )}
 
       {/* Configuration */}
       {configData && (

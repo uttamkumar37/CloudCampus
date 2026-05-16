@@ -72,6 +72,9 @@ public interface StaffRepository extends JpaRepository<Staff, UUID> {
     /** Look up the staff profile linked to a login account (for teacher self-service). */
     Optional<Staff> findBySchoolIdAndUserId(UUID schoolId, UUID userId);
 
+    /** Resolve staff by user account — tenant filter scopes to current tenant automatically. */
+    Optional<Staff> findByUserId(UUID userId);
+
     // ── Super Admin analytics (native — bypasses tenant filter) ───────────────
 
     @Query(value = "SELECT COUNT(*) FROM staff WHERE status = 'ACTIVE'", nativeQuery = true)

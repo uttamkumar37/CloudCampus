@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getMyTimetable } from '../api/teacherTimetableApi';
 import {
   getAttendanceStudents,
   takeAttendance,
+  openSessionWithQr,
   type AttendanceStatus,
   type StudentMark,
+  type SessionWithQrResponse,
 } from '../api/teacherAttendanceApi';
 import type { TimetableSlot } from '@/features/timetable/types/timetable';
 
@@ -24,11 +26,98 @@ const STATUS_STYLES: Record<AttendanceStatus, string> = {
 
 const ALL_STATUSES: AttendanceStatus[] = ['PRESENT', 'ABSENT', 'LATE', 'EXCUSED'];
 
+interface QrPanelProps {
+  slot: TimetableSlot;
+  date: string;
+}
+
+function QrPanel({ slot, date }: QrPanelProps) {
+  const [qr, setQr]           = useState<SessionWithQrResponse | null>(null);
+  const [secondsLeft, setSecs] = useState(0);
+  const timerRef              = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startCountdown = (expiresAt: string) => {
+    const ttl = Math.round((new Date(expiresAt).getTime() - Date.now()) / 1000);
+    setSecs(Math.max(0, ttl));
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setSecs((s) => {
+        if (s <= 1) { clearInterval(timerRef.current!); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+  };
+
+  const { mutate: open, isPending, isError, error } = useMutation({
+    mutationFn: () => openSessionWithQr({
+      classId:       slot.classId,
+      sectionId:     slot.sectionId || undefined,
+      academicYearId: slot.academicYearId,
+      subjectId:     slot.subjectId || undefined,
+      sessionDate:   date,
+      periodNumber:  slot.periodNumber,
+    }),
+    onSuccess: (res) => {
+      setQr(res);
+      startCountdown(res.expiresAt);
+    },
+  });
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const expired = qr !== null && secondsLeft === 0;
+  const errMsg = (error as { response?: { data?: { error?: { message?: string } } } })
+    ?.response?.data?.error?.message ?? 'Failed to generate QR. This period may already have a session.';
+
+  return (
+    <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-indigo-900">QR Attendance</h3>
+          <p className="text-xs text-indigo-500">Students scan to mark themselves present instantly</p>
+        </div>
+        <button
+          onClick={() => open()}
+          disabled={isPending}
+          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+        >
+          {isPending ? 'Generating…' : qr && !expired ? 'Refresh QR' : 'Generate QR'}
+        </button>
+      </div>
+
+      {isError && (
+        <p className="text-xs text-red-600">{errMsg}</p>
+      )}
+
+      {qr && (
+        <div className="flex flex-col items-center gap-3">
+          <div className={`relative rounded-lg border-2 p-2 bg-white ${expired ? 'border-red-300' : 'border-indigo-400'}`}>
+            <img
+              src={`data:image/png;base64,${qr.qrBase64}`}
+              alt="QR code for attendance"
+              className={`h-52 w-52 ${expired ? 'opacity-30' : ''}`}
+            />
+            {expired && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-lg">
+                <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-600">Expired</span>
+              </div>
+            )}
+          </div>
+          <div className={`text-sm font-semibold tabular-nums ${expired ? 'text-red-500' : secondsLeft <= 30 ? 'text-amber-600' : 'text-indigo-700'}`}>
+            {expired ? 'QR expired — click Refresh QR to generate a new one' : `Expires in ${secondsLeft}s`}
+          </div>
+          <p className="text-xs text-indigo-400">Display this on your screen or projector</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TeacherAttendancePage() {
-  const [date, setDate]           = useState(toDateStr(new Date()));
-  const [selectedSlot, setSlot]   = useState<TimetableSlot | null>(null);
-  const [marks, setMarks]         = useState<Record<string, AttendanceStatus>>({});
-  const [saved, setSaved]         = useState(false);
+  const [date, setDate]         = useState(toDateStr(new Date()));
+  const [selectedSlot, setSlot] = useState<TimetableSlot | null>(null);
+  const [marks, setMarks]       = useState<Record<string, AttendanceStatus>>({});
+  const [saved, setSaved]       = useState(false);
 
   const { data: allSlots = [] } = useQuery({
     queryKey: ['teacher-timetable'],
@@ -146,7 +235,12 @@ export default function TeacherAttendancePage() {
         </div>
       )}
 
-      {/* Student roster */}
+      {/* QR panel — shown as soon as a period is selected */}
+      {selectedSlot && (
+        <QrPanel slot={selectedSlot} date={date} />
+      )}
+
+      {/* Student roster — manual marking */}
       {selectedSlot && (
         <>
           {loadingStudents ? (

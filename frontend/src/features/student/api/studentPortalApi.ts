@@ -183,3 +183,7 @@ export async function getMyAttendance(): Promise<MyAttendance> {
   const { data } = await axiosInstance.get<ApiResponse<MyAttendance>>('/v1/student/attendance');
   return data.data!;
 }
+
+export async function qrMarkAttendance(token: string): Promise<void> {
+  await axiosInstance.post('/v1/student/attendance/qr-mark', { token });
+}
