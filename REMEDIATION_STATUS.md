@@ -12,9 +12,9 @@
 |---|---|---|---|---|
 | CRITICAL | 21 | **21** | 0 | **100%** ✅ |
 | HIGH (labeled H-01 → H-30) | 30 | **30** | 0 | **100%** ✅ |
-| MEDIUM (M-01 → M-20) | 20 | 0 | 20 | 0% |
-| LOW (L-01 → L-30) | 30 | 0 | 30 | 0% |
-| **Grand Total** | **101** | **51** | **50** | **50%** |
+| MEDIUM (M-01 → M-20) | 20 | **15** | 5 | **75%** |
+| LOW (L-01 → L-30) | 30 | **1** | 29 | **3%** |
+| **Grand Total** | **101** | **67** | **34** | **66%** |
 
 > **Production Gate:** All CRITICAL blockers cleared. All labeled HIGH findings resolved. The platform may proceed to **soft launch (1–3 pilot schools)** per the audit's Phase 1 + Phase 2 recommendation. GA requires MEDIUM completion.
 
@@ -148,7 +148,7 @@
 | L-09 | Swagger UI `permitAll()` could drift from springdoc config | ⬜ Pending |
 | L-10 | File upload stores `getOriginalFilename()` in DB — XSS via filename | ⬜ Pending |
 | L-11 | Demo seed users have predictable UUIDs — server fingerprinting | ⬜ Pending |
-| L-12 | V48 migration gap — cannot safely add V48 later | ⬜ Pending |
+| L-12 | V48 migration gap — cannot safely add V48 later | ✅ Done — resolved by M-13 (V48__DELETED.sql) |
 | L-13 | Soft delete (`deleted_at`) missing on several content tables | ⬜ Pending |
 | L-14 | `student_fee_records.tenant_id` missing FK to `tenants(id)` | ⬜ Pending |
 | L-15 | `BCryptPasswordEncoder(12)` thread saturation under high concurrent login | ⬜ Pending |
@@ -176,7 +176,7 @@
 |---|---|---|
 | **Any deployment** | All 21 CRITICAL resolved | ✅ **CLEARED** |
 | **Soft launch** (1–3 pilot schools) | CRITICAL + HIGH complete | ✅ **CLEARED** |
-| **GA launch** | CRITICAL + HIGH + MEDIUM complete | ❌ 20 MEDIUM remaining |
+| **GA launch** | CRITICAL + HIGH + MEDIUM complete | ❌ 5 MEDIUM remaining (M-06/07/08/09/10/15/16) |
 | **Fully hardened** | All 101 labeled findings resolved | ❌ 50 remaining |
 
 ---
