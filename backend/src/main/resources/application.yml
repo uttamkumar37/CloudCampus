@@ -41,7 +41,7 @@ spring:
       simple:
         concurrency: 1
         max-concurrency: 3
-        acknowledge-mode: auto    # auto-ack on success; nack on exception
+        acknowledge-mode: manual  # explicit basicAck/basicNack in consumer (CRIT-18)
 
   # ── REDIS ────────────────────────────────────────────────────────────────
   # C-20: App starts even if Redis is temporarily unavailable (lazy-connect).
