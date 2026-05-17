@@ -256,6 +256,8 @@ app:
     embedding-dimensions: 1536
     chat-model: ${AI_CHAT_MODEL:claude-haiku-4-5-20251001}
     embedding-model: ${AI_EMBEDDING_MODEL:text-embedding-3-small}
+    # H-23: cap LLM output to prevent runaway responses burning budget or leaking data
+    max-output-chars: ${AI_MAX_OUTPUT_CHARS:8000}
 
   # ── Razorpay — online payment gateway (CC-0903) ───────────────────────────
   # Set RAZORPAY_ENABLED=true and provide real keys in staging/production.

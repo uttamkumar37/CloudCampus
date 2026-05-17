@@ -2,7 +2,10 @@ package com.cloudcampus.ai.gateway;
 
 import com.cloudcampus.ai.usage.service.AiBudgetEnforcer;
 import com.cloudcampus.ai.usage.service.UsageLoggingService;
+import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.web.RequestContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Thin wrapper around Spring AI's ChatModel that adds:
@@ -27,12 +31,27 @@ import java.util.UUID;
 @Service
 public class AiGatewayService {
 
+    private static final Logger log = LoggerFactory.getLogger(AiGatewayService.class);
+
+    // H-23: deny-list — patterns that indicate prompt-injection leakage or
+    // the model being coerced into producing clearly off-topic harmful content.
+    private static final Pattern CONTENT_FILTER = Pattern.compile(
+            "(?i)(ignore (previous|all) instructions?|" +
+            "jailbreak|" +
+            "DAN mode|" +
+            "as an? (AI|language model) I (cannot|must|will)|" +
+            "my (previous|new) instructions?)",
+            Pattern.CASE_INSENSITIVE);
+
     private final ChatModel           chatModel;
     private final UsageLoggingService usageLogging;
     private final AiBudgetEnforcer    budgetEnforcer;
 
     @Value("${app.ai.chat-model:claude-haiku-4-5-20251001}")
     private String chatModelName;
+
+    @Value("${app.ai.max-output-chars:8000}")
+    private int maxOutputChars;
 
     public AiGatewayService(Map<String, ChatModel> chatModels,
                             UsageLoggingService usageLogging,
@@ -72,7 +91,7 @@ public class AiGatewayService {
 
             usageLogging.record(tenantId, currentUserId(), providerName(), chatModelName,
                     promptKey, in, out, latencyMs, true, null);
-            return content;
+            return guardOutput(content);
 
         } catch (Exception e) {
             usageLogging.record(tenantId, currentUserId(), providerName(), chatModelName,
@@ -107,13 +126,29 @@ public class AiGatewayService {
 
             usageLogging.record(tenantId, currentUserId(), providerName(), chatModelName,
                     promptKey, in, out, latencyMs, true, null);
-            return content;
+            return guardOutput(content);
 
         } catch (Exception e) {
             usageLogging.record(tenantId, currentUserId(), providerName(), chatModelName,
                     promptKey, 0, 0, System.currentTimeMillis() - start, false, e.getMessage());
             throw e;
         }
+    }
+
+    // ── Output guardrails (H-23) ──────────────────────────────────────────────
+
+    private String guardOutput(String content) {
+        if (content == null) return "";
+        if (CONTENT_FILTER.matcher(content).find()) {
+            log.warn("AI output blocked by content filter [model={}]", chatModelName);
+            throw new BadRequestException("AI response did not pass content safety check");
+        }
+        if (content.length() > maxOutputChars) {
+            log.warn("AI output truncated: {} chars → {} [model={}]",
+                    content.length(), maxOutputChars, chatModelName);
+            return content.substring(0, maxOutputChars);
+        }
+        return content;
     }
 
     private String providerName() {
