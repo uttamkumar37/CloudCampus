@@ -23,6 +23,7 @@ import com.cloudcampus.finance.repository.FeeCategoryRepository;
 import com.cloudcampus.finance.repository.FeePaymentRepository;
 import com.cloudcampus.finance.repository.FeeStructureRepository;
 import com.cloudcampus.finance.repository.StudentFeeRecordRepository;
+import io.micrometer.tracing.annotation.NewSpan;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -220,6 +221,7 @@ class FeeServiceImpl implements FeeService {
     // Payments
     // ─────────────────────────────────────────────────────────────────────────
 
+    @NewSpan("finance.recordPayment")
     @Override
     @Transactional
     public FeePaymentResponse recordPayment(UUID recordId, RecordPaymentRequest req) {

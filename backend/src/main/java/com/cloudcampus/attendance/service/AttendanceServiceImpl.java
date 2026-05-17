@@ -15,6 +15,7 @@ import com.cloudcampus.attendance.repository.AttendanceSessionRepository;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.RequestContext;
+import io.micrometer.tracing.annotation.NewSpan;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -169,6 +170,7 @@ class AttendanceServiceImpl implements AttendanceService {
     // Reports (CC-0805)
     // ─────────────────────────────────────────────────────────────────────────
 
+    @NewSpan("attendance.getStudentReport")
     @Override
     @Transactional(readOnly = true)
     public StudentAttendanceReport getStudentReport(UUID studentId, LocalDate from, LocalDate to) {

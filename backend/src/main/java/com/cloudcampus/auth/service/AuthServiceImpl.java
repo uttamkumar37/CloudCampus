@@ -22,6 +22,7 @@ import com.cloudcampus.common.metrics.BusinessMetrics;
 import com.cloudcampus.feature.repository.TenantFeatureRepository;
 import com.cloudcampus.school.repository.SchoolRepository;
 import com.cloudcampus.school.service.UserSchoolAccessService;
+import io.micrometer.tracing.annotation.NewSpan;
 import org.springframework.transaction.annotation.Transactional;
 import com.cloudcampus.config.JwtProperties;
 import org.slf4j.Logger;
@@ -137,6 +138,7 @@ public class AuthServiceImpl implements AuthService {
 
     // ── Login ────────────────────────────────────────────────────────────────
 
+    @NewSpan("auth.login")
     @Override
     public LoginResponse login(LoginRequest request, String clientIp) {
 
