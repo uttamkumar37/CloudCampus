@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OWASP Dependency-Check suppressions (H-21).
+  Add <suppress> entries here for false positives after triaging each CVE.
+  Example:
+    <suppress>
+      <notes>CVE-XXXX-YYYYY — false positive; library is not used at runtime</notes>
+      <cve>CVE-XXXX-YYYYY</cve>
+    </suppress>
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+</suppressions>
