@@ -25,11 +25,14 @@ RUN apk add --no-cache curl ca-certificates gnupg gnupg-utils \
     && curl -fsSL \
        "https://dl.min.io/client/mc/release/linux-${TARGETARCH}/mc" \
        -o /usr/local/bin/mc \
+    # L-28: verify checksum before executing — prevents tampered binary execution
+    && echo "${MC_SHA256_AMD64}  /usr/local/bin/mc" | sha256sum -c - \
     && chmod +x /usr/local/bin/mc \
     # supercronic
     && curl -fsSL \
        "https://github.com/aptible/supercronic/releases/download/v${SUPERCRONIC_VERSION}/supercronic-linux-${TARGETARCH}" \
        -o /usr/local/bin/supercronic \
+    && echo "${SUPERCRONIC_SHA256_AMD64}  /usr/local/bin/supercronic" | sha256sum -c - \
     && chmod +x /usr/local/bin/supercronic \
     # smoke-test
     && mc --version \

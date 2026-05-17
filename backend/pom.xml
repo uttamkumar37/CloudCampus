@@ -285,6 +285,18 @@
     </dependencies>
 
     <build>
+        <!-- L-30: exclude application-local.yml so it never ships inside the JAR.
+             Developers keep the file locally; it must NOT reach staging/prod images. -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>application-local.yml</exclude>
+                </excludes>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+
         <plugins>
             <!-- Surefire: pass -Dapi.version=1.41 so docker-java 3.4.1 uses
                  /v1.41/info instead of /v1.24/info (Docker Engine 29.x MinAPIVersion=1.40). -->
