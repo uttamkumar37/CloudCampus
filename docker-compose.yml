@@ -25,6 +25,30 @@
 
 services:
 
+  # ── Nginx (TLS termination + reverse proxy) ────────────────────────────
+  # Run: infra/nginx/gen-certs.sh to create self-signed dev certs first.
+  # Production: replace infra/nginx/certs/ with real cert + key files.
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: cloudcampus-nginx
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/certs:/etc/nginx/certs:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
+
   # ── PostgreSQL 16 ──────────────────────────────────────────────────────
   postgres:
     image: pgvector/pgvector:pg16
