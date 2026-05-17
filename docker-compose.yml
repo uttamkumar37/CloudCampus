@@ -23,6 +23,13 @@
 #   tempo       → 127.0.0.1:3200 (query API) + 127.0.0.1:4318 (OTLP HTTP)
 #   alertmanager→ 127.0.0.1:9093
 
+# L-27: log rotation applied to every service — prevents unbounded disk fill
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
 
   # ── Nginx (TLS termination + reverse proxy) ────────────────────────────
@@ -39,6 +46,7 @@ services:
       - ./infra/nginx/certs:/etc/nginx/certs:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -66,6 +74,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -96,6 +105,7 @@ services:
       retries: 5
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -124,6 +134,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -141,6 +152,7 @@ services:
     ports:
       - "127.0.0.1:1025:1025"
       - "127.0.0.1:8025:8025"
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -169,6 +181,7 @@ services:
       - prometheus_data:/prometheus
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -191,6 +204,7 @@ services:
     volumes:
       - ./infra/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -220,6 +234,7 @@ services:
     depends_on:
       - prometheus
       - tempo
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -241,6 +256,7 @@ services:
     volumes:
       - ./infra/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
       - tempo_data:/var/tempo
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -274,6 +290,7 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -296,6 +313,7 @@ services:
     volumes:
       - ./infra/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
       - loki_data:/loki
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -318,6 +336,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       - loki
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
@@ -345,6 +364,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging: *default-logging
     restart: unless-stopped
     deploy:
       resources:
