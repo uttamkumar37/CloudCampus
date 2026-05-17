@@ -43,9 +43,10 @@ public class AiGatewayService {
             "my (previous|new) instructions?)",
             Pattern.CASE_INSENSITIVE);
 
-    private final ChatModel           chatModel;
-    private final UsageLoggingService usageLogging;
-    private final AiBudgetEnforcer    budgetEnforcer;
+    private final ChatModel            chatModel;
+    private final UsageLoggingService  usageLogging;
+    private final AiBudgetEnforcer     budgetEnforcer;
+    private final AiRateLimiterService aiRateLimiter;
 
     @Value("${app.ai.chat-model:claude-haiku-4-5-20251001}")
     private String chatModelName;
@@ -54,12 +55,14 @@ public class AiGatewayService {
     private int maxOutputChars;
 
     public AiGatewayService(Map<String, ChatModel> chatModels,
-                            UsageLoggingService usageLogging,
-                            AiBudgetEnforcer    budgetEnforcer,
+                            UsageLoggingService    usageLogging,
+                            AiBudgetEnforcer       budgetEnforcer,
+                            AiRateLimiterService   aiRateLimiter,
                             @Value("${app.ai.chat-provider-bean:openAiChatModel}") String preferredChatBean) {
         this.chatModel      = resolveChatModel(chatModels, preferredChatBean);
         this.usageLogging   = usageLogging;
         this.budgetEnforcer = budgetEnforcer;
+        this.aiRateLimiter  = aiRateLimiter;
     }
 
     private ChatModel resolveChatModel(Map<String, ChatModel> chatModels, String preferredChatBean) {
@@ -79,6 +82,7 @@ public class AiGatewayService {
      */
     public String complete(String renderedPrompt, String promptKey, UUID tenantId) {
         budgetEnforcer.enforce(tenantId);
+        aiRateLimiter.check(currentUserId());
         long start = System.currentTimeMillis();
         try {
             ChatResponse response  = chatModel.call(new Prompt(renderedPrompt));
@@ -111,6 +115,7 @@ public class AiGatewayService {
     public String completeStructured(String systemText, String userText,
                                      String promptKey, UUID tenantId) {
         budgetEnforcer.enforce(tenantId);
+        aiRateLimiter.check(currentUserId());
         long start = System.currentTimeMillis();
         try {
             Prompt prompt = new Prompt(List.of(
