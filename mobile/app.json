@@ -36,7 +36,8 @@
           "color": "#1e3a5f",
           "sounds": []
         }
-      ]
+      ],
+      "./plugins/withNetworkSecurity"
     ]
   }
 }

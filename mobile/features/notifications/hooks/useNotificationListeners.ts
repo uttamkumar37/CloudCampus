@@ -31,6 +31,25 @@ interface NotificationData {
   tenantId?: string;
 }
 
+// M-08: only navigate to routes that belong to this app's screen graph.
+// An attacker controlling the push payload cannot redirect users to
+// arbitrary deep-links (phishing, open-redirect, javascript: URIs).
+const ALLOWED_TARGET_ROUTES = new Set<string>([
+  '/(app)/attendance',
+  '/(app)/fees',
+  '/(app)/exams',
+  '/(app)/announcements',
+  '/(app)/dashboard',
+  '/(app)/profile',
+  '/(app)/notifications',
+]);
+
+function isSafeRoute(route: string | undefined): route is string {
+  if (!route) return false;
+  // Exact match only — no prefix matching to prevent path traversal
+  return ALLOWED_TARGET_ROUTES.has(route);
+}
+
 export function useNotificationListeners(): void {
   const router = useRouter();
   const receivedSub = useRef<EventSubscription | null>(null);
@@ -55,7 +74,7 @@ export function useNotificationListeners(): void {
     responseSub.current = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         const data = response.notification.request.content.data as NotificationData;
-        if (data?.targetRoute) {
+        if (isSafeRoute(data?.targetRoute)) {
           router.push(data.targetRoute as Parameters<typeof router.push>[0]);
         }
       },

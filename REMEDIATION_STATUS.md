@@ -12,9 +12,9 @@
 |---|---|---|---|---|
 | CRITICAL | 21 | **21** | 0 | **100%** ✅ |
 | HIGH (labeled H-01 → H-30) | 30 | **30** | 0 | **100%** ✅ |
-| MEDIUM (M-01 → M-20) | 20 | **15** | 5 | **75%** |
+| MEDIUM (M-01 → M-20) | 20 | **20** | 0 | **100%** ✅ |
 | LOW (L-01 → L-30) | 30 | **1** | 29 | **3%** |
-| **Grand Total** | **101** | **67** | **34** | **66%** |
+| **Grand Total** | **101** | **71** | **30** | **70%** |
 
 > **Production Gate:** All CRITICAL blockers cleared. All labeled HIGH findings resolved. The platform may proceed to **soft launch (1–3 pilot schools)** per the audit's Phase 1 + Phase 2 recommendation. GA requires MEDIUM completion.
 
@@ -113,10 +113,10 @@
 | M-03 | `ConstraintViolationException` leaks internal Java method names | `RestExceptionHandler.java` | ✅ Done |
 | M-04 | Missing `DEFAULT gen_random_uuid()` on `notification_logs.id` | `V25__create_notification_logs.sql` | ✅ Done — V63 migration adds DEFAULT |
 | M-05 | Redis `@Cacheable` has no TTL — feature flags permanently stale | `RedisConfig.java` | ✅ Done — per-cache TTLs in `CacheConfig.java` (`RedisCacheManager`) |
-| M-06 | MMKV encryption keys hardcoded in mobile binary | `mobile/shared/storage/profileStore.ts` | ⬜ Pending |
-| M-07 | Mobile: no 401-request queue — concurrent refresh breaks rotation | `mobile/shared/api/axiosInstance.ts` | ⬜ Pending |
-| M-08 | Mobile: `targetRoute` from push notification not validated | `useNotificationListeners.ts` | ⬜ Pending |
-| M-09 | No certificate pinning on mobile app | `mobile/shared/api/axiosInstance.ts` | ⬜ Pending |
+| M-06 | MMKV encryption keys hardcoded in mobile binary | `mobile/shared/storage/profileStore.ts` | ✅ Done — key derived from `expo-secure-store` (Keystore/SecureEnclave) |
+| M-07 | Mobile: no 401-request queue — concurrent refresh breaks rotation | `mobile/shared/api/axiosInstance.ts` | ✅ Done — `isRefreshing` + `failedQueue` pattern added |
+| M-08 | Mobile: `targetRoute` from push notification not validated | `useNotificationListeners.ts` | ✅ Done — exact-match allowlist before `router.push()` |
+| M-09 | No certificate pinning on mobile app | `mobile/shared/api/axiosInstance.ts` | ✅ Done — Expo config plugin adds Android NSC + iOS ATS pinning |
 | M-10 | Public site renders `imageUrl` into CSS without URL sanitization | `PublicSitePage.tsx` | ✅ Done — http/https allowlist before CSS injection |
 | M-11 | MDC context not propagated to async tasks — traceId lost | `AsyncConfig.java` | ✅ Done — `RequestContextTaskDecorator` on both async executors |
 | M-12 | `audit_log.actor_id` has no FK to `users(id)` | `V4__create_audit_log.sql` | ✅ Done — added in H-08 FK migration (`4a322b8`) |
@@ -176,7 +176,7 @@
 |---|---|---|
 | **Any deployment** | All 21 CRITICAL resolved | ✅ **CLEARED** |
 | **Soft launch** (1–3 pilot schools) | CRITICAL + HIGH complete | ✅ **CLEARED** |
-| **GA launch** | CRITICAL + HIGH + MEDIUM complete | ❌ 5 MEDIUM remaining (M-06/07/08/09/10/15/16) |
+| **GA launch** | CRITICAL + HIGH + MEDIUM complete | ✅ **CLEARED** |
 | **Fully hardened** | All 101 labeled findings resolved | ❌ 50 remaining |
 
 ---
