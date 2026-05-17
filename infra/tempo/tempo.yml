@@ -13,7 +13,10 @@ ingester:
 
 compactor:
   compaction:
-    block_retention: 24h
+    # H-18: 24h retention means traces from the previous day are gone by the time
+    # an incident is investigated the next morning. 168h (7 days) covers a full
+    # on-call rotation and allows correlation with weekly Grafana dashboards.
+    block_retention: 168h
 
 storage:
   trace:
