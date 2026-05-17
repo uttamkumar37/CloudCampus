@@ -104,6 +104,13 @@ server:
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
     min-response-size: 1024     # Only compress responses larger than 1 KB.
 
+  # H-04: Trust forwarded-IP headers only from the nginx reverse proxy.
+  # Tomcat's RemoteIpValve processes X-Forwarded-For / X-Real-IP and rewrites
+  # request.getRemoteAddr() to the real client IP. Client-injected headers
+  # from non-trusted addresses (i.e. not the loopback / private range of the
+  # proxy) are stripped, preventing rate-limiter bypass via spoofed headers.
+  forward-headers-strategy: native
+
   # C-09: Tomcat-level payload size limit (safety net after servlet layer).
   tomcat:
     max-http-form-post-size: 10MB
