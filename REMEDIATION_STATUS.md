@@ -108,18 +108,18 @@
 
 | ID | Finding | File | Status |
 |---|---|---|---|
-| M-01 | No CI/CD container image vulnerability scanning | `ci.yml` | ⬜ Pending |
-| M-02 | Grafana `admin/admin` + dashboard edit/delete enabled | `docker-compose.yml` | ⬜ Pending |
+| M-01 | No CI/CD container image vulnerability scanning | `ci.yml` | ✅ Done — Trivy added in H-21 (`e28e30e`) |
+| M-02 | Grafana `admin/admin` + dashboard edit/delete enabled | `docker-compose.yml` | ✅ Done |
 | M-03 | `ConstraintViolationException` leaks internal Java method names | `RestExceptionHandler.java` | ⬜ Pending |
 | M-04 | Missing `DEFAULT gen_random_uuid()` on `notification_logs.id` | `V25__create_notification_logs.sql` | ⬜ Pending |
-| M-05 | Redis `@Cacheable` has no TTL — feature flags permanently stale | `RedisConfig.java` | ⬜ Pending |
+| M-05 | Redis `@Cacheable` has no TTL — feature flags permanently stale | `RedisConfig.java` | ✅ Done — per-cache TTLs in `CacheConfig.java` (`RedisCacheManager`) |
 | M-06 | MMKV encryption keys hardcoded in mobile binary | `mobile/shared/storage/profileStore.ts` | ⬜ Pending |
 | M-07 | Mobile: no 401-request queue — concurrent refresh breaks rotation | `mobile/shared/api/axiosInstance.ts` | ⬜ Pending |
 | M-08 | Mobile: `targetRoute` from push notification not validated | `useNotificationListeners.ts` | ⬜ Pending |
 | M-09 | No certificate pinning on mobile app | `mobile/shared/api/axiosInstance.ts` | ⬜ Pending |
 | M-10 | Public site renders `imageUrl` into CSS without URL sanitization | `PublicSitePage.tsx` | ⬜ Pending |
-| M-11 | MDC context not propagated to async tasks — traceId lost | `AsyncConfig.java` | ⬜ Pending |
-| M-12 | `audit_log.actor_id` has no FK to `users(id)` | `V4__create_audit_log.sql` | ⬜ Pending |
+| M-11 | MDC context not propagated to async tasks — traceId lost | `AsyncConfig.java` | ✅ Done — `RequestContextTaskDecorator` on both async executors |
+| M-12 | `audit_log.actor_id` has no FK to `users(id)` | `V4__create_audit_log.sql` | ✅ Done — added in H-08 FK migration (`4a322b8`) |
 | M-13 | V48 migration gap — prevents future V48 in production | Flyway migrations | ⬜ Pending |
 | M-14 | `device_tokens` table missing `tenant_id` — filter cannot apply | `V10__create_device_tokens.sql` | ⬜ Pending |
 | M-15 | Loki/Promtail not implemented — JSON logs go to stdout only | `logback-spring.xml` | ⬜ Pending |
