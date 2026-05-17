@@ -109,10 +109,9 @@ describe('SchoolAdminDashboardPage', () => {
   it('renders all four stat card labels', () => {
     renderShell();
     const main = screen.getByRole('main');
-    expect(within(main).getByText('Students')).toBeInTheDocument();
-    expect(within(main).getByText('Staff')).toBeInTheDocument();
-    // 'Classes' also appears in Quick Actions, so use getAllByText
-    expect(within(main).getAllByText('Classes').length).toBeGreaterThanOrEqual(1);
-    expect(within(main).getByText('Attendance Today')).toBeInTheDocument();
+    expect(within(main).getByTestId('stat-students')).toBeInTheDocument();
+    expect(within(main).getByTestId('stat-staff')).toBeInTheDocument();
+    expect(within(main).getByTestId('stat-classes')).toBeInTheDocument();
+    expect(within(main).getByTestId('stat-notices')).toBeInTheDocument();
   });
 });

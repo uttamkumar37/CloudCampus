@@ -8,12 +8,13 @@
  *  3. useProactiveTokenRefresh (mounted inside app group) pre-empts expiry on
  *     foreground transitions.
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useSessionHydration } from '@/shared/hooks/useSessionHydration';
+import { initDatabase } from '@/offline/database';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +59,20 @@ function NavigationGuard({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
+  const [dbReady, setDbReady] = useState(false);
+
+  useEffect(() => {
+    initDatabase().finally(() => setDbReady(true));
+  }, []);
+
+  if (!dbReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#1e3a5f" />
+      </View>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <NavigationGuard>

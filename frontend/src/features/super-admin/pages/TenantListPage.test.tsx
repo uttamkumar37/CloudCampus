@@ -56,7 +56,7 @@ describe('TenantListPage', () => {
   it('shows empty state when no tenants', async () => {
     vi.mocked(tenantApi.listTenants).mockResolvedValue(makePageResponse([]));
     renderPage();
-    await waitFor(() => expect(screen.getByText(/no tenants yet/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('tenant-empty-state')).toBeInTheDocument());
   });
 
   it('shows error message on fetch failure', async () => {

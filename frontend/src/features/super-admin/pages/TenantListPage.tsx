@@ -63,7 +63,7 @@ export function TenantListPage() {
       )}
 
       {data && data.items.length === 0 && !isLoading && (
-        <p className="text-sm text-gray-500">No tenants yet. Create one to get started.</p>
+        <p data-testid="tenant-empty-state" className="text-sm text-gray-500">No tenants yet. Create one to get started.</p>
       )}
 
       {data && data.items.length > 0 && (
