@@ -117,7 +117,7 @@
 | M-07 | Mobile: no 401-request queue — concurrent refresh breaks rotation | `mobile/shared/api/axiosInstance.ts` | ⬜ Pending |
 | M-08 | Mobile: `targetRoute` from push notification not validated | `useNotificationListeners.ts` | ⬜ Pending |
 | M-09 | No certificate pinning on mobile app | `mobile/shared/api/axiosInstance.ts` | ⬜ Pending |
-| M-10 | Public site renders `imageUrl` into CSS without URL sanitization | `PublicSitePage.tsx` | ⬜ Pending |
+| M-10 | Public site renders `imageUrl` into CSS without URL sanitization | `PublicSitePage.tsx` | ✅ Done — http/https allowlist before CSS injection |
 | M-11 | MDC context not propagated to async tasks — traceId lost | `AsyncConfig.java` | ✅ Done — `RequestContextTaskDecorator` on both async executors |
 | M-12 | `audit_log.actor_id` has no FK to `users(id)` | `V4__create_audit_log.sql` | ✅ Done — added in H-08 FK migration (`4a322b8`) |
 | M-13 | V48 migration gap — prevents future V48 in production | Flyway migrations | ✅ Done — V48__DELETED.sql placeholder added |

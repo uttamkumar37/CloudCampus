@@ -12,7 +12,10 @@ import {
 function HeroSection({ content }: { content: Record<string, unknown> }) {
   const headline = typeof content.headline === 'string' ? content.headline : '';
   const subtext  = typeof content.subtext === 'string' ? content.subtext : '';
-  const imageUrl = typeof content.imageUrl === 'string' ? content.imageUrl : '';
+  const rawImageUrl = typeof content.imageUrl === 'string' ? content.imageUrl : '';
+  // M-10: only allow http/https URLs in CSS background-image to prevent
+  // javascript: or data: URIs from being injected into the style attribute.
+  const imageUrl = /^https?:\/\//i.test(rawImageUrl) ? rawImageUrl : '';
 
   return (
     <section
