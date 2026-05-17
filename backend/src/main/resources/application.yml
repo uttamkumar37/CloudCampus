@@ -37,11 +37,19 @@ spring:
     username: ${RABBITMQ_USERNAME:cloudcampus}
     password: ${RABBITMQ_PASSWORD:cloudcampus_dev}
     virtual-host: /
+    # H-07: publisher confirms — broker acks every message it has durably stored.
+    # Without this, a broker restart between publish and persistence silently loses messages.
+    publisher-confirm-type: correlated
+    publisher-returns: true
     listener:
       simple:
         concurrency: 1
         max-concurrency: 3
         acknowledge-mode: manual  # explicit basicAck/basicNack in consumer (CRIT-18)
+        # H-17: prefetch limits in-flight unacked messages per consumer.
+        # Without this the broker pushes all queued messages at once; manual-ack
+        # consumers then hold 250+ unacked messages in memory with no back-pressure.
+        prefetch: 10
 
   # ── REDIS ────────────────────────────────────────────────────────────────
   # C-20: App starts even if Redis is temporarily unavailable (lazy-connect).

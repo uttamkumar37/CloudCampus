@@ -1,5 +1,7 @@
 package com.cloudcampus.notification.queue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -34,6 +36,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnBean(ConnectionFactory.class)
 public class NotificationQueueConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(NotificationQueueConfig.class);
 
     // ── Constants ─────────────────────────────────────────────────────────────
 
@@ -109,6 +113,21 @@ public class NotificationQueueConfig {
                                   Jackson2JsonMessageConverter messageConverter) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(messageConverter);
+
+        // H-07: publisher confirms — broker acks back when the message is durably stored.
+        // mandatory=true triggers the returns callback if the message cannot be routed.
+        template.setMandatory(true);
+        template.setConfirmCallback((correlationData, ack, cause) -> {
+            if (!ack) {
+                log.error("Notification message not confirmed by broker — possible loss. cause={} correlationData={}",
+                        cause, correlationData);
+            }
+        });
+        template.setReturnsCallback(returned -> log.error(
+                "Notification message returned unroutable: exchange={} routingKey={} replyCode={} replyText={}",
+                returned.getExchange(), returned.getRoutingKey(),
+                returned.getReplyCode(), returned.getReplyText()));
+
         return template;
     }
 
@@ -120,10 +139,11 @@ public class NotificationQueueConfig {
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(messageConverter);
         // CRIT-18: manual ack — consumer must call basicAck/basicNack explicitly.
-        // auto-ack acked messages on delivery, losing them if the consumer crashed
-        // mid-processing before the dispatch completed.
         factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         factory.setDefaultRequeueRejected(false);
+        // H-17: prefetch limits in-flight unacked messages to 10 per consumer thread,
+        // providing back-pressure and preventing memory exhaustion under queue backlogs.
+        factory.setPrefetchCount(10);
         return factory;
     }
 }
