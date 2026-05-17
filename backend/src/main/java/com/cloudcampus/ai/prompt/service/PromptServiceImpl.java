@@ -8,6 +8,7 @@ import com.cloudcampus.ai.prompt.dto.PromptTemplateResponse;
 import com.cloudcampus.ai.prompt.entity.AiPromptTemplate;
 import com.cloudcampus.ai.prompt.repository.AiPromptTemplateRepository;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.RequestContext;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,12 +84,17 @@ class PromptServiceImpl implements PromptService {
     public PromptRenderResponse render(UUID id, PromptRenderRequest request) {
         AiPromptTemplate template = load(id);
 
+        // CRIT-16: tenantId must come from the authenticated JWT context, never from
+        // the request body. A client-supplied null tenantId caused AiBudgetEnforcer to
+        // return early, bypassing per-tenant token and request-rate limits entirely.
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+
         Map<String, Object> vars = request.variables() != null ? request.variables() : Map.of();
         String rendered = vars.isEmpty()
                 ? template.getTemplate()
                 : new PromptTemplate(template.getTemplate()).render(vars);
 
-        String aiResponse = gateway.complete(rendered, template.getPromptKey(), request.tenantId());
+        String aiResponse = gateway.complete(rendered, template.getPromptKey(), tenantId);
         return new PromptRenderResponse(rendered, aiResponse);
     }
 
