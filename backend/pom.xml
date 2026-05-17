@@ -124,6 +124,14 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!-- H-14: commons-pool2 enables the Lettuce connection pool.
+             Without this dependency the pool config in application.yml is silently ignored
+             and all Redis operations share a single blocking connection. -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
