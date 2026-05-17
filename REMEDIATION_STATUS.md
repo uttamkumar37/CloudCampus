@@ -110,7 +110,7 @@
 |---|---|---|---|
 | M-01 | No CI/CD container image vulnerability scanning | `ci.yml` | ✅ Done — Trivy added in H-21 (`e28e30e`) |
 | M-02 | Grafana `admin/admin` + dashboard edit/delete enabled | `docker-compose.yml` | ✅ Done |
-| M-03 | `ConstraintViolationException` leaks internal Java method names | `RestExceptionHandler.java` | ⬜ Pending |
+| M-03 | `ConstraintViolationException` leaks internal Java method names | `RestExceptionHandler.java` | ✅ Done |
 | M-04 | Missing `DEFAULT gen_random_uuid()` on `notification_logs.id` | `V25__create_notification_logs.sql` | ⬜ Pending |
 | M-05 | Redis `@Cacheable` has no TTL — feature flags permanently stale | `RedisConfig.java` | ✅ Done — per-cache TTLs in `CacheConfig.java` (`RedisCacheManager`) |
 | M-06 | MMKV encryption keys hardcoded in mobile binary | `mobile/shared/storage/profileStore.ts` | ⬜ Pending |
