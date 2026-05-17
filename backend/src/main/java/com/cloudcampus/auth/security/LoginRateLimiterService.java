@@ -5,10 +5,11 @@ import com.cloudcampus.config.RateLimitProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.UUID;
+import java.util.List;
 
 /**
  * Sliding-window rate limiter for the login endpoint (CC-1801 / EUP-030).
@@ -45,6 +46,23 @@ public class LoginRateLimiterService {
     private static final String KEY_PREFIX_IP   = "rl:login:ip:";
     private static final String KEY_PREFIX_USER = "rl:login:user:";
     private static final String KEY_PREFIX_LOCK = "lock:fail:";
+
+    // H-12: atomic sliding-window Lua script — eliminates the TOCTOU race between
+    // ZREMRANGEBYSCORE → ZCARD → ZADD that previously allowed bursts to slip through.
+    // Returns 1 if the request is allowed, 0 if the limit is exceeded.
+    private static final DefaultRedisScript<Long> SLIDING_WINDOW_SCRIPT =
+            new DefaultRedisScript<>(
+                    "local now = tonumber(ARGV[1])\n" +
+                    "local windowStart = tonumber(ARGV[2])\n" +
+                    "local maxAttempts = tonumber(ARGV[3])\n" +
+                    "local windowSeconds = tonumber(ARGV[4])\n" +
+                    "redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, windowStart)\n" +
+                    "local count = redis.call('ZCARD', KEYS[1])\n" +
+                    "if count >= maxAttempts then return 0 end\n" +
+                    "redis.call('ZADD', KEYS[1], now, now .. ':' .. math.random())\n" +
+                    "redis.call('EXPIRE', KEYS[1], windowSeconds)\n" +
+                    "return 1",
+                    Long.class);
 
     private final RedisTemplate<String, String> redisTemplate;
     private final RateLimitProperties           props;
@@ -124,29 +142,26 @@ public class LoginRateLimiterService {
         long windowStart = nowMs - (windowSeconds * 1_000L);
 
         try {
-            // 1. Evict entries outside the window.
-            redisTemplate.opsForZSet().removeRangeByScore(key, 0, windowStart);
+            // H-12: single atomic Lua call — eliminates the TOCTOU race of the previous
+            // 4-step ZREMRANGEBYSCORE → ZCARD → ZADD → EXPIRE sequence.
+            Long allowed = redisTemplate.execute(
+                    SLIDING_WINDOW_SCRIPT,
+                    List.of(key),
+                    String.valueOf(nowMs),
+                    String.valueOf(windowStart),
+                    String.valueOf(maxAttempts),
+                    String.valueOf(windowSeconds));
 
-            // 2. Count remaining entries in the window.
-            Long count = redisTemplate.opsForZSet().zCard(key);
-            if (count != null && count >= maxAttempts) {
+            if (!Long.valueOf(1L).equals(allowed)) {
                 log.warn("Rate limit exceeded [key={}]", redactKey(key));
                 throw new TooManyRequestsException("Too many requests. Please try again later.");
             }
-
-            // 3. Record this attempt — member is unique UUID to avoid zset deduplication.
-            String member = nowMs + ":" + UUID.randomUUID();
-            redisTemplate.opsForZSet().add(key, member, nowMs);
-
-            // 4. Refresh TTL so the key doesn't stay in Redis after the window expires.
-            redisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
         } catch (TooManyRequestsException e) {
-            throw e; // always propagate rate-limit rejections
+            throw e;
         } catch (Exception e) {
-            // Fail-open: if Redis is unavailable, allow the request through.
-            // BCrypt cost (≈300 ms) still acts as a rate-limit deterrent.
+            // Fail-open: BCrypt cost (≈300 ms) acts as deterrent when Redis is down.
             log.warn("Rate limiter unavailable (Redis down?), failing open [key={}]: {}",
-                     redactKey(key), e.getMessage());
+                    redactKey(key), e.getMessage());
         }
     }
 
