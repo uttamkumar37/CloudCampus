@@ -2,6 +2,8 @@ package com.cloudcampus.student.repository;
 
 import com.cloudcampus.student.entity.Student;
 import com.cloudcampus.student.entity.StudentStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,15 +23,28 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     /** All students in a school, ordered by last name then first name. */
     List<Student> findAllBySchoolIdOrderByLastNameAscFirstNameAsc(UUID schoolId);
 
+    /** Paginated — use for API responses to cap result size (CRIT-20). */
+    Page<Student> findAllBySchoolIdOrderByLastNameAscFirstNameAsc(UUID schoolId, Pageable pageable);
+
     /** Students in a school filtered by status. */
     List<Student> findAllBySchoolIdAndStatusOrderByLastNameAscFirstNameAsc(
             UUID schoolId, StudentStatus status);
 
+    /** Paginated — use for API responses to cap result size (CRIT-20). */
+    Page<Student> findAllBySchoolIdAndStatusOrderByLastNameAscFirstNameAsc(
+            UUID schoolId, StudentStatus status, Pageable pageable);
+
     /** Students assigned to a specific class. */
     List<Student> findAllByClassIdOrderByLastNameAscFirstNameAsc(UUID classId);
 
+    /** Paginated — use for API responses to cap result size (CRIT-20). */
+    Page<Student> findAllByClassIdOrderByLastNameAscFirstNameAsc(UUID classId, Pageable pageable);
+
     /** Students assigned to a specific section. */
     List<Student> findAllBySectionIdOrderByLastNameAscFirstNameAsc(UUID sectionId);
+
+    /** Paginated — use for API responses to cap result size (CRIT-20). */
+    Page<Student> findAllBySectionIdOrderByLastNameAscFirstNameAsc(UUID sectionId, Pageable pageable);
 
     /** Students in a class filtered by status. */
     List<Student> findAllByClassIdAndStatusOrderByLastNameAscFirstNameAsc(
@@ -56,7 +71,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
                OR LOWER(s.lastName)  LIKE LOWER(CONCAT(:q, '%')))
            ORDER BY s.lastName, s.firstName
            """)
-    List<Student> searchByName(@Param("schoolId") UUID schoolId, @Param("q") String query);
+    Page<Student> searchByName(@Param("schoolId") UUID schoolId, @Param("q") String query, Pageable pageable);
 
     /** Count active students per school (dashboard metric). */
     long countBySchoolIdAndStatus(UUID schoolId, StudentStatus status);
