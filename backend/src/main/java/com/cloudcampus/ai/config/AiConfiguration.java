@@ -44,10 +44,9 @@ public class AiConfiguration {
     static class MockChatModel implements ChatModel {
         @Override
         public ChatResponse call(Prompt prompt) {
-            String input = prompt.getContents();
-            String preview = input.length() > 80 ? input.substring(0, 80) + "…" : input;
-            AssistantMessage msg = new AssistantMessage(
-                    "[Mock AI — no API key configured] Received: " + preview);
+            // L-17: do not echo back any part of the prompt — prevents leaking
+            // user input or system instructions into logs / API responses.
+            AssistantMessage msg = new AssistantMessage("[Mock AI — real provider not configured]");
             return new ChatResponse(List.of(new Generation(msg)));
         }
     }

@@ -267,7 +267,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET: ${MINIO_BUCKET:-cloudcampus-backups}
-      RETENTION_DAYS: ${RETENTION_DAYS:-7}
+      RETENTION_DAYS: ${RETENTION_DAYS:-30}
       BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE}
     depends_on:
       postgres:
