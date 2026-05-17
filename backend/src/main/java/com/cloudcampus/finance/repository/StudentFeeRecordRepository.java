@@ -10,9 +10,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface StudentFeeRecordRepository extends JpaRepository<StudentFeeRecord, UUID> {
+
+    // Tenant-scoped lookup — use instead of findById() to prevent cross-tenant access.
+    // @Filter applies to collection queries but NOT to findById(); this method enforces
+    // tenant ownership explicitly in the WHERE clause.
+    Optional<StudentFeeRecord> findByIdAndTenantId(UUID id, UUID tenantId);
 
     List<StudentFeeRecord> findByStudentId(UUID studentId);
 
