@@ -16,12 +16,13 @@ public interface DeviceTokenRepository extends JpaRepository<DeviceToken, UUID> 
     /** Lookup by unique (userId, pushToken) pair — used for upsert logic. */
     Optional<DeviceToken> findByUserIdAndPushToken(UUID userId, String pushToken);
 
-    /** All tokens for a user — used when sending user-targeted notifications. */
-    List<DeviceToken> findAllByUserId(UUID userId);
+    /** All tokens for a user scoped to their tenant. */
+    List<DeviceToken> findAllByTenantIdAndUserId(UUID tenantId, UUID userId);
 
-    /** All tokens for a set of users — bulk notification dispatch. */
-    @Query("SELECT d FROM DeviceToken d WHERE d.userId IN :userIds")
-    List<DeviceToken> findAllByUserIdIn(@Param("userIds") List<UUID> userIds);
+    /** All tokens for a set of users within a tenant — bulk notification dispatch. */
+    @Query("SELECT d FROM DeviceToken d WHERE d.tenantId = :tenantId AND d.userId IN :userIds")
+    List<DeviceToken> findAllByTenantIdAndUserIdIn(@Param("tenantId") UUID tenantId,
+                                                   @Param("userIds") List<UUID> userIds);
 
     /**
      * Deletes a specific token — called when FCM/APNs reports the token is
