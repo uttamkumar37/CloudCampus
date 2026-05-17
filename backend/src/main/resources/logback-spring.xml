@@ -31,9 +31,12 @@
         <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder class="net.logstash.logback.encoder.LogstashEncoder">
                 <!-- Include MDC fields (correlationId, tenantId added by filters) -->
+                <!-- L-22: include traceId/spanId injected by Micrometer Tracing -->
                 <includeMdcKeyName>correlationId</includeMdcKeyName>
                 <includeMdcKeyName>tenantId</includeMdcKeyName>
                 <includeMdcKeyName>userId</includeMdcKeyName>
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>spanId</includeMdcKeyName>
                 <!-- Structured app metadata for Grafana/Loki label selectors -->
                 <customFields>{"app":"cloudcampus-backend"}</customFields>
                 <!-- Shorten stack traces to the first 10 frames to keep log volume manageable -->

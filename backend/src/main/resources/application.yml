@@ -112,6 +112,16 @@ spring:
         schema-name: public
         table-name: vector_store
 
+spring:
+  threads:
+    virtual:
+      # L-23: enable virtual threads (Project Loom) for Spring MVC thread pool.
+      # Removes the ThreadLocal migration blocker (CC-0011) by making virtual
+      # threads the default executor — each request gets its own lightweight
+      # carrier thread so blocking I/O (DB, Redis) no longer stalls a platform
+      # thread. Compatible with Spring Boot 3.2+ / Java 21.
+      enabled: true
+
 server:
   port: 8080
 
