@@ -28,6 +28,9 @@ public class DeviceToken {
     @Id
     private UUID id;
 
+    @Column(name = "tenant_id")
+    private UUID tenantId;
+
     @Column(name = "user_id", nullable = false, updatable = false)
     private UUID userId;
 
@@ -71,6 +74,9 @@ public class DeviceToken {
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
+
+    public UUID getTenantId() { return tenantId; }
+    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
 
     public UUID getUserId() { return userId; }
     public void setUserId(UUID userId) { this.userId = userId; }
