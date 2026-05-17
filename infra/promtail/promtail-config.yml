@@ -1,0 +1,43 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Read JSON logs from all Docker containers via the Docker socket
+  - job_name: containers
+    docker_sd_configs:
+      - host:             unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name:   status
+            values: [running]
+    relabel_configs:
+      # Use the container name as the "app" label for easy filtering in Grafana
+      - source_labels: [__meta_docker_container_name]
+        regex:         /(.*)
+        target_label:  app
+      - source_labels: [__meta_docker_container_log_stream]
+        target_label:  logstream
+      # Drop noisy health-check containers
+      - source_labels: [app]
+        regex:         .*healthcheck.*
+        action:        drop
+    pipeline_stages:
+      # Parse JSON lines emitted by Logback's JsonLayout so field values are
+      # indexed as Loki structured metadata (level, traceId, tenantId, etc.)
+      - json:
+          expressions:
+            level:     level
+            logger:    logger_name
+            traceId:   traceId
+            tenantId:  tenantId
+      - labels:
+          level:
+          traceId:
+          tenantId:
