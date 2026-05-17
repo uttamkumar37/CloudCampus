@@ -60,6 +60,15 @@ spring:
       timeout: 1s
       repositories:
         enabled: false           # We use RedisTemplate directly, not Spring Data Redis repos.
+      # H-14: Lettuce connection pool — requires commons-pool2 on the classpath.
+      # Without pooling every Redis call borrows and returns a single shared connection
+      # serially, causing latency spikes under concurrent auth/cache/rate-limit load.
+      lettuce:
+        pool:
+          max-active: 20         # max simultaneous connections
+          max-idle: 10           # connections kept ready when idle
+          min-idle: 2            # always keep 2 warm connections
+          max-wait: 1000ms       # block at most 1 s waiting for a connection
 
   # ── MAIL ─────────────────────────────────────────────────────────────────
   # Production: set MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD env vars.
