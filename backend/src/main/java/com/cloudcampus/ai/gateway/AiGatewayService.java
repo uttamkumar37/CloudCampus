@@ -3,12 +3,15 @@ package com.cloudcampus.ai.gateway;
 import com.cloudcampus.ai.usage.service.AiBudgetEnforcer;
 import com.cloudcampus.ai.usage.service.UsageLoggingService;
 import com.cloudcampus.common.web.RequestContext;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -60,6 +63,41 @@ public class AiGatewayService {
         long start = System.currentTimeMillis();
         try {
             ChatResponse response  = chatModel.call(new Prompt(renderedPrompt));
+            String       content   = response.getResult().getOutput().getText();
+            long         latencyMs = System.currentTimeMillis() - start;
+
+            var usage = response.getMetadata() != null ? response.getMetadata().getUsage() : null;
+            int in  = (usage != null && usage.getPromptTokens()     != null) ? usage.getPromptTokens().intValue()     : 0;
+            int out = (usage != null && usage.getCompletionTokens() != null) ? usage.getCompletionTokens().intValue() : 0;
+
+            usageLogging.record(tenantId, currentUserId(), providerName(), chatModelName,
+                    promptKey, in, out, latencyMs, true, null);
+            return content;
+
+        } catch (Exception e) {
+            usageLogging.record(tenantId, currentUserId(), providerName(), chatModelName,
+                    promptKey, 0, 0, System.currentTimeMillis() - start, false, e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * Sends system instructions and user input as separate role-separated messages
+     * (CRIT-15 prompt injection defence). The LLM provider enforces the system/user
+     * boundary — a malicious user question cannot override the system instructions.
+     *
+     * Use this instead of {@link #complete} whenever the prompt contains untrusted
+     * user input (RAG queries, chatbot messages, template rendering with user data).
+     */
+    public String completeStructured(String systemText, String userText,
+                                     String promptKey, UUID tenantId) {
+        budgetEnforcer.enforce(tenantId);
+        long start = System.currentTimeMillis();
+        try {
+            Prompt prompt = new Prompt(List.of(
+                    new SystemMessage(systemText),
+                    new UserMessage(userText)));
+            ChatResponse response  = chatModel.call(prompt);
             String       content   = response.getResult().getOutput().getText();
             long         latencyMs = System.currentTimeMillis() - start;
 
