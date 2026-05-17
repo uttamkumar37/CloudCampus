@@ -85,7 +85,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"username\": \"superadmin\", \"password\": \"Admin@123\"}"
+              "raw": "{\"username\": \"superadmin\", \"password\": \"admin123\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -410,6 +410,140 @@
               "raw": "{\n  \"email\": \"principal@jnvlucknow.edu.in\"\n}"
             }
           }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"schooladmin@jnv-lucknow.edu\", \"otp\": \"123456\", \"newPassword\": \"NewPass@123\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            },
+            "description": "Verify OTP and set new password"
+          }
+        },
+        {
+          "name": "Revoke All Sessions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/revoke-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "revoke-all"
+              ]
+            },
+            "description": "Signs out of ALL devices. X-Revoked-Sessions header in response."
+          }
+        },
+        {
+          "name": "Device Sessions",
+          "item": [
+            {
+              "name": "List My Device Sessions",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/devices",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "devices"
+                  ]
+                },
+                "description": "Returns all active device sessions for the authenticated user"
+              }
+            },
+            {
+              "name": "Remove Device Session",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/devices/{{deviceId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "devices",
+                    "{{deviceId}}"
+                  ]
+                },
+                "description": "Revoke a single device session by ID (set deviceId env var first)"
+              }
+            }
+          ]
         }
       ]
     },
@@ -514,6 +648,207 @@
                   "raw": "{\n  \"code\": \"demo-school\",\n  \"name\": \"Demo School\"\n}"
                 }
               }
+            },
+            {
+              "name": "Get Tenant",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/tenants/{{tenantId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "tenants",
+                    "{{tenantId}}"
+                  ]
+                },
+                "description": "Fetch single tenant detail"
+              }
+            },
+            {
+              "name": "Suspend Tenant",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/tenants/{{tenantId}}/suspend",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "tenants",
+                    "{{tenantId}}",
+                    "suspend"
+                  ]
+                },
+                "description": "Sets tenant status to SUSPENDED"
+              }
+            },
+            {
+              "name": "Activate Tenant",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/tenants/{{tenantId}}/activate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "tenants",
+                    "{{tenantId}}",
+                    "activate"
+                  ]
+                },
+                "description": "Restores SUSPENDED tenant to ACTIVE"
+              }
+            },
+            {
+              "name": "Get Tenant Config",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/tenants/{{tenantId}}/config",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "tenants",
+                    "{{tenantId}}",
+                    "config"
+                  ]
+                },
+                "description": "All config keys with current or default values"
+              }
+            },
+            {
+              "name": "Set Tenant Config Value",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"value\": \"5000\"}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/tenants/{{tenantId}}/config/MAX_STUDENTS",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "tenants",
+                    "{{tenantId}}",
+                    "config",
+                    "MAX_STUDENTS"
+                  ]
+                },
+                "description": "Upsert a single config key. Change path segment for other keys."
+              }
+            },
+            {
+              "name": "Platform Stats",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/tenants/stats",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "tenants",
+                    "stats"
+                  ]
+                },
+                "description": "Total / active / suspended / new-this-month counts"
+              }
             }
           ]
         },
@@ -557,7 +892,7 @@
           "name": "Feature Flags",
           "item": [
             {
-              "name": "List Features",
+              "name": "Get Tenant Feature Flags",
               "request": {
                 "method": "GET",
                 "header": [
@@ -575,17 +910,662 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/features",
+                  "raw": "{{baseUrl}}/super-admin/tenants/{{tenantId}}/features",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
-                    "school-admin",
-                    "schools",
-                    "{{schoolId}}",
+                    "super-admin",
+                    "tenants",
+                    "{{tenantId}}",
                     "features"
                   ]
-                }
+                },
+                "description": "Returns enablement state of all features for a tenant"
+              }
+            }
+          ]
+        },
+        {
+          "name": "School Access (Admin)",
+          "item": [
+            {
+              "name": "List User School Access",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/users/{{targetUserId}}/school-access",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "users",
+                    "{{targetUserId}}",
+                    "school-access"
+                  ]
+                },
+                "description": "List all schools a user can access. Set targetUserId env var."
+              }
+            },
+            {
+              "name": "Grant School Access",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"schoolId\": \"{{schoolId}}\"}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/users/{{targetUserId}}/school-access",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "users",
+                    "{{targetUserId}}",
+                    "school-access"
+                  ]
+                },
+                "description": "Grant a user access to an additional school"
+              }
+            },
+            {
+              "name": "Revoke School Access",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/users/{{targetUserId}}/school-access/{{schoolId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "users",
+                    "{{targetUserId}}",
+                    "school-access",
+                    "{{schoolId}}"
+                  ]
+                },
+                "description": "Revoke a user's access to a specific school"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Subscriptions",
+          "item": [
+            {
+              "name": "List Subscription Plans",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/subscription-plans",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "subscription-plans"
+                  ]
+                },
+                "description": "All available subscription tiers (FREE, BASIC, PREMIUM, ENTERPRISE)"
+              }
+            },
+            {
+              "name": "Get Tenant Subscription",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/tenants/{{tenantId}}/subscription",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "tenants",
+                    "{{tenantId}}",
+                    "subscription"
+                  ]
+                },
+                "description": "Current subscription plan for a tenant"
+              }
+            },
+            {
+              "name": "Update Tenant Subscription",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"planCode\": \"PREMIUM\", \"expiresAt\": \"2027-01-01\"}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/tenants/{{tenantId}}/subscription",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "tenants",
+                    "{{tenantId}}",
+                    "subscription"
+                  ]
+                },
+                "description": "Assign or change a tenant's subscription plan"
+              }
+            }
+          ]
+        },
+        {
+          "name": "AI \u2014 Prompts",
+          "item": [
+            {
+              "name": "List AI Prompts",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/prompts",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "prompts"
+                  ]
+                },
+                "description": "All system prompt templates"
+              }
+            },
+            {
+              "name": "Create AI Prompt",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"name\": \"grade-report\", \"template\": \"Summarise the grade report for {{studentName}}\", \"category\": \"REPORTS\", \"model\": \"claude-3-sonnet\"}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/prompts",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "prompts"
+                  ]
+                },
+                "description": "Create a new prompt template"
+              }
+            },
+            {
+              "name": "Get AI Prompt",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/prompts/{{aiPromptId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "prompts",
+                    "{{aiPromptId}}"
+                  ]
+                },
+                "description": "Fetch a single prompt. Set aiPromptId env var."
+              }
+            },
+            {
+              "name": "Activate AI Prompt",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/prompts/{{aiPromptId}}/activate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "prompts",
+                    "{{aiPromptId}}",
+                    "activate"
+                  ]
+                },
+                "description": "Enable a prompt template"
+              }
+            },
+            {
+              "name": "Deactivate AI Prompt",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/prompts/{{aiPromptId}}/deactivate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "prompts",
+                    "{{aiPromptId}}",
+                    "deactivate"
+                  ]
+                },
+                "description": "Disable a prompt template without deleting it"
+              }
+            },
+            {
+              "name": "Render AI Prompt",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"variables\": {\"studentName\": \"Aarav Verma\"}}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/prompts/{{aiPromptId}}/render",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "prompts",
+                    "{{aiPromptId}}",
+                    "render"
+                  ]
+                },
+                "description": "Dry-run: render template with variables, no AI call"
+              }
+            }
+          ]
+        },
+        {
+          "name": "AI \u2014 Knowledge Base",
+          "item": [
+            {
+              "name": "List Knowledge Docs",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/knowledge/{{tenantId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "knowledge",
+                    "{{tenantId}}"
+                  ]
+                },
+                "description": "All knowledge base documents for a tenant"
+              }
+            },
+            {
+              "name": "Upload Knowledge Doc",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"title\": \"School Policies\", \"content\": \"Students must wear uniform...\", \"category\": \"POLICY\"}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/knowledge/{{tenantId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "knowledge",
+                    "{{tenantId}}"
+                  ]
+                },
+                "description": "Add a document to tenant knowledge base"
+              }
+            },
+            {
+              "name": "Delete Knowledge Doc",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/knowledge/{{tenantId}}/{{kbDocId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "knowledge",
+                    "{{tenantId}}",
+                    "{{kbDocId}}"
+                  ]
+                },
+                "description": "Remove a knowledge document. Set kbDocId env var."
+              }
+            },
+            {
+              "name": "Query Knowledge Base",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"query\": \"What is the attendance policy?\", \"topK\": 3}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/knowledge/{{tenantId}}/query",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "knowledge",
+                    "{{tenantId}}",
+                    "query"
+                  ]
+                },
+                "description": "Semantic search over tenant knowledge base"
+              }
+            }
+          ]
+        },
+        {
+          "name": "AI \u2014 Usage",
+          "item": [
+            {
+              "name": "Global AI Usage Stats",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/usage",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "usage"
+                  ]
+                },
+                "description": "Platform-wide AI token/call usage summary"
+              }
+            },
+            {
+              "name": "Tenant AI Usage Stats",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{superToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/super-admin/ai/usage/{{tenantId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "super-admin",
+                    "ai",
+                    "usage",
+                    "{{tenantId}}"
+                  ]
+                },
+                "description": "AI usage breakdown for a specific tenant"
               }
             }
           ]
@@ -595,6 +1575,79 @@
     {
       "name": "3. School Admin",
       "item": [
+        {
+          "name": "My Schools",
+          "item": [
+            {
+              "name": "List My Schools",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/me/schools",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "me",
+                    "schools"
+                  ]
+                },
+                "description": "Schools the authenticated school-admin can access (for school switcher)"
+              }
+            },
+            {
+              "name": "Switch Active School",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/me/schools/{{schoolId}}/activate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "me",
+                    "schools",
+                    "{{schoolId}}",
+                    "activate"
+                  ]
+                },
+                "description": "Switch JWT context to a different school. Returns new accessToken."
+              }
+            }
+          ]
+        },
         {
           "name": "Dashboard",
           "item": [
@@ -2667,6 +3720,78 @@
                   ]
                 }
               }
+            },
+            {
+              "name": "Create Payment Order (School Admin)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"amount\": 150000, \"currency\": \"INR\"}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/fee-records/{{feeRecord6a001Id}}/payment-order",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "fee-records",
+                    "{{feeRecord6a001Id}}",
+                    "payment-order"
+                  ]
+                },
+                "description": "Create Razorpay payment order for a fee record"
+              }
+            },
+            {
+              "name": "Verify Payment",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{authToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"razorpayOrderId\": \"order_xxx\", \"razorpayPaymentId\": \"pay_xxx\", \"razorpaySignature\": \"sig_xxx\"}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/payment/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payment",
+                    "verify"
+                  ]
+                },
+                "description": "Verify Razorpay payment signature and mark fee record paid"
+              }
             }
           ]
         },
@@ -3715,6 +4840,528 @@
               }
             }
           ]
+        },
+        {
+          "name": "Website Builder",
+          "item": [
+            {
+              "name": "Get Website",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website"
+                  ]
+                },
+                "description": "Get website record for the school"
+              }
+            },
+            {
+              "name": "Set Published Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/published",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "published"
+                  ]
+                },
+                "description": "Toggle the school website on/off",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"published\": true}"
+                }
+              }
+            },
+            {
+              "name": "List Pages",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/pages",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "pages"
+                  ]
+                },
+                "description": "All pages for the school website"
+              }
+            },
+            {
+              "name": "Create Page",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"title\": \"About Us\", \"slug\": \"about\", \"published\": false, \"displayOrder\": 1}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/pages",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "pages"
+                  ]
+                },
+                "description": "Create a new website page"
+              }
+            },
+            {
+              "name": "Update Page",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"title\": \"About Us\", \"slug\": \"about\", \"published\": true, \"displayOrder\": 1, \"seoTitle\": \"About JNV Lucknow\", \"seoDescription\": \"Learn about our school\"}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/pages/{{pageId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "pages",
+                    "{{pageId}}"
+                  ]
+                },
+                "description": "Update page metadata. Set pageId env var."
+              }
+            },
+            {
+              "name": "Delete Page",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/pages/{{pageId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "pages",
+                    "{{pageId}}"
+                  ]
+                },
+                "description": "Delete a page and all its sections"
+              }
+            },
+            {
+              "name": "List Sections",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/pages/{{pageId}}/sections",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "pages",
+                    "{{pageId}}",
+                    "sections"
+                  ]
+                },
+                "description": "All content sections for a page"
+              }
+            },
+            {
+              "name": "Add Section",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"sectionType\": \"HERO\", \"position\": 0, \"content\": {\"headline\": \"Welcome to JNV Lucknow\", \"subtext\": \"Excellence in Education since 1988\"}}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/pages/{{pageId}}/sections",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "pages",
+                    "{{pageId}}",
+                    "sections"
+                  ]
+                },
+                "description": "Add a content section to a page"
+              }
+            },
+            {
+              "name": "Update Section",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"sectionType\": \"HERO\", \"position\": 0, \"content\": {\"headline\": \"JNV Lucknow \u2014 Navodaya Vidyalaya\", \"subtext\": \"Residential school of excellence\", \"imageUrl\": \"\"}}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/pages/{{pageId}}/sections/{{sectionId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "pages",
+                    "{{pageId}}",
+                    "sections",
+                    "{{sectionId}}"
+                  ]
+                },
+                "description": "Update a section. Set sectionId env var."
+              }
+            },
+            {
+              "name": "Delete Section",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/pages/{{pageId}}/sections/{{sectionId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "pages",
+                    "{{pageId}}",
+                    "sections",
+                    "{{sectionId}}"
+                  ]
+                },
+                "description": "Remove a content section"
+              }
+            },
+            {
+              "name": "List Nav Items",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/nav",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "nav"
+                  ]
+                },
+                "description": "Navigation items for the school website"
+              }
+            },
+            {
+              "name": "Add Nav Item",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"label\": \"Admissions\", \"pageSlug\": \"admissions\", \"externalUrl\": null, \"displayOrder\": 2}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/nav",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "nav"
+                  ]
+                },
+                "description": "Add a navigation item"
+              }
+            },
+            {
+              "name": "Update Nav Item",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"label\": \"Admissions\", \"pageSlug\": \"admissions\", \"externalUrl\": null, \"displayOrder\": 2}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/nav/{{navItemId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "nav",
+                    "{{navItemId}}"
+                  ]
+                },
+                "description": "Update a nav item. Set navItemId env var."
+              }
+            },
+            {
+              "name": "Delete Nav Item",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{schoolAdminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/school-admin/schools/{{schoolId}}/website/nav/{{navItemId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "school-admin",
+                    "schools",
+                    "{{schoolId}}",
+                    "website",
+                    "nav",
+                    "{{navItemId}}"
+                  ]
+                },
+                "description": "Remove a nav item"
+              }
+            }
+          ]
         }
       ]
     },
@@ -3984,6 +5631,81 @@
               "raw": "{\n  \"leaveType\": \"CASUAL\",\n  \"fromDate\": \"2026-05-20\",\n  \"toDate\": \"2026-05-20\",\n  \"reason\": \"Family function\"\n}"
             }
           }
+        },
+        {
+          "name": "Generate QR for Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{teacherToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/teacher/attendance/sessions/{{session6aApr1Id}}/qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "teacher",
+                "attendance",
+                "sessions",
+                "{{session6aApr1Id}}",
+                "qr"
+              ]
+            },
+            "description": "Generate a QR code token for an existing attendance session"
+          }
+        },
+        {
+          "name": "Create Session With QR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{teacherToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"sectionId\": \"{{section6aId}}\", \"date\": \"2026-05-20\", \"subjectId\": \"{{subjectMathId}}\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/teacher/attendance/sessions/with-qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "teacher",
+                "attendance",
+                "sessions",
+                "with-qr"
+              ]
+            },
+            "description": "Create an attendance session and immediately generate a QR token"
+          }
         }
       ]
     },
@@ -4178,6 +5900,79 @@
                 "assignments"
               ]
             }
+          }
+        },
+        {
+          "name": "Mark Attendance via QR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"qrToken\": \"PASTE_QR_TOKEN_HERE\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/student/attendance/qr-mark",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "attendance",
+                "qr-mark"
+              ]
+            },
+            "description": "Student scans QR code to self-mark attendance"
+          }
+        },
+        {
+          "name": "Create Payment Order (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-Id",
+                "value": "{{tenantId}}"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{studentToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"amount\": 150000, \"currency\": \"INR\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/student/fee-records/{{feeRecord6a001Id}}/payment-order",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student",
+                "fee-records",
+                "{{feeRecord6a001Id}}",
+                "payment-order"
+              ]
+            },
+            "description": "Student initiates payment for own fee record"
           }
         }
       ]
@@ -4477,6 +6272,82 @@
                 "branding"
               ]
             }
+          }
+        },
+        {
+          "name": "Get Public Site (tenant code)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/sites/jnv-lucknow",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "sites",
+                "jnv-lucknow"
+              ]
+            },
+            "description": "Get school website metadata + nav items for a tenant (no auth). Replace jnv-lucknow with actual tenant code."
+          }
+        },
+        {
+          "name": "Get Public Page (home)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/sites/jnv-lucknow/pages/home",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "sites",
+                "jnv-lucknow",
+                "pages",
+                "home"
+              ]
+            },
+            "description": "Get a published page with all sections. Page must be published=true. Slug: home"
+          }
+        },
+        {
+          "name": "Get Public Page (about)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/sites/jnv-lucknow/pages/about",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "sites",
+                "jnv-lucknow",
+                "pages",
+                "about"
+              ]
+            },
+            "description": "Get about page with sections (if published)"
           }
         }
       ]

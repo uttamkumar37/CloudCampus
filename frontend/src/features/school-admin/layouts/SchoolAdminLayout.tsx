@@ -38,8 +38,9 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'WhatsApp', to: '/school-admin/whatsapp', feature: 'WHATSAPP' },
   { label: 'Notice Board', to: '/school-admin/notices', feature: 'NOTICE_BOARD' },
   { label: 'Reports', to: '/school-admin/reports', feature: 'REPORTS' },
-  { label: 'Website', to: '/school-admin/website', feature: 'WEBSITE_BUILDER' },
-  { label: 'Settings', to: '/school-admin/settings' },
+  { label: 'Website',       to: '/school-admin/website',        feature: 'WEBSITE_BUILDER' },
+  { label: 'Custom Domain', to: '/school-admin/custom-domain',  feature: 'WEBSITE_BUILDER' },
+  { label: 'Settings',      to: '/school-admin/settings' },
 ];
 
 // ── Inner component that reads one feature flag ───────────────────────────────

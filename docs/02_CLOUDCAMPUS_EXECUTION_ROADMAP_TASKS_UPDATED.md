@@ -4,14 +4,26 @@
 
 ---
 
-## Progress Summary (as of 2026-05-16 — E92 Website Builder)
+## Progress Summary (as of 2026-05-16 — E93 P2 Completion + Full Demo Seed)
 
 | Metric | Count |
 |--------|-------|
 | **Total tasks** | 193 |
-| **Completed** | ~189 (98%) |
+| **Completed** | 193 (100%) |
 | **In Progress** | 0 |
-| **Not Started** | ~4 |
+| **Not Started** | 0 |
+
+### E93 Completions — P2 Feature Completion + Full Demo Seed (2026-05-16) 🎉 100%
+
+| Task | What was built |
+|------|---------------|
+| CC-0212 Custom domain verification ✅ | `V53__custom_domains.sql` — `custom_domains` table (tenant_id, domain, verification_token, status PENDING/VERIFIED/FAILED, verified_at, failure_reason); `CustomDomain` JPA entity with `create()`/`markVerified()`/`markFailed()`; `CustomDomainServiceImpl` — DNS TXT verification via Java JNDI `DnsContextFactory` checking `_cloudcampus-verify.{domain}` with 3s timeout, fail-open; `CustomDomainController` at `/v1/school-admin/domains` (register/verify/list/delete) + `/v1/super-admin/tenants/{id}/domains`; frontend `domainApi.ts` + `CustomDomainPage.tsx` (register form, DNS TXT record display, verify/delete actions, status badges PENDING/VERIFIED/FAILED); nav item "Custom Domain" in `SchoolAdminLayout` (feature-gated `WEBSITE_BUILDER`); route `/school-admin/custom-domain`. |
+| CC-0704 Lesson planning ✅ | `V54__lesson_plans.sql` — `lesson_plans` table (tenant_id, school_id, staff_id, class_id, section_id, subject_id, academic_year_id, plan_date, period_number, topic, objectives, activities, materials, homework_note, status DRAFT/PUBLISHED); `LessonPlan` JPA entity with `create()`/`publish()`/`update()`; `LessonPlanServiceImpl`; `LessonPlanController` at `/v1/teacher/lesson-plans` (CRUD + publish) + `/v1/school-admin/lesson-plans`; frontend `lessonPlanApi.ts` + `LessonPlanPage.tsx` (date range filter, create form with topic/objectives/activities/materials/homework fields, publish/delete); nav item "Lesson Plans" in `TeacherLayout`; route `/teacher/lesson-plans`. |
+| CC-1201 Online classes ✅ | `V55__online_classes.sql` — `online_classes` table (tenant_id, school_id, staff_id, class_id, section_id, subject_id, title, description, meeting_url, platform ZOOM/GMEET/TEAMS/CUSTOM, scheduled_at, duration_minutes, status SCHEDULED/LIVE/ENDED/CANCELLED, recording_url); `OnlineClass` JPA entity with `start()`/`end()`/`cancel()`/`setRecordingUrl()`; `OnlineClassServiceImpl`; `OnlineClassController` at `/v1/teacher/online-classes`, `/v1/student/online-classes`, `/v1/school-admin/online-classes`; frontend `onlineClassApi.ts` + `OnlineClassPage.tsx` (schedule form, platform dropdown, meeting URL, status lifecycle buttons Start/End/Cancel, Add Recording modal); nav "Online Classes" in `TeacherLayout`; route `/teacher/online-classes`. |
+| CC-1202 Video upload system ✅ | `V56__video_resources.sql` — `video_resources` table (tenant_id, school_id, staff_id, subject_id, class_id, title, description, file_key, file_size_bytes, content_type, duration_seconds, thumbnail_key, upload_status PENDING/READY/FAILED, visibility CLASS/SCHOOL/PUBLIC, view_count); `VideoResource` JPA entity; `VideoServiceImpl` — uses existing `MinioClient` bean, `initiateUpload()` generates presigned PUT URL (browser uploads directly to MinIO), `confirmUpload()` marks READY, `delete()` removes from MinIO + DB; `VideoController` at `/v1/teacher/videos/initiate`+`/confirm`+`/list`+`/delete`, `/v1/student/videos`, `/v1/school-admin/videos`; frontend `videoApi.ts` + `VideoUploadPage.tsx` (upload form with progress bar, visibility selector, XHR direct-to-MinIO, video list with Watch/Delete); nav "Videos" in `TeacherLayout`; route `/teacher/videos`. |
+| Staff-user link fix (V57) ✅ | `V57__seed_demo_staff_users.sql` — PL/pgSQL migration linking `teacher1` and `schooladmin` users to `staff` records by resolving the real `jnv-lucknow` tenant UUID. Fixed teacher portal (lesson plans/online classes/videos) returning 500 due to `findBySchoolIdAndUserId()` failing when teacher JWT has no `schoolId` claim — changed all 3 controllers to use `staffRepository.findByUserId()` and derive `schoolId` from the resolved staff entity. |
+| Full JNV Lucknow demo seed (V58) ✅ | `V58__full_jnv_lucknow_seed.sql` — 400-line idempotent seed aligned to real DB UUIDs (V42 was skipped due to hardcoded UUID mismatch). Seeds: 10 subjects (MATH/PHY/CHEM/BIO/ENG/HIN/SST/CS/SKT/PE), 7 classes (VI–XII), 14 sections (A+B each), 8 additional staff (Principal/VP/6 teachers), 12 students (5 in X-A incl. student1, 3 X-B, 2 IX-A, 2 XII-A), parent-student link (parent1→student1), 6 fee structures (Class X+XII), 4 fee records for student1 (tuition PAID, exam PENDING, library PAID, sports OVERDUE), 9 timetable slots (Math/English/Physics, Mon–Fri), 5 attendance sessions + 10 records (student1 80%), 3 homework assignments, 5 school notices, 1 mid-term exam + 4 exam subjects + 8 student marks. All UUIDs fixed and documented in LOGIN_CREDENTIALS.md. |
+| Docs overhaul ✅ | `LOGIN_CREDENTIALS.md` fully rewritten with all real UUIDs, complete UUID reference tables (tenant/school/academic-year/classes/sections/subjects/staff/students/fees/exams), student1 demo data summary, updated verified endpoint tables for all 4 roles. Roadmap updated to 193/193 (100%). |
 
 ### E92 Completions — Website Builder (CC-2001/2002/2003/2004) (2026-05-16)
 

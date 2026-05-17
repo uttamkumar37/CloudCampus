@@ -59,6 +59,7 @@ import { AiUsagePage } from '@/features/super-admin/pages/AiUsagePage';
 import { SchoolSettingsPage } from '@/features/school-admin/pages/SchoolSettingsPage';
 import { DepartmentListPage } from '@/features/school-admin/pages/DepartmentListPage';
 import { WebsiteBuilderPage } from '@/features/school-admin/pages/WebsiteBuilderPage';
+import { CustomDomainPage } from '@/features/school-admin/pages/CustomDomainPage';
 import { PublicSitePage } from '@/features/public-site/pages/PublicSitePage';
 import { TeacherLayout } from '@/features/teacher/layouts/TeacherLayout';
 import TeacherDashboardPage from '@/features/teacher/pages/TeacherDashboardPage';
@@ -70,6 +71,9 @@ import TeacherAssignmentSubmissionsPage from '@/features/teacher/pages/TeacherAs
 import TeacherAttendancePage from '@/features/teacher/pages/TeacherAttendancePage';
 import TeacherNoticesPage from '@/features/teacher/pages/TeacherNoticesPage';
 import TeacherLeavePage from '@/features/teacher/pages/TeacherLeavePage';
+import { LessonPlanPage } from '@/features/teacher/pages/LessonPlanPage';
+import { OnlineClassPage } from '@/features/teacher/pages/OnlineClassPage';
+import { VideoUploadPage } from '@/features/teacher/pages/VideoUploadPage';
 import { StudentLayout } from '@/features/student/layouts/StudentLayout';
 import StudentDashboardPage from '@/features/student/pages/StudentDashboardPage';
 import StudentHomeworkPage from '@/features/student/pages/StudentHomeworkPage';
@@ -185,6 +189,7 @@ export function AppRouter() {
           <Route path="notices" element={<NoticeBoardPage />} />
           <Route path="departments" element={<DepartmentListPage />} />
           <Route path="website" element={<WebsiteBuilderPage />} />
+          <Route path="custom-domain" element={<CustomDomainPage />} />
           <Route path="settings" element={<SchoolSettingsPage />} />
         </Route>
 
@@ -205,8 +210,11 @@ export function AppRouter() {
           <Route path="homework/:homeworkId/submissions" element={<TeacherHomeworkSubmissionsPage />} />
           <Route path="assignments" element={<TeacherAssignmentListPage />} />
           <Route path="assignments/:assignmentId/submissions" element={<TeacherAssignmentSubmissionsPage />} />
-          <Route path="notices" element={<TeacherNoticesPage />} />
-          <Route path="leave"   element={<TeacherLeavePage />} />
+          <Route path="lesson-plans"   element={<LessonPlanPage />} />
+          <Route path="online-classes" element={<OnlineClassPage />} />
+          <Route path="videos"         element={<VideoUploadPage />} />
+          <Route path="notices"        element={<TeacherNoticesPage />} />
+          <Route path="leave"          element={<TeacherLeavePage />} />
         </Route>
 
         {/* Student portal — STUDENT role required */}

@@ -25,7 +25,7 @@ import java.util.UUID;
  * GET    /v1/auth/devices       — list active sessions for the current user
  * DELETE /v1/auth/devices/{id}  — revoke a specific session
  */
-@RestController
+@RestController("authDeviceController")
 @RequestMapping("/v1/auth/devices")
 @Tag(name = "Devices", description = "Manage authenticated device sessions")
 public class DeviceController {
