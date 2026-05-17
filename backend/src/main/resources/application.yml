@@ -258,6 +258,9 @@ app:
     embedding-model: ${AI_EMBEDDING_MODEL:text-embedding-3-small}
     # H-23: cap LLM output to prevent runaway responses burning budget or leaking data
     max-output-chars: ${AI_MAX_OUTPUT_CHARS:8000}
+    # H-24: per-user sliding-window limit on AI inference calls (60 s window)
+    rate-limit:
+      max-per-user-per-minute: ${AI_RATE_LIMIT_PER_USER:20}
 
   # ── Razorpay — online payment gateway (CC-0903) ───────────────────────────
   # Set RAZORPAY_ENABLED=true and provide real keys in staging/production.
