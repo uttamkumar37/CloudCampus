@@ -7,6 +7,8 @@ import com.cloudcampus.school.dto.ClassRoomRequest;
 import com.cloudcampus.school.dto.ClassRoomResponse;
 import com.cloudcampus.school.entity.ClassRoom;
 import com.cloudcampus.school.repository.ClassRoomRepository;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -19,14 +21,17 @@ import java.util.UUID;
 class ClassRoomServiceImpl implements ClassRoomService {
 
     private final ClassRoomRepository repo;
+    private final CacheManager cacheManager;
 
-    ClassRoomServiceImpl(ClassRoomRepository repo) {
+    ClassRoomServiceImpl(ClassRoomRepository repo, CacheManager cacheManager) {
         this.repo = repo;
+        this.cacheManager = cacheManager;
     }
 
     @Override
     @Transactional
-    @CacheEvict(value = "classes", allEntries = true)
+    // L-25: evict only the affected academic year's entry, not all tenants'
+    @CacheEvict(value = "classes", key = "#req.academicYearId")
     public ClassRoomResponse create(UUID schoolId, ClassRoomRequest req) {
         if (repo.existsBySchoolIdAndAcademicYearIdAndName(schoolId, req.academicYearId(), req.name())) {
             throw new BadRequestException(
@@ -58,7 +63,7 @@ class ClassRoomServiceImpl implements ClassRoomService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "classes", allEntries = true)
+    @CacheEvict(value = "classes", key = "#result.academicYearId")
     public ClassRoomResponse update(UUID id, ClassRoomRequest req) {
         ClassRoom classRoom = findOrThrow(id);
         classRoom.setName(req.name());
@@ -69,12 +74,13 @@ class ClassRoomServiceImpl implements ClassRoomService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "classes", allEntries = true)
     public void delete(UUID id) {
-        if (!repo.existsById(id)) {
-            throw new NotFoundException("Class not found: " + id);
-        }
+        ClassRoom classRoom = findOrThrow(id);
+        UUID academicYearId = classRoom.getAcademicYearId();
         repo.deleteById(id);
+        // L-25: evict only the affected academic year, not the entire cache
+        Cache cache = cacheManager.getCache("classes");
+        if (cache != null) cache.evict(academicYearId);
     }
 
     private ClassRoom findOrThrow(UUID id) {

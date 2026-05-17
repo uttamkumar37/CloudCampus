@@ -19,5 +19,5 @@ public interface AcademicYearService {
     /** Marks the given year as current; clears the flag from all other years of the same school. */
     AcademicYearResponse setAsCurrent(UUID id);
 
-    void close(UUID id);
+    AcademicYearResponse close(UUID id);
 }

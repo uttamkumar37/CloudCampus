@@ -9,6 +9,7 @@ import com.cloudcampus.school.entity.Subject;
 import com.cloudcampus.school.repository.SubjectRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +27,11 @@ class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "subjects", allEntries = true)
+    // L-25: evict only the two affected school entries, not all tenants'
+    @Caching(evict = {
+        @CacheEvict(value = "subjects", key = "#schoolId"),
+        @CacheEvict(value = "subjects", key = "#schoolId + ':active'")
+    })
     public SubjectResponse create(UUID schoolId, SubjectRequest req) {
         if (repo.existsBySchoolIdAndCode(schoolId, req.code())) {
             throw new BadRequestException("Subject code '" + req.code() + "' already exists for this school");
@@ -66,10 +71,12 @@ class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "subjects", allEntries = true)
+    @Caching(evict = {
+        @CacheEvict(value = "subjects", key = "#result.schoolId"),
+        @CacheEvict(value = "subjects", key = "#result.schoolId + ':active'")
+    })
     public SubjectResponse update(UUID id, SubjectRequest req) {
         Subject subject = findOrThrow(id);
-        // If code is changing, verify it won't clash with another subject.
         if (!subject.getCode().equals(req.code())
                 && repo.existsBySchoolIdAndCode(subject.getSchoolId(), req.code())) {
             throw new BadRequestException("Subject code '" + req.code() + "' already exists for this school");
@@ -82,7 +89,10 @@ class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "subjects", allEntries = true)
+    @Caching(evict = {
+        @CacheEvict(value = "subjects", key = "#result.schoolId"),
+        @CacheEvict(value = "subjects", key = "#result.schoolId + ':active'")
+    })
     public SubjectResponse deactivate(UUID id) {
         Subject subject = findOrThrow(id);
         if (!subject.isActive()) {
@@ -94,7 +104,10 @@ class SubjectServiceImpl implements SubjectService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "subjects", allEntries = true)
+    @Caching(evict = {
+        @CacheEvict(value = "subjects", key = "#result.schoolId"),
+        @CacheEvict(value = "subjects", key = "#result.schoolId + ':active'")
+    })
     public SubjectResponse activate(UUID id) {
         Subject subject = findOrThrow(id);
         if (subject.isActive()) {
