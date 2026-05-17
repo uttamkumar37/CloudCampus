@@ -24,6 +24,7 @@ import com.cloudcampus.config.JwtProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +77,18 @@ public class AuthServiceImpl implements AuthService {
     // BCrypt format — will never match any real input.
     private static final String DUMMY_HASH =
             "$2a$12$dummyhashXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+
+    // Atomic GET+DEL Lua script — fixes the TOCTOU race in refresh token rotation
+    // (CRIT-11). Two concurrent requests with the same token both saw a non-null
+    // GET result under the old code and both proceeded to issue new tokens.
+    // With this script, only the first caller gets the userId; the second gets nil.
+    private static final DefaultRedisScript<String> GETDEL_SCRIPT =
+            new DefaultRedisScript<>(
+                    "local v = redis.call('GET', KEYS[1])\n" +
+                    "if v == false then return nil end\n" +
+                    "redis.call('DEL', KEYS[1])\n" +
+                    "return v",
+                    String.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -217,10 +230,15 @@ public class AuthServiceImpl implements AuthService {
     public RefreshResponse refresh(RefreshRequest request) {
         String oldKey = RT_KEY_PREFIX + request.refreshToken();
 
-        // Resolve userId from Redis.
-        String userIdStr = redisTemplate.opsForValue().get(oldKey);
+        // Atomic GET+DEL via Lua script (CRIT-11).
+        // Under the old two-step GET→DEL, two concurrent requests with the same
+        // token both read a non-null userId and both issued new tokens (double-spend).
+        // The script atomically reads and deletes in a single Redis command;
+        // exactly one caller gets the userId — the other gets null and fails.
+        String userIdStr = redisTemplate.execute(
+                GETDEL_SCRIPT, List.of(oldKey));
         if (userIdStr == null) {
-            // Token expired or never existed — do not reveal which.
+            // Token expired, never existed, or already consumed by a concurrent request.
             throw new UnauthorizedException("Invalid or expired refresh token");
         }
 
@@ -230,16 +248,10 @@ public class AuthServiceImpl implements AuthService {
 
         // Guard: refuse to issue a new token to a suspended account.
         if (user.getStatus() != UserStatus.ACTIVE) {
-            // Clean up the stale token while we're here.
-            redisTemplate.delete(oldKey);
             log.warn("Refresh denied — non-active account [userId={}]", userId);
             throw new ForbiddenException("Account is not active");
         }
 
-        // Rotate: delete old token and issue a new one atomically.
-        // If the old token was already deleted by a concurrent request, the user
-        // above would not have been found — so by here we still hold the only copy.
-        redisTemplate.delete(oldKey);
         // Remove old UUID from the per-user index before issuing the new one.
         redisTemplate.opsForSet().remove(RT_USER_KEY_PREFIX + userId, request.refreshToken());
         String newRefreshToken = issueRefreshToken(userId);
