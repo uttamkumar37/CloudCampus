@@ -1,0 +1,38 @@
+global:
+  smtp_smarthost: 'localhost:25'
+  smtp_from: 'alertmanager@cloudcampus.io'
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'dev-null'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'ops-email'
+      repeat_interval: 1h
+    - match:
+        severity: warning
+      receiver: 'ops-email'
+      repeat_interval: 4h
+
+receivers:
+  - name: 'dev-null'
+    # Default receiver — override for staging/prod with real destinations.
+
+  - name: 'ops-email'
+    email_configs:
+      - to: 'ops@cloudcampus.io'
+        send_resolved: true
+        headers:
+          Subject: '[CloudCampus] {{ .Status | toUpper }} — {{ .GroupLabels.alertname }}'
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']

@@ -45,7 +45,9 @@ spring:
       # SECURITY: never log credentials in connection strings
       data-source-properties:
         ssl: "true"
-        sslfactory: org.postgresql.ssl.NonValidatingFactory   # replace with RDS CA cert in production
+        sslmode: "verify-full"
+        sslfactory: org.postgresql.ssl.DefaultJavaSSLFactory
+        sslrootcert: ${DB_SSL_ROOT_CERT:/etc/ssl/certs/rds-ca.pem}
 
   jpa:
     open-in-view: false

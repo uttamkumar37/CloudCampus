@@ -4,22 +4,24 @@
 # CloudCampus — Local Development Infrastructure
 # ──────────────────────────────────────────────────────────────────────────
 # Usage:
-#   docker compose up -d          # start all services in the background
-#   docker compose down           # stop and remove containers (data persists in volumes)
-#   docker compose down -v        # stop and DELETE all data (full reset)
+#   cp .env.example .env && $EDITOR .env   # fill in secrets first
+#   docker compose up -d                   # start all services
+#   docker compose down                    # stop (data persists in volumes)
+#   docker compose down -v                 # stop + DELETE all data (full reset)
 #
 # Then run the backend with dev profile:
 #   JWT_SECRET='...' BOOTSTRAP_ADMIN_PASSWORD='...' mvn spring-boot:run
 #
-# Services:
-#   postgres    → localhost:5432   (cloudcampus / cloudcampus_dev)
-#   redis       → localhost:6379
-#   minio       → localhost:9000 (API) + localhost:9001 (Console)
-#   mailhog     → localhost:8025 (Web UI) — captures all outbound emails in dev
-#   rabbitmq    → localhost:5672 (AMQP) + localhost:15672 (management UI — cloudcampus/cloudcampus_dev)
-#   prometheus  → localhost:9090 — scrapes /actuator/prometheus
-#   grafana     → localhost:3100 — pre-provisioned dashboard (admin/admin)
-#   tempo       → localhost:3200 (query API) + localhost:4318 (OTLP HTTP ingest)
+# Services (all bound to 127.0.0.1 — NOT externally accessible):
+#   postgres    → 127.0.0.1:5432   (cloudcampus / ${POSTGRES_PASSWORD})
+#   redis       → 127.0.0.1:6379   (password-protected)
+#   minio       → 127.0.0.1:9000 (API) + 127.0.0.1:9001 (Console)
+#   mailhog     → 127.0.0.1:8025 (Web UI) — captures all outbound emails in dev
+#   rabbitmq    → 127.0.0.1:5672 (AMQP) + 127.0.0.1:15672 (management UI)
+#   prometheus  → 127.0.0.1:9090 — scrapes /actuator/prometheus
+#   grafana     → 127.0.0.1:3100 — pre-provisioned dashboard
+#   tempo       → 127.0.0.1:3200 (query API) + 127.0.0.1:4318 (OTLP HTTP)
+#   alertmanager→ 127.0.0.1:9093
 
 services:
 
@@ -28,49 +30,69 @@ services:
     image: pgvector/pgvector:pg16
     container_name: cloudcampus-postgres
     environment:
-      POSTGRES_DB: cloudcampus
-      POSTGRES_USER: cloudcampus
-      POSTGRES_PASSWORD: cloudcampus_dev
+      POSTGRES_DB: ${POSTGRES_DB:-cloudcampus}
+      POSTGRES_USER: ${POSTGRES_USER:-cloudcampus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cloudcampus -d cloudcampus"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cloudcampus} -d ${POSTGRES_DB:-cloudcampus}"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
 
   # ── Redis 7 ────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: cloudcampus-redis
-    command: redis-server --save 60 1 --loglevel warning
+    command: >
+      redis-server
+      --save 60 1
+      --loglevel warning
+      --requirepass ${REDIS_PASSWORD}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
 
   # ── MinIO (S3-compatible object storage) ───────────────────────────────
-  # Simulates AWS S3 for local file upload / presigned URL development.
-  # Console: http://localhost:9001  login: minioadmin / minioadmin
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2024-05-28T17-19-53Z
     container_name: cloudcampus-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     volumes:
       - minio_data:/data
     healthcheck:
@@ -79,22 +101,33 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
 
   # ── MailHog (SMTP catcher) ─────────────────────────────────────────────
-  # Captures all outgoing emails in dev so you can inspect them.
-  # Web UI: http://localhost:8025
-  # SMTP:   localhost:1025 (configure spring.mail.host=localhost port=1025 in dev)
   mailhog:
-    image: mailhog/mailhog:latest
+    image: mailhog/mailhog:v1.0.1
     container_name: cloudcampus-mailhog
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
 
   # ── Prometheus ─────────────────────────────────────────────────────────
-  # Scrapes /actuator/prometheus from the Spring Boot backend.
-  # UI: http://localhost:9090
   prometheus:
     image: prom/prometheus:v2.52.0
     container_name: cloudcampus-prometheus
@@ -103,30 +136,58 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--web.console.libraries=/usr/share/prometheus/console_libraries"
       - "--web.console.templates=/usr/share/prometheus/consoles"
-      - "--web.enable-lifecycle"         # allows POST /-/reload to hot-reload config
+      - "--web.enable-lifecycle"
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./infra/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus_data:/prometheus
     extra_hosts:
-      - "host.docker.internal:host-gateway"  # resolve backend on Linux hosts
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+
+  # ── Alertmanager ───────────────────────────────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: cloudcampus-alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    ports:
+      - "127.0.0.1:9093:9093"
+    volumes:
+      - ./infra/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
 
   # ── Grafana ────────────────────────────────────────────────────────────
-  # Pre-provisioned with Prometheus datasource and CloudCampus dashboard.
-  # UI: http://localhost:3100  login: admin / admin  (change on first login)
   grafana:
     image: grafana/grafana:10.4.3
     container_name: cloudcampus-grafana
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: "admin"          # change in staging/prod
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_SERVER_HTTP_PORT: "3000"
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: "/var/lib/grafana/dashboards/cloudcampus-backend.json"
     ports:
-      - "3100:3000"
+      - "127.0.0.1:3100:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -135,33 +196,37 @@ services:
       - prometheus
       - tempo
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
 
   # ── Tempo (OpenTelemetry traces) ───────────────────────────────────────
-  # Receives OTLP traces from backend and serves trace queries to Grafana.
   tempo:
     image: grafana/tempo:2.5.0
     container_name: cloudcampus-tempo
     command: ["-config.file=/etc/tempo/tempo.yml"]
     ports:
-      - "3200:3200"  # Tempo query API
-      - "4318:4318"  # OTLP HTTP ingest
+      - "127.0.0.1:3200:3200"
+      - "127.0.0.1:4318:4318"
     volumes:
       - ./infra/tempo/tempo.yml:/etc/tempo/tempo.yml:ro
       - tempo_data:/var/tempo
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.05"
+          memory: 64M
 
   # ── pg_dump backup sidecar ─────────────────────────────────────────────
-  # Runs daily at 02:00 UTC, dumps the cloudcampus database, uploads to
-  # MinIO bucket "cloudcampus-backups", and prunes dumps older than 7 days.
-  #
-  # To trigger a manual backup immediately:
-  #   docker compose exec pgbackup /usr/local/bin/backup.sh
-  #
-  # To restore a dump:
-  #   docker compose exec pgbackup \
-  #     mc cp backup/cloudcampus-backups/pg/cloudcampus/<timestamp>.dump /tmp/restore.dump
-  #   pg_restore --host=localhost --port=5432 --username=cloudcampus \
-  #     --dbname=cloudcampus --clean /tmp/restore.dump
   pgbackup:
     build:
       context: ./infra/pgbackup
@@ -170,41 +235,55 @@ services:
     environment:
       PG_HOST: postgres
       PG_PORT: "5432"
-      PG_DB: cloudcampus
-      PG_USER: cloudcampus
-      PGPASSWORD: cloudcampus_dev          # matches postgres service password above
+      PG_DB: ${POSTGRES_DB:-cloudcampus}
+      PG_USER: ${POSTGRES_USER:-cloudcampus}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
       MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: cloudcampus-backups
-      RETENTION_DAYS: "7"
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET:-cloudcampus-backups}
+      RETENTION_DAYS: ${RETENTION_DAYS:-7}
     depends_on:
       postgres:
         condition: service_healthy
       minio:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
 
-  # ── RabbitMQ 3 — durable notification queue (CC-1504) ─────────────────
-  # Management UI: http://localhost:15672  (guest / guest)
-  # AMQP:          localhost:5672
+  # ── RabbitMQ 3 ────────────────────────────────────────────────────────
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: cloudcampus-rabbitmq
     ports:
-      - "5672:5672"    # AMQP
-      - "15672:15672"  # management UI
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: cloudcampus
-      RABBITMQ_DEFAULT_PASS: cloudcampus_dev
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-cloudcampus}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
 
 volumes:
   postgres_data:
@@ -214,3 +293,4 @@ volumes:
   grafana_data:
   rabbitmq_data:
   tempo_data:
+  alertmanager_data:

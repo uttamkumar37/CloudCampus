@@ -73,3 +73,54 @@ groups:
         annotations:
           summary: "JVM heap usage > 85 % ({{ $value | humanizePercentage }})"
           description: "JVM heap is high. Consider increasing -Xmx or investigating a memory leak."
+
+      # JVM heap usage > 95 % — critical, OOM imminent
+      - alert: JvmHeapCritical
+        expr: |
+          (
+            jvm_memory_used_bytes{area="heap"}
+            /
+            jvm_memory_max_bytes{area="heap"}
+          ) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "JVM heap usage > 95 % ({{ $value | humanizePercentage }}) — OOM imminent"
+          description: "JVM heap is critically high. An OutOfMemoryError is likely within minutes."
+
+      # Redis down (no scrape data for > 1 min)
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is unreachable"
+          description: "Prometheus cannot reach Redis. Rate limiting, session caching, and OTP TTLs are degraded."
+
+      # RabbitMQ queue depth > 1000 messages (notification backlog)
+      - alert: RabbitMQQueueDepthHigh
+        expr: rabbitmq_queue_messages{queue=~"notification.*"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RabbitMQ notification queue depth > 1000 ({{ $value }})"
+          description: "The notification queue has a large backlog. Consumer may be stuck or undersized."
+
+      # Disk usage > 85 % on any mounted volume
+      - alert: DiskSpaceHigh
+        expr: |
+          (
+            node_filesystem_size_bytes{fstype!="tmpfs"}
+            - node_filesystem_avail_bytes{fstype!="tmpfs"}
+          )
+          /
+          node_filesystem_size_bytes{fstype!="tmpfs"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk usage > 85 % on {{ $labels.mountpoint }}"
+          description: "Disk space on {{ $labels.mountpoint }} is critically low. Clean up or expand volume."
