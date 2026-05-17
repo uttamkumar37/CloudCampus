@@ -123,7 +123,7 @@
 | M-13 | V48 migration gap — prevents future V48 in production | Flyway migrations | ✅ Done — V48__DELETED.sql placeholder added |
 | M-14 | `device_tokens` table missing `tenant_id` — filter cannot apply | `V10__create_device_tokens.sql` | ✅ Done — V64 migration + entity + repo + service updated |
 | M-15 | Loki/Promtail not implemented — JSON logs go to stdout only | `logback-spring.xml` | ✅ Done — Loki + Promtail added to docker-compose; Grafana datasource provisioned |
-| M-16 | HikariCP pool (20) insufficient for multi-replica deployment | `application-prod.yml` | ⬜ Pending |
+| M-16 | HikariCP pool (20) insufficient for multi-replica deployment | `application-prod.yml` | ✅ Done — env-var driven `HIKARI_MAX_POOL_SIZE` with sizing formula documented |
 | M-17 | `ai_usage_logs` missing `school_id` — no per-school cost attribution | `V46__ai_foundation.sql` | ✅ Done — V65 migration + entity/service/gateway updated |
 | M-18 | `@EnableScheduling` — no metrics on executor queue depth | `AsyncConfig.java` | ✅ Done — `ExecutorServiceMetrics` bound to both executors |
 | M-19 | `AttendanceRecordRepository` implicit JPQL cross-join bypasses filter | `AttendanceRecordRepository.java` | ✅ Done — both comma-join queries rewritten as native INNER JOIN |
