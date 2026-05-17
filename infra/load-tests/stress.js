@@ -23,6 +23,13 @@ import { check, sleep } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 import { BASE_URL } from './helpers/auth.js';
 
+// H-25: Refuse to run with a default/fallback credential — force explicit env vars.
+const ADMIN_USERNAME = __ENV.ADMIN_USERNAME || 'superadmin';
+const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD;
+if (!ADMIN_PASSWORD) {
+  throw new Error('ADMIN_PASSWORD env var is required — set it with --env ADMIN_PASSWORD=<value>');
+}
+
 const latency     = new Trend('stress_latency', true);
 const errorRate   = new Rate('stress_errors');
 const rateLimited = new Rate('stress_rate_limited');
@@ -56,10 +63,7 @@ export default function () {
   } else {
     res = http.post(
       `${BASE_URL}${path}`,
-      JSON.stringify({
-        username: __ENV.ADMIN_USERNAME || 'superadmin',
-        password: __ENV.ADMIN_PASSWORD || 'admin123',
-      }),
+      JSON.stringify({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD }),
       { headers: { 'Content-Type': 'application/json' } }
     );
   }
