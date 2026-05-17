@@ -2,6 +2,7 @@ package com.cloudcampus.auth.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -21,12 +22,13 @@ import java.util.UUID;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LoginResponse(
-        String  accessToken,
-        String  refreshToken,
-        long    expiresIn,
-        String  role,
-        UUID    userId,
-        UUID    tenantId,
-        UUID    schoolId,
-        boolean requiresPasswordChange
+        String       accessToken,
+        String       refreshToken,
+        long         expiresIn,
+        String       role,
+        UUID         userId,
+        UUID         tenantId,
+        UUID         schoolId,
+        boolean      requiresPasswordChange,
+        List<String> features
 ) {}

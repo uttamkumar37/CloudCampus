@@ -26,7 +26,7 @@ import java.util.UUID;
  * Requires a valid JWT. The userId is extracted from the security principal
  * (set by JwtAuthenticationFilter) — never trusted from the request body.
  */
-@RestController
+@RestController("notificationDeviceController")
 @RequestMapping("/v1/devices")
 @Tag(name = "Devices", description = "Push notification device management")
 public class DeviceController {

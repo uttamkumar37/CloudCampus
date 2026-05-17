@@ -74,7 +74,10 @@ public class AuthController {
         String clientIp  = extractClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
         LoginResponse body = authService.login(request, clientIp);
-        deviceSessionService.register(body.userId(), body.tenantId(), userAgent, clientIp);
+        // superadmin has no tenantId — skip device session (NOT NULL constraint)
+        if (body.tenantId() != null) {
+            deviceSessionService.register(body.userId(), body.tenantId(), userAgent, clientIp);
+        }
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
     }
 

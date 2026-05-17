@@ -90,6 +90,9 @@ app:
   ai:
     enabled: false   # mock mode — set to true + real API keys for live AI
 
+  demo:
+    enabled: true    # seeds Greenwood International School on startup (DemoDataSeeder)
+
 # ── OpenAPI / Swagger UI — enabled in dev only ──────────────────────────
 springdoc:
   api-docs:

@@ -2,13 +2,16 @@ import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 const NAV = [
-  { label: 'Dashboard',   to: '/teacher/dashboard'   },
-  { label: 'Timetable',   to: '/teacher/timetable'   },
-  { label: 'Attendance',  to: '/teacher/attendance'  },
-  { label: 'Homework',    to: '/teacher/homework'    },
-  { label: 'Assignments', to: '/teacher/assignments' },
-  { label: 'Notices',     to: '/teacher/notices'     },
-  { label: 'Leave',       to: '/teacher/leave'       },
+  { label: 'Dashboard',    to: '/teacher/dashboard'    },
+  { label: 'Timetable',    to: '/teacher/timetable'    },
+  { label: 'Attendance',   to: '/teacher/attendance'   },
+  { label: 'Lesson Plans', to: '/teacher/lesson-plans' },
+  { label: 'Online Classes', to: '/teacher/online-classes' },
+  { label: 'Videos',       to: '/teacher/videos'       },
+  { label: 'Homework',     to: '/teacher/homework'     },
+  { label: 'Assignments',  to: '/teacher/assignments'  },
+  { label: 'Notices',      to: '/teacher/notices'      },
+  { label: 'Leave',        to: '/teacher/leave'        },
 ];
 
 export function TeacherLayout() {

@@ -16,6 +16,7 @@ import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.exception.TooManyRequestsException;
 import com.cloudcampus.common.exception.UnauthorizedException;
+import com.cloudcampus.feature.repository.TenantFeatureRepository;
 import com.cloudcampus.school.repository.SchoolRepository;
 import com.cloudcampus.school.service.UserSchoolAccessService;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,6 +86,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuditLogService auditLog;
     private final SchoolRepository schoolRepository;
     private final UserSchoolAccessService userSchoolAccessService;
+    private final TenantFeatureRepository tenantFeatureRepository;
 
     public AuthServiceImpl(
             UserRepository userRepository,
@@ -95,7 +97,8 @@ public class AuthServiceImpl implements AuthService {
             LoginRateLimiterService rateLimiter,
             AuditLogService auditLog,
             SchoolRepository schoolRepository,
-            UserSchoolAccessService userSchoolAccessService
+            UserSchoolAccessService userSchoolAccessService,
+            TenantFeatureRepository tenantFeatureRepository
     ) {
         this.userRepository          = userRepository;
         this.passwordEncoder         = passwordEncoder;
@@ -106,6 +109,7 @@ public class AuthServiceImpl implements AuthService {
         this.auditLog                = auditLog;
         this.schoolRepository        = schoolRepository;
         this.userSchoolAccessService = userSchoolAccessService;
+        this.tenantFeatureRepository = tenantFeatureRepository;
     }
 
     // ── Login ────────────────────────────────────────────────────────────────
@@ -167,12 +171,7 @@ public class AuthServiceImpl implements AuthService {
             throw new ForbiddenException("Account is not active");
         }
 
-        // Step 4: Issue tokens.
-        String accessToken  = jwtUtil.generateAccessToken(
-                user.getId(), user.getTenantId(), null, user.getRole().name());
-        String refreshToken = issueRefreshToken(user.getId());
-
-        // Step 5: Resolve schoolId for SCHOOL_ADMIN.
+        // Step 4: Resolve schoolId for SCHOOL_ADMIN so it is embedded in the JWT.
         // Prefer the user's primary school from user_school_access (CC-0214).
         // Fall back to the tenant's "MAIN" school for backward compatibility
         // with accounts that pre-date the cross-school access model.
@@ -185,6 +184,17 @@ public class AuthServiceImpl implements AuthService {
                             .orElse(null));
         }
 
+        // Step 5: Issue tokens (schoolId is now resolved and included in the JWT).
+        String accessToken  = jwtUtil.generateAccessToken(
+                user.getId(), user.getTenantId(), schoolId, user.getRole().name());
+        String refreshToken = issueRefreshToken(user.getId());
+
+        // Step 6: Resolve enabled feature-flag codes for this tenant.
+        // SUPER_ADMIN has no tenant — returns empty list (roles check takes precedence).
+        List<String> features = user.getTenantId() != null
+                ? tenantFeatureRepository.findEnabledKeysByTenantId(user.getTenantId())
+                : List.of();
+
         auditLog.logLoginSuccess(user.getId(), user.getTenantId(), user.getUsername(), clientIp);
         log.info("Successful login [userId={}, role={}]", user.getId(), user.getRole());
 
@@ -196,7 +206,8 @@ public class AuthServiceImpl implements AuthService {
                 user.getId(),
                 user.getTenantId(),
                 schoolId,
-                user.isForcePasswordChange()
+                user.isForcePasswordChange(),
+                features
         );
     }
 
