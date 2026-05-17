@@ -34,7 +34,17 @@ public class AiBudgetEnforcer {
     }
 
     public void enforce(UUID tenantId) {
-        if (tenantId == null) return;
+        // CRIT-16: fail-closed — never skip budget enforcement silently.
+        // The old null-return allowed a client-supplied tenantId=null to bypass
+        // all per-tenant token and daily-request limits.
+        // Super-admin background tasks must supply the target tenantId explicitly;
+        // use enforce(SUPER_ADMIN_SENTINEL_UUID) with a config budget of 0 (unlimited)
+        // rather than passing null.
+        if (tenantId == null) {
+            throw new IllegalStateException(
+                    "AiBudgetEnforcer.enforce() called with null tenantId — " +
+                    "tenantId must be derived from RequestContext, never from client input");
+        }
 
         checkMonthlyTokenBudget(tenantId);
         checkDailyRequestLimit(tenantId);
