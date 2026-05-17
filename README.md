@@ -475,3 +475,23 @@ feature/*             ← feature branches
 ## License
 
 Proprietary — CloudCampus © 2026. All rights reserved.
+
+---
+
+## How to Contribute and Push Changes
+
+1. **Update the README or any file as needed.**
+2. **Stage your changes:**
+    ```bash
+    git add README.md
+    ```
+3. **Commit your changes:**
+    ```bash
+    git commit -m "Update README: <short description of your change>"
+    ```
+4. **Push to GitHub:**
+    ```bash
+    git push origin <your-branch-name>
+    ```
+
+> _Note: Make sure you are on the correct feature or release branch before pushing. For mainline changes, use `release/cloudcampus-v1`._
