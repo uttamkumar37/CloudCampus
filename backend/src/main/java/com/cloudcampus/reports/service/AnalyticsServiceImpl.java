@@ -9,6 +9,8 @@ import com.cloudcampus.student.repository.StudentRepository;
 import com.cloudcampus.tenant.entity.Tenant;
 import com.cloudcampus.tenant.entity.TenantStatus;
 import com.cloudcampus.tenant.repository.TenantRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,9 @@ class AnalyticsServiceImpl implements AnalyticsService {
         this.feeRepo     = feeRepo;
     }
 
+    // H-06: cap at 2 000 tenants to prevent OOM on a misconfigured instance.
+    private static final int MAX_TENANTS_PER_ANALYTICS_PAGE = 2_000;
+
     @Override
     @Transactional(readOnly = true)
     public PlatformAnalyticsResponse platformAnalytics() {
@@ -58,11 +63,13 @@ class AnalyticsServiceImpl implements AnalyticsService {
         Map<UUID, Long>       schoolsByTenant  = toCountMap(schoolRepo.countActiveGroupedByTenant());
         Map<UUID, BigDecimal[]> feesByTenant   = toFeeMap(feeRepo.sumAmountsGroupedByTenant());
 
-        // Tenant list.
-        List<Tenant> allTenants = tenantRepo.findAll();
-        long activeTenants = allTenants.stream()
-                .filter(t -> t.getStatus() == TenantStatus.ACTIVE)
-                .count();
+        // H-06: DB-level counts avoid iterating the full list; paged load caps memory use.
+        long totalTenants  = tenantRepo.count();
+        long activeTenants = tenantRepo.countByStatus(TenantStatus.ACTIVE);
+
+        List<Tenant> allTenants = tenantRepo.findAll(
+                PageRequest.of(0, MAX_TENANTS_PER_ANALYTICS_PAGE, Sort.by("name"))
+        ).getContent();
 
         List<TenantAnalyticsSummary> tenantRows = allTenants.stream()
                 .map(t -> {
@@ -86,7 +93,7 @@ class AnalyticsServiceImpl implements AnalyticsService {
                 .toList();
 
         return new PlatformAnalyticsResponse(
-                allTenants.size(),
+                totalTenants,
                 activeTenants,
                 totalStudents,
                 totalStaff,
