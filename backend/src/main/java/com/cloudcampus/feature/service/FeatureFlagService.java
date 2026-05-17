@@ -45,4 +45,11 @@ public interface FeatureFlagService {
      * CORE features are always included.
      */
     Set<String> getEnabledFeatures(UUID tenantId);
+
+    /**
+     * Immediately removes the Redis feature-flag cache entry for the given tenant.
+     * L-03: call this after a subscription plan change so the next request re-warms
+     * flags from the DB rather than serving a stale (possibly over-permissive) set.
+     */
+    void invalidateForTenant(UUID tenantId);
 }

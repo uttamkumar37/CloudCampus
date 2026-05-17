@@ -159,6 +159,11 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
         log.debug("Feature cache warmed: tenantId={}, keys={}", tenantId, enabled);
     }
 
+    @Override
+    public void invalidateForTenant(UUID tenantId) {
+        invalidateCache(tenantId);
+    }
+
     private void invalidateCache(UUID tenantId) {
         redisTemplate.delete(KEY_PREFIX + tenantId);
         log.debug("Feature cache invalidated: tenantId={}", tenantId);

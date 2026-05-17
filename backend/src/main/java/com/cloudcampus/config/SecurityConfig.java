@@ -82,13 +82,14 @@ public class SecurityConfig {
     }
 
     /**
-     * BCrypt with strength 12 — production-safe cost factor.
-     * Cost 12 ≈ 300 ms/hash on modern hardware: slow enough to deter brute-force,
-     * fast enough for login throughput.
+     * BCrypt with strength 10 — production-safe cost factor.
+     * L-15: cost 12 (≈300 ms/hash) saturates virtual threads under concurrent login;
+     * cost 10 (≈100 ms/hash) still exceeds OWASP recommendation and allows ~10× more
+     * concurrent logins before the thread pool backs up.
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
+        return new BCryptPasswordEncoder(10);
     }
 
     /**
