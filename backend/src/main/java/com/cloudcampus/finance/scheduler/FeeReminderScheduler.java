@@ -9,6 +9,7 @@ import com.cloudcampus.notification.queue.NotificationQueuePublisher;
 import com.cloudcampus.school.repository.SchoolRepository;
 import com.cloudcampus.student.repository.StudentParentLinkRepository;
 import com.cloudcampus.student.repository.StudentRepository;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -58,6 +59,7 @@ class FeeReminderScheduler {
     }
 
     @Scheduled(cron = "0 0 8 * * *", zone = "UTC")
+    @SchedulerLock(name = "FeeReminderScheduler_sendReminders", lockAtMostFor = "PT30M", lockAtLeastFor = "PT5M")
     @Transactional(readOnly = true)
     public void sendReminders() {
         LocalDate today = LocalDate.now();

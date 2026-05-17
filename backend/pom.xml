@@ -262,6 +262,18 @@
             <version>3.4.1</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- ShedLock — distributed scheduler locking via Redis (CRIT-19) -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+            <version>6.9.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-redis-spring</artifactId>
+            <version>6.9.1</version>
+        </dependency>
     </dependencies>
 
     <build>

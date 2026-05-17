@@ -3,6 +3,7 @@ package com.cloudcampus.retention;
 import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.auth.repository.UserRepository;
 import com.cloudcampus.common.retention.RetentionProperties;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -43,6 +44,7 @@ public class DataRetentionService {
     }
 
     @Scheduled(cron = "0 0 2 * * *", zone = "UTC")
+    @SchedulerLock(name = "DataRetentionService_purge", lockAtMostFor = "PT30M", lockAtLeastFor = "PT5M")
     @Transactional
     public void purgeExpiredSoftDeletedUsers() {
         int days = props.softDeleteRetentionDays();

@@ -1,5 +1,6 @@
 package com.cloudcampus.demo;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,6 +37,7 @@ public class DemoResetScheduler {
     }
 
     @Scheduled(cron = "0 0 2 * * *")   // 02:00 AM daily
+    @SchedulerLock(name = "DemoResetScheduler_reset", lockAtMostFor = "PT30M", lockAtLeastFor = "PT5M")
     @Transactional
     public void reset() {
         log.info("DEMO RESET: starting nightly reset for tenant {}.", TENANT_ID);
