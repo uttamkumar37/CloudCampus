@@ -18,6 +18,9 @@ public class AiUsageLog {
     @Column(name = "tenant_id")
     private UUID tenantId;
 
+    @Column(name = "school_id")
+    private UUID schoolId;
+
     @Column(name = "user_id")
     private UUID userId;
 
@@ -50,12 +53,13 @@ public class AiUsageLog {
 
     protected AiUsageLog() {}
 
-    public static AiUsageLog create(UUID tenantId, UUID userId, String provider, String model,
+    public static AiUsageLog create(UUID tenantId, UUID schoolId, UUID userId, String provider, String model,
                                     String promptKey, int inputTokens, int outputTokens,
                                     int latencyMs, boolean success, String errorMessage) {
         AiUsageLog log = new AiUsageLog();
         log.id           = UUID.randomUUID();
         log.tenantId     = tenantId;
+        log.schoolId     = schoolId;
         log.userId       = userId;
         log.provider     = provider;
         log.model        = model;

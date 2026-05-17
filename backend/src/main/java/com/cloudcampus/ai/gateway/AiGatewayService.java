@@ -93,12 +93,12 @@ public class AiGatewayService {
             int in  = (usage != null && usage.getPromptTokens()     != null) ? usage.getPromptTokens().intValue()     : 0;
             int out = (usage != null && usage.getCompletionTokens() != null) ? usage.getCompletionTokens().intValue() : 0;
 
-            usageLogging.record(tenantId, currentUserId(), providerName(), chatModelName,
+            usageLogging.record(tenantId, currentSchoolId(), currentUserId(), providerName(), chatModelName,
                     promptKey, in, out, latencyMs, true, null);
             return guardOutput(content);
 
         } catch (Exception e) {
-            usageLogging.record(tenantId, currentUserId(), providerName(), chatModelName,
+            usageLogging.record(tenantId, currentSchoolId(), currentUserId(), providerName(), chatModelName,
                     promptKey, 0, 0, System.currentTimeMillis() - start, false, e.getMessage());
             throw e;
         }
@@ -129,12 +129,12 @@ public class AiGatewayService {
             int in  = (usage != null && usage.getPromptTokens()     != null) ? usage.getPromptTokens().intValue()     : 0;
             int out = (usage != null && usage.getCompletionTokens() != null) ? usage.getCompletionTokens().intValue() : 0;
 
-            usageLogging.record(tenantId, currentUserId(), providerName(), chatModelName,
+            usageLogging.record(tenantId, currentSchoolId(), currentUserId(), providerName(), chatModelName,
                     promptKey, in, out, latencyMs, true, null);
             return guardOutput(content);
 
         } catch (Exception e) {
-            usageLogging.record(tenantId, currentUserId(), providerName(), chatModelName,
+            usageLogging.record(tenantId, currentSchoolId(), currentUserId(), providerName(), chatModelName,
                     promptKey, 0, 0, System.currentTimeMillis() - start, false, e.getMessage());
             throw e;
         }
@@ -164,5 +164,12 @@ public class AiGatewayService {
 
     private UUID currentUserId() {
         try { return RequestContext.getUserId(); } catch (Exception e) { return null; }
+    }
+
+    private UUID currentSchoolId() {
+        try {
+            String s = RequestContext.getSchoolId();
+            return s != null ? UUID.fromString(s) : null;
+        } catch (Exception e) { return null; }
     }
 }
