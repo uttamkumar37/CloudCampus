@@ -1,0 +1,8 @@
+-- V48: PLACEHOLDER — version intentionally reserved
+--
+-- M-13: A gap existed between V47 and V49 because a migration was removed
+-- after being applied to some environments. This no-op file fills the gap so
+-- Flyway never attempts to assign the V48 slot to a future migration, which
+-- would cause a checksum conflict on databases that already ran a prior V48.
+--
+-- Do NOT add real schema changes here.
