@@ -207,7 +207,11 @@ app:
     api:
       per-user-requests: 20            # 20 @RateLimit calls per user per minute
       per-user-window-seconds: 60
-      per-tenant-requests: 60          # 60 @RateLimit calls per tenant per minute
+      # H-30: 60 req/min tenant ceiling blocked schools with >3 concurrent users
+      # (3 users × 20 req/user/min = 60, saturating the tenant bucket immediately).
+      # 500 req/min supports ~25 active users at full per-user throughput, while
+      # still providing a meaningful DoS barrier at the tenant level.
+      per-tenant-requests: 500         # 500 @RateLimit calls per tenant per minute
       per-tenant-window-seconds: 60
 
   # ── PII data retention (CC-1806) ──────────────────────────────────────────────
