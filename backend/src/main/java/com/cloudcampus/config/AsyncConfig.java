@@ -1,5 +1,6 @@
 package com.cloudcampus.config;
 
+import com.cloudcampus.common.web.RequestContextTaskDecorator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -39,9 +40,8 @@ public class AsyncConfig {
         executor.setMaxPoolSize(8);
         executor.setQueueCapacity(50);
         executor.setThreadNamePrefix("audit-");
-        // CallerRunsPolicy: if the queue is full, the calling thread executes the task.
-        // This prevents silent audit loss under burst load. The slight latency spike
-        // is acceptable — it's better than dropping audit records.
+        // Propagate RequestContext (tenantId/schoolId/userId) to async threads (CRIT-10).
+        executor.setTaskDecorator(new RequestContextTaskDecorator());
         executor.setRejectedExecutionHandler((r, exec) -> {
             log.warn("Audit executor queue full — running task on caller thread");
             r.run();
@@ -68,6 +68,8 @@ public class AsyncConfig {
         executor.setMaxPoolSize(6);
         executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("notification-");
+        // Propagate RequestContext (tenantId/schoolId/userId) to async threads (CRIT-10).
+        executor.setTaskDecorator(new RequestContextTaskDecorator());
         executor.setRejectedExecutionHandler((r, exec) -> {
             log.warn("Notification executor queue full — running task on caller thread");
             r.run();
