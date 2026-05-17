@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { qrMarkAttendance } from '../api/studentPortalApi';
@@ -12,8 +12,12 @@ export default function StudentQrScanPage() {
   const [state, setState] = useState<State>(token ? 'marking' : 'no-token');
   const [errMsg, setErrMsg] = useState('');
 
+  // Capture the token at mount time — searchParams can change but we only
+  // want to mark attendance for the token that was present on first render.
+  const initialToken = useRef(token);
+
   const { mutate } = useMutation({
-    mutationFn: () => qrMarkAttendance(token!),
+    mutationFn: () => qrMarkAttendance(initialToken.current!),
     onSuccess: () => setState('success'),
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })
@@ -24,9 +28,8 @@ export default function StudentQrScanPage() {
   });
 
   useEffect(() => {
-    if (token) mutate();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (initialToken.current) mutate();
+  }, [mutate]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4">

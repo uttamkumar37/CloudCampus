@@ -137,16 +137,16 @@
 
 | ID | Finding | Status |
 |---|---|---|
-| L-01 | `useEffect` suppressed `react-hooks/exhaustive-deps` in QR scan page | ⬜ Pending |
-| L-02 | No global error boundary in React app | ⬜ Pending |
+| L-01 | `useEffect` suppressed `react-hooks/exhaustive-deps` in QR scan page | ✅ Done — `useRef` for initial token, `mutate` in deps |
+| L-02 | No global error boundary in React app | ✅ Done — `ErrorBoundary` class component wraps `App` |
 | L-03 | Feature flags stale after subscription downgrade | ⬜ Pending |
 | L-04 | `schoolId` taken from client-side Zustand store — not from JWT | ⬜ Pending |
 | L-05 | Mobile: `useProactiveTokenRefresh` always no-ops | ⬜ Pending |
 | L-06 | Mobile: no biometric re-authentication on session restore | ⬜ Pending |
 | L-07 | Mobile: WatermelonDB SQLite database unencrypted | ⬜ Pending |
 | L-08 | Mobile: no Universal Links / App Links configuration | ⬜ Pending |
-| L-09 | Swagger UI `permitAll()` could drift from springdoc config | ⬜ Pending |
-| L-10 | File upload stores `getOriginalFilename()` in DB — XSS via filename | ⬜ Pending |
+| L-09 | Swagger UI `permitAll()` could drift from springdoc config | ✅ Done — paths injected via `@Value` from springdoc properties |
+| L-10 | File upload stores `getOriginalFilename()` in DB — XSS via filename | ✅ Done — `sanitizeFilename()` strips HTML/path chars before DB insert |
 | L-11 | Demo seed users have predictable UUIDs — server fingerprinting | ⬜ Pending |
 | L-12 | V48 migration gap — cannot safely add V48 later | ✅ Done — resolved by M-13 (V48__DELETED.sql) |
 | L-13 | Soft delete (`deleted_at`) missing on several content tables | ⬜ Pending |

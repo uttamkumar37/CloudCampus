@@ -34,16 +34,17 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
     public StudentDocumentResponse upload(UUID schoolId, UUID studentId, String documentType, MultipartFile file) {
         validateStudent(studentId, schoolId);
 
-        UUID   tenantId   = UUID.fromString(RequestContext.getTenantId());
-        UUID   uploadedBy = RequestContext.getUserId();
-        String objectKey  = buildObjectKey(tenantId, schoolId, studentId, file.getOriginalFilename());
+        UUID   tenantId      = UUID.fromString(RequestContext.getTenantId());
+        UUID   uploadedBy    = RequestContext.getUserId();
+        String safeFilename  = sanitizeFilename(file.getOriginalFilename());
+        String objectKey     = buildObjectKey(tenantId, schoolId, studentId, safeFilename);
 
         storage.upload(objectKey, file);
 
         StudentDocument doc = StudentDocument.create(
                 tenantId, schoolId, studentId,
                 documentType,
-                file.getOriginalFilename(),
+                safeFilename,
                 file.getContentType() != null ? file.getContentType() : "application/octet-stream",
                 file.getSize(),
                 objectKey,
@@ -83,6 +84,21 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
         studentRepo.findById(studentId)
                 .filter(s -> s.getSchoolId().equals(schoolId))
                 .orElseThrow(() -> new NotFoundException("Student not found in this school"));
+    }
+
+    // L-10: strip path separators and HTML-significant chars from the filename
+    // before storing in the DB. A crafted filename like "<script>alert(1)</script>.pdf"
+    // could cause XSS if rendered without escaping in downstream admin UIs.
+    private static String sanitizeFilename(String raw) {
+        if (raw == null || raw.isBlank()) return "upload";
+        String name = raw
+                .replaceAll("[/\\\\]", "")          // strip path separators
+                .replaceAll("[<>\"'&;]", "")         // strip HTML/script chars
+                .replaceAll("\\s+", "_")             // collapse whitespace
+                .trim();
+        // Extract extension from the sanitized name and cap total length at 200 chars
+        if (name.length() > 200) name = name.substring(0, 200);
+        return name.isBlank() ? "upload" : name;
     }
 
     private String buildObjectKey(UUID tenantId, UUID schoolId, UUID studentId, String originalFilename) {
