@@ -127,7 +127,7 @@
 | M-17 | `ai_usage_logs` missing `school_id` — no per-school cost attribution | `V46__ai_foundation.sql` | ✅ Done — V65 migration + entity/service/gateway updated |
 | M-18 | `@EnableScheduling` — no metrics on executor queue depth | `AsyncConfig.java` | ✅ Done — `ExecutorServiceMetrics` bound to both executors |
 | M-19 | `AttendanceRecordRepository` implicit JPQL cross-join bypasses filter | `AttendanceRecordRepository.java` | ✅ Done — both comma-join queries rewritten as native INNER JOIN |
-| M-20 | No MinIO health indicator in Spring Actuator | `application.yml` | ⬜ Pending |
+| M-20 | No MinIO health indicator in Spring Actuator | `application.yml` | ✅ Done — `MinioHealthIndicator` added (bucket existence check) |
 
 ---
 

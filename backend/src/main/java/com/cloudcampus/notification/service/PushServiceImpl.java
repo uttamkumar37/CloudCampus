@@ -72,7 +72,7 @@ public class PushServiceImpl implements PushService {
     @Async("notificationExecutor")
     public void sendPushToUserAsync(UUID tenantId, UUID schoolId, UUID userId,
                                     String title, String body, Map<String, String> data) {
-        List<DeviceToken> tokens = deviceTokenRepository.findAllByUserId(userId);
+        List<DeviceToken> tokens = deviceTokenRepository.findAllByTenantIdAndUserId(tenantId, userId);
         if (tokens.isEmpty()) {
             log.debug("sendPushToUser: no device tokens for userId={}", userId);
             return;
@@ -89,7 +89,7 @@ public class PushServiceImpl implements PushService {
         if (userIds == null || userIds.isEmpty()) {
             return;
         }
-        List<DeviceToken> tokens = deviceTokenRepository.findAllByUserIdIn(userIds);
+        List<DeviceToken> tokens = deviceTokenRepository.findAllByTenantIdAndUserIdIn(tenantId, userIds);
         if (tokens.isEmpty()) {
             log.debug("sendPushToUsers: no device tokens for {} users", userIds.size());
             return;
