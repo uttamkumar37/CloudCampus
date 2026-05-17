@@ -172,30 +172,15 @@ class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional(readOnly = true)
     public StudentAttendanceReport getStudentReport(UUID studentId, LocalDate from, LocalDate to) {
-        // 1. Fetch all attendance records for the student
-        List<AttendanceRecord> all = recordRepo.findAllByStudentIdOrderByCreatedAtAsc(studentId);
+        // H-05: single JOIN query filtered by date range in the DB — avoids loading the
+        // student's full history and then issuing an unbounded IN clause for session IDs.
+        List<AttendanceRecord> records =
+                recordRepo.findAllByStudentIdAndSessionDateBetween(studentId, from, to);
 
-        if (all.isEmpty()) {
+        if (records.isEmpty()) {
             return StudentAttendanceReport.of(studentId, 0L, 0L, 0L, 0L);
         }
-
-        // 2. Get the distinct session IDs referenced by those records
-        List<UUID> sessionIds = all.stream()
-                .map(AttendanceRecord::getSessionId).distinct().toList();
-
-        // 3. Load session dates for those IDs
-        Map<UUID, LocalDate> sessionDateMap = sessionRepo.findAllById(sessionIds)
-                .stream().collect(Collectors.toMap(
-                        AttendanceSession::getId, AttendanceSession::getSessionDate));
-
-        // 4. Keep only records whose session falls within [from, to]
-        List<AttendanceRecord> filtered = all.stream()
-                .filter(r -> {
-                    LocalDate d = sessionDateMap.get(r.getSessionId());
-                    return d != null && !d.isBefore(from) && !d.isAfter(to);
-                }).toList();
-
-        return aggregateRecords(studentId, filtered);
+        return aggregateRecords(studentId, records);
     }
 
     @Override
