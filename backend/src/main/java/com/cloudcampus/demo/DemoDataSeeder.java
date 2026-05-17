@@ -1059,11 +1059,12 @@ public class DemoDataSeeder implements ApplicationRunner {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**
-     * Derives a deterministic UUID from a short human-readable tag.
-     * Avoids hardcoding 40+ long UUID strings while keeping IDs stable across restarts.
+     * L-11: previously used UUID.nameUUIDFromBytes("greenwood-demo:" + tag) which
+     * produced predictable UUIDs — anyone knowing the scheme could enumerate demo
+     * tenants by ID. Now generates a random UUID per seed run.
      */
-    static UUID uuid(String tag) {
-        return UUID.nameUUIDFromBytes(("greenwood-demo:" + tag).getBytes());
+    static UUID uuid(String ignoredTag) {
+        return UUID.randomUUID();
     }
 
     /** Returns the last 20 working days (Mon-Fri) ending yesterday. */
