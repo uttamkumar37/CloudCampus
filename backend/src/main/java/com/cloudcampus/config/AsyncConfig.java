@@ -1,6 +1,8 @@
 package com.cloudcampus.config;
 
 import com.cloudcampus.common.web.RequestContextTaskDecorator;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -9,6 +11,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -33,6 +36,12 @@ public class AsyncConfig {
 
     private static final Logger log = LoggerFactory.getLogger(AsyncConfig.class);
 
+    private final MeterRegistry meterRegistry;
+
+    public AsyncConfig(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
     @Bean(name = "auditExecutor")
     public Executor auditExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -47,6 +56,9 @@ public class AsyncConfig {
             r.run();
         });
         executor.initialize();
+        // M-18: bind queue depth, active count, and pool utilisation to Prometheus.
+        ExecutorServiceMetrics.monitor(meterRegistry, executor.getThreadPoolExecutor(),
+                "audit_executor", List.of());
         return executor;
     }
 
@@ -77,6 +89,9 @@ public class AsyncConfig {
             r.run();
         });
         executor.initialize();
+        // M-18: bind queue depth, active count, and pool utilisation to Prometheus.
+        ExecutorServiceMetrics.monitor(meterRegistry, executor.getThreadPoolExecutor(),
+                "notification_executor", List.of());
         return executor;
     }
 }
