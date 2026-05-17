@@ -9,8 +9,10 @@ import com.cloudcampus.auth.entity.User;
 import com.cloudcampus.auth.entity.UserRole;
 import com.cloudcampus.auth.entity.UserStatus;
 import com.cloudcampus.auth.repository.UserRepository;
+import com.cloudcampus.auth.security.JwtDenylistService;
 import com.cloudcampus.auth.security.JwtUtil;
 import com.cloudcampus.auth.security.LoginRateLimiterService;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
@@ -29,6 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -100,6 +103,7 @@ public class AuthServiceImpl implements AuthService {
     private final SchoolRepository schoolRepository;
     private final UserSchoolAccessService userSchoolAccessService;
     private final TenantFeatureRepository tenantFeatureRepository;
+    private final JwtDenylistService jwtDenylistService;
 
     public AuthServiceImpl(
             UserRepository userRepository,
@@ -111,7 +115,8 @@ public class AuthServiceImpl implements AuthService {
             AuditLogService auditLog,
             SchoolRepository schoolRepository,
             UserSchoolAccessService userSchoolAccessService,
-            TenantFeatureRepository tenantFeatureRepository
+            TenantFeatureRepository tenantFeatureRepository,
+            JwtDenylistService jwtDenylistService
     ) {
         this.userRepository          = userRepository;
         this.passwordEncoder         = passwordEncoder;
@@ -123,6 +128,7 @@ public class AuthServiceImpl implements AuthService {
         this.schoolRepository        = schoolRepository;
         this.userSchoolAccessService = userSchoolAccessService;
         this.tenantFeatureRepository = tenantFeatureRepository;
+        this.jwtDenylistService      = jwtDenylistService;
     }
 
     // ── Login ────────────────────────────────────────────────────────────────
@@ -291,6 +297,14 @@ public class AuthServiceImpl implements AuthService {
                     // Corrupted Redis value — audit failure is non-critical.
                 }
             }
+        }
+
+        // H-02: denylist the access token so it cannot be reused until it naturally expires.
+        // jti + expiry were written to RequestContext by JwtAuthenticationFilter.
+        String jti = RequestContext.getJwtJti();
+        Instant expiry = RequestContext.getJwtExpiry();
+        if (jti != null && expiry != null) {
+            jwtDenylistService.deny(jti, expiry);
         }
     }
 
