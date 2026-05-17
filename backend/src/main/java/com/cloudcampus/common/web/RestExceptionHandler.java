@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
@@ -91,9 +92,23 @@ public class RestExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, ApiError.of("VALIDATION_ERROR", "Validation failed", details));
     }
 
+    // M-03: ex.getMessage() leaks full Java method signatures (e.g.
+    // "createStudent.request.email: must not be blank"). Extract only the
+    // leaf property name and the constraint message from each violation.
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
-        return build(HttpStatus.BAD_REQUEST, ApiError.of("VALIDATION_ERROR", ex.getMessage()));
+        Map<String, String> fieldErrors = ex.getConstraintViolations().stream()
+                .collect(Collectors.toMap(
+                        v -> {
+                            String path = v.getPropertyPath().toString();
+                            int dot = path.lastIndexOf('.');
+                            return dot >= 0 ? path.substring(dot + 1) : path;
+                        },
+                        v -> v.getMessage(),
+                        (a, b) -> a));
+        Map<String, Object> details = new HashMap<>();
+        details.put("fields", fieldErrors);
+        return build(HttpStatus.BAD_REQUEST, ApiError.of("VALIDATION_ERROR", "Validation failed", details));
     }
 
     @ExceptionHandler(StorageException.class)
