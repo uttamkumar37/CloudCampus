@@ -264,7 +264,10 @@ class FeeServiceImpl implements FeeService {
     // ─────────────────────────────────────────────────────────────────────────
 
     private StudentFeeRecord requireRecord(UUID recordId) {
-        return recordRepo.findById(recordId)
+        // findById() bypasses the Hibernate @Filter tenant scope — always use
+        // findByIdAndTenantId() to prevent cross-tenant fee record access (CRIT-14).
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return recordRepo.findByIdAndTenantId(recordId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Fee record not found: " + recordId));
     }
 
@@ -299,14 +302,11 @@ class FeeServiceImpl implements FeeService {
                 .toList();
     }
 
-    /**
-     * Generates a receipt number in the format RCT-YYYY-XXXXXXX
-     * where XXXXXXX is a zero-padded sequential count per year prefix.
-     */
     private String generateReceiptNumber(UUID schoolId) {
-        String year   = String.valueOf(Year.now().getValue());
-        String prefix = "RCT-" + year + "-";
-        long   count  = paymentRepo.countByReceiptNumberStartingWith(prefix);
-        return prefix + String.format("%07d", count + 1);
+        String year = String.valueOf(Year.now().getValue());
+        // nextval() is atomic at the DB level — eliminates the COUNT/WRITE race
+        // condition that previously allowed duplicate receipt numbers (CRIT-13).
+        long seq = paymentRepo.nextReceiptSequence();
+        return "RCT-" + year + "-" + String.format("%07d", seq);
     }
 }
