@@ -18,6 +18,7 @@ import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.exception.TooManyRequestsException;
 import com.cloudcampus.common.exception.UnauthorizedException;
+import com.cloudcampus.common.metrics.BusinessMetrics;
 import com.cloudcampus.feature.repository.TenantFeatureRepository;
 import com.cloudcampus.school.repository.SchoolRepository;
 import com.cloudcampus.school.service.UserSchoolAccessService;
@@ -104,6 +105,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserSchoolAccessService userSchoolAccessService;
     private final TenantFeatureRepository tenantFeatureRepository;
     private final JwtDenylistService jwtDenylistService;
+    private final BusinessMetrics metrics;
 
     public AuthServiceImpl(
             UserRepository userRepository,
@@ -116,7 +118,8 @@ public class AuthServiceImpl implements AuthService {
             SchoolRepository schoolRepository,
             UserSchoolAccessService userSchoolAccessService,
             TenantFeatureRepository tenantFeatureRepository,
-            JwtDenylistService jwtDenylistService
+            JwtDenylistService jwtDenylistService,
+            BusinessMetrics metrics
     ) {
         this.userRepository          = userRepository;
         this.passwordEncoder         = passwordEncoder;
@@ -129,6 +132,7 @@ public class AuthServiceImpl implements AuthService {
         this.userSchoolAccessService = userSchoolAccessService;
         this.tenantFeatureRepository = tenantFeatureRepository;
         this.jwtDenylistService      = jwtDenylistService;
+        this.metrics                 = metrics;
     }
 
     // ── Login ────────────────────────────────────────────────────────────────
@@ -142,6 +146,7 @@ public class AuthServiceImpl implements AuthService {
             rateLimiter.checkAndRecord(clientIp, request.username());
         } catch (TooManyRequestsException ex) {
             auditLog.logLoginBlocked(request.username(), clientIp);
+            metrics.recordLoginRateLimited();
             throw ex;
         }
 
@@ -172,9 +177,11 @@ public class AuthServiceImpl implements AuthService {
                     auditLog.logAccountLocked(u.getId(), u.getTenantId(), request.username(), clientIp);
                     log.warn("Account suspended after repeated failed logins [userId={}, username={}]",
                             u.getId(), request.username());
+                    metrics.recordLoginLockedOut();
                 }
             });
 
+            metrics.recordLoginFailure();
             throw new UnauthorizedException("Invalid credentials");
         }
 
@@ -214,6 +221,7 @@ public class AuthServiceImpl implements AuthService {
                 ? tenantFeatureRepository.findEnabledKeysByTenantId(user.getTenantId())
                 : List.of();
 
+        metrics.recordLoginSuccess();
         auditLog.logLoginSuccess(user.getId(), user.getTenantId(), user.getUsername(), clientIp);
         log.info("Successful login [userId={}, role={}]", user.getId(), user.getRole());
 

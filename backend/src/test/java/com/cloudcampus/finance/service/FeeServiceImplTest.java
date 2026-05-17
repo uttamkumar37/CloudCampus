@@ -41,6 +41,7 @@ class FeeServiceImplTest {
     @Mock FeeStructureRepository     structureRepo;
     @Mock StudentFeeRecordRepository recordRepo;
     @Mock FeePaymentRepository       paymentRepo;
+    @Mock com.cloudcampus.common.metrics.BusinessMetrics metrics;
 
     FeeServiceImpl feeService;
 
@@ -50,7 +51,7 @@ class FeeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        feeService = new FeeServiceImpl(categoryRepo, structureRepo, recordRepo, paymentRepo);
+        feeService = new FeeServiceImpl(categoryRepo, structureRepo, recordRepo, paymentRepo, metrics);
     }
 
     // ── waiveRecord ──────────────────────────────────────────────────────────

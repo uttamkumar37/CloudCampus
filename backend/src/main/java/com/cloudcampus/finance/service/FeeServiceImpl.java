@@ -18,6 +18,7 @@ import com.cloudcampus.finance.entity.FeePayment;
 import com.cloudcampus.finance.entity.FeeStatus;
 import com.cloudcampus.finance.entity.FeeStructure;
 import com.cloudcampus.finance.entity.StudentFeeRecord;
+import com.cloudcampus.common.metrics.BusinessMetrics;
 import com.cloudcampus.finance.repository.FeeCategoryRepository;
 import com.cloudcampus.finance.repository.FeePaymentRepository;
 import com.cloudcampus.finance.repository.FeeStructureRepository;
@@ -39,15 +40,18 @@ class FeeServiceImpl implements FeeService {
     private final FeeStructureRepository     structureRepo;
     private final StudentFeeRecordRepository recordRepo;
     private final FeePaymentRepository       paymentRepo;
+    private final BusinessMetrics            metrics;
 
     FeeServiceImpl(FeeCategoryRepository      categoryRepo,
                    FeeStructureRepository     structureRepo,
                    StudentFeeRecordRepository recordRepo,
-                   FeePaymentRepository       paymentRepo) {
+                   FeePaymentRepository       paymentRepo,
+                   BusinessMetrics            metrics) {
         this.categoryRepo  = categoryRepo;
         this.structureRepo = structureRepo;
         this.recordRepo    = recordRepo;
         this.paymentRepo   = paymentRepo;
+        this.metrics       = metrics;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -243,6 +247,7 @@ class FeeServiceImpl implements FeeService {
         record.applyPayment(req.amount());
         recordRepo.save(record);
 
+        metrics.recordPayment(req.paymentMode().name(), req.amount());
         return FeePaymentResponse.from(saved);
     }
 
