@@ -16,9 +16,15 @@ import java.util.Map;
 public class SeoService {
 
     private final ExperienceWebsiteSeoSettingsRepository seoSettingsRepository;
+    private final WebsiteSchemaValidator websiteSchemaValidator;
+    private final WebsiteAuditTimelineService auditTimelineService;
 
-    public SeoService(ExperienceWebsiteSeoSettingsRepository seoSettingsRepository) {
+    public SeoService(ExperienceWebsiteSeoSettingsRepository seoSettingsRepository,
+                      WebsiteSchemaValidator websiteSchemaValidator,
+                      WebsiteAuditTimelineService auditTimelineService) {
         this.seoSettingsRepository = seoSettingsRepository;
+        this.websiteSchemaValidator = websiteSchemaValidator;
+        this.auditTimelineService = auditTimelineService;
     }
 
     public List<WebsiteSeoSettingsResponse> listAll() {
@@ -37,7 +43,8 @@ public class SeoService {
     }
 
     @Transactional
-    public WebsiteSeoSettingsResponse upsert(WebsiteSeoUpsertRequest req) {
+    public WebsiteSeoSettingsResponse upsert(WebsiteSeoUpsertRequest req, java.util.UUID actorId) {
+        websiteSchemaValidator.validateSeo(req);
         WebsiteSeoSettings settings = seoSettingsRepository.findByRoutePath(req.routePath())
                 .orElseGet(() -> WebsiteSeoSettings.create(
                         req.pageId(),
@@ -66,15 +73,33 @@ public class SeoService {
                     req.sitemapChangeFreq()
             );
         }
-        return WebsiteSeoSettingsResponse.from(seoSettingsRepository.save(settings));
+        WebsiteSeoSettings saved = seoSettingsRepository.save(settings);
+        auditTimelineService.record(
+                "SEO_SAVED",
+                "SEO",
+                saved.getId(),
+                saved.getRoutePath(),
+                actorId,
+                Map.of("routePath", saved.getRoutePath(), "sitemapPriority", saved.getSitemapPriority())
+        );
+        return WebsiteSeoSettingsResponse.from(saved);
     }
 
     @Transactional
-    public WebsiteSeoSettingsResponse publish(String routePath) {
+    public WebsiteSeoSettingsResponse publish(String routePath, java.util.UUID actorId) {
         WebsiteSeoSettings settings = seoSettingsRepository.findByRoutePath(routePath)
                 .orElseThrow(() -> new NotFoundException("SEO settings not found"));
         settings.publish();
-        return WebsiteSeoSettingsResponse.from(seoSettingsRepository.save(settings));
+        WebsiteSeoSettings saved = seoSettingsRepository.save(settings);
+        auditTimelineService.record(
+                "SEO_PUBLISHED",
+                "SEO",
+                saved.getId(),
+                saved.getRoutePath(),
+                actorId,
+                Map.of("routePath", saved.getRoutePath())
+        );
+        return WebsiteSeoSettingsResponse.from(saved);
     }
 
     private static Map<String, Object> nullSafeMap(Map<String, Object> input) {

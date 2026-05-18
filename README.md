@@ -52,7 +52,7 @@ Browser / Mobile
 | Runtime | Java 21 (Temurin) |
 | Framework | Spring Boot 3.4.5 |
 | AI | Spring AI 1.0.0 · Anthropic Claude · OpenAI Embeddings · pgvector |
-| Database | PostgreSQL 16 + pgvector · Flyway migrations V1–V82 |
+| Database | PostgreSQL 16 + pgvector · Flyway migrations V1–V86 |
 | Cache / Session | Redis 7 |
 | Object Storage | MinIO (S3-compatible) |
 | Auth | JWT (HS256) · Spring Security |
@@ -163,7 +163,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 
 ## Feature Status
 
-> **As of 2026-05-18 — ~207 of 213 tasks done (97%)**
+> **As of 2026-05-19 — ~219 of 232 tasks done (94%) — TASK-001–019 complete**
 
 ### Backend (Java / Spring Boot)
 
@@ -232,6 +232,12 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | **Super Admin Public Website Link** — dynamic live-site link generated from current `window.location.origin` for local/staging/prod | ✅ Done |
 | Experience event partition extension through 2028 (V81) | ✅ Done |
 | Payment gateway idempotency keys (V82) | ✅ Done |
+| **Upload audit log** (V83) — `upload_audit_log`: UPLOAD / DOWNLOAD_URL / DELETE events with tenant, actor, correlation ID; TASK-010 | ✅ Done |
+| **Tenant storage quota** — per-tenant byte cap via `TenantConfigKey.MAX_STORAGE_BYTES`; upload rejected before MinIO write when exceeded; TASK-011 | ✅ Done |
+| **Antivirus/quarantine design doc** — `docs/UPLOAD_ANTIVIRUS_QUARANTINE_DESIGN.md`; TASK-012 | ✅ Done |
+| **Website rollback audit log** (V84) — immutable ledger of publish and rollback events; TASK-016 | ✅ Done |
+| **Website audit timeline** (V85) — `website_audit_timeline`: PAGE/SECTION/NAVIGATION/THEME/WEBSITE events; `GET /v1/super-admin/public-website/audit-timeline`; TASK-018 | ✅ Done |
+| **Investor room access audit** (V86) — `investor_room_access_log`: METADATA_ACCESS / CONTENT_ACCESS / UNLOCK_SUCCESS / UNLOCK_FAILURE / EXPIRED; EXPIRED uses `REQUIRES_NEW` to commit despite outer tx rollback; TASK-019 | ✅ Done |
 
 ### Web Frontend (React / TypeScript)
 
@@ -261,6 +267,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | **ExperienceAnalyticsDashboard** — stat cards + CSS bar chart for event funnel, period selector (7/14/30/90 days) | ✅ Done |
 | **CloudCampus public homepage** — premium SaaS landing page at `/` and `/home`, config-driven sections for future Website Builder editing | ✅ Done |
 | **Public Website Builder live link** — `View Public Website` in Super Admin shell and `View Live Website` in Public Website Builder shell | ✅ Done |
+| **Website audit timeline panel** — last 12 change events displayed in `PublicWebsitePublishPage`; backed by `GET /v1/super-admin/public-website/audit-timeline`; TASK-018 | ✅ Done |
 | School-admin dashboard (live stats), academic management | ✅ Done |
 | Student management (admit / profile / list / bulk import / promotion) | ✅ Done |
 | Staff management (list / create / profile) | ✅ Done |
@@ -307,17 +314,32 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Grafana dashboards (9 panels) | ✅ Done |
 | Staging / production profiles | ✅ Done |
 | pg_dump backup sidecar + disaster recovery drill script | ✅ Done |
+| **Scheduled DR drill** — monthly GitHub Actions workflow (`dr-drill.yml`): spins up Postgres + MinIO, runs Flyway, seeds data, executes backup + restore drill; TASK-007 | ✅ Done |
+| **Backup freshness monitoring** — Pushgateway (`prom/pushgateway:v1.9.0`, port 9091) in Docker Compose; `backup.sh` pushes `cc_backup_last_success_timestamp_seconds`; `BackupNotFresh` (>8h) and `BackupMetricAbsent` (>25h) Prometheus alerts; TASK-008 | ✅ Done |
+| **Incident runbook** — `docs/INCIDENT_RUNBOOK.md`: PB-1 PostgreSQL restore, PB-2 Redis outage, PB-3 RabbitMQ backlog, PB-4 MinIO failure, PB-5 tenant comms; TASK-009 | ✅ Done |
 | CI/CD pipeline (4-job GitHub Actions: backend / frontend / mobile / docker) | ✅ Done |
 
 ---
 
-## Remaining Work (~6 tasks, 3%)
+## Remaining Work (~13 tasks, 6% — TASK-020 onwards)
 
-| Area | Pending | Notes |
-|------|---------|-------|
-| Experience Studio — Ephemeral tenant provisioning | Phase 5 — not built (EUP-100) | Isolated school per demo session |
-| Experience Studio — Analytics funnel full detail view | Phase 6 — partial | Dashboard exists; cohort/funnel drill-down not built |
-| AI Copilot ScopedValue migration | EUP-007 partial | Virtual threads enabled via `spring.threads.virtual.enabled=true`; ScopedValue refactor of RequestContext pending |
+Production readiness roadmap: TASK-001–019 complete. Remaining tasks cover AI safety hardening, load testing, deployment gates, security compliance, and operational SOPs.
+
+| Area | Task | Notes |
+|------|------|-------|
+| Investor room expiry validation tests | TASK-020 | Expired rooms must never expose protected content |
+| Watermark / download control plan | TASK-021 | Design doc only |
+| AI prompt injection test cases | TASK-022 | CRIT-15 regression suite |
+| Cross-tenant RAG leakage tests | TASK-023 | Embedding isolation verification |
+| AI usage audit dashboard | TASK-024 | Token spend per tenant |
+| AI budget anomaly alert | TASK-025 | Prometheus alert on spend spike |
+| k6 load test scenarios | TASK-027–028 | School admin + public website flows |
+| Database index audit | TASK-029 | Query plan review on large tables |
+| Migration gate + rollback playbook | TASK-031–032 | Zero-downtime deployment checklist |
+| MFA / SSO readiness plan | TASK-035–037 | Super admin hardening + SAML/OIDC design |
+| Alert routing + audit retention policy | TASK-038–039 | Alertmanager routes + data lifecycle |
+| Experience Studio — Ephemeral tenant provisioning | Phase 5 — EUP-100 | Isolated school per demo session |
+| AI Copilot ScopedValue migration | EUP-007 partial | `ScopedValue` refactor of `RequestContext` for virtual threads |
 
 ---
 
@@ -417,6 +439,10 @@ Base path: `/v1`
 | `GET` | `/v1/super-admin/public-website/branding/themes` | List website themes |
 | `GET` | `/v1/super-admin/public-website/seo` | List SEO entries |
 | `POST` | `/v1/super-admin/public-website/publish` | Publish full website snapshot |
+| `GET` | `/v1/super-admin/public-website/audit-timeline?limit=N` | Last N website change events (PAGE/SECTION/NAVIGATION/THEME/WEBSITE) |
+| `GET` | `/v1/super-admin/public-website/publish/rollback-audit` | Rollback audit log |
+| `GET` | `/v1/super-admin/tenants/{tenantId}/storage/quota` | Tenant storage quota usage |
+| `GET` | `/v1/school-admin/storage/quota` | Own school storage quota usage |
 
 ### Public Website
 
@@ -558,7 +584,7 @@ Proprietary — CloudCampus © 2026. All rights reserved.
 _Former source: `docs/DEV_GUIDE.md`._
 
 
-**Version:** 2.0 | **Updated:** 2026-05-18
+**Version:** 2.1 | **Updated:** 2026-05-19
 > Local development reference — credentials, UUIDs, commands, known issues.
 
 ---
@@ -571,7 +597,7 @@ docker compose up -d
 # NOTE: postgres image MUST be pgvector/pgvector:pg16 (not postgres:16-alpine)
 # Flyway V46 requires pgvector. If wrong image: docker compose down && docker compose up -d
 
-# 2. Backend (Flyway auto-applies V1–V74 on first boot)
+# 2. Backend (Flyway auto-applies V1–V86 on first boot)
 cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 # Runs on http://localhost:8080

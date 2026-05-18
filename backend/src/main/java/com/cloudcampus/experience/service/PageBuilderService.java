@@ -30,13 +30,19 @@ public class PageBuilderService {
     private final ExperienceWebsitePageRepository pageRepository;
     private final ExperienceWebsiteSectionRepository sectionRepository;
     private final ExperienceWebsiteNavigationRepository navigationRepository;
+    private final WebsiteSchemaValidator websiteSchemaValidator;
+    private final WebsiteAuditTimelineService auditTimelineService;
 
     public PageBuilderService(ExperienceWebsitePageRepository pageRepository,
                               ExperienceWebsiteSectionRepository sectionRepository,
-                              ExperienceWebsiteNavigationRepository navigationRepository) {
+                              ExperienceWebsiteNavigationRepository navigationRepository,
+                              WebsiteSchemaValidator websiteSchemaValidator,
+                              WebsiteAuditTimelineService auditTimelineService) {
         this.pageRepository = pageRepository;
         this.sectionRepository = sectionRepository;
         this.navigationRepository = navigationRepository;
+        this.websiteSchemaValidator = websiteSchemaValidator;
+        this.auditTimelineService = auditTimelineService;
     }
 
     public List<WebsitePageResponse> listPages() {
@@ -45,6 +51,7 @@ public class PageBuilderService {
 
     @Transactional
     public WebsitePageResponse createPage(WebsitePageCreateRequest req, UUID actorId) {
+        websiteSchemaValidator.validateCreatePage(req);
         WebsitePage page = WebsitePage.create(
                 req.pageKey(),
                 req.title(),
@@ -53,21 +60,49 @@ public class PageBuilderService {
                 nullSafeMap(req.settingsJson()),
                 actorId
         );
-        return WebsitePageResponse.from(pageRepository.save(page));
+        WebsitePage saved = pageRepository.save(page);
+        auditTimelineService.record(
+                "PAGE_CREATED",
+                "PAGE",
+                saved.getId(),
+                saved.getTitle(),
+                actorId,
+                Map.of("slug", saved.getSlug(), "pageKey", saved.getPageKey())
+        );
+        return WebsitePageResponse.from(saved);
     }
 
     @Transactional
-    public WebsitePageResponse updatePage(UUID id, WebsitePageUpdateRequest req) {
+    public WebsitePageResponse updatePage(UUID id, WebsitePageUpdateRequest req, UUID actorId) {
+        websiteSchemaValidator.validateUpdatePage(req);
         WebsitePage page = pageRepository.findById(id).orElseThrow(() -> new NotFoundException("Website page not found"));
         page.update(req.title(), req.slug(), nullSafeMap(req.seoJson()), nullSafeMap(req.settingsJson()));
-        return WebsitePageResponse.from(pageRepository.save(page));
+        WebsitePage saved = pageRepository.save(page);
+        auditTimelineService.record(
+                "PAGE_UPDATED",
+                "PAGE",
+                saved.getId(),
+                saved.getTitle(),
+                actorId,
+                Map.of("slug", saved.getSlug(), "version", saved.getVersion())
+        );
+        return WebsitePageResponse.from(saved);
     }
 
     @Transactional
-    public WebsitePageResponse publishPage(UUID id) {
+    public WebsitePageResponse publishPage(UUID id, UUID actorId) {
         WebsitePage page = pageRepository.findById(id).orElseThrow(() -> new NotFoundException("Website page not found"));
         page.publish();
-        return WebsitePageResponse.from(pageRepository.save(page));
+        WebsitePage saved = pageRepository.save(page);
+        auditTimelineService.record(
+                "PAGE_PUBLISHED",
+                "PAGE",
+                saved.getId(),
+                saved.getTitle(),
+                actorId,
+                Map.of("slug", saved.getSlug(), "version", saved.getVersion())
+        );
+        return WebsitePageResponse.from(saved);
     }
 
     public List<WebsiteSectionResponse> listSections(UUID pageId) {
@@ -76,6 +111,7 @@ public class PageBuilderService {
 
     @Transactional
     public WebsiteSectionResponse createSection(UUID pageId, WebsiteSectionCreateRequest req, UUID actorId) {
+        websiteSchemaValidator.validateCreateSection(req);
         if (pageRepository.findById(pageId).isEmpty()) {
             throw new NotFoundException("Website page not found");
         }
@@ -88,23 +124,51 @@ public class PageBuilderService {
                 nullSafeMap(req.configJson()),
                 actorId
         );
-        return WebsiteSectionResponse.from(sectionRepository.save(section));
+        WebsiteSection saved = sectionRepository.save(section);
+        auditTimelineService.record(
+                "SECTION_CREATED",
+                "SECTION",
+                saved.getId(),
+                saved.getTitle(),
+                actorId,
+                Map.of("pageId", pageId.toString(), "sectionType", saved.getSectionType(), "position", saved.getPosition())
+        );
+        return WebsiteSectionResponse.from(saved);
     }
 
     @Transactional
-    public WebsiteSectionResponse updateSection(UUID sectionId, WebsiteSectionUpdateRequest req) {
+    public WebsiteSectionResponse updateSection(UUID sectionId, WebsiteSectionUpdateRequest req, UUID actorId) {
+        websiteSchemaValidator.validateUpdateSection(req);
         WebsiteSection section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new NotFoundException("Website section not found"));
         section.update(req.title(), req.sectionType(), req.position(), nullSafeMap(req.configJson()));
-        return WebsiteSectionResponse.from(sectionRepository.save(section));
+        WebsiteSection saved = sectionRepository.save(section);
+        auditTimelineService.record(
+                "SECTION_UPDATED",
+                "SECTION",
+                saved.getId(),
+                saved.getTitle(),
+                actorId,
+                Map.of("pageId", saved.getPageId().toString(), "sectionType", saved.getSectionType(), "position", saved.getPosition())
+        );
+        return WebsiteSectionResponse.from(saved);
     }
 
     @Transactional
-    public WebsiteSectionResponse publishSection(UUID sectionId) {
+    public WebsiteSectionResponse publishSection(UUID sectionId, UUID actorId) {
         WebsiteSection section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new NotFoundException("Website section not found"));
         section.publish();
-        return WebsiteSectionResponse.from(sectionRepository.save(section));
+        WebsiteSection saved = sectionRepository.save(section);
+        auditTimelineService.record(
+                "SECTION_PUBLISHED",
+                "SECTION",
+                saved.getId(),
+                saved.getTitle(),
+                actorId,
+                Map.of("pageId", saved.getPageId().toString(), "sectionType", saved.getSectionType())
+        );
+        return WebsiteSectionResponse.from(saved);
     }
 
     public List<WebsiteNavigationResponse> listNavigation() {
@@ -113,6 +177,7 @@ public class PageBuilderService {
 
     @Transactional
     public WebsiteNavigationResponse createNavigation(WebsiteNavigationCreateRequest req, UUID actorId) {
+        websiteSchemaValidator.validateCreateNavigation(req);
         WebsiteNavigation navigation = WebsiteNavigation.create(
                 req.label(),
                 req.path(),
@@ -122,23 +187,51 @@ public class PageBuilderService {
                 req.visible(),
                 actorId
         );
-        return WebsiteNavigationResponse.from(navigationRepository.save(navigation));
+        WebsiteNavigation saved = navigationRepository.save(navigation);
+        auditTimelineService.record(
+                "NAVIGATION_CREATED",
+                "NAVIGATION",
+                saved.getId(),
+                saved.getLabel(),
+                actorId,
+                Map.of("path", saved.getPath(), "groupName", saved.getGroupName(), "visible", saved.isVisible())
+        );
+        return WebsiteNavigationResponse.from(saved);
     }
 
     @Transactional
-    public WebsiteNavigationResponse updateNavigation(UUID id, WebsiteNavigationUpdateRequest req) {
+    public WebsiteNavigationResponse updateNavigation(UUID id, WebsiteNavigationUpdateRequest req, UUID actorId) {
+        websiteSchemaValidator.validateUpdateNavigation(req);
         WebsiteNavigation navigation = navigationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Website navigation not found"));
         navigation.update(req.label(), req.path(), req.target(), req.groupName(), req.position(), req.visible());
-        return WebsiteNavigationResponse.from(navigationRepository.save(navigation));
+        WebsiteNavigation saved = navigationRepository.save(navigation);
+        auditTimelineService.record(
+                "NAVIGATION_UPDATED",
+                "NAVIGATION",
+                saved.getId(),
+                saved.getLabel(),
+                actorId,
+                Map.of("path", saved.getPath(), "groupName", saved.getGroupName(), "visible", saved.isVisible())
+        );
+        return WebsiteNavigationResponse.from(saved);
     }
 
     @Transactional
-    public WebsiteNavigationResponse publishNavigation(UUID id) {
+    public WebsiteNavigationResponse publishNavigation(UUID id, UUID actorId) {
         WebsiteNavigation navigation = navigationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Website navigation not found"));
         navigation.publish();
-        return WebsiteNavigationResponse.from(navigationRepository.save(navigation));
+        WebsiteNavigation saved = navigationRepository.save(navigation);
+        auditTimelineService.record(
+                "NAVIGATION_PUBLISHED",
+                "NAVIGATION",
+                saved.getId(),
+                saved.getLabel(),
+                actorId,
+                Map.of("path", saved.getPath(), "groupName", saved.getGroupName())
+        );
+        return WebsiteNavigationResponse.from(saved);
     }
 
     private static Map<String, Object> nullSafeMap(Map<String, Object> input) {

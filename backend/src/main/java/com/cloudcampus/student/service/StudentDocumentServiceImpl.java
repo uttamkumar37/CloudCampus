@@ -1,7 +1,10 @@
 package com.cloudcampus.student.service;
 
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.storage.StorageQuotaService;
 import com.cloudcampus.common.web.RequestContext;
+import com.cloudcampus.storage.audit.UploadAuditEvent;
+import com.cloudcampus.storage.audit.UploadAuditService;
 import com.cloudcampus.student.dto.StudentDocumentResponse;
 import com.cloudcampus.student.entity.StudentDocument;
 import com.cloudcampus.student.repository.StudentDocumentRepository;
@@ -20,13 +23,19 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
     private final StudentRepository         studentRepo;
     private final StudentDocumentRepository documentRepo;
     private final StorageService            storage;
+    private final UploadAuditService        auditService;
+    private final StorageQuotaService       quotaService;
 
     public StudentDocumentServiceImpl(StudentRepository studentRepo,
                                        StudentDocumentRepository documentRepo,
-                                       StorageService storage) {
+                                       StorageService storage,
+                                       UploadAuditService auditService,
+                                       StorageQuotaService quotaService) {
         this.studentRepo  = studentRepo;
         this.documentRepo = documentRepo;
         this.storage      = storage;
+        this.auditService = auditService;
+        this.quotaService = quotaService;
     }
 
     @Override
@@ -39,18 +48,24 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
         String safeFilename  = sanitizeFilename(file.getOriginalFilename());
         String objectKey     = buildObjectKey(tenantId, schoolId, studentId, safeFilename);
 
+        quotaService.checkUploadAllowed(tenantId, file.getSize());
         storage.upload(objectKey, file);
 
+        String mimeType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
         StudentDocument doc = StudentDocument.create(
                 tenantId, schoolId, studentId,
                 documentType,
                 safeFilename,
-                file.getContentType() != null ? file.getContentType() : "application/octet-stream",
+                mimeType,
                 file.getSize(),
                 objectKey,
                 uploadedBy);
 
-        return StudentDocumentResponse.from(documentRepo.save(doc));
+        StudentDocument saved = documentRepo.save(doc);
+        auditService.record(UploadAuditEvent.UPLOAD,
+                tenantId, schoolId, uploadedBy,
+                saved.getId(), objectKey, safeFilename, mimeType, file.getSize());
+        return StudentDocumentResponse.from(saved);
     }
 
     @Override
@@ -62,12 +77,16 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public String presignedUrl(UUID schoolId, UUID studentId, UUID documentId) {
         validateStudent(studentId, schoolId);
         StudentDocument doc = documentRepo.findByIdAndStudentId(documentId, studentId)
                 .orElseThrow(() -> new NotFoundException("Document not found"));
-        return storage.presignedGetUrl(doc.getObjectKey());
+        String url = storage.presignedGetUrl(doc.getObjectKey());
+        auditService.record(UploadAuditEvent.DOWNLOAD_URL,
+                doc.getTenantId(), doc.getSchoolId(), RequestContext.getUserId(),
+                documentId, doc.getObjectKey(), doc.getFileName(), doc.getMimeType(), null);
+        return url;
     }
 
     @Override
@@ -76,8 +95,16 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
         validateStudent(studentId, schoolId);
         StudentDocument doc = documentRepo.findByIdAndStudentId(documentId, studentId)
                 .orElseThrow(() -> new NotFoundException("Document not found"));
-        storage.delete(doc.getObjectKey());
+        UUID   delTenantId = doc.getTenantId();
+        UUID   delSchoolId = doc.getSchoolId();
+        String delKey      = doc.getObjectKey();
+        String delName     = doc.getFileName();
+        String delMime     = doc.getMimeType();
+        storage.delete(delKey);
         documentRepo.delete(doc);
+        auditService.record(UploadAuditEvent.DELETE,
+                delTenantId, delSchoolId, RequestContext.getUserId(),
+                documentId, delKey, delName, delMime, null);
     }
 
     private void validateStudent(UUID studentId, UUID schoolId) {

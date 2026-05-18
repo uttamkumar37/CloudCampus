@@ -1,6 +1,8 @@
 package com.cloudcampus.experience.service;
 
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.experience.audit.InvestorRoomAccessEvent;
+import com.cloudcampus.experience.audit.InvestorRoomAccessLogService;
 import com.cloudcampus.experience.dto.request.InvestorRoomCreateRequest;
 import com.cloudcampus.experience.dto.response.InvestorRoomResponse;
 import com.cloudcampus.experience.dto.response.InvestorRoomSectionResponse;
@@ -28,22 +30,27 @@ public class InvestorRoomService {
 
     private final InvestorRoomRepository        repo;
     private final InvestorRoomSectionRepository sectionRepo;
+    private final InvestorRoomAccessLogService  accessLogService;
 
     public InvestorRoomService(InvestorRoomRepository repo,
-                               InvestorRoomSectionRepository sectionRepo) {
-        this.repo        = repo;
-        this.sectionRepo = sectionRepo;
+                               InvestorRoomSectionRepository sectionRepo,
+                               InvestorRoomAccessLogService accessLogService) {
+        this.repo             = repo;
+        this.sectionRepo      = sectionRepo;
+        this.accessLogService = accessLogService;
     }
 
     public InvestorRoomResponse getRoom(String roomCode) {
-        return fullRoom(loadActiveRoom(roomCode));
+        return fullRoom(loadActiveRoom(roomCode, null));
     }
 
-    public InvestorRoomResponse getPublicRoom(String roomCode) {
-        InvestorRoom room = loadActiveRoom(roomCode);
+    public InvestorRoomResponse getPublicRoom(String roomCode, String clientIp) {
+        InvestorRoom room = loadActiveRoom(roomCode, clientIp);
         if ("LINK_ONLY".equals(room.getAccessMode())) {
+            accessLogService.record(InvestorRoomAccessEvent.CONTENT_ACCESS, room, clientIp);
             return fullRoom(room);
         }
+        accessLogService.record(InvestorRoomAccessEvent.METADATA_ACCESS, room, clientIp);
         return InvestorRoomResponse.metadata(room);
     }
 
@@ -87,28 +94,32 @@ public class InvestorRoomService {
         return room.getRoomCode();
     }
 
-    public Optional<InvestorRoomResponse> unlockRoom(String roomCode, String candidatePassword) {
-        InvestorRoom room = loadActiveRoom(roomCode);
+    public Optional<InvestorRoomResponse> unlockRoom(String roomCode, String candidatePassword, String clientIp) {
+        InvestorRoom room = loadActiveRoom(roomCode, clientIp);
         if ("LINK_ONLY".equals(room.getAccessMode())) {
+            accessLogService.record(InvestorRoomAccessEvent.CONTENT_ACCESS, room, clientIp);
             return Optional.of(fullRoom(room));
         }
         if ("PASSWORD".equals(room.getAccessMode())
                 && room.getAccessSecret() != null
                 && candidatePassword != null
                 && BCrypt.checkpw(candidatePassword, room.getAccessSecret())) {
+            accessLogService.record(InvestorRoomAccessEvent.UNLOCK_SUCCESS, room, clientIp);
             return Optional.of(fullRoom(room));
         }
+        accessLogService.record(InvestorRoomAccessEvent.UNLOCK_FAILURE, room, clientIp);
         return Optional.empty();
     }
 
     public boolean verifyPassword(String roomCode, String candidatePassword) {
-        return unlockRoom(roomCode, candidatePassword).isPresent();
+        return unlockRoom(roomCode, candidatePassword, null).isPresent();
     }
 
-    private InvestorRoom loadActiveRoom(String roomCode) {
+    private InvestorRoom loadActiveRoom(String roomCode, String clientIp) {
         InvestorRoom room = repo.findByRoomCodeAndStatus(roomCode, "ACTIVE")
                 .orElseThrow(() -> new NotFoundException("Investor room not found: " + roomCode));
         if (!notExpired(room)) {
+            accessLogService.record(InvestorRoomAccessEvent.EXPIRED, room, clientIp);
             throw new NotFoundException("Investor room not found: " + roomCode);
         }
         return room;

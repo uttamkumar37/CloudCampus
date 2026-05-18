@@ -91,6 +91,15 @@ public class TenantConfigServiceImpl implements TenantConfigService {
                     throw new BadRequestException(key.name() + " must be a positive integer");
                 }
             }
+            case MAX_STORAGE_BYTES -> {
+                try {
+                    long n = Long.parseLong(value.trim());
+                    if (n < 0) throw new BadRequestException(
+                            key.name() + " must be 0 (unlimited) or a positive integer");
+                } catch (NumberFormatException e) {
+                    throw new BadRequestException(key.name() + " must be an integer (0 = unlimited)");
+                }
+            }
             case SUPPORT_EMAIL -> {
                 if (!value.isBlank() && !EMAIL_RE.matcher(value.trim()).matches()) {
                     throw new BadRequestException("SUPPORT_EMAIL must be a valid email address or empty");

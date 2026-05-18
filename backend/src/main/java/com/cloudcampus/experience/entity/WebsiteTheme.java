@@ -116,6 +116,16 @@ public class WebsiteTheme {
         this.publishedAt = Instant.now();
     }
 
+    public void restorePublishedState(boolean published) {
+        if (published) {
+            publish();
+        } else {
+            this.status = "DRAFT";
+            this.published = false;
+            this.publishedAt = null;
+        }
+    }
+
     public UUID getId() {
         return id;
     }

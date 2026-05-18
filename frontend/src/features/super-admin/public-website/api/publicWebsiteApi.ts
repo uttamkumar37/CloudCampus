@@ -5,8 +5,10 @@ import type {
   WebsiteDashboard,
   WebsiteNavigation,
   WebsitePage,
+  WebsiteAuditTimelineEvent,
   WebsiteSection,
   WebsiteSeo,
+  WebsiteRollbackAudit,
   WebsiteSnapshot,
   WebsiteTheme,
 } from '../types';
@@ -162,6 +164,20 @@ export async function listSnapshots(): Promise<WebsiteSnapshot[]> {
 
 export async function rollbackSnapshot(snapshotId: string): Promise<WebsiteSnapshot> {
   const res = await api.post<ApiEnvelope<WebsiteSnapshot>>(`${ADMIN_BASE}/publish/rollback/${snapshotId}`);
+  return res.data.data;
+}
+
+export async function listRollbackAudit(snapshotId?: string): Promise<WebsiteRollbackAudit[]> {
+  const res = await api.get<ApiEnvelope<WebsiteRollbackAudit[]>>(`${ADMIN_BASE}/publish/rollback-audit`, {
+    params: snapshotId ? { snapshotId } : undefined,
+  });
+  return res.data.data;
+}
+
+export async function listAuditTimeline(limit = 50): Promise<WebsiteAuditTimelineEvent[]> {
+  const res = await api.get<ApiEnvelope<WebsiteAuditTimelineEvent[]>>(`${ADMIN_BASE}/audit-timeline`, {
+    params: { limit },
+  });
   return res.data.data;
 }
 

@@ -18,9 +18,15 @@ import java.util.UUID;
 public class BrandingService {
 
     private final ExperienceWebsiteThemeRepository themeRepository;
+    private final WebsiteSchemaValidator websiteSchemaValidator;
+    private final WebsiteAuditTimelineService auditTimelineService;
 
-    public BrandingService(ExperienceWebsiteThemeRepository themeRepository) {
+    public BrandingService(ExperienceWebsiteThemeRepository themeRepository,
+                           WebsiteSchemaValidator websiteSchemaValidator,
+                           WebsiteAuditTimelineService auditTimelineService) {
         this.themeRepository = themeRepository;
+        this.websiteSchemaValidator = websiteSchemaValidator;
+        this.auditTimelineService = auditTimelineService;
     }
 
     public List<WebsiteThemeResponse> listThemes() {
@@ -29,6 +35,7 @@ public class BrandingService {
 
     @Transactional
     public WebsiteThemeResponse createTheme(WebsiteThemeCreateRequest req, UUID actorId) {
+        websiteSchemaValidator.validateCreateTheme(req);
         WebsiteTheme theme = WebsiteTheme.create(
                 req.themeKey(),
                 req.name(),
@@ -37,21 +44,49 @@ public class BrandingService {
                 nullSafeMap(req.effectsJson()),
                 actorId
         );
-        return WebsiteThemeResponse.from(themeRepository.save(theme));
+        WebsiteTheme saved = themeRepository.save(theme);
+        auditTimelineService.record(
+                "THEME_CREATED",
+                "THEME",
+                saved.getId(),
+                saved.getName(),
+                actorId,
+                Map.of("themeKey", saved.getThemeKey())
+        );
+        return WebsiteThemeResponse.from(saved);
     }
 
     @Transactional
-    public WebsiteThemeResponse updateTheme(UUID id, WebsiteThemeUpdateRequest req) {
+    public WebsiteThemeResponse updateTheme(UUID id, WebsiteThemeUpdateRequest req, UUID actorId) {
+        websiteSchemaValidator.validateUpdateTheme(req);
         WebsiteTheme theme = themeRepository.findById(id).orElseThrow(() -> new NotFoundException("Website theme not found"));
         theme.update(req.name(), nullSafeMap(req.tokensJson()), nullSafeMap(req.typographyJson()), nullSafeMap(req.effectsJson()));
-        return WebsiteThemeResponse.from(themeRepository.save(theme));
+        WebsiteTheme saved = themeRepository.save(theme);
+        auditTimelineService.record(
+                "THEME_UPDATED",
+                "THEME",
+                saved.getId(),
+                saved.getName(),
+                actorId,
+                Map.of("themeKey", saved.getThemeKey())
+        );
+        return WebsiteThemeResponse.from(saved);
     }
 
     @Transactional
-    public WebsiteThemeResponse publishTheme(UUID id) {
+    public WebsiteThemeResponse publishTheme(UUID id, UUID actorId) {
         WebsiteTheme theme = themeRepository.findById(id).orElseThrow(() -> new NotFoundException("Website theme not found"));
         theme.publish();
-        return WebsiteThemeResponse.from(themeRepository.save(theme));
+        WebsiteTheme saved = themeRepository.save(theme);
+        auditTimelineService.record(
+                "THEME_PUBLISHED",
+                "THEME",
+                saved.getId(),
+                saved.getName(),
+                actorId,
+                Map.of("themeKey", saved.getThemeKey())
+        );
+        return WebsiteThemeResponse.from(saved);
     }
 
     public WebsiteThemeResponse activeTheme() {

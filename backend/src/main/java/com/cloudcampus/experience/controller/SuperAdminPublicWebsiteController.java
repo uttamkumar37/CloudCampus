@@ -13,9 +13,11 @@ import com.cloudcampus.experience.dto.request.WebsiteThemeUpdateRequest;
 import com.cloudcampus.experience.dto.response.DemoScenarioResponse;
 import com.cloudcampus.experience.dto.response.InvestorRoomResponse;
 import com.cloudcampus.experience.dto.response.PublicWebsiteDashboardResponse;
+import com.cloudcampus.experience.dto.response.WebsiteAuditTimelineEventResponse;
 import com.cloudcampus.experience.dto.response.WebsiteNavigationResponse;
 import com.cloudcampus.experience.dto.response.WebsitePageResponse;
 import com.cloudcampus.experience.dto.response.WebsitePublishSnapshotResponse;
+import com.cloudcampus.experience.dto.response.WebsiteRollbackAuditLogResponse;
 import com.cloudcampus.experience.dto.response.WebsiteSectionResponse;
 import com.cloudcampus.experience.dto.response.WebsiteSeoSettingsResponse;
 import com.cloudcampus.experience.dto.response.WebsiteThemeResponse;
@@ -100,14 +102,20 @@ public class SuperAdminPublicWebsiteController {
     @PutMapping("/pages/{id}")
     public ResponseEntity<ApiResponse<WebsitePageResponse>> updatePage(
             @PathVariable UUID id,
-            @RequestBody WebsitePageUpdateRequest req
+            @RequestBody WebsitePageUpdateRequest req,
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.updatePage(id, req)));
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.updatePage(id, req, actorId)));
     }
 
     @PostMapping("/pages/{id}/publish")
-    public ResponseEntity<ApiResponse<WebsitePageResponse>> publishPage(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.publishPage(id)));
+    public ResponseEntity<ApiResponse<WebsitePageResponse>> publishPage(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.publishPage(id, actorId)));
     }
 
     @GetMapping("/pages/{id}/sections")
@@ -128,14 +136,20 @@ public class SuperAdminPublicWebsiteController {
     @PutMapping("/sections/{sectionId}")
     public ResponseEntity<ApiResponse<WebsiteSectionResponse>> updateSection(
             @PathVariable UUID sectionId,
-            @RequestBody WebsiteSectionUpdateRequest req
+            @RequestBody WebsiteSectionUpdateRequest req,
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.updateSection(sectionId, req)));
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.updateSection(sectionId, req, actorId)));
     }
 
     @PostMapping("/sections/{sectionId}/publish")
-    public ResponseEntity<ApiResponse<WebsiteSectionResponse>> publishSection(@PathVariable UUID sectionId) {
-        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.publishSection(sectionId)));
+    public ResponseEntity<ApiResponse<WebsiteSectionResponse>> publishSection(
+            @PathVariable UUID sectionId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.publishSection(sectionId, actorId)));
     }
 
     @GetMapping("/navigation")
@@ -155,14 +169,20 @@ public class SuperAdminPublicWebsiteController {
     @PutMapping("/navigation/{id}")
     public ResponseEntity<ApiResponse<WebsiteNavigationResponse>> updateNavigation(
             @PathVariable UUID id,
-            @RequestBody WebsiteNavigationUpdateRequest req
+            @RequestBody WebsiteNavigationUpdateRequest req,
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.updateNavigation(id, req)));
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.updateNavigation(id, req, actorId)));
     }
 
     @PostMapping("/navigation/{id}/publish")
-    public ResponseEntity<ApiResponse<WebsiteNavigationResponse>> publishNavigation(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.publishNavigation(id)));
+    public ResponseEntity<ApiResponse<WebsiteNavigationResponse>> publishNavigation(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, pageBuilderService.publishNavigation(id, actorId)));
     }
 
     @GetMapping("/branding/themes")
@@ -182,14 +202,20 @@ public class SuperAdminPublicWebsiteController {
     @PutMapping("/branding/themes/{id}")
     public ResponseEntity<ApiResponse<WebsiteThemeResponse>> updateTheme(
             @PathVariable UUID id,
-            @RequestBody WebsiteThemeUpdateRequest req
+            @RequestBody WebsiteThemeUpdateRequest req,
+            @AuthenticationPrincipal UserDetails userDetails
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(null, brandingService.updateTheme(id, req)));
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, brandingService.updateTheme(id, req, actorId)));
     }
 
     @PostMapping("/branding/themes/{id}/publish")
-    public ResponseEntity<ApiResponse<WebsiteThemeResponse>> publishTheme(@PathVariable UUID id) {
-        return ResponseEntity.ok(ApiResponse.ok(null, brandingService.publishTheme(id)));
+    public ResponseEntity<ApiResponse<WebsiteThemeResponse>> publishTheme(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, brandingService.publishTheme(id, actorId)));
     }
 
     @GetMapping("/seo")
@@ -201,13 +227,21 @@ public class SuperAdminPublicWebsiteController {
     }
 
     @PutMapping("/seo")
-    public ResponseEntity<ApiResponse<WebsiteSeoSettingsResponse>> upsertSeo(@RequestBody WebsiteSeoUpsertRequest req) {
-        return ResponseEntity.ok(ApiResponse.ok(null, seoService.upsert(req)));
+    public ResponseEntity<ApiResponse<WebsiteSeoSettingsResponse>> upsertSeo(
+            @RequestBody WebsiteSeoUpsertRequest req,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, seoService.upsert(req, actorId)));
     }
 
     @PostMapping("/seo/publish")
-    public ResponseEntity<ApiResponse<WebsiteSeoSettingsResponse>> publishSeo(@RequestParam String routePath) {
-        return ResponseEntity.ok(ApiResponse.ok(null, seoService.publish(routePath)));
+    public ResponseEntity<ApiResponse<WebsiteSeoSettingsResponse>> publishSeo(
+            @RequestParam String routePath,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, seoService.publish(routePath, actorId)));
     }
 
     @GetMapping("/content-blocks")
@@ -248,12 +282,30 @@ public class SuperAdminPublicWebsiteController {
     }
 
     @PostMapping("/publish/rollback/{snapshotId}")
-    public ResponseEntity<ApiResponse<WebsitePublishSnapshotResponse>> rollback(@PathVariable UUID snapshotId) {
-        return ResponseEntity.ok(ApiResponse.ok(null, publishService.rollback(snapshotId)));
+    public ResponseEntity<ApiResponse<WebsitePublishSnapshotResponse>> rollback(
+            @PathVariable UUID snapshotId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        UUID actorId = UUID.fromString(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.ok(null, publishService.rollback(snapshotId, actorId)));
     }
 
     @GetMapping("/publish/snapshots")
     public ResponseEntity<ApiResponse<List<WebsitePublishSnapshotResponse>>> snapshots() {
         return ResponseEntity.ok(ApiResponse.ok(null, publishService.snapshots()));
+    }
+
+    @GetMapping("/publish/rollback-audit")
+    public ResponseEntity<ApiResponse<List<WebsiteRollbackAuditLogResponse>>> rollbackAudit(
+            @RequestParam(required = false) UUID snapshotId
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(null, publishService.rollbackAudit(snapshotId)));
+    }
+
+    @GetMapping("/audit-timeline")
+    public ResponseEntity<ApiResponse<List<WebsiteAuditTimelineEventResponse>>> auditTimeline(
+            @RequestParam(defaultValue = "50") int limit
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(null, publishService.auditTimeline(limit)));
     }
 }

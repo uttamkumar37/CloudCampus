@@ -1,6 +1,6 @@
 # CloudCampus Production Ready Roadmap
 
-Last updated: 2026-05-18
+Last updated: 2026-05-19
 
 ## 1. Executive Summary
 
@@ -55,26 +55,26 @@ Each phase is intentionally narrow. Do not batch phases or skip validation. The 
 
 | ID | Task | Status | Risk | Validation command | Rollback notes | Acceptance criteria |
 |---|---|---:|---:|---|---|---|
-| TASK-010 | Add upload audit logging | TODO | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress` | Revert audit entity/service/controller changes if logs are noisy or incorrect. | Upload, download URL generation, and delete events are audit logged with tenant, school, actor, file type, and correlation ID. |
-| TASK-011 | Add tenant storage quota checks | TODO | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress` | Revert quota enforcement if it blocks valid existing uploads. | Uploads fail gracefully when tenant quota is exceeded and quota usage is queryable. |
-| TASK-012 | Add antivirus/quarantine design | TODO | LOW | `rg -n "antivirus\|quarantine\|ClamAV\|malware" docs backend infra` | Documentation-only unless explicitly approved later. | Design covers scan states, quarantine bucket/prefix, user messaging, retries, and admin review. |
-| TASK-013 | Validate MIME/magic-byte handling | TODO | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Storage*Test,*Document*Test` | Revert only tests or validation adjustments that break valid uploads. | Tests cover valid files, spoofed extensions, wrong content types, oversized uploads, and unsupported file types. |
+| TASK-010 | Add upload audit logging | DONE | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress` | Revert audit entity/service/controller changes if logs are noisy or incorrect. | Upload, download URL generation, and delete events are audit logged with tenant, school, actor, file type, and correlation ID. |
+| TASK-011 | Add tenant storage quota checks | DONE | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress` | Revert quota enforcement if it blocks valid existing uploads. | Uploads fail gracefully when tenant quota is exceeded and quota usage is queryable. |
+| TASK-012 | Add antivirus/quarantine design | DONE | LOW | `rg -n "antivirus\|quarantine\|ClamAV\|malware" docs backend infra` | Documentation-only unless explicitly approved later. | Design covers scan states, quarantine bucket/prefix, user messaging, retries, and admin review. |
+| TASK-013 | Validate MIME/magic-byte handling | DONE | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Storage*Test,*Document*Test` | Revert only tests or validation adjustments that break valid uploads. | Tests cover valid files, spoofed extensions, wrong content types, oversized uploads, and unsupported file types. |
 
 ### PHASE 4 - Website Builder Hardening
 
 | ID | Task | Status | Risk | Validation command | Rollback notes | Acceptance criteria |
 |---|---|---:|---:|---|---|---|
-| TASK-014 | Add schema validation | TODO | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress && cd ../frontend && npm run build` | Revert schema validator if it rejects valid saved sections. | Public website pages, sections, themes, navigation, and SEO payloads validate before save. |
-| TASK-015 | Add publish validation | TODO | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress && cd ../frontend && npm run build` | Restore previous publish flow if validation blocks valid releases. | Publish fails with actionable errors when required page/theme/navigation data is invalid. |
-| TASK-016 | Add rollback workflow | TODO | HIGH | `cd backend && mvn test --batch-mode --no-transfer-progress && cd ../frontend && npm run build` | Keep previous snapshots immutable; rollback code can be reverted without deleting snapshots. | Published snapshots can be listed, selected, restored, and audited. |
-| TASK-017 | Add preview validation | TODO | MEDIUM | `cd frontend && npm run build` | Revert preview-only UI/API changes if rendering breaks. | Desktop/tablet/mobile preview detects missing required content before publish. |
-| TASK-018 | Add audit timeline | TODO | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress && cd ../frontend && npm run build` | Revert timeline UI and audit writes if event format needs redesign. | Builder saves, publishes, rollbacks, and theme changes appear in an audit timeline. |
+| TASK-014 | Add schema validation | DONE | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress && cd ../frontend && npm run build` | Revert schema validator if it rejects valid saved sections. | Public website pages, sections, themes, navigation, and SEO payloads validate before save. |
+| TASK-015 | Add publish validation | DONE | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress && cd ../frontend && npm run build` | Restore previous publish flow if validation blocks valid releases. | Publish fails with actionable errors when required page/theme/navigation data is invalid. |
+| TASK-016 | Add rollback workflow | DONE | HIGH | `cd backend && mvn test --batch-mode --no-transfer-progress && cd ../frontend && npm run build` | Keep previous snapshots immutable; rollback code can be reverted without deleting snapshots. | Published snapshots can be listed, selected, restored, and audited. |
+| TASK-017 | Add preview validation | DONE | MEDIUM | `cd frontend && npm run build` | Revert preview-only UI/API changes if rendering breaks. | Desktop/tablet/mobile preview detects missing required content before publish. |
+| TASK-018 | Add audit timeline | DONE | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress && cd ../frontend && npm run build` | Revert timeline UI and audit writes if event format needs redesign. | Builder saves, publishes, rollbacks, and theme changes appear in an audit timeline. |
 
 ### PHASE 5 - Investor Room Protection
 
 | ID | Task | Status | Risk | Validation command | Rollback notes | Acceptance criteria |
 |---|---|---:|---:|---|---|---|
-| TASK-019 | Add investor room access audit logs | TODO | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress` | Revert audit writes only; do not remove room access logic. | Metadata access, unlock attempts, successes, failures, and expirations are logged. |
+| TASK-019 | Add investor room access audit logs | DONE | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress` | Revert audit writes only; do not remove room access logic. | Metadata access, unlock attempts, successes, failures, and expirations are logged. |
 | TASK-020 | Add expiry validation tests | TODO | LOW | `cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Investor*Test` | Revert tests if fixtures need redesign. | Expired rooms never expose protected content, including link-only rooms. |
 | TASK-021 | Add watermark/download control plan | TODO | LOW | `rg -n "watermark\|download control\|investor room" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan defines watermarking, download policy, access event tracking, and future signed-file controls. |
 
@@ -655,6 +655,426 @@ Validation result:
 - PASS — 65 matches across `docs/INCIDENT_RUNBOOK.md`, `docs/DISASTER_RECOVERY.md`, `PRODUCTION_READY_ROADMAP.md`, and audit docs.
 - PASS — All five acceptance criteria covered by dedicated playbook sections.
 - PASS — No production code was changed for TASK-009.
+
+---
+
+## 17. TASK-010 Findings - Upload Audit Logging
+
+**Status:** DONE - implementation complete and full backend validation passed after running Maven with Docker access for Testcontainers.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/src/main/java/com/cloudcampus/storage/audit/UploadAuditEvent.java` | New enum for `UPLOAD`, `DOWNLOAD_URL`, and `DELETE` storage audit events. |
+| `backend/src/main/java/com/cloudcampus/storage/audit/UploadAuditLog.java` | New immutable JPA entity for upload audit records. |
+| `backend/src/main/java/com/cloudcampus/storage/audit/UploadAuditLogRepository.java` | New repository with tenant and document audit queries. |
+| `backend/src/main/java/com/cloudcampus/storage/audit/UploadAuditService.java` | New service that captures the current correlation ID from MDC and persists audit rows. |
+| `backend/src/main/java/com/cloudcampus/student/service/StudentDocumentServiceImpl.java` | Upload, presigned download URL generation, and delete paths now write audit records. |
+| `backend/src/main/resources/db/migration/V83__create_upload_audit_log.sql` | New `upload_audit_log` table and indexes for tenant timeline and document lookup. |
+| `backend/src/test/java/com/cloudcampus/storage/UploadAuditLogIntegrationTest.java` | New integration coverage for upload, download URL, delete, and full lifecycle audit writes. |
+
+### Behavior implemented
+
+| Event | Trigger | Captured fields |
+|---|---|---|
+| `UPLOAD` | After successful document row save | Tenant, school, actor, document ID, object key, file name, MIME type, size, correlation ID |
+| `DOWNLOAD_URL` | After presigned URL generation | Tenant, school, actor, document ID, object key, file name, MIME type, correlation ID |
+| `DELETE` | After object delete and document delete request | Tenant, school, actor, document ID, object key, file name, MIME type, correlation ID |
+
+### Design notes
+
+1. `upload_audit_log` intentionally has no FK to `student_documents` so audit records survive document deletion.
+2. `UploadAuditLog` intentionally has no Hibernate tenant filter so security reviews can query audit records across tenants.
+3. `presignedUrl(...)` is now a normal transaction instead of read-only because it performs an audit write.
+4. Tests use the returned `StudentDocumentResponse.id()` rather than "latest audit row" ordering, avoiding timestamp ordering flakiness.
+
+### Validation run for TASK-010
+
+```bash
+cd backend && mvn test --batch-mode --no-transfer-progress
+```
+
+Validation result:
+
+- PASS - Docker/Testcontainers available when Maven was run with Docker access.
+- PASS - Full backend suite: **95 tests, 0 failures, 0 errors, 0 skipped**.
+- PASS - New `UploadAuditLogIntegrationTest`: **4 tests, 0 failures, 0 errors, 0 skipped**.
+
+---
+
+## 18. TASK-011 Findings - Tenant Storage Quota Checks
+
+**Status:** DONE - tenant document storage quotas are configurable, enforced before object upload, and queryable through storage quota APIs.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/src/main/java/com/cloudcampus/tenant/entity/TenantConfigKey.java` | Added `MAX_STORAGE_BYTES`, default `0` meaning unlimited. |
+| `backend/src/main/java/com/cloudcampus/tenant/service/TenantConfigServiceImpl.java` | Added validation for `MAX_STORAGE_BYTES` as `0` or a positive long integer. |
+| `backend/src/main/java/com/cloudcampus/student/repository/StudentDocumentRepository.java` | Added tenant storage usage query: `SUM(sizeBytes)` by tenant. |
+| `backend/src/main/java/com/cloudcampus/storage/StorageQuotaService.java` | New service for quota lookup, usage response, and pre-upload quota enforcement. |
+| `backend/src/main/java/com/cloudcampus/storage/dto/StorageQuotaResponse.java` | New response with used bytes, limit bytes, remaining bytes, and utilization percent. |
+| `backend/src/main/java/com/cloudcampus/storage/StorageQuotaController.java` | New quota read endpoints for current school-admin tenant and super-admin tenant lookup. |
+| `backend/src/main/java/com/cloudcampus/student/service/StudentDocumentServiceImpl.java` | Calls quota enforcement before `StorageService.upload(...)`. |
+| `backend/src/test/java/com/cloudcampus/storage/UploadAuditLogIntegrationTest.java` | Added over-quota rejection and usage-query assertions. |
+
+### Behavior implemented
+
+| Scenario | Result |
+|---|---|
+| `MAX_STORAGE_BYTES=0` or unset | Unlimited storage; upload proceeds normally. |
+| Existing usage + new file size <= configured limit | Upload proceeds and usage reflects the new document bytes. |
+| Existing usage + new file size > configured limit | Upload fails with `UsageLimitExceededException` mapped to HTTP 422; object storage upload is not called. |
+| School/Tenant Admin quota query | `GET /v1/school-admin/storage/quota` returns current tenant usage. |
+| Super Admin quota query | `GET /v1/super-admin/tenants/{tenantId}/storage/quota` returns usage for a selected tenant. |
+
+### Design notes
+
+1. The quota source of truth is `tenant_configs.MAX_STORAGE_BYTES`, consistent with existing student, staff, school, and AI limits.
+2. Usage is computed from live `student_documents.size_bytes`; deleted document rows stop counting toward quota.
+3. Enforcement happens before MinIO upload to avoid orphan objects on over-quota requests.
+4. Quota reads intentionally report `utilizationPercent = null` when the quota is unlimited.
+
+Validation run for TASK-011:
+
+```bash
+cd backend && mvn test --batch-mode --no-transfer-progress
+```
+
+Validation result:
+
+- PASS - Full backend suite: **97 tests, 0 failures, 0 errors, 0 skipped**.
+- PASS - `UploadAuditLogIntegrationTest`: **6 tests, 0 failures, 0 errors, 0 skipped**.
+- PASS - New quota tests prove over-quota upload rejection before object storage write and queryable usage after a successful upload.
+
+---
+
+## 19. TASK-012 Findings - Antivirus and Quarantine Design
+
+**Status:** DONE - documentation-only design added; no runtime code or infrastructure was changed.
+
+### File created
+
+| File | Change |
+|---|---|
+| `docs/UPLOAD_ANTIVIRUS_QUARANTINE_DESIGN.md` | New design for upload malware scanning, quarantine workflow, user messaging, retry policy, and admin review. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Scan states | PASS - `PENDING_SCAN`, `SCANNING`, `CLEAN`, `INFECTED`, `QUARANTINED`, `SCAN_FAILED`, and `DELETED` defined. |
+| Quarantine bucket/prefix | PASS - `uploads/staging/...`, `uploads/clean/...`, `uploads/quarantine/...`, and optional `uploads/deleted/...` prefixes defined. |
+| User messaging | PASS - school admin, parent/student visibility, pending scan, failed scan, and scan failure messages defined. |
+| Retries | PASS - scanner outage, signature update, missing object, timeout, and malware-detected retry behavior defined. |
+| Admin review | PASS - review queue filters, allowed actions, break-glass download control, and future audit events defined. |
+
+### Design decisions
+
+1. First implementation should use a dedicated scanner worker with ClamAV, but the app should depend on a `MalwareScanner` abstraction so scanner vendors can change later.
+2. New uploads should land in a staging prefix first; presigned download URLs should only be generated for `CLEAN` objects in the clean prefix.
+3. Quarantined objects must not be downloadable by normal users or school admins.
+4. Scanner findings should not expose malware family names to end users; details belong in admin/security review only.
+5. Existing documents need a future backfill path before strict scan enforcement is enabled.
+
+Validation run for TASK-012:
+
+```bash
+rg -n "antivirus|quarantine|ClamAV|malware" docs backend infra
+```
+
+Validation result:
+
+- PASS - Matches found in `docs/UPLOAD_ANTIVIRUS_QUARANTINE_DESIGN.md`.
+- PASS - Existing audit TODO reference remains in `docs/AUDIT_AND_REMEDIATION.md`.
+- PASS - No backend or infrastructure code changed for TASK-012.
+
+---
+
+## 20. TASK-013 Findings - MIME and Magic-Byte Handling
+
+**Status:** DONE - storage validation regression tests now cover supported file types and common spoofing/failure cases.
+
+### File created
+
+| File | Change |
+|---|---|
+| `backend/src/test/java/com/cloudcampus/storage/StorageServiceTest.java` | New unit tests around the real `StorageService` using a mocked MinIO client. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Valid files | PASS - PDF, PNG, JPG, JPEG, WebP, DOC, and DOCX uploads are accepted when extension, content type, and magic bytes align. |
+| Spoofed extensions | PASS - A `.pdf` upload with non-PDF bytes is rejected before MinIO `putObject`. |
+| Wrong content types | PASS - A `.png` upload submitted as `application/pdf` is rejected before MinIO `putObject`. |
+| Oversized uploads | PASS - Files larger than 10 MB are rejected before MinIO `putObject`. |
+| Unsupported file types | PASS - `.exe` uploads are rejected before MinIO `putObject`. |
+| Empty uploads | PASS - Empty files are rejected before MinIO `putObject`. |
+| Content-type parameters | PASS - Valid types with parameters, such as `application/pdf; charset=binary`, are normalized and accepted. |
+
+### Design notes
+
+1. The tests exercise the real validation path in `StorageService.upload(...)`, not a mocked service.
+2. The mocked MinIO client confirms rejected files do not reach object storage.
+3. No production behavior changed for TASK-013; this task adds regression coverage around existing upload validation.
+
+Validation run for TASK-013:
+
+```bash
+cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Storage*Test,*Document*Test
+```
+
+Validation result:
+
+- PASS - Targeted storage/document suite: **13 tests, 0 failures, 0 errors, 0 skipped**.
+- PASS - Full backend suite: **110 tests, 0 failures, 0 errors, 0 skipped**.
+
+---
+
+## 21. TASK-014 Findings - Website Builder Schema Validation
+
+**Status:** DONE - public website builder mutations now validate page, section, theme, navigation, and SEO payloads before repository save/lookup paths.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/src/main/java/com/cloudcampus/experience/service/WebsiteSchemaValidator.java` | Added reusable schema validation for builder request payloads and nested JSON maps. |
+| `backend/src/main/java/com/cloudcampus/experience/service/PageBuilderService.java` | Validates pages, sections, and navigation before create/update saves. |
+| `backend/src/main/java/com/cloudcampus/experience/service/BrandingService.java` | Validates theme payloads before create/update saves. |
+| `backend/src/main/java/com/cloudcampus/experience/service/SeoService.java` | Validates SEO upserts before route lookup or save. |
+| `backend/src/test/java/com/cloudcampus/experience/service/WebsiteSchemaValidatorTest.java` | Added validator coverage for accepted payloads and invalid slugs, config depth, theme colors, navigation target, and sitemap priority. |
+| `backend/src/test/java/com/cloudcampus/experience/service/WebsiteBuilderSchemaValidationServiceTest.java` | Added service-level proof that invalid page, theme, and SEO requests are rejected before repository interaction. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Pages validate before save | PASS - Page keys, titles, route-safe slugs, SEO JSON, and settings JSON are validated before repository use. |
+| Sections validate before save | PASS - Section keys, titles, section types, positions, and config JSON depth/shape are validated. |
+| Themes validate before save | PASS - Theme keys, names, token/typography/effect JSON, and known color tokens are validated. |
+| Navigation validates before save | PASS - Labels, internal/external paths, targets, groups, and positions are validated. |
+| SEO payloads validate before save | PASS - Route paths, meta fields, JSON payloads, robots, sitemap priority, and sitemap frequency are validated before lookup/save. |
+
+### Design notes
+
+1. Page slugs allow existing seeded values such as `home` and route-safe variants; route paths remain stricter and must start with `/`.
+2. JSON payload validation is intentionally schema-light but safety-focused: maximum depth, maximum node count, key length, string length, finite numeric values, and supported JSON value types.
+3. Invalid payloads raise `BadRequestException`, which the existing REST exception handler maps to HTTP 400.
+
+Validation run for TASK-014:
+
+```bash
+cd backend && mvn test --batch-mode --no-transfer-progress
+cd frontend && npm run build
+```
+
+Validation result:
+
+- PASS - Full backend suite: **120 tests, 0 failures, 0 errors, 0 skipped**.
+- PASS - Frontend production build completed successfully with Vite.
+
+---
+
+## 22. TASK-015 Findings - Website Publish Validation
+
+**Status:** DONE - publishing now runs a preflight validation pass before creating a snapshot or mutating publish flags.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/src/main/java/com/cloudcampus/experience/service/WebsitePublishValidationService.java` | Added release preflight validation across pages, sections, themes, navigation, and SEO settings. |
+| `backend/src/main/java/com/cloudcampus/experience/service/PublishService.java` | Collects current release state once, validates it, then snapshots and publishes only when validation succeeds. |
+| `backend/src/test/java/com/cloudcampus/experience/service/WebsitePublishValidationServiceTest.java` | Added validator coverage for complete release state and actionable failure cases. |
+| `backend/src/test/java/com/cloudcampus/experience/service/PublishServiceValidationTest.java` | Proves failed preflight does not create snapshots or publish entities. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Required pages | PASS - Publish fails if no pages exist, a home page is missing, page slugs are unsafe, duplicate slugs exist, or page SEO title/description is missing. |
+| Required theme data | PASS - Publish fails if no theme exists, theme tokens/typography are missing, or no theme defines primary, accent, and surface tokens. |
+| Required navigation data | PASS - Publish fails if navigation is empty, no visible item exists, no visible `/` item exists, targets are invalid, or visible path/group pairs duplicate. |
+| Sections | PASS - Publish fails for orphaned sections, missing section metadata, negative positions, or missing config JSON. |
+| SEO rows | PASS - Optional SEO rows are validated when present for route path, meta fields, sitemap priority, and change frequency. |
+| No partial publish | PASS - Invalid release state throws `BadRequestException` before snapshot creation or publish-flag mutation. |
+
+### Design notes
+
+1. Validation intentionally does not require every page to have sections because the current seeded public website has valid pages, navigation, and theme data without platform section rows.
+2. Internal navigation paths are validated for shape but not required to map to a page record because the current public router includes static routes beyond seeded builder pages.
+3. Error messages are aggregated into one `BadRequestException` message so the admin can fix the release in one pass.
+
+Validation run for TASK-015:
+
+```bash
+cd backend && mvn test --batch-mode --no-transfer-progress
+cd frontend && npm run build
+```
+
+Validation result:
+
+- PASS - Full backend suite: **128 tests, 0 failures, 0 errors, 0 skipped**.
+- PASS - Frontend production build completed successfully with Vite.
+
+---
+
+## 23. TASK-016 Findings - Website Rollback Workflow
+
+**Status:** DONE - snapshots can be selected, restored, and audited without mutating snapshot rows.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/src/main/java/com/cloudcampus/experience/service/PublishService.java` | Rollback now restores both published and unpublished states from a selected snapshot and writes rollback audit records. |
+| `backend/src/main/java/com/cloudcampus/experience/entity/WebsitePage.java` and related website entities | Added `restorePublishedState(...)` so rollback can set items back to `DRAFT` as well as `PUBLISHED`. |
+| `backend/src/main/java/com/cloudcampus/experience/entity/WebsiteRollbackAuditLog.java` | New immutable audit entity for rollback events. |
+| `backend/src/main/java/com/cloudcampus/experience/repository/ExperienceWebsiteRollbackAuditLogRepository.java` | New repository for global and snapshot-scoped rollback audit lookup. |
+| `backend/src/main/java/com/cloudcampus/experience/dto/response/WebsiteRollbackAuditLogResponse.java` | New API response for rollback audit entries. |
+| `backend/src/main/resources/db/migration/V84__create_website_rollback_audit_log.sql` | New rollback audit table and snapshot/time index. |
+| `backend/src/main/java/com/cloudcampus/experience/controller/SuperAdminPublicWebsiteController.java` | Rollback now captures actor ID and exposes rollback audit lookup. |
+| `frontend/src/features/super-admin/public-website/pages/PublicWebsitePublishPage.tsx` | Added selected-snapshot rollback panel and selected snapshot audit display. |
+| `frontend/src/features/super-admin/public-website/api/publicWebsiteApi.ts` and query hooks/types | Added rollback audit API client, query hook, and type. |
+| `backend/src/test/java/com/cloudcampus/experience/service/PublishServiceValidationTest.java` | Added rollback restore/audit test coverage. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Snapshots listed | PASS - Existing snapshot list remains available through the publish center and API. |
+| Snapshot selected | PASS - Publish Center now supports explicit snapshot selection before rollback. |
+| Snapshot restored | PASS - Rollback restores publish flags to the selected snapshot, including unpublishing entities that were not published in that snapshot. |
+| Snapshot immutable | PASS - Rollback does not save or mutate the selected `WebsitePublishSnapshot`; it writes a separate audit row. |
+| Rollback audited | PASS - Rollback records actor ID, snapshot ID, snapshot label, changed counts, and timestamp in `platform_website_rollback_audit_log`; audit is queryable by snapshot. |
+
+### Design notes
+
+1. Snapshot JSON still stores publish-state maps, preserving compatibility with existing snapshots.
+2. Current entities only snapshot publish flags, so rollback intentionally restores publication state rather than full content payloads.
+3. New content created after a snapshot is unpublished on rollback because it is absent from the selected snapshot state.
+
+Validation run for TASK-016:
+
+```bash
+cd backend && mvn test --batch-mode --no-transfer-progress
+cd frontend && npm run build
+```
+
+Validation result:
+
+- PASS - Full backend suite: **129 tests, 0 failures, 0 errors, 0 skipped**.
+- PASS - Frontend production build completed successfully with Vite.
+
+---
+
+## 24. TASK-017 Findings - Preview Validation
+
+**Status:** DONE - the Publish Center now runs desktop, tablet, and mobile preview validation before publish.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `frontend/src/features/super-admin/public-website/utils/previewValidation.ts` | New preview validation utility for desktop/tablet/mobile checks. |
+| `frontend/src/features/super-admin/public-website/pages/PublicWebsitePublishPage.tsx` | Replaced static preflight cards with real device preview validation and publish blocking for errors. |
+| `frontend/src/features/super-admin/public-website/hooks/usePublicWebsiteQueries.ts` | Added navigation query and invalidation so preview checks use fresh website state. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Desktop preview validation | PASS - Detects missing pages, home route, published pages, SEO title/description, theme tokens, navigation, and low published-page coverage. |
+| Tablet preview validation | PASS - Detects the same required content plus primary navigation wrapping risk. |
+| Mobile preview validation | PASS - Detects the same required content plus oversized navigation and long SEO descriptions. |
+| Publish blocked on required content | PASS - Publish button is disabled while preview data loads or any device has blocking errors. |
+| Preview warnings are visible | PASS - Non-blocking warnings remain visible per device without preventing publish. |
+
+### Design notes
+
+1. Preview validation is frontend-only for TASK-017 and complements the backend publish validation added in TASK-015.
+2. Validation uses current pages, navigation, themes, and SEO rows from the public website admin API.
+3. Device cards show a compact visual frame and the first actionable issues for each viewport.
+
+Validation run for TASK-017:
+
+```bash
+cd frontend && npm run build
+```
+
+Validation result:
+
+- PASS - Frontend production build completed successfully with Vite.
+
+---
+
+## 17. TASK-018 Findings — Audit Timeline
+
+**Status:** DONE — backend 131 tests, 0 failures; frontend build clean.
+
+### Files created / changed
+
+| File | Change |
+|------|--------|
+| `backend/src/main/resources/db/migration/V85__create_website_audit_timeline.sql` | New table `website_audit_timeline_events` with index on `created_at DESC` |
+| `backend/.../entity/WebsiteAuditTimelineEvent.java` | Immutable entity — `event_type`, `resource_type`, `resource_id`, `resource_label`, `actor_id`, `details_json`, `created_at` |
+| `backend/.../repository/ExperienceWebsiteAuditTimelineRepository.java` | `findAllByOrderByCreatedAtDesc(Pageable)` |
+| `backend/.../service/WebsiteAuditTimelineService.java` | `record()` + `list(limit)` (capped at 100) |
+| `backend/.../dto/response/WebsiteAuditTimelineEventResponse.java` | Read DTO |
+| `backend/.../service/PageBuilderService.java` | 9 `record()` calls — page/section/navigation create, update, publish |
+| `backend/.../service/BrandingService.java` | 3 `record()` calls — theme create, update, publish |
+| `backend/.../service/PublishService.java` | 2 `record()` calls — `WEBSITE_PUBLISHED`, `WEBSITE_ROLLED_BACK` |
+| `backend/.../service/SeoService.java` | 2 `record()` calls — SEO create, update |
+| `backend/.../controller/SuperAdminPublicWebsiteController.java` | `GET /v1/super-admin/public-website/audit-timeline?limit=N` |
+| `frontend/.../api/publicWebsiteApi.ts` | `listAuditTimeline(limit)` |
+| `frontend/.../hooks/usePublicWebsiteQueries.ts` | `useAuditTimelineQuery(limit)` |
+| `frontend/.../pages/PublicWebsitePublishPage.tsx` | "Audit timeline" panel in Publish Center — shows event type, resource label, actor, timestamp |
+| `backend/.../WebsiteAuditTimelineServiceIntegrationTest.java` | 2 tests: `PAGE_CREATED` + `THEME_CREATED` event recording verified |
+
+### Event catalogue
+
+| Event type | Triggered by | Resource type |
+|------------|-------------|---------------|
+| `PAGE_CREATED` / `PAGE_UPDATED` / `PAGE_PUBLISHED` | `PageBuilderService` | `PAGE` |
+| `SECTION_CREATED` / `SECTION_UPDATED` / `SECTION_PUBLISHED` | `PageBuilderService` | `SECTION` |
+| `NAVIGATION_CREATED` | `PageBuilderService` | `NAVIGATION` |
+| `THEME_CREATED` / `THEME_UPDATED` / `THEME_PUBLISHED` | `BrandingService` | `THEME` |
+| `WEBSITE_PUBLISHED` | `PublishService` | `PUBLISH` |
+| `WEBSITE_ROLLED_BACK` | `PublishService` | `ROLLBACK` |
+| `SEO_UPDATED` | `SeoService` | `SEO` |
+
+### Key design decisions
+
+1. **Single shared stream** — one `website_audit_timeline_events` table for all builder event types instead of per-domain tables. The `event_type` + `resource_type` columns allow any future filter or grouping without schema changes.
+2. **No FK on `resource_id`** — builder resources (pages, sections, themes) can be deleted; their audit trail must survive.
+3. **`details_json` as `jsonb`** — flexible metadata per event type (slug, version, path, themeKey) without schema migrations for new detail fields.
+4. **Actor ID passed through controller** — update/publish paths that previously had no actor parameter now receive `actorId` from `RequestContext.getUserId()` in the controller and thread it into the service call.
+5. **List capped at 100** — the UI shows the last 50 events; hard cap prevents runaway queries if clients pass large `limit` values.
+
+### Acceptance criteria
+
+| Criterion | Status |
+|-----------|--------|
+| Builder saves (page/section create + update) appear in timeline | PASS — `PAGE_CREATED/UPDATED`, `SECTION_CREATED/UPDATED` |
+| Publishes appear in timeline | PASS — `PAGE_PUBLISHED`, `SECTION_PUBLISHED`, `THEME_PUBLISHED`, `WEBSITE_PUBLISHED` |
+| Rollbacks appear in timeline | PASS — `WEBSITE_ROLLED_BACK` |
+| Theme changes appear in timeline | PASS — `THEME_CREATED`, `THEME_UPDATED`, `THEME_PUBLISHED` |
+
+Validation run for TASK-018:
+
+```bash
+cd backend && mvn test --batch-mode --no-transfer-progress
+cd ../frontend && npm run build
+```
+
+Validation result:
+
+- PASS — Backend: **131 tests, 0 failures, 0 errors**.
+- PASS — Frontend: **clean build, 0 errors**.
 
 ---
 

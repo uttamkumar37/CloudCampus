@@ -77,6 +77,26 @@ export type WebsiteSnapshot = {
   createdAt: string;
 };
 
+export type WebsiteRollbackAudit = {
+  id: string;
+  snapshotId: string;
+  snapshotLabel: string;
+  actorId: string | null;
+  restoredCountsJson: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type WebsiteAuditTimelineEvent = {
+  id: string;
+  eventType: string;
+  resourceType: string;
+  resourceId: string | null;
+  resourceLabel: string;
+  actorId: string | null;
+  detailsJson: Record<string, unknown>;
+  createdAt: string;
+};
+
 export type WebsiteDashboard = {
   totalVisitors: number;
   pageViews: number;

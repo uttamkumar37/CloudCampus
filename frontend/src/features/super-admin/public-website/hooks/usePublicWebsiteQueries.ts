@@ -7,6 +7,7 @@ import {
   listSections,
   createSection,
   publishSection,
+  listNavigation,
   listThemes,
   createTheme,
   publishTheme,
@@ -18,6 +19,8 @@ import {
   publishWebsite,
   listSnapshots,
   rollbackSnapshot,
+  listRollbackAudit,
+  listAuditTimeline,
 } from '../api/publicWebsiteApi';
 import type { WebsiteSection } from '../types';
 
@@ -37,7 +40,10 @@ export function useCreatePageMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createPage,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'audit-timeline'] });
+    },
   });
 }
 
@@ -45,7 +51,10 @@ export function usePublishPageMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: publishPage,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'audit-timeline'] });
+    },
   });
 }
 
@@ -76,6 +85,7 @@ export function useCreateSectionMutation() {
     onSuccess: (section: WebsiteSection) => {
       queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] });
       queryClient.invalidateQueries({ queryKey: ['public-website', 'pages', section.pageId, 'sections'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'audit-timeline'] });
     },
   });
 }
@@ -87,6 +97,7 @@ export function usePublishSectionMutation() {
     onSuccess: (section: WebsiteSection) => {
       queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] });
       queryClient.invalidateQueries({ queryKey: ['public-website', 'pages', section.pageId, 'sections'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'audit-timeline'] });
     },
   });
 }
@@ -95,11 +106,18 @@ export function useWebsiteThemesQuery() {
   return useQuery({ queryKey: ['public-website', 'themes'], queryFn: listThemes });
 }
 
+export function useWebsiteNavigationQuery() {
+  return useQuery({ queryKey: ['public-website', 'navigation'], queryFn: listNavigation });
+}
+
 export function useCreateThemeMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createTheme,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['public-website', 'themes'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'themes'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'audit-timeline'] });
+    },
   });
 }
 
@@ -107,7 +125,10 @@ export function usePublishThemeMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: publishTheme,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['public-website', 'themes'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'themes'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'audit-timeline'] });
+    },
   });
 }
 
@@ -119,7 +140,10 @@ export function useUpsertSeoMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: upsertSeo,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['public-website', 'seo'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'seo'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'audit-timeline'] });
+    },
   });
 }
 
@@ -127,7 +151,10 @@ export function usePublishSeoMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: publishSeo,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['public-website', 'seo'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'seo'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'audit-timeline'] });
+    },
   });
 }
 
@@ -141,9 +168,12 @@ export function usePublishWebsiteMutation() {
     mutationFn: publishWebsite,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'navigation'] });
       queryClient.invalidateQueries({ queryKey: ['public-website', 'themes'] });
       queryClient.invalidateQueries({ queryKey: ['public-website', 'seo'] });
       queryClient.invalidateQueries({ queryKey: ['public-website', 'snapshots'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'rollback-audit'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'audit-timeline'] });
     },
   });
 }
@@ -158,9 +188,27 @@ export function useRollbackSnapshotMutation() {
     mutationFn: rollbackSnapshot,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'navigation'] });
       queryClient.invalidateQueries({ queryKey: ['public-website', 'themes'] });
       queryClient.invalidateQueries({ queryKey: ['public-website', 'seo'] });
       queryClient.invalidateQueries({ queryKey: ['public-website', 'snapshots'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'rollback-audit'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'audit-timeline'] });
     },
+  });
+}
+
+export function useRollbackAuditQuery(snapshotId: string | null) {
+  return useQuery({
+    queryKey: ['public-website', 'rollback-audit', snapshotId],
+    queryFn: () => listRollbackAudit(snapshotId ?? undefined),
+    enabled: Boolean(snapshotId),
+  });
+}
+
+export function useAuditTimelineQuery(limit = 50) {
+  return useQuery({
+    queryKey: ['public-website', 'audit-timeline', limit],
+    queryFn: () => listAuditTimeline(limit),
   });
 }

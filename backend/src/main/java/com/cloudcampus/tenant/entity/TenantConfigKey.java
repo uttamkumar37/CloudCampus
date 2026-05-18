@@ -24,6 +24,10 @@ public enum TenantConfigKey {
             "200",
             "Maximum number of staff members per school"
     ),
+    MAX_STORAGE_BYTES(
+            "0",
+            "Maximum total student document storage per tenant in bytes. 0 = unlimited."
+    ),
     SUPPORT_EMAIL(
             "",
             "Tenant support contact email (shown in-app to end users)"

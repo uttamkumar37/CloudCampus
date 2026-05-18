@@ -6,6 +6,7 @@ import com.cloudcampus.experience.service.InvestorRoomService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +32,9 @@ public class InvestorRoomController {
     @SecurityRequirements
     @GetMapping("/{roomCode}")
     public ResponseEntity<ApiResponse<InvestorRoomResponse>> getRoom(
-            @PathVariable String roomCode) {
-        return ResponseEntity.ok(ApiResponse.ok(null, investorRoomService.getPublicRoom(roomCode)));
+            @PathVariable String roomCode, HttpServletRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(null,
+                investorRoomService.getPublicRoom(roomCode, clientIp(request))));
     }
 
     @Operation(summary = "Verify password access for a PASSWORD-mode room")
@@ -40,14 +42,23 @@ public class InvestorRoomController {
     @PostMapping("/{roomCode}/access")
     public ResponseEntity<ApiResponse<Map<String, Object>>> verifyAccess(
             @PathVariable String roomCode,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
         Optional<InvestorRoomResponse> room =
-                investorRoomService.unlockRoom(roomCode, body.getOrDefault("password", ""));
+                investorRoomService.unlockRoom(roomCode, body.getOrDefault("password", ""), clientIp(request));
         if (room.isEmpty()) {
             return ResponseEntity.ok(ApiResponse.ok(null, Map.of("granted", false)));
         }
         return ResponseEntity.ok(ApiResponse.ok(null, Map.of(
                 "granted", true,
                 "room", room.get())));
+    }
+
+    private static String clientIp(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
+        String xri = request.getHeader("X-Real-IP");
+        if (xri != null && !xri.isBlank()) return xri.trim();
+        return request.getRemoteAddr();
     }
 }
