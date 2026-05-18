@@ -332,6 +332,7 @@ export function AppRouter() {
 
           {/* Root and catch-all */}
           <Route path="/" element={<CloudCampusPublicWebsitePage />} />
+          <Route path="/home" element={<CloudCampusPublicWebsitePage />} />
           <Route path="/features" element={<CloudCampusPublicWebsitePage />} />
           <Route path="/platform" element={<CloudCampusPublicWebsitePage />} />
           <Route path="/ai" element={<CloudCampusPublicWebsitePage />} />

@@ -12,14 +12,10 @@ import { listSections, createSection, deleteSection } from '../api/sectionApi';
 
 const schema = z.object({
   name: z.string().min(1, 'Section name is required').max(50),
-  capacity: z
-    .string()
-    .optional()
-    .transform((v) => (v ? Number(v) : undefined)),
+  capacity: z.string().optional(),
 });
 
 type FormInput = { name: string; capacity?: string };
-type FormValues = z.infer<typeof schema>;
 
 interface CreateFormProps {
   classId: string;
@@ -34,17 +30,20 @@ function CreateForm({ classId, onClose }: CreateFormProps) {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<FormInput>({ resolver: zodResolver(schema) as any });
+  } = useForm<FormInput>({ resolver: zodResolver(schema) });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (values: FormValues) =>
-      createSection(classId, values),
+    mutationFn: (values: FormInput) =>
+      createSection(classId, {
+        name: values.name,
+        capacity: toOptionalNumber(values.capacity),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sections', classId] });
       onClose();
     },
     onError: () => {
-      setError('root' as any, { message: 'Failed to create section. Please try again.' });
+      setError('root', { message: 'Failed to create section. Please try again.' });
     },
   });
 
@@ -52,15 +51,15 @@ function CreateForm({ classId, onClose }: CreateFormProps) {
 
   return (
     <form
-      onSubmit={handleSubmit((v) => mutate(v as unknown as FormValues))}
+      onSubmit={handleSubmit((v) => mutate(v))}
       className="mb-5 rounded-xl border border-blue-100 bg-blue-50 p-5"
       noValidate
     >
       <h3 className="mb-4 text-sm font-semibold text-gray-800">New Section</h3>
 
-      {(errors as any).root && (
+      {errors.root && (
         <p className="mb-3 rounded-lg bg-red-50 p-2 text-sm text-red-700" role="alert">
-          {(errors as any).root.message}
+          {errors.root.message}
         </p>
       )}
 
@@ -110,6 +109,10 @@ function CreateForm({ classId, onClose }: CreateFormProps) {
       </div>
     </form>
   );
+}
+
+function toOptionalNumber(value?: string) {
+  return value ? Number(value) : undefined;
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────

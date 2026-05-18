@@ -219,7 +219,14 @@ public class SecurityConfig {
                 HttpMethod.DELETE.name(),
                 HttpMethod.OPTIONS.name()
         ));
-        config.setAllowedHeaders(List.of("*"));
+        // Explicit header allowlist — never wildcard on authenticated APIs.
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "Origin",
+                "X-Requested-With"
+        ));
         config.setExposedHeaders(List.of(
                 "X-Correlation-Id",
                 "X-Tenant-Id"

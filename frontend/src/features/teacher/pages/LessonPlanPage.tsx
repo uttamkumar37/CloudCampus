@@ -16,6 +16,18 @@ const STATUS_COLOR: Record<string, string> = {
   PUBLISHED: 'bg-green-100  text-green-800',
 };
 
+const TEXT_FIELDS: Array<{
+  label: string;
+  key: keyof Pick<LessonPlanRequest, 'topic' | 'objectives' | 'activities' | 'materials' | 'homeworkNote'>;
+  required?: boolean;
+}> = [
+  { label: 'Topic *', key: 'topic', required: true },
+  { label: 'Learning Objectives', key: 'objectives' },
+  { label: 'Activities', key: 'activities' },
+  { label: 'Materials / Resources', key: 'materials' },
+  { label: 'Homework Note', key: 'homeworkNote' },
+];
+
 export function LessonPlanPage() {
   const qc = useQueryClient();
   const [from, setFrom] = useState(todayStr());
@@ -95,16 +107,10 @@ export function LessonPlanPage() {
                 className="w-full rounded border border-gray-300 px-2 py-1 text-sm" />
             </div>
           </div>
-          {[
-            { label: 'Topic *', key: 'topic', required: true },
-            { label: 'Learning Objectives', key: 'objectives' },
-            { label: 'Activities', key: 'activities' },
-            { label: 'Materials / Resources', key: 'materials' },
-            { label: 'Homework Note', key: 'homeworkNote' },
-          ].map(({ label, key, required }) => (
+          {TEXT_FIELDS.map(({ label, key, required }) => (
             <div key={key} className="mb-2">
               <label className="block text-xs text-gray-600 mb-1">{label}</label>
-              <textarea rows={2} value={(form as any)[key] ?? ''}
+              <textarea rows={2} value={form[key] ?? ''}
                 onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                 className="w-full rounded border border-gray-300 px-2 py-1 text-sm resize-y"
                 required={required} />

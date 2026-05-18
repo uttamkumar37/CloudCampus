@@ -70,7 +70,8 @@ app:
 
   jwt:
     secret: "test-secret-key-for-integration-tests-only-do-not-use-in-production-must-be-long-enough"
-    expiration-ms: 3600000
+    access-token-expiry-seconds: 3600
+    refresh-token-expiry-seconds: 86400
 
   otp:
     ttl-seconds: 300

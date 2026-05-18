@@ -1,6 +1,6 @@
 # CloudCampus — Architecture Reference
 
-**Version:** 2.1 | **Updated:** 2026-05-18 | **Branch:** `main`
+**Version:** 2.2 | **Updated:** 2026-05-18 | **Branch:** `main`
 
 Multi-tenant SaaS school management platform — Java 21 + Spring Boot 3 + React 19 + React Native.
 
@@ -221,6 +221,12 @@ Public Website / Demo / Investor Room (no auth)
   → PublicExperienceController + InvestorRoomController (/v1/experience/public/**)
   → authClient (Axios, no token, baseURL: http://localhost:8080)
 
+CloudCampus public marketing website (no auth)
+  → React route / and /home
+  → CloudCampusPublicWebsitePage config-driven section renderer
+  → Public website APIs hydrate nav/theme/page payloads when available
+  → Same origin URL used across local/staging/prod
+
 Analytics events (async)
   → POST /v1/experience/public/events
   → ExperienceEventPublisher → RabbitMQ exchange: cc.experience.events
@@ -260,6 +266,9 @@ listener/  ExperienceEventListener (manual ack, DLX on failure)
 | GET | `/v1/experience/public/investor/{roomCode}` | Room + all VISIBLE sections |
 | POST | `/v1/experience/public/investor/{roomCode}/access` | Verify password |
 | POST | `/v1/experience/public/events` | Ingest analytics events (async) |
+| GET | `/v1/experience/public/website/pages/{slug}` | Published public website page |
+| GET | `/v1/experience/public/website/navigation` | Published public website navigation |
+| GET | `/v1/experience/public/website/theme` | Published public website theme tokens |
 
 ### Super Admin API Endpoints (SUPER_ADMIN role)
 | Method | Path | Notes |
@@ -280,6 +289,13 @@ listener/  ExperienceEventListener (manual ack, DLX on failure)
 | GET / POST / PUT / DELETE | `/v1/super-admin/experience/campaigns` | Studio domains |
 | GET | `/v1/super-admin/experience/seed-health` | Entity count report |
 | GET | `/v1/super-admin/experience/render-profile` | Public render profile |
+| GET | `/v1/super-admin/public-website/dashboard` | Website dashboard |
+| GET / POST | `/v1/super-admin/public-website/pages` | Website pages |
+| GET / POST | `/v1/super-admin/public-website/pages/{pageId}/sections` | Website sections |
+| GET / POST | `/v1/super-admin/public-website/navigation` | Navigation builder |
+| GET / POST | `/v1/super-admin/public-website/branding/themes` | Theme builder |
+| GET / PUT | `/v1/super-admin/public-website/seo` | SEO settings |
+| POST | `/v1/super-admin/public-website/publish` | Publish website snapshot |
 
 ### Frontend Structure
 ```
@@ -308,7 +324,27 @@ features/super-admin/experience/
   SeedHealthPanel.tsx            ← entity count dashboard with status badges
   RenderProfilePreview.tsx       ← live public render profile preview
   ExperienceAnalyticsDashboard.tsx ← stat cards + CSS bar chart, period selector
+
+features/public-site/pages/
+  CloudCampusPublicWebsitePage.tsx ← public SaaS homepage at / and /home
+                                    Config object drives nav, hero, stats,
+                                    role showcase, feature grid, portal preview,
+                                    investor, demo, pricing, and footer sections
+  PublicSitePage.tsx               ← tenant school public site renderer
+
+features/super-admin/public-website/
+  components/PublicWebsiteShell.tsx ← Website Builder shell + dynamic View Live Website link
+  config/websiteBuilderTemplates.ts ← default section templates + builder readiness metadata
+  pages/*                           ← dashboard, pages, branding, SEO, analytics, media, publish
 ```
+
+### Public Website Runtime Notes
+- The CloudCampus public homepage is reachable at `/` and `/home`.
+- The homepage is intentionally component-based and content-driven via `siteConfig`, so future Super Admin Website Builder editing can map section type, order, visibility, title, subtitle, CTA, and card data without rewriting the renderer.
+- The public homepage still calls `getPublicNavigation`, `getPublicTheme`, and `getPublicPage(slug)` through React Query, allowing published website data to hydrate nav/theme/page context as backend editing matures.
+- Super Admin exposes dynamic public-site links in both the main shell and Public Website Builder shell. The URL is generated with `new URL('/', window.location.origin).toString()`, avoiding hardcoded local/staging/prod hostnames.
+- Super Admin Website Builder pages now expose route composition, audience/device preview cues, default section templates, and publish/rollback readiness on top of the existing `WebsitePage`, `WebsiteSection`, and snapshot APIs.
+- Admin Login remains `/login`; authenticated Super Admin, School Admin, Teacher, Student, and Parent routes remain protected by existing route guards.
 
 ### School Admin — AI Copilot (CC-1603)
 ```
@@ -368,6 +404,7 @@ student promotion: app/(app)/student-promotion.tsx (SCHOOL_ADMIN)
 | 3 — Investor Rooms | Rooms + sections + password gate | ✅ Complete |
 | 3b — Studio Expansion | Brand System, Stakeholder Journeys, Story Scenes, Trust Modules, Website Routes, Templates, Campaigns, Seed Health, Render Profile | ✅ Complete (V75–V78) |
 | 3c — Public Website | Platform public website tables + seed (V79/V80) | ✅ Complete |
+| 3d — Premium Public SaaS UI | Landing page hero, stats, role showcase, feature grid, platform preview, investor, demo, pricing, footer, dynamic Super Admin live-site links | ✅ Complete |
 | 4 — AI Content Gen | Claude API for block copy generation | 🔲 Planned |
 | 5 — Ephemeral Tenants | Real isolated tenant per demo session | 🔲 Planned |
 | 6 — Analytics Dashboard | Funnel + cohort analysis UI | 🔲 Planned |
@@ -462,3 +499,1136 @@ GitHub Actions — 4-job pipeline:
 | Presentation viewer | Public `/presentation/:slug` React page is Phase 4. |
 | pgvector image | Must use `pgvector/pgvector:pg16` — plain `postgres:16-alpine` will fail V46. |
 | Experience Studio AI (Phase 4) | `AiExperienceManager` UI shell is built; Claude-backed content generation endpoint is not yet wired. |
+
+
+---
+
+# Enterprise Experience Studio Architecture
+
+_Former source: `docs/ENTERPRISE_EXPERIENCE_STUDIO_ARCHITECTURE.md`._
+
+
+Date: 2026-05-18
+Status: Production blueprint + Phase-1 implementation alignment
+
+## Executive Summary
+
+Enterprise Experience Studio is a Super Admin controlled digital experience platform inside CloudCampus.
+It allows no-code control of global branding, dynamic websites, stakeholder journeys, demo environments,
+AI showcases, presentations, campaigns, templates, and trust narratives.
+
+This document maps the target architecture to existing CloudCampus capabilities and defines an implementation
+roadmap that preserves tenant isolation, RBAC, auditability, and production-grade reliability.
+
+## 1. Full Architecture
+
+### 1.1 Platform Layers
+
+1. Experience Orchestration Layer
+- Audience segmentation
+- Journey routing
+- Rendering policies
+- Feature-flag gates
+
+2. Experience Domain Layer
+- Branding Engine
+- Website Builder
+- Stakeholder Journey Engine
+- Demo Orchestration
+- AI Experience Layer
+- Presentation Builder
+- Marketing Automation
+- Template Marketplace
+- Analytics and Insights
+- Enterprise Trust Modules
+
+3. Experience Data Layer
+- PostgreSQL content/config tables
+- Redis hot cache for rendering and flags
+- MinIO/S3 for assets
+- RabbitMQ event stream for analytics and automations
+
+4. Delivery Layer
+- Public web renderer
+- Super Admin Studio renderer
+- API gateway and edge cache/CDN
+
+### 1.2 Existing Foundation Already Present
+
+Backend already contains:
+- Super Admin experience APIs under /v1/super-admin/experience
+- Public experience APIs under /v1/experience/public
+- Platform tables for content blocks, presentations, demos, investor rooms, campaigns, and events
+- RabbitMQ event ingestion and listener pipeline for experience events
+
+Frontend already contains:
+- Super Admin Experience Control Center route
+- Content Block editor
+- Demo Scenario manager
+- Investor Room builder
+- Public demo and investor pages
+
+## 2. Super Admin Module Structure
+
+Top-level module name:
+- Enterprise Experience Studio
+
+Studio sections:
+- Mission and governance
+- Experience domains board
+- Active management consoles
+- Publishing and release controls
+- Rollback and version history
+
+## 3. Database Design
+
+Current platform tables (already migrated):
+- platform_content_blocks
+- platform_presentations
+- platform_presentation_slides
+- platform_demo_scenarios
+- platform_demo_sessions
+- platform_investor_rooms
+- platform_investor_room_sections
+- platform_investor_room_views
+- platform_campaigns
+- platform_campaign_steps
+- platform_campaign_enrollments
+- platform_experience_events (partitioned)
+
+Next-wave tables to add:
+- platform_brand_systems
+- platform_brand_tokens
+- platform_brand_versions
+- platform_website_routes
+- platform_website_layouts
+- platform_widget_registry
+- platform_stakeholder_journeys
+- platform_template_marketplace
+- platform_ai_experience_policies
+- platform_publish_releases
+
+## 4. Dynamic Rendering Engine Architecture
+
+Rendering key:
+- renderKey = tenant + audience + role + locale + brandVersion + featureFlags + route
+
+Policy chain:
+1. Identify audience and role
+2. Resolve applicable brand pack and overrides
+3. Resolve route layout schema
+4. Resolve widget tree and data contracts
+5. Apply feature-flag and permission gates
+6. Render with cache stamps and telemetry hooks
+
+Caching:
+- L1 in-memory (frontend)
+- L2 Redis (server-side composition)
+- CDN cache for public anonymous pages
+
+## 5. Website Builder Architecture
+
+No-code model:
+- Route schema
+- Section schema
+- Widget schema
+- SEO schema
+- Publish schema
+
+Editor capabilities:
+- Drag-drop section ordering
+- Reusable section library
+- Header/footer composition
+- Dynamic route templates
+- Preview by audience/device/locale
+
+Current implementation:
+- Pages are created through `/v1/super-admin/public-website/pages` with SEO and builder settings.
+- Sections are created through `/v1/super-admin/public-website/pages/{id}/sections`.
+- The Super Admin UI offers default templates for hero, stakeholder showcase,
+  trust metrics, investor narrative, demo conversion, and pricing sections.
+- Every UI-created section receives a non-empty structured `configJson` with a
+  template id and editable content defaults, preserving the future no-code edit
+  model.
+- Website publishing remains snapshot-backed through
+  `/v1/super-admin/public-website/publish` with rollback via
+  `/v1/super-admin/public-website/publish/rollback/{snapshotId}`.
+
+## 6. Branding Engine Architecture
+
+Brand model:
+- Token system (color, spacing, radius, typography, motion)
+- Theme variants (light/dark/high-contrast)
+- Brand packs with versions
+- Tenant and campaign override rules
+
+Runtime:
+- Token packs compiled to CSS variable bundles
+- Render-time token override map per audience/route
+
+## 7. Presentation Engine Architecture
+
+Slide architecture:
+- Presentation metadata
+- Ordered slide graph
+- Slide widgets (metric, chart, timeline, media, CTA)
+- Animation profile per slide
+
+Delivery:
+- Public share links
+- Password-gated mode
+- Export pipeline (PDF/PPT as async job)
+
+## 8. Marketing Engine Architecture
+
+Automation model:
+- Trigger -> enrollment -> step execution -> conversion tracking
+
+Supported triggers:
+- Signup
+- Demo start
+- Demo completion
+- Route visit
+- Manual campaign launch
+
+Channels:
+- Email
+- In-app prompt
+- Webhook
+- WhatsApp connector (adapter)
+
+## 9. AI Experience Architecture
+
+Core services:
+- Prompt orchestration
+- Safety and policy enforcement
+- Budget controller
+- Usage metering
+- Explainability and audit trail
+
+Control dimensions:
+- tenant-aware
+- role-aware
+- audience-aware
+- feature-flag controlled
+
+## 10. Analytics Architecture
+
+Ingestion:
+- Client event batches -> public events API -> RabbitMQ -> persistence
+
+Computed views:
+- Funnel by audience
+- Journey drop-offs
+- Demo conversion
+- Feature engagement
+- Campaign attribution
+- AI consumption metrics
+
+## 11. Folder Structure
+
+Frontend target structure:
+
+- src/features/super-admin/experience-studio/
+  - components/
+  - pages/
+  - hooks/
+  - api/
+  - schemas/
+  - types/
+  - store/
+
+Backend target structure:
+
+- com/cloudcampus/experience/
+  - controller/
+  - dto/request/
+  - dto/response/
+  - entity/
+  - repository/
+  - service/
+  - config/
+  - listener/
+
+## 12. React Component Architecture
+
+Studio shell components:
+- StudioHeader
+- DomainBoard
+- DomainCard
+- ActiveConsoles
+- PublishCenter
+- ReleaseTimeline
+
+Builder components:
+- RouteCanvas
+- SectionPalette
+- WidgetConfigurator
+- AudiencePreviewPanel
+- SeoInspector
+
+## 13. Backend Module Architecture
+
+Core services:
+- ExperienceCompositionService
+- BrandResolutionService
+- JourneyResolutionService
+- RenderPolicyService
+- PublishReleaseService
+- ExperienceAuditService
+
+## 14. API Structure
+
+Super Admin APIs:
+- /v1/super-admin/experience/*
+- /v1/super-admin/experience/branding/*
+- /v1/super-admin/experience/websites/*
+- /v1/super-admin/experience/journeys/*
+- /v1/super-admin/experience/templates/*
+- /v1/super-admin/experience/campaigns/*
+- /v1/super-admin/experience/presentations/*
+
+Public APIs:
+- /v1/experience/public/*
+- /v1/experience/public/render/*
+- /v1/experience/public/events
+- /v1/experience/public/render-profile
+
+## 15. Feature Flag Architecture
+
+Flag scopes:
+- global flag
+- tenant flag
+- audience flag
+- route flag
+
+Evaluation precedence:
+- hard security gate -> tenant entitlement -> audience route policy -> experiment flag
+
+## 16. Dynamic Widget Architecture
+
+Widget contract:
+- widgetType
+- dataSource
+- permissions
+- featureRequirements
+- renderConfig
+- fallbackBehavior
+
+Registry:
+- server-side whitelist of widget types
+- schema validation at publish time
+
+## 17. SEO Architecture
+
+SEO model per route:
+- title templates
+- meta descriptions
+- OG tags
+- canonical URLs
+- schema.org JSON-LD
+- sitemap inclusion policy
+
+Automation:
+- generate sitemap on publish
+- invalidate CDN and search index queue
+
+## 18. Multi-Tenant Rendering Strategy
+
+Rules:
+- no cross-tenant data joins in rendering
+- content lookup scoped by tenant with global fallback
+- RequestContext tenant enforcement in service layer
+- tenant-specific cache keys
+
+## 19. Demo Environment Strategy
+
+Isolation model:
+- ephemeral demo tenant/session
+- seeded fake but realistic school datasets
+- role switch profiles
+- TTL cleanup and reset APIs
+
+Safety model:
+- no write paths to production tenants
+- synthetic credentials and data only
+
+## 20. Performance Optimization Strategy
+
+Targets:
+- sub-100ms config fetch from cache
+- async non-blocking analytics ingestion
+- precomputed route payload snapshots
+- lazy load heavy widgets
+- code splitting by studio domain
+
+## 21. UI/UX Design System
+
+Direction:
+- premium enterprise visual language
+- clear information hierarchy
+- bold but disciplined color tokens
+- role-centric storytelling templates
+
+System foundations:
+- tokenized spacing and typography
+- motion presets by narrative intensity
+- reusable composable primitives
+
+## 22. Enterprise Animation Strategy
+
+Animation principles:
+- purpose-driven transitions
+- staged reveal for metrics and narratives
+- avoid decorative-only motion
+
+Runtime controls:
+- reduced-motion support
+- per-page motion profile
+
+## 23. Responsive Design Strategy
+
+Breakpoints:
+- mobile first composition
+- adaptive navigation in studio and public experiences
+- role-specific CTA placement for small screens
+
+## 24. Production-Grade Implementation Roadmap
+
+Phase A (now, 2-3 sprints)
+- Upgrade Super Admin shell to Enterprise Experience Studio
+- Stabilize existing content/demo/investor tools
+- Add publish/release audit trail endpoints
+
+Phase B (3-6 sprints)
+- Branding engine data model + token runtime
+- Website route/layout builder MVP
+- Stakeholder journey rule engine
+
+Phase C (6-10 sprints)
+- Template marketplace
+- Presentation export pipeline
+- Campaign channel expansion
+
+Phase D (10+ sprints)
+- AI autonomous journey optimization
+- advanced trust center widgets
+- franchise/government packs
+
+## 25. Priority-Based Execution Plan
+
+P0
+- Tenant safety and RBAC on all experience APIs
+- Publish workflow with audit logs and rollback
+- Rendering contract and schema validators
+
+P1
+- Branding engine + website builder MVP
+- Stakeholder journey engine
+- Analytics dashboards for conversion and engagement
+
+P2
+- Template marketplace and campaign intelligence
+- Presentation exports and advanced storytelling modules
+
+P3
+- Autonomous AI optimization, AR/VR modules, global expansion packs
+
+## Current Implementation Updates in This Change
+
+Implemented now:
+- Super Admin experience module upgraded to Enterprise Experience Studio shell
+- Domain board covering all major platform capabilities
+- Existing working consoles preserved for content blocks, demo scenarios, and investor rooms
+- Super Admin navigation renamed to Experience Studio
+- New persisted backend domains added for:
+  - Branding systems
+  - Website route configurations
+  - Stakeholder journeys
+- New Super Admin APIs added under /v1/super-admin/experience for:
+  - /branding
+  - /website-routes
+  - /stakeholder-journeys
+- New Studio UI managers added for:
+  - Branding systems
+  - Website routes
+  - Stakeholder journeys
+- New Flyway migration added to create foundational platform tables for the three domains
+
+Not yet implemented in code (planned by roadmap):
+- Full no-code website drag/drop builder
+- Branding token runtime and brand versioning UI
+- Advanced journey orchestration and runtime rendering policy evaluator
+- Template marketplace and export subsystems
+
+
+---
+
+# AI Development Instructions
+
+_Former source: `CLAUDE.md`._
+
+
+## Project Overview
+
+CloudCampus is a multi-tenant SaaS school management platform.
+
+Architecture:
+
+* Backend: Spring Boot 3 + Java 21
+* Frontend: React + TypeScript + Vite
+* Mobile: React Native
+* Database: PostgreSQL
+* Cache: Redis
+* Storage: MinIO
+* Monitoring: Prometheus + Grafana
+* Email: MailHog (dev)
+* Infrastructure: Docker Compose
+* Authentication: JWT-based
+* Multi-tenancy: tenant-aware architecture
+
+---
+
+# Core Engineering Principles
+
+## 1. Never break existing functionality
+
+Before modifying:
+
+* inspect dependencies
+* inspect related services
+* inspect frontend/backend integration
+* inspect tenant isolation
+* inspect RBAC/security impact
+
+Always preserve backward compatibility unless explicitly instructed.
+
+---
+
+## 2. Multi-tenant safety is critical
+
+Every tenant must remain isolated.
+
+Always verify:
+
+* tenantId propagation
+* repository filtering
+* JWT tenant claims
+* role isolation
+* school isolation
+* query scoping
+
+Never expose cross-tenant data.
+
+---
+
+## 3. Security-first development
+
+Always preserve:
+
+* JWT validation
+* password hashing
+* audit logging
+* RBAC checks
+* rate limiting
+* input validation
+* tenant validation
+* permission checks
+
+Never bypass authentication/security.
+
+---
+
+## 4. Production-grade code only
+
+Avoid:
+
+* temporary hacks
+* duplicate logic
+* hardcoded secrets
+* unstructured services
+* weak validation
+* poor naming
+* unoptimized queries
+
+Prefer:
+
+* clean architecture
+* SOLID principles
+* reusable components
+* DTO separation
+* service abstraction
+* proper transaction handling
+
+---
+
+# Project Structure
+
+## Backend
+
+```text
+backend/
+```
+
+Tech stack:
+
+* Spring Boot 3
+* Java 21
+* Maven
+* PostgreSQL
+* Redis
+* Flyway
+* JWT
+
+---
+
+## Frontend
+
+```text
+frontend/
+```
+
+Tech stack:
+
+* React
+* TypeScript
+* Vite
+* Zustand
+* React Query
+
+---
+
+## Mobile
+
+```text
+mobile/
+```
+
+Tech stack:
+
+* React Native
+* Offline sync
+* Shared auth contracts
+
+---
+
+## Infrastructure
+
+```text
+infra/
+```
+
+Contains:
+
+* Docker
+* Prometheus
+* Grafana
+* load testing
+* backups
+* observability
+
+---
+
+# Required Workflow Before Coding
+
+## ALWAYS perform architecture analysis first
+
+Before implementing features:
+
+```bash
+graphify query "how <feature> works"
+```
+
+Examples:
+
+```bash
+graphify query "how authentication works"
+graphify query "how attendance works"
+graphify query "how fee management works"
+graphify query "how tenant isolation works"
+```
+
+---
+
+# Graphify Commands
+
+## Full extraction
+
+```bash
+graphify extract . --backend gemini --max-concurrency 2
+```
+
+---
+
+## Incremental update
+
+```bash
+graphify update .
+```
+
+---
+
+## Watch mode
+
+```bash
+graphify watch .
+```
+
+---
+
+## Generate architecture tree
+
+```bash
+graphify tree
+```
+
+Open:
+
+```bash
+open graphify-out/GRAPH_TREE.html
+```
+
+---
+
+## Generate call-flow diagrams
+
+```bash
+graphify export callflow-html
+```
+
+Open:
+
+```bash
+open graphify-out/CloudCampus-callflow.html
+```
+
+---
+
+## Explain architecture node
+
+```bash
+graphify explain "JwtUtil"
+```
+
+---
+
+## Find dependency path
+
+```bash
+graphify path "LoginPage()" "JwtUtil"
+```
+
+---
+
+# Required Workflow After Coding
+
+After ANY architecture/code changes:
+
+```bash
+graphify update .
+```
+
+After major feature/module changes:
+
+```bash
+graphify export callflow-html
+graphify tree
+```
+
+---
+
+# Backend Development Rules
+
+## Controllers
+
+Controllers should:
+
+* remain thin
+* validate requests
+* delegate to services
+* never contain business logic
+
+---
+
+## Services
+
+Services should:
+
+* contain business logic
+* enforce tenant isolation
+* enforce RBAC
+* remain modular
+* use transactions properly
+
+---
+
+## Repositories
+
+Repositories must:
+
+* scope tenant data properly
+* avoid N+1 queries
+* use indexes efficiently
+* support soft delete
+
+---
+
+## DTOs
+
+Never expose entities directly.
+
+Use:
+
+* request DTOs
+* response DTOs
+* mapper layer if needed
+
+---
+
+## Security
+
+Always validate:
+
+* JWT
+* roles
+* tenant access
+* school ownership
+* permissions
+
+---
+
+## Logging
+
+Security-sensitive operations must:
+
+* create audit logs
+* include actor/user info
+* include tenant context
+* avoid secret leakage
+
+---
+
+# Frontend Development Rules
+
+## Avoid infinite API loops
+
+Never write:
+
+```tsx
+useEffect(() => {
+  apiCall()
+})
+```
+
+Always include dependencies.
+
+---
+
+## React Query
+
+For login/auth mutations:
+
+```tsx
+retry: false
+```
+
+Avoid auth retry loops.
+
+---
+
+## State Management
+
+Use Zustand stores cleanly.
+
+Avoid:
+
+* duplicated state
+* stale auth state
+* circular updates
+
+---
+
+## API Layer
+
+Keep API calls centralized:
+
+```text
+features/*/api/
+```
+
+---
+
+## RBAC UI
+
+Frontend must respect:
+
+* permissions
+* roles
+* tenant restrictions
+* school restrictions
+
+Never expose unauthorized UI.
+
+---
+
+# Mobile Development Rules
+
+Maintain compatibility with:
+
+* backend contracts
+* auth flow
+* offline sync
+* shared DTOs
+
+Avoid diverging schemas.
+
+---
+
+# Database Rules
+
+## Use Flyway migrations only
+
+Never manually modify schema.
+
+---
+
+## Preserve tenant isolation
+
+Every tenant-scoped table should:
+
+* include tenant_id
+* filter correctly
+* index correctly
+
+---
+
+## Avoid destructive migrations
+
+Prefer:
+
+* additive migrations
+* safe transformations
+* rollback-safe operations
+
+---
+
+# Docker Rules
+
+Infrastructure services run in Docker:
+
+```text
+postgres
+redis
+minio
+mailhog
+grafana
+prometheus
+```
+
+Backend/frontend run locally during development.
+
+---
+
+# Authentication Rules
+
+Current auth stack:
+
+* JWT access tokens
+* refresh tokens
+* rate limiting
+* audit logging
+* password reset
+* tenant-aware auth
+
+Never weaken auth/security.
+
+---
+
+# Rate Limiting
+
+Development environments may temporarily relax limits.
+
+Production must always enforce:
+
+* login protection
+* brute-force prevention
+* abuse prevention
+
+---
+
+# Audit Logging
+
+Critical actions must create audit events:
+
+* login
+* logout
+* password changes
+* tenant changes
+* RBAC changes
+* fee operations
+* attendance operations
+
+---
+
+# Architecture Analysis Guidelines
+
+Before refactoring:
+
+```bash
+graphify path "A" "B"
+```
+
+Before implementing:
+
+```bash
+graphify query "how <module> works"
+```
+
+After major changes:
+
+```bash
+graphify export callflow-html
+graphify tree
+```
+
+---
+
+# Recommended Daily Workflow
+
+## Start day
+
+```bash
+graphify watch .
+```
+
+---
+
+## Before coding
+
+```bash
+graphify query "how <feature> works"
+```
+
+---
+
+## After coding
+
+```bash
+graphify update .
+```
+
+---
+
+## End of day
+
+```bash
+graphify export callflow-html
+graphify tree
+```
+
+Commit updated graph outputs.
+
+---
+
+# Git Rules
+
+Commit important architecture outputs:
+
+```text
+graphify-out/graph.json
+graphify-out/GRAPH_TREE.html
+graphify-out/CloudCampus-callflow.html
+```
+
+Do not commit:
+
+```text
+.graphify_cache/
+```
+
+---
+
+# Current Local Development URLs
+
+Backend:
+
+```text
+http://localhost:8080
+```
+
+Frontend:
+
+```text
+http://localhost:5173
+```
+
+MinIO:
+
+```text
+http://localhost:9001
+```
+
+Grafana:
+
+```text
+http://localhost:3100
+```
+
+Prometheus:
+
+```text
+http://localhost:9090
+```
+
+MailHog:
+
+```text
+http://localhost:8025
+```
+
+---
+
+# Important CloudCampus Modules
+
+Core systems:
+
+* Authentication
+* RBAC
+* Tenant Management
+* School Management
+* Student Lifecycle
+* Attendance
+* Fee Management
+* Notifications
+* Audit Logging
+* Feature Flags
+* Observability
+* Reporting
+* Parent/Guardian Links
+* Mobile Sync
+
+---
+
+# AI Agent Expectations
+
+Claude should:
+
+* inspect architecture before changes
+* avoid hallucinating APIs
+* preserve module boundaries
+* preserve tenant isolation
+* preserve RBAC
+* update Graphify outputs after changes
+* maintain production-grade code quality
+
+---
+
+# Current Graph Stats
+
+CloudCampus currently contains:
+
+* ~1791 graph nodes
+* ~4013 graph edges
+* ~150 architecture communities
+
+This is already a large SaaS-scale architecture.

@@ -1,0 +1,141 @@
+name: DR Drill — Monthly Restore Validation
+
+on:
+  schedule:
+    - cron: '0 6 1 * *'   # 1st of every month at 06:00 UTC
+  workflow_dispatch:        # Manual trigger for ad-hoc drills
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Spins up PostgreSQL + MinIO, applies all Flyway migrations, seeds minimal
+  # data, runs backup.sh (pg_dump → GPG → MinIO), then runs drill.sh
+  # (download → decrypt → pg_restore → validate row counts).
+  # Exit code 0 = PASS, any non-zero = FAIL (job fails, alerts fire).
+  # ──────────────────────────────────────────────────────────────────────────
+  dr-drill:
+    name: DR Drill — Backup + Restore + Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: cloudcampus
+          POSTGRES_USER: cloudcampus
+          POSTGRES_PASSWORD: drillpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PG_HOST: localhost
+      PG_PORT: "5432"
+      PG_DB: cloudcampus
+      PG_USER: cloudcampus
+      PGPASSWORD: drillpassword
+      MINIO_ENDPOINT: http://localhost:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: cloudcampus-backups
+      # Passphrase protects the GPG-encrypted dump. CI uses a dedicated
+      # drill-only passphrase — no real customer data is involved.
+      BACKUP_PASSPHRASE: ${{ secrets.DR_DRILL_PASSPHRASE || 'ci-drill-passphrase-not-real-data' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # ── MinIO ──────────────────────────────────────────────────────────────
+      - name: Start MinIO
+        run: |
+          docker run -d \
+            --name minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:RELEASE.2024-11-07T00-52-20Z server /data
+          timeout 60 bash -c \
+            'until curl -sf http://localhost:9000/minio/health/live; do sleep 2; done'
+
+      # ── Tool installation ──────────────────────────────────────────────────
+      - name: Install mc, postgresql-client-16, gnupg
+        run: |
+          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc \
+            -o /usr/local/bin/mc
+          chmod +x /usr/local/bin/mc
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client-16 gnupg
+          mc --version
+          psql --version
+          gpg --version | head -1
+
+      # ── Schema ─────────────────────────────────────────────────────────────
+      - name: Apply Flyway migrations
+        run: |
+          docker run --rm \
+            --network host \
+            -v ${{ github.workspace }}/backend/src/main/resources/db/migration:/flyway/sql \
+            flyway/flyway:10-alpine \
+              -url="jdbc:postgresql://localhost:5432/cloudcampus" \
+              -user=cloudcampus \
+              -password=drillpassword \
+              -connectRetries=5 \
+              migrate
+
+      # ── Seed ───────────────────────────────────────────────────────────────
+      - name: Seed minimal DR drill data
+        run: |
+          psql -h localhost -U cloudcampus -d cloudcampus << 'SQL'
+          INSERT INTO tenants (id, code, name, status, created_at, updated_at)
+          VALUES (
+            '00000000-0000-0000-0000-000000000001',
+            'DRILL',
+            'DR Drill Tenant',
+            'ACTIVE',
+            NOW(), NOW()
+          );
+
+          INSERT INTO schools (id, tenant_id, name, code, status, created_at, updated_at)
+          VALUES (
+            '00000000-0000-0000-0000-000000000002',
+            '00000000-0000-0000-0000-000000000001',
+            'DR Drill School',
+            'DRILL-SCH',
+            'ACTIVE',
+            NOW(), NOW()
+          );
+
+          INSERT INTO users (id, tenant_id, username, password_hash, role, status)
+          VALUES (
+            '00000000-0000-0000-0000-000000000003',
+            '00000000-0000-0000-0000-000000000001',
+            'drill@cloudcampus.io',
+            '$2a$10$drill.placeholder.not.a.real.hash',
+            'TENANT_ADMIN',
+            'ACTIVE'
+          );
+          SQL
+
+      # ── Backup ─────────────────────────────────────────────────────────────
+      - name: Run backup.sh (pg_dump → GPG → MinIO)
+        working-directory: infra/pgbackup
+        run: sh backup.sh
+
+      # ── Restore + validate ─────────────────────────────────────────────────
+      - name: Run drill.sh (decrypt → pg_restore → validate)
+        working-directory: infra/pgbackup
+        run: DRILL_SKIP_BACKUP=1 sh drill.sh
+
+      # ── Artifacts ──────────────────────────────────────────────────────────
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dr-drill-failure-${{ github.run_id }}
+          path: /tmp/pgbackup/
+          retention-days: 14

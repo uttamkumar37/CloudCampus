@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
@@ -101,7 +101,7 @@ export function SchoolSettingsPage() {
     enabled:  !!schoolId,
   });
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, control, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   });
 
@@ -132,8 +132,9 @@ export function SchoolSettingsPage() {
     },
   });
 
-  const allowLate   = watch('allowLateAttendance');
-  const maskValue   = watch('workingDaysMask') ?? data?.workingDaysMask ?? 62;
+  const allowLate = useWatch({ control, name: 'allowLateAttendance' });
+  const maskValue = useWatch({ control, name: 'workingDaysMask' }) ?? data?.workingDaysMask ?? 62;
+  const primaryColor = useWatch({ control, name: 'primaryColor' });
 
   function onSubmit(values: FormValues) {
     mutation.mutate({
@@ -265,10 +266,10 @@ export function SchoolSettingsPage() {
                 placeholder="#1A73E8"
                 maxLength={7}
                 className="input w-36 font-mono" />
-              {watch('primaryColor') && /^#[0-9A-Fa-f]{6}$/.test(watch('primaryColor') ?? '') && (
+              {primaryColor && /^#[0-9A-Fa-f]{6}$/.test(primaryColor) && (
                 <div
                   className="h-8 w-8 rounded-lg border border-gray-200 shadow-sm"
-                  style={{ backgroundColor: watch('primaryColor') ?? '' }}
+                  style={{ backgroundColor: primaryColor }}
                 />
               )}
             </div>

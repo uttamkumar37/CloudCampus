@@ -43,6 +43,29 @@ function FeeBadge({ rate }: { rate: number }) {
   );
 }
 
+function SortTh({
+  label,
+  k,
+  active,
+  sortAsc,
+  onSort,
+}: {
+  label: string;
+  k: SortKey;
+  active: boolean;
+  sortAsc: boolean;
+  onSort: (key: SortKey) => void;
+}) {
+  return (
+    <th
+      onClick={() => onSort(k)}
+      className="cursor-pointer select-none px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-800"
+    >
+      {label}{active ? (sortAsc ? ' ↑' : ' ↓') : ''}
+    </th>
+  );
+}
+
 export function SchoolComparisonPage() {
   const [tenantId, setTenantId] = useState('');
   const [run, setRun] = useState(false);
@@ -76,18 +99,6 @@ export function SchoolComparisonPage() {
         return sortAsc ? cmp : -cmp;
       })
     : [];
-
-  function SortTh({ label, k }: { label: string; k: SortKey }) {
-    const active = sortKey === k;
-    return (
-      <th
-        onClick={() => toggleSort(k)}
-        className="cursor-pointer select-none px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-800"
-      >
-        {label}{active ? (sortAsc ? ' ↑' : ' ↓') : ''}
-      </th>
-    );
-  }
 
   const avgAttendance = sorted.length
     ? sorted.filter((r) => r.attendanceRate > 0).reduce((s, r) => s + r.attendanceRate, 0) /
@@ -160,13 +171,13 @@ export function SchoolComparisonPage() {
               <table className="min-w-full divide-y divide-gray-100 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <SortTh label="School" k="schoolName" />
+                    <SortTh label="School" k="schoolName" active={sortKey === 'schoolName'} sortAsc={sortAsc} onSort={toggleSort} />
                     <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Academic Year</th>
-                    <SortTh label="Students" k="activeStudents" />
+                    <SortTh label="Students" k="activeStudents" active={sortKey === 'activeStudents'} sortAsc={sortAsc} onSort={toggleSort} />
                     <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Sessions</th>
-                    <SortTh label="Attendance" k="attendanceRate" />
+                    <SortTh label="Attendance" k="attendanceRate" active={sortKey === 'attendanceRate'} sortAsc={sortAsc} onSort={toggleSort} />
                     <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Due / Collected</th>
-                    <SortTh label="Fee Rate" k="feeCollectionRate" />
+                    <SortTh label="Fee Rate" k="feeCollectionRate" active={sortKey === 'feeCollectionRate'} sortAsc={sortAsc} onSort={toggleSort} />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">

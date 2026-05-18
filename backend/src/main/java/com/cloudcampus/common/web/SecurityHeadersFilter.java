@@ -21,13 +21,12 @@ import java.io.IOException;
  * Headers added:
  *   X-Content-Type-Options       — prevents MIME-type sniffing
  *   X-Frame-Options              — clickjacking protection
- *   X-XSS-Protection             — legacy XSS filter (belt-and-suspenders)
+ *   X-XSS-Protection             — set to 0 (disables buggy IE XSS auditor; deprecated header)
  *   Referrer-Policy              — controls referrer information leakage
  *   Permissions-Policy           — disables unneeded browser features
- *   Strict-Transport-Security    — forces HTTPS (only meaningful over TLS)
+ *   Strict-Transport-Security    — forces HTTPS; sent only when request is already over TLS
  *   Cache-Control                — prevents caching of API responses by proxies
- *
- * NOT adding Content-Security-Policy here — it is configured per-page in the frontend.
+ *   Content-Security-Policy      — restricts resource loading for REST API responses
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
@@ -45,24 +44,33 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
         // Deny embedding in iframes — prevents clickjacking.
         response.setHeader("X-Frame-Options", "DENY");
 
-        // Belt-and-suspenders XSS header for older browsers.
-        response.setHeader("X-XSS-Protection", "1; mode=block");
+        // Disable the legacy XSS auditor — value "0" is correct. The old "1; mode=block"
+        // value introduced reflected-XSS vulnerabilities in IE. Modern browsers have
+        // removed the XSS auditor entirely; this header is kept only for old IE compatibility.
+        response.setHeader("X-XSS-Protection", "0");
 
         // Do not send the full URL as Referer to third-party sites.
         response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 
-        // Disable browser features not needed by the API (camera, mic, geolocation from API server).
+        // Disable browser features not needed by the API.
         response.setHeader("Permissions-Policy",
                 "camera=(), microphone=(), geolocation=(), payment=()");
 
-        // Force HTTPS for 1 year; include subdomains.
-        // Safe for HTTPS-only endpoints. Omit this header if the endpoint can serve HTTP.
-        response.setHeader("Strict-Transport-Security",
-                "max-age=31536000; includeSubDomains");
+        // HSTS is only meaningful and safe over TLS — do not send on plaintext HTTP,
+        // because a man-in-the-middle can strip the header before it reaches the client.
+        if (request.isSecure()) {
+            response.setHeader("Strict-Transport-Security",
+                    "max-age=31536000; includeSubDomains");
+        }
 
         // API responses must not be cached by browsers or CDN proxies.
         response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
         response.setHeader("Pragma", "no-cache");
+
+        // CSP for REST API responses: no HTML is served, so 'none' is appropriate.
+        // frame-ancestors 'none' replaces X-Frame-Options for modern browsers.
+        response.setHeader("Content-Security-Policy",
+                "default-src 'none'; frame-ancestors 'none'");
 
         filterChain.doFilter(request, response);
     }

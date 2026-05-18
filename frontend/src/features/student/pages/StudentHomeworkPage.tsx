@@ -11,6 +11,11 @@ function isOverdue(dueDate: string) {
   return new Date(dueDate) < new Date();
 }
 
+function isConflictError(error: unknown) {
+  const candidate = error as { response?: { status?: number } };
+  return candidate.response?.status === 409;
+}
+
 function SubmitForm({
   homework,
   onClose,
@@ -28,8 +33,8 @@ function SubmitForm({
       qc.invalidateQueries({ queryKey: ['student-homework'] });
       onClose();
     },
-    onError: (err: any) => {
-      if (err?.response?.status === 409) setAlreadyDone(true);
+    onError: (err: unknown) => {
+      if (isConflictError(err)) setAlreadyDone(true);
     },
   });
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getMyTimetable } from '../api/teacherTimetableApi';
 import {
@@ -135,27 +135,27 @@ export default function TeacherAttendancePage() {
     enabled:  !!selectedSlot,
   });
 
-  useEffect(() => {
-    if (students.length > 0) {
-      const initial: Record<string, AttendanceStatus> = {};
-      students.forEach((s) => { initial[s.id] = 'PRESENT'; });
-      setMarks(initial);
-      setSaved(false);
-    }
+  const defaultMarks = useMemo(() => {
+    const initial: Record<string, AttendanceStatus> = {};
+    students.forEach((s) => { initial[s.id] = 'PRESENT'; });
+    return initial;
   }, [students]);
 
-  useEffect(() => {
+  const activeMarks = Object.keys(marks).length > 0 ? marks : defaultMarks;
+
+  function changeDate(nextDate: string) {
+    setDate(nextDate);
     setSlot(null);
     setMarks({});
     setSaved(false);
-  }, [date]);
+  }
 
   const mutation = useMutation({
     mutationFn: () => {
       if (!selectedSlot) throw new Error('No slot selected');
       const markList: StudentMark[] = students.map((s) => ({
         studentId: s.id,
-        status:    marks[s.id] ?? 'ABSENT',
+        status:    activeMarks[s.id] ?? 'ABSENT',
       }));
       return takeAttendance({
         classId:        selectedSlot.classId,
@@ -184,7 +184,7 @@ export default function TeacherAttendancePage() {
 
   const summary = ALL_STATUSES.map((s) => ({
     status: s,
-    count: Object.values(marks).filter((v) => v === s).length,
+    count: Object.values(activeMarks).filter((v) => v === s).length,
   })).filter((s) => s.count > 0);
 
   return (
@@ -202,7 +202,7 @@ export default function TeacherAttendancePage() {
           type="date"
           value={date}
           max={toDateStr(new Date())}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={(e) => changeDate(e.target.value)}
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
         />
       </div>
@@ -219,7 +219,7 @@ export default function TeacherAttendancePage() {
             {todaySlots.map((slot) => (
               <button
                 key={slot.id}
-                onClick={() => { setSlot(slot); setSaved(false); }}
+                onClick={() => { setSlot(slot); setMarks({}); setSaved(false); }}
                 className={[
                   'rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
                   selectedSlot?.id === slot.id
@@ -289,7 +289,7 @@ export default function TeacherAttendancePage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {students.map((student, idx) => {
-                      const current = marks[student.id] ?? 'PRESENT';
+                      const current = activeMarks[student.id] ?? 'PRESENT';
                       return (
                         <tr key={student.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 text-gray-400 text-xs">{idx + 1}</td>

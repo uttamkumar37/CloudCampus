@@ -80,6 +80,29 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+function Field({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-gray-600">
+        {label}
+        {required && <span className="ml-0.5 text-red-500"> *</span>}
+      </label>
+      {children}
+      {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
+
 // ── Edit form ─────────────────────────────────────────────────────────────────
 
 function EditForm({
@@ -134,29 +157,6 @@ function EditForm({
       setError('root', { message: 'Failed to save changes. Please try again.' });
     },
   });
-
-  function Field({
-    label,
-    required,
-    error,
-    children,
-  }: {
-    label: string;
-    required?: boolean;
-    error?: string;
-    children: React.ReactNode;
-  }) {
-    return (
-      <div>
-        <label className="mb-1 block text-xs font-medium text-gray-600">
-          {label}
-          {required && <span className="ml-0.5 text-red-500"> *</span>}
-        </label>
-        {children}
-        {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
-      </div>
-    );
-  }
 
   return (
     <form

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
@@ -54,31 +54,27 @@ export default function MarksEntryPage() {
     enabled: !!schoolId && !!examId && !!subjectEntryId,
   });
 
-  // ── Initialise rows when students + existing marks are loaded ─────────────
-
-  useEffect(() => {
-    if (students.length === 0) return;
-
+  const initialRows = useMemo(() => {
     const existingMap = new Map(existingMarks.map((m) => [m.studentId, m]));
 
-    setRows(
-      students.map((s: StudentSummaryResponse) => {
-        const existing = existingMap.get(s.id);
-        return {
-          studentId: s.id,
-          marksObtained: existing?.marksObtained != null ? String(existing.marksObtained) : '',
-          isAbsent: existing?.isAbsent ?? false,
-          remarks: existing?.remarks ?? '',
-        };
-      }),
-    );
+    return students.map((s: StudentSummaryResponse) => {
+      const existing = existingMap.get(s.id);
+      return {
+        studentId: s.id,
+        marksObtained: existing?.marksObtained != null ? String(existing.marksObtained) : '',
+        isAbsent: existing?.isAbsent ?? false,
+        remarks: existing?.remarks ?? '',
+      };
+    });
   }, [students, existingMarks]);
+
+  const editableRows = rows.length > 0 ? rows : initialRows;
 
   // ── Save mutation ─────────────────────────────────────────────────────────
 
   const saveMutation = useMutation({
     mutationFn: () => {
-      const entries = rows.map((row) => ({
+      const entries = editableRows.map((row) => ({
         studentId: row.studentId,
         marksObtained: row.isAbsent
           ? 0
@@ -105,28 +101,37 @@ export default function MarksEntryPage() {
   // ── Row helpers ───────────────────────────────────────────────────────────
 
   function updateRow(idx: number, patch: Partial<RowState>) {
-    setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+    setRows((prev) => {
+      const source = prev.length > 0 ? prev : initialRows;
+      return source.map((r, i) => (i === idx ? { ...r, ...patch } : r));
+    });
   }
 
   function markAllAbsent() {
-    setRows((prev) => prev.map((r) => ({ ...r, isAbsent: true, marksObtained: '0' })));
+    setRows((prev) => {
+      const source = prev.length > 0 ? prev : initialRows;
+      return source.map((r) => ({ ...r, isAbsent: true, marksObtained: '0' }));
+    });
   }
 
   function clearAll() {
-    setRows((prev) => prev.map((r) => ({ ...r, isAbsent: false, marksObtained: '', remarks: '' })));
+    setRows((prev) => {
+      const source = prev.length > 0 ? prev : initialRows;
+      return source.map((r) => ({ ...r, isAbsent: false, marksObtained: '', remarks: '' }));
+    });
   }
 
   // ── Derived stats ─────────────────────────────────────────────────────────
 
   const stats = useMemo(() => {
-    const entered = rows.filter((r) => r.isAbsent || r.marksObtained !== '').length;
-    const absent  = rows.filter((r) => r.isAbsent).length;
-    const passed  = rows.filter((r) => {
+    const entered = editableRows.filter((r) => r.isAbsent || r.marksObtained !== '').length;
+    const absent  = editableRows.filter((r) => r.isAbsent).length;
+    const passed  = editableRows.filter((r) => {
       if (r.isAbsent || r.marksObtained === '' || !paper) return false;
       return parseFloat(r.marksObtained) >= paper.passingMarks;
     }).length;
     return { entered, absent, passed };
-  }, [rows, paper]);
+  }, [editableRows, paper]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -182,7 +187,7 @@ export default function MarksEntryPage() {
       {/* Stats bar */}
       <div className="mb-4 flex gap-6 rounded-lg bg-indigo-50 px-5 py-3 text-sm">
         <span>
-          <span className="font-semibold text-indigo-700">{rows.length}</span>
+          <span className="font-semibold text-indigo-700">{editableRows.length}</span>
           <span className="ml-1 text-gray-500">Students</span>
         </span>
         <span>
@@ -215,7 +220,7 @@ export default function MarksEntryPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {rows.map((row, idx) => {
+            {editableRows.map((row, idx) => {
               const student = studentMap.get(row.studentId);
               const marksNum = row.marksObtained !== '' ? parseFloat(row.marksObtained) : null;
               const isPassed = marksNum != null && marksNum >= paper.passingMarks;
@@ -273,7 +278,7 @@ export default function MarksEntryPage() {
               );
             })}
 
-            {rows.length === 0 && (
+            {editableRows.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
                   No students found for this class.
@@ -287,11 +292,11 @@ export default function MarksEntryPage() {
       {/* Footer actions */}
       <div className="mt-4 flex items-center gap-4">
         <button
-          disabled={saveMutation.isPending || rows.length === 0}
+          disabled={saveMutation.isPending || editableRows.length === 0}
           onClick={() => saveMutation.mutate()}
           className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
         >
-          {saveMutation.isPending ? 'Saving…' : `Save All (${rows.length} students)`}
+          {saveMutation.isPending ? 'Saving…' : `Save All (${editableRows.length} students)`}
         </button>
         <Link
           to={`/school-admin/exams/${examId}`}

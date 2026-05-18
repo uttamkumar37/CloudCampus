@@ -74,8 +74,8 @@ export function VideoUploadPage() {
 
       setTitle(''); setDescription(''); setFile(null); setUploadProgress(null);
       if (fileRef.current) fileRef.current.value = '';
-    } catch (err: any) {
-      setUploadError(err.message ?? 'Upload failed');
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
       setUploadProgress(null);
     }
   }

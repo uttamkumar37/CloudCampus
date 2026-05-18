@@ -17,6 +17,7 @@ export function SuperAdminLayout() {
   const user      = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate  = useNavigate();
+  const publicWebsiteUrl = getPublicWebsiteUrl();
 
   function handleLogout() {
     clearAuth();
@@ -72,8 +73,16 @@ export function SuperAdminLayout() {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col">
-        <header className="flex h-14 items-center border-b border-gray-200 bg-white px-6">
+        <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-6">
           <h1 className="text-sm font-medium text-gray-500">Super Admin Console</h1>
+          <a
+            href={publicWebsiteUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full border border-cyan-200 bg-cyan-50 px-4 py-1.5 text-xs font-bold text-cyan-800 transition hover:border-cyan-300 hover:bg-cyan-100"
+          >
+            View Public Website
+          </a>
         </header>
         <main className="flex-1">
           <Outlet />
@@ -81,4 +90,12 @@ export function SuperAdminLayout() {
       </div>
     </div>
   );
+}
+
+function getPublicWebsiteUrl() {
+  if (typeof window === 'undefined') {
+    return '/';
+  }
+
+  return new URL('/', window.location.origin).toString();
 }

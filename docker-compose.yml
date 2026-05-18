@@ -267,6 +267,26 @@ services:
           cpus: "0.05"
           memory: 64M
 
+  # ── Prometheus Pushgateway ─────────────────────────────────────────────
+  # Receives batch-job metrics (e.g. backup success timestamp) that cannot be
+  # scraped directly because they run ephemerally in a cron context.
+  # Prometheus scrapes Pushgateway via job_name: pushgateway (honor_labels: true).
+  pushgateway:
+    image: prom/pushgateway:v1.9.0
+    container_name: cloudcampus-pushgateway
+    ports:
+      - "127.0.0.1:9091:9091"
+    logging: *default-logging
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 64M
+        reservations:
+          cpus: "0.01"
+          memory: 16M
+
   # ── pg_dump backup sidecar ─────────────────────────────────────────────
   pgbackup:
     build:
@@ -285,11 +305,14 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-cloudcampus-backups}
       RETENTION_DAYS: ${RETENTION_DAYS:-30}
       BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE}
+      PUSHGATEWAY_URL: http://pushgateway:9091
     depends_on:
       postgres:
         condition: service_healthy
       minio:
         condition: service_healthy
+      pushgateway:
+        condition: service_started
     logging: *default-logging
     restart: unless-stopped
     deploy:

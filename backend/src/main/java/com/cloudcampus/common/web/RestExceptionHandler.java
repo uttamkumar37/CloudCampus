@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -61,6 +62,13 @@ public class RestExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiResponse<Void>> handleConflict(ConflictException ex) {
         return build(HttpStatus.CONFLICT, ApiError.of("CONFLICT", ex.getMessage()));
+    }
+
+    // Spring Security @PreAuthorize throws AccessDeniedException — must be handled explicitly
+    // before the catch-all Exception handler converts it to 500.
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
+        return build(HttpStatus.FORBIDDEN, ApiError.of("ACCESS_DENIED", "You do not have permission to access this resource"));
     }
 
     // C-05: ForbiddenException → 403. Used for permission and tenant access denials.

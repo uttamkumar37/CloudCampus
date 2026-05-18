@@ -4,6 +4,9 @@ import {
   listPages,
   createPage,
   publishPage,
+  listSections,
+  createSection,
+  publishSection,
   listThemes,
   createTheme,
   publishTheme,
@@ -16,6 +19,7 @@ import {
   listSnapshots,
   rollbackSnapshot,
 } from '../api/publicWebsiteApi';
+import type { WebsiteSection } from '../types';
 
 export function useWebsiteDashboardQuery() {
   return useQuery({ queryKey: ['public-website', 'dashboard'], queryFn: getWebsiteDashboard });
@@ -42,6 +46,48 @@ export function usePublishPageMutation() {
   return useMutation({
     mutationFn: publishPage,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] }),
+  });
+}
+
+export function useWebsiteSectionsQuery(pageId: string | null) {
+  return useQuery({
+    queryKey: ['public-website', 'pages', pageId, 'sections'],
+    queryFn: () => listSections(pageId ?? ''),
+    enabled: Boolean(pageId),
+  });
+}
+
+export function useCreateSectionMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      pageId,
+      payload,
+    }: {
+      pageId: string;
+      payload: {
+        sectionKey: string;
+        title: string;
+        sectionType: string;
+        position: number;
+        configJson?: Record<string, unknown>;
+      };
+    }) => createSection(pageId, payload),
+    onSuccess: (section: WebsiteSection) => {
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'pages', section.pageId, 'sections'] });
+    },
+  });
+}
+
+export function usePublishSectionMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: publishSection,
+    onSuccess: (section: WebsiteSection) => {
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'pages'] });
+      queryClient.invalidateQueries({ queryKey: ['public-website', 'pages', section.pageId, 'sections'] });
+    },
   });
 }
 

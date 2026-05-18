@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import {
@@ -34,12 +34,6 @@ export default function StaffAttendancePage() {
     enabled: !!schoolId,
   });
 
-  // Reset overrides when date changes or fresh data arrives
-  useEffect(() => {
-    setOverrides({});
-    setSaved(false);
-  }, [date, rows]);
-
   const mutation = useMutation({
     mutationFn: () => {
       const entries = rows.map((r) => ({
@@ -51,9 +45,16 @@ export default function StaffAttendancePage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['staff-attendance', schoolId, date] });
+      setOverrides({});
       setSaved(true);
     },
   });
+
+  function changeDate(nextDate: string) {
+    setDate(nextDate);
+    setOverrides({});
+    setSaved(false);
+  }
 
   function setStatus(staffId: string, status: StaffAttendanceStatus) {
     setOverrides((prev) => ({ ...prev, [staffId]: status }));
@@ -83,7 +84,7 @@ export default function StaffAttendancePage() {
           <input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => changeDate(e.target.value)}
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
           />
           <button

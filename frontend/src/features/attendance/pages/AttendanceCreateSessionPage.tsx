@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -60,7 +60,7 @@ export function AttendanceCreateSessionPage() {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     setValue,
     setError,
     formState: { errors },
@@ -69,8 +69,8 @@ export function AttendanceCreateSessionPage() {
     defaultValues: { sessionDate: todayIso, periodNumber: '0' },
   });
 
-  const selectedYearId = watch('academicYearId');
-  const selectedClassId = watch('classId');
+  const selectedYearId = useWatch({ control, name: 'academicYearId' });
+  const selectedClassId = useWatch({ control, name: 'classId' });
 
   // Load academic years
   const { data: years } = useQuery({

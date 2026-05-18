@@ -25,6 +25,14 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
+  # Pushgateway — receives batch-job metrics (e.g. backup success timestamp)
+  # honor_labels: true preserves the job/instance labels pushed by backup.sh
+  # so the metric appears as job="pgbackup", not job="pushgateway".
+  - job_name: 'pushgateway'
+    honor_labels: true
+    static_configs:
+      - targets: ['pushgateway:9091']
+
   # Spring Boot backend — /actuator/prometheus (Micrometer)
   # 'host.docker.internal' resolves to the host machine from within Docker.
   - job_name: 'cloudcampus-backend'

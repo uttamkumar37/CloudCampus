@@ -11,18 +11,11 @@ import { listClasses, createClass, deleteClass } from '../api/classApi';
 
 const schema = z.object({
   name: z.string().min(1, 'Class name is required').max(100),
-  gradeLevel: z
-    .string()
-    .optional()
-    .transform((v) => (v ? Number(v) : undefined)),
-  capacity: z
-    .string()
-    .optional()
-    .transform((v) => (v ? Number(v) : undefined)),
+  gradeLevel: z.string().optional(),
+  capacity: z.string().optional(),
 });
 
 type FormInput = { name: string; gradeLevel?: string; capacity?: string };
-type FormValues = z.infer<typeof schema>;
 
 interface CreateFormProps {
   schoolId: string;
@@ -38,17 +31,22 @@ function CreateForm({ schoolId, academicYearId, onClose }: CreateFormProps) {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<FormInput>({ resolver: zodResolver(schema) as any });
+  } = useForm<FormInput>({ resolver: zodResolver(schema) });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (values: FormValues) =>
-      createClass(schoolId, { ...values, academicYearId }),
+    mutationFn: (values: FormInput) =>
+      createClass(schoolId, {
+        academicYearId,
+        name: values.name,
+        gradeLevel: toOptionalNumber(values.gradeLevel),
+        capacity: toOptionalNumber(values.capacity),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classes', academicYearId] });
       onClose();
     },
     onError: () => {
-      setError('root' as any, { message: 'Failed to create class. Please try again.' });
+      setError('root', { message: 'Failed to create class. Please try again.' });
     },
   });
 
@@ -56,15 +54,15 @@ function CreateForm({ schoolId, academicYearId, onClose }: CreateFormProps) {
 
   return (
     <form
-      onSubmit={handleSubmit((v) => mutate(v as unknown as FormValues))}
+      onSubmit={handleSubmit((v) => mutate(v))}
       className="mb-5 rounded-xl border border-blue-100 bg-blue-50 p-5"
       noValidate
     >
       <h3 className="mb-4 text-sm font-semibold text-gray-800">New Class</h3>
 
-      {(errors as any).root && (
+      {errors.root && (
         <p className="mb-3 rounded-lg bg-red-50 p-2 text-sm text-red-700" role="alert">
-          {(errors as any).root.message}
+          {errors.root.message}
         </p>
       )}
 
@@ -127,6 +125,10 @@ function CreateForm({ schoolId, academicYearId, onClose }: CreateFormProps) {
       </div>
     </form>
   );
+}
+
+function toOptionalNumber(value?: string) {
+  return value ? Number(value) : undefined;
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────

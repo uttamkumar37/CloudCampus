@@ -109,6 +109,28 @@ groups:
           summary: "RabbitMQ notification queue depth > 1000 ({{ $value }})"
           description: "The notification queue has a large backlog. Consumer may be stuck or undersized."
 
+      # Backup stale — last successful pg_dump > 8 hours ago
+      # cc_backup_last_success_timestamp_seconds is pushed by backup.sh via Pushgateway.
+      - alert: BackupNotFresh
+        expr: (time() - cc_backup_last_success_timestamp_seconds) > 28800
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL backup is stale ({{ $value | humanizeDuration }} since last success)"
+          description: "No successful pg_dump has completed in the last 8 hours. Check the pgbackup container logs and MinIO bucket."
+
+      # Backup metric absent — Pushgateway has never received a push (or was reset)
+      # for: 25h gives a brand-new deployment one full backup cycle before alerting.
+      - alert: BackupMetricAbsent
+        expr: absent(cc_backup_last_success_timestamp_seconds)
+        for: 25h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backup success metric is absent — no backup has ever been reported"
+          description: "cc_backup_last_success_timestamp_seconds has not been pushed to Pushgateway in 25 hours. The pgbackup container may not be running or PUSHGATEWAY_URL is not configured."
+
       # Disk usage > 85 % on any mounted volume
       - alert: DiskSpaceHigh
         expr: |

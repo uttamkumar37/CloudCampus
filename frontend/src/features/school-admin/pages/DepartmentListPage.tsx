@@ -62,7 +62,7 @@ function DepartmentForm({
       onClose();
     },
     onError: () => {
-      (setError as any)('root', { message: 'Failed to save department. Please try again.' });
+      setError('root', { message: 'Failed to save department. Please try again.' });
     },
   });
 
@@ -78,9 +78,9 @@ function DepartmentForm({
         {editing ? 'Edit Department' : 'New Department'}
       </h3>
 
-      {(errors as any).root && (
+      {errors.root && (
         <p className="mb-3 rounded-lg bg-red-50 p-2 text-sm text-red-700" role="alert">
-          {(errors as any).root.message}
+          {errors.root.message}
         </p>
       )}
 

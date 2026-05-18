@@ -11,6 +11,11 @@ const STATUS_COLOR: Record<string, string> = {
   FAILED:   'bg-red-100    text-red-800',
 };
 
+function errorMessage(error: unknown, fallback: string) {
+  const candidate = error as { response?: { data?: { error?: { message?: string } } } };
+  return candidate.response?.data?.error?.message ?? fallback;
+}
+
 export function CustomDomainPage() {
   const qc = useQueryClient();
   const [domain, setDomain] = useState('');
@@ -24,7 +29,7 @@ export function CustomDomainPage() {
   const register = useMutation({
     mutationFn: () => registerDomainApi(domain),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['custom-domains'] }); setDomain(''); setError(''); },
-    onError: (e: any) => setError(e.response?.data?.error?.message ?? 'Registration failed'),
+    onError: (e: unknown) => setError(errorMessage(e, 'Registration failed')),
   });
 
   const verify = useMutation({

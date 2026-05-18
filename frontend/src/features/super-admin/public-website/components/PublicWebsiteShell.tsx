@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { websiteBuilderReadiness } from '../config/websiteBuilderTemplates';
 
 const ITEMS = [
   { label: 'Website Dashboard', to: '/super-admin/public-website' },
@@ -25,16 +26,39 @@ export function PublicWebsiteShell({
   children: React.ReactNode;
 }) {
   const location = useLocation();
+  const publicWebsiteUrl = getPublicWebsiteUrl();
 
   return (
-    <div className="min-h-full bg-[radial-gradient(circle_at_top_left,#dbeafe_0%,#ecfeff_30%,#f8fafc_65%)] px-6 py-6">
-      <div className="rounded-3xl border border-white/60 bg-white/70 p-6 shadow-2xl shadow-slate-200 backdrop-blur-md">
+    <div className="min-h-full bg-[radial-gradient(circle_at_top_left,#dbeafe_0%,#ecfeff_30%,#f8fafc_65%)] px-4 py-5 sm:px-6">
+      <div className="rounded-[2rem] border border-white/60 bg-white/75 p-4 shadow-2xl shadow-slate-200 backdrop-blur-md sm:p-6">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-3xl font-black tracking-tight text-slate-900">{title}</h2>
-            <p className="text-sm text-slate-600">{subtitle}</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-cyan-700">Experience Studio</p>
+            <h2 className="mt-1 text-3xl font-black tracking-tight text-slate-900">{title}</h2>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">{subtitle}</p>
           </div>
-          <div className="rounded-full bg-slate-900 px-4 py-1 text-xs font-semibold text-white">Public Website Platform</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-slate-300">
+              Public Website Platform
+            </div>
+            <a
+              href={publicWebsiteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-cyan-200 bg-white px-4 py-2 text-xs font-bold text-cyan-800 transition hover:border-cyan-300 hover:bg-cyan-50"
+            >
+              View Live Website
+            </a>
+          </div>
+        </div>
+
+        <div className="mb-5 grid gap-3 lg:grid-cols-4">
+          {websiteBuilderReadiness.map((item) => (
+            <div key={item.label} className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-500">{item.label}</p>
+              <p className="mt-2 text-sm font-semibold leading-5 text-slate-800">{item.value}</p>
+            </div>
+          ))}
         </div>
 
         <div className="mb-6 grid gap-2 md:grid-cols-4 xl:grid-cols-6">
@@ -61,4 +85,12 @@ export function PublicWebsiteShell({
       </div>
     </div>
   );
+}
+
+function getPublicWebsiteUrl() {
+  if (typeof window === 'undefined') {
+    return '/';
+  }
+
+  return new URL('/', window.location.origin).toString();
 }

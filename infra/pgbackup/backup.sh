@@ -98,4 +98,20 @@ mc find "${MINIO_ALIAS}/${MINIO_BUCKET}/pg/${PG_DB}/" \
 
 # ── 7. Cleanup local temp files ───────────────────────────────────────────────
 rm -f "${ENC_FILE}"
+
+# ── 8. Report success timestamp to Prometheus Pushgateway (optional) ──────────
+# Pushes cc_backup_last_success_timestamp_seconds so Prometheus can alert when
+# the metric goes stale (> 8 h). Non-fatal: a push failure does not fail the
+# backup job — the dump is already safely in MinIO.
+if [ -n "${PUSHGATEWAY_URL:-}" ]; then
+    printf '# HELP cc_backup_last_success_timestamp_seconds Unix timestamp of the last successful pg_dump.\n# TYPE cc_backup_last_success_timestamp_seconds gauge\ncc_backup_last_success_timestamp_seconds %s\n' \
+        "$(date +%s)" \
+    | curl -sf \
+           --max-time 5 \
+           --data-binary @- \
+           "${PUSHGATEWAY_URL}/metrics/job/pgbackup/instance/${PG_DB}" \
+    && log "Pushgateway: reported cc_backup_last_success_timestamp_seconds" \
+    || log "WARNING: Pushgateway push failed (non-fatal — backup is in MinIO)"
+fi
+
 log "Backup job finished successfully"

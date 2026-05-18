@@ -16,7 +16,7 @@ CloudCampus/
 ├── infra/
 │   ├── prometheus/   # Prometheus config + alert rules
 │   └── grafana/      # Grafana provisioning + dashboards
-├── docs/             # Architecture specs and upgrade plans
+├── docs/             # Consolidated architecture, audit, and remediation docs
 └── docker-compose.yml
 ```
 
@@ -84,6 +84,9 @@ docker compose up -d   # pgvector/pgvector:pg16, Redis, MinIO, MailHog, Promethe
 
 | Service | URL |
 |---------|-----|
+| Public website | http://localhost:5173 |
+| Public website home alias | http://localhost:5173/home |
+| Admin login | http://localhost:5173/login |
 | API | http://localhost:8080 |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
 | MailHog | http://localhost:8025 |
@@ -110,6 +113,11 @@ cd frontend
 npm install
 npm run dev           # http://localhost:5173
 ```
+
+Public web routes:
+- `/` and `/home` render the CloudCampus public marketing website.
+- `/login` remains the authenticated portal entry point.
+- `/features`, `/platform`, `/ai`, `/investors`, `/pricing`, `/about`, and `/contact` reuse the public website shell.
 
 ### 4 — Run the mobile app
 
@@ -220,6 +228,8 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | **Experience Studio — Seed Health Monitor** — `/v1/super-admin/experience/seed-health` reports seeded entity counts | ✅ Done |
 | **Experience Studio — Public Render Profile** — `/v1/experience/public/render-profile` unified public API | ✅ Done |
 | **Public Website** — platform_public_website tables + seed (V79/V80) | ✅ Done |
+| **Public SaaS Website UI** — investor-ready landing page with hero, stats, role showcase, feature grid, platform previews, investor, demo, pricing, footer | ✅ Done |
+| **Super Admin Public Website Link** — dynamic live-site link generated from current `window.location.origin` for local/staging/prod | ✅ Done |
 | Experience event partition extension through 2028 (V81) | ✅ Done |
 | Payment gateway idempotency keys (V82) | ✅ Done |
 
@@ -249,6 +259,8 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | **SeedHealthPanel** — entity count dashboard with status badges | ✅ Done |
 | **RenderProfilePreview** — live preview of public-facing render profile | ✅ Done |
 | **ExperienceAnalyticsDashboard** — stat cards + CSS bar chart for event funnel, period selector (7/14/30/90 days) | ✅ Done |
+| **CloudCampus public homepage** — premium SaaS landing page at `/` and `/home`, config-driven sections for future Website Builder editing | ✅ Done |
+| **Public Website Builder live link** — `View Public Website` in Super Admin shell and `View Live Website` in Public Website Builder shell | ✅ Done |
 | School-admin dashboard (live stats), academic management | ✅ Done |
 | Student management (admit / profile / list / bulk import / promotion) | ✅ Done |
 | Staff management (list / create / profile) | ✅ Done |
@@ -320,7 +332,7 @@ A comprehensive Postman collection is provided in `docs/postman/`:
 
 Login requests auto-save JWT tokens to environment variables. Import both files, run a login request, then execute any request in that role's folder.
 
-See [docs/LOGIN_CREDENTIALS.md](docs/LOGIN_CREDENTIALS.md) for all credentials and verified endpoint URLs.
+Demo credentials and verified local URLs are documented in the consolidated **Demo Credentials** section of this README.
 
 ---
 
@@ -398,6 +410,24 @@ Base path: `/v1`
 | `PATCH` | `/v1/super-admin/ai/prompts/{id}/activate` | Activate prompt version |
 | `PATCH` | `/v1/super-admin/ai/prompts/{id}/deactivate` | Deactivate prompt version |
 | `POST` | `/v1/super-admin/ai/prompts/{id}/render` | Test render prompt with AI |
+| `GET` | `/v1/super-admin/public-website/dashboard` | Public website dashboard |
+| `GET` | `/v1/super-admin/public-website/pages` | Public website page list |
+| `POST` | `/v1/super-admin/public-website/pages` | Create public website page |
+| `POST` | `/v1/super-admin/public-website/pages/{id}/publish` | Publish a page |
+| `GET` | `/v1/super-admin/public-website/branding/themes` | List website themes |
+| `GET` | `/v1/super-admin/public-website/seo` | List SEO entries |
+| `POST` | `/v1/super-admin/public-website/publish` | Publish full website snapshot |
+
+### Public Website
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | CloudCampus public SaaS homepage |
+| `GET` | `/home` | Public homepage alias |
+| `GET` | `/features`, `/platform`, `/ai`, `/investors`, `/pricing`, `/about`, `/contact` | Public website routes using the same configurable page shell |
+| `GET` | `/v1/experience/public/website/pages/{slug}` | Published website page payload |
+| `GET` | `/v1/experience/public/website/navigation` | Published navigation |
+| `GET` | `/v1/experience/public/website/theme` | Published theme tokens |
 
 ### Actuator
 
@@ -519,3 +549,684 @@ Proprietary — CloudCampus © 2026. All rights reserved.
     ```
 
 > _Note: Make sure you are on the correct feature or release branch before pushing. For mainline changes, use `release/cloudcampus-v1`._
+
+
+---
+
+# Consolidated Developer Guide
+
+_Former source: `docs/DEV_GUIDE.md`._
+
+
+**Version:** 2.0 | **Updated:** 2026-05-18
+> Local development reference — credentials, UUIDs, commands, known issues.
+
+---
+
+## 1. Quick Start
+
+```bash
+# 1. Start all infrastructure
+docker compose up -d
+# NOTE: postgres image MUST be pgvector/pgvector:pg16 (not postgres:16-alpine)
+# Flyway V46 requires pgvector. If wrong image: docker compose down && docker compose up -d
+
+# 2. Backend (Flyway auto-applies V1–V74 on first boot)
+cd backend
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+# Runs on http://localhost:8080
+
+# 3. Frontend
+cd frontend
+npm install && npm run dev
+# Runs on http://localhost:5173
+
+# 4. Mobile (optional)
+cd mobile
+npm install --legacy-peer-deps
+npx expo start
+```
+
+> **First boot:** `superadmin` is bootstrapped automatically from `BOOTSTRAP_ADMIN_PASSWORD`.
+> Dev profile defaults to `Admin@123` via `application-dev.yml`.
+
+---
+
+## 2. All Login Credentials
+
+**All accounts use password: `Admin@123`**
+
+### Frontend login: [http://localhost:5173/login](http://localhost:5173/login)
+
+| Role | Username | Password | Notes |
+|------|----------|----------|-------|
+| Super Admin | `superadmin` | `Admin@123` | No tenant header needed |
+| School Admin | `schooladmin` | `Admin@123` | Tenant: `jnv-lucknow` |
+| Teacher | `teacher1` | `Admin@123` | Rajesh Kumar Sharma — Maths, Class X-A |
+| Student | `student1` | `Admin@123` | Arjun Sharma — Class X, Section A |
+| Parent | `parent1` | `Admin@123` | Guardian of Arjun Sharma |
+
+### API login
+
+```bash
+# Super Admin (no X-Tenant-Id)
+curl -X POST http://localhost:8080/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"superadmin","password":"Admin@123"}'
+
+# School Admin / Teacher / Student / Parent
+curl -X POST http://localhost:8080/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -H "X-Tenant-Id: jnv-lucknow" \
+  -d '{"username":"schooladmin","password":"Admin@123"}'
+```
+
+Response: `data.accessToken`, `data.refreshToken`, `data.role`, `data.features`
+
+---
+
+## 3. Local Service URLs
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| Backend API | http://localhost:8080 | — |
+| Swagger UI | http://localhost:8080/swagger-ui.html | dev only |
+| Frontend | http://localhost:5173 | — |
+| MailHog | http://localhost:8025 | — |
+| MinIO Console | http://localhost:9001 | `minioadmin` / `minioadmin` |
+| Prometheus | http://localhost:9090 | — |
+| Grafana | http://localhost:3100 | `admin` / `admin` |
+| Tempo | http://localhost:3200 | — |
+| RabbitMQ | http://localhost:15672 | `cloudcampus` / `cloudcampus_dev` |
+
+### PostgreSQL direct access
+
+```bash
+PGPASSWORD=cloudcampus_dev psql -U cloudcampus -d cloudcampus -h localhost
+# or via Docker:
+docker exec -it cloudcampus-postgres psql -U cloudcampus -d cloudcampus
+```
+
+### Redis direct access
+
+```bash
+docker exec -it cloudcampus-redis redis-cli -a cloudcampus_dev
+# Flush all caches:
+docker exec cloudcampus-redis redis-cli -a cloudcampus_dev FLUSHALL
+```
+
+---
+
+## 4. DSEP Public Pages (no login)
+
+| Page | URL |
+|------|-----|
+| Interactive Demo | http://localhost:5173/demo |
+| Investor Room (Series A) | http://localhost:5173/investor/CC-SEED-A1 |
+
+### Super Admin Experience Console
+
+Login as `superadmin`, then: http://localhost:5173/super-admin/experience
+
+| Tab | Content |
+|-----|---------|
+| Content Blocks | 62 blocks — search, edit JSON, publish |
+| Demo Scenarios | 3 scenarios — CBSE Urban, ICSE Boarding, IB International |
+| Investor Rooms | CC-SEED-A1 — Series A Data Room with 6 sections |
+
+> **Demo page note:** Clicking "Open CloudCampus Demo" after a demo starts leads to `/demo/login?token=...` which has no route yet (Phase 5). The credential reveal screen works — use `superadmin` credentials to explore a real instance instead.
+
+---
+
+## 5. Demo Tenant — JNV Lucknow
+
+Fully seeded by Flyway migrations V57 (staff-user links) and V58 (complete school data).
+
+| Field | Value |
+|-------|-------|
+| Tenant code | `jnv-lucknow` |
+| Tenant UUID | `804d7650-c915-4236-8431-2d4aef5cd102` |
+| School name | Jawahar Navodaya Vidyalaya Lucknow |
+| School UUID | `9786d685-d4a8-4092-9d1f-8558632d7b32` |
+| Academic Year | 2026-27 — `73f7aff8-dd77-44f3-8244-f4cc691f8b8a` |
+| Classes | VI–XII (7 classes × 2 sections = 14 sections) |
+| Students | 12 seeded |
+| Staff | 10 total |
+
+---
+
+## 6. Key UUIDs
+
+### Classes
+
+| Class | UUID |
+|-------|------|
+| VI | `c0000006-0000-0000-0000-000000000001` |
+| VII | `c0000007-0000-0000-0000-000000000001` |
+| VIII | `c0000008-0000-0000-0000-000000000001` |
+| IX | `c0000009-0000-0000-0000-000000000001` |
+| X | `c0000010-0000-0000-0000-000000000001` |
+| XI | `c0000011-0000-0000-0000-000000000001` |
+| XII | `c0000012-0000-0000-0000-000000000001` |
+
+Sections follow pattern: class UUID with `a` or `b` suffix.
+Example: X-A = `c0000010-0000-0000-0000-00000000000a`
+
+### Subjects
+
+| Subject | UUID |
+|---------|------|
+| Mathematics | `5b000001-0000-0000-0000-000000000001` |
+| Physics | `5b000002-0000-0000-0000-000000000001` |
+| Chemistry | `5b000003-0000-0000-0000-000000000001` |
+| Biology | `5b000004-0000-0000-0000-000000000001` |
+| English | `5b000005-0000-0000-0000-000000000001` |
+| Hindi | `5b000006-0000-0000-0000-000000000001` |
+| Social Science | `5b000007-0000-0000-0000-000000000001` |
+| Computer Science | `5b000008-0000-0000-0000-000000000001` |
+| Sanskrit | `5b000009-0000-0000-0000-000000000001` |
+| Physical Education | `5b000010-0000-0000-0000-000000000001` |
+
+### Staff
+
+| Name | Role | UUID |
+|------|------|------|
+| Rajesh Kumar Sharma (`teacher1`) | TEACHER — Maths | `073e320b-ad40-4d35-a971-3bd886a64aa0` |
+| School Admin (`schooladmin`) | ADMIN_STAFF | `4719cb1d-94c3-41ba-81b0-dd8a92b59e67` |
+| Suresh Kumar Verma | PRINCIPAL | `5f000001-0000-0000-0000-000000000001` |
+| Sunita Devi Mishra | VICE_PRINCIPAL | `5f000002-0000-0000-0000-000000000001` |
+| Anita Kumari Singh | TEACHER — Biology | `5f000003-0000-0000-0000-000000000001` |
+| Robert Paul Thomas | TEACHER — English | `5f000004-0000-0000-0000-000000000001` |
+| Pradeep Kumar Tiwari | TEACHER — Physics | `5f000005-0000-0000-0000-000000000001` |
+| Kavita Rani Yadav | TEACHER — Hindi | `5f000006-0000-0000-0000-000000000001` |
+| Manoj Kumar Bajpai | TEACHER — PE | `5f000007-0000-0000-0000-000000000001` |
+| Dinesh Kumar Verma | ACCOUNTANT | `5f000008-0000-0000-0000-000000000001` |
+
+### Students (Class X-A unless noted)
+
+| Name | Section | UUID |
+|------|---------|------|
+| Arjun Sharma (`student1`) | X-A | `7d000001-0000-0000-0000-000000000001` |
+| Priya Gupta | X-A | `7d000002-0000-0000-0000-000000000001` |
+| Rahul Kumar Singh | X-A | `7d000003-0000-0000-0000-000000000001` |
+| Neha Mishra | X-A | `7d000004-0000-0000-0000-000000000001` |
+| Vikram Patel | X-A | `7d000005-0000-0000-0000-000000000001` |
+| Pooja Rani Verma | X-B | `7d000006-0000-0000-0000-000000000001` |
+| Rohan Agarwal | X-B | `7d000007-0000-0000-0000-000000000001` |
+| Sneha Pandey | X-B | `7d000008-0000-0000-0000-000000000001` |
+| Aditya Jha | IX-A | `7d000009-0000-0000-0000-000000000001` |
+| Ritu Srivastava | IX-A | `7d000010-0000-0000-0000-000000000001` |
+| Deepak Narayan | XII-A | `7d000011-0000-0000-0000-000000000001` |
+| Meena Laxmi | XII-A | `7d000012-0000-0000-0000-000000000001` |
+
+### Fee Structures (Class X)
+
+| Item | UUID |
+|------|------|
+| Tuition ₹12,000 | `fe000001-0000-0000-0000-000000000001` |
+| Examination ₹1,500 | `fe000002-0000-0000-0000-000000000001` |
+| Library ₹500 | `fe000003-0000-0000-0000-000000000001` |
+| Sports ₹750 | `fe000004-0000-0000-0000-000000000001` |
+
+### Exam Records
+
+| Item | UUID |
+|------|------|
+| Mid-Term April 2026 | `ex000001-0000-0000-0000-000000000001` |
+| Maths exam paper (X-A) | `es000001-0000-0000-0000-000000000001` |
+| English exam paper (X-A) | `es000002-0000-0000-0000-000000000001` |
+| Physics exam paper (X-A) | `es000003-0000-0000-0000-000000000001` |
+| Social Science exam paper | `es000004-0000-0000-0000-000000000001` |
+
+---
+
+## 7. Student1 Demo Data (Arjun Sharma, Class X-A)
+
+| Data type | Detail |
+|-----------|--------|
+| Attendance | 5 sessions (7–14 Apr): 4 PRESENT, 1 ABSENT (80%) |
+| Fees | Tuition PAID ₹12,000 · Exam PENDING ₹1,500 · Library PAID ₹500 · Sports OVERDUE ₹750 |
+| Marks | Maths 78 · English 85 · Physics 71 · SST 88 (avg 80.5/100) |
+| Homework | 3 published assignments (Maths, English, Physics) |
+| Notices | 5 school notices visible |
+| Timetable | Maths P1 Mon–Fri · English P2 Mon/Wed · Physics P2 Tue/Thu |
+| Parent link | `parent1` linked as GUARDIAN |
+
+---
+
+## 8. Key API Endpoints
+
+Use the JWT from `/v1/auth/login` as `Authorization: Bearer <token>`.
+
+### School Admin (`X-Tenant-Id: jnv-lucknow`)
+
+```
+GET  /v1/school-admin/schools/{schoolId}/dashboard
+GET  /v1/school-admin/schools/{schoolId}/academic-years
+GET  /v1/school-admin/academic-years/{academicYearId}/classes
+GET  /v1/school-admin/classes/{classId}/sections
+GET  /v1/school-admin/schools/{schoolId}/subjects
+GET  /v1/school-admin/schools/{schoolId}/staff
+GET  /v1/school-admin/schools/{schoolId}/students
+GET  /v1/school-admin/schools/{schoolId}/exams
+GET  /v1/school-admin/schools/{schoolId}/fee-structures
+GET  /v1/school-admin/schools/{schoolId}/notices
+```
+
+### Teacher (`X-Tenant-Id: jnv-lucknow`)
+
+```
+GET  /v1/teacher/dashboard
+GET  /v1/teacher/timetable
+POST /v1/teacher/attendance/sessions
+POST /v1/teacher/attendance/sessions/with-qr
+GET  /v1/teacher/lesson-plans?from=2026-04-01&to=2026-04-30
+POST /v1/teacher/online-classes
+POST /v1/teacher/videos/initiate
+```
+
+### Student (`X-Tenant-Id: jnv-lucknow`)
+
+```
+GET  /v1/student/fees
+GET  /v1/student/timetable
+GET  /v1/student/attendance?from=2026-04-01&to=2026-04-30
+GET  /v1/student/homework
+GET  /v1/student/results
+POST /v1/student/attendance/qr-mark
+```
+
+### Parent (`X-Tenant-Id: jnv-lucknow`)
+
+```
+GET  /v1/parent/children
+GET  /v1/parent/children/{studentId}/attendance?from=...&to=...
+GET  /v1/parent/children/{studentId}/fees
+GET  /v1/parent/children/{studentId}/results
+GET  /v1/parent/children/{studentId}/timetable
+GET  /v1/parent/children/{studentId}/homework
+```
+> Use student UUID (`7d000001-...`) not the user ID for child endpoints.
+
+### DSEP Public (no auth)
+
+```
+GET  /v1/experience/public/content-blocks?keys=hero.headline,stats.schools
+GET  /v1/experience/public/demo-scenarios
+POST /v1/experience/public/demo/start
+GET  /v1/experience/public/investor/CC-SEED-A1
+POST /v1/experience/public/investor/{roomCode}/access
+POST /v1/experience/public/events
+```
+
+---
+
+## 9. Environment Variables
+
+| Variable | Default (dev) | Description |
+|----------|---------------|-------------|
+| `BOOTSTRAP_ADMIN_USERNAME` | `superadmin` | Super admin username at first boot |
+| `BOOTSTRAP_ADMIN_PASSWORD` | `Admin@123` | Empty string = skip bootstrap |
+| `JWT_SECRET` | `changeme-dev-secret-minimum-32-chars!!` | **Must change in prod** |
+| `ENCRYPTION_SECRET` | `dev-encryption-key-must-be-at-least-32ch` | AES-256-GCM key for PII |
+| `REDIS_PASSWORD` | `cloudcampus_dev` | Redis auth password |
+| `MAIL_HOST` / `MAIL_PORT` | `localhost` / `1025` | SMTP (MailHog in dev) |
+| `APP_AI_ENABLED` | `false` | `true` = real Claude/OpenAI; `false` = mock |
+| `ANTHROPIC_API_KEY` | `dev-placeholder` | Required when AI enabled |
+| `OPENAI_API_KEY` | `dev-placeholder` | Required when AI enabled |
+| `FRONTEND_BASE_URL` | `http://localhost:5173` | Origin for QR deep-links |
+
+---
+
+## 10. Known Issues & Fixes
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `@Cacheable` fails after backend restart | Stale Redis entry with old schema | `redis-cli -a cloudcampus_dev FLUSHALL` |
+| `Could not resolve subtype @class` in Redis | Cached `List<JavaRecord>` — records are `final`, no `@class` emitted | Remove `@Cacheable` from that method; cache flat DTOs only |
+| V46 migration fails — `extension "vector" does not exist` | Wrong postgres image | Use `pgvector/pgvector:pg16`; `docker compose down && up -d` |
+| QR scan shows "Invalid QR Code" | Token expired (5-min TTL) | Teacher generates fresh QR; verify `FRONTEND_BASE_URL` matches browser origin |
+| AI returns mock response | `APP_AI_ENABLED=false` | Set `true` + real `ANTHROPIC_API_KEY` |
+| Teacher endpoints return "Staff record not found" | `teacher1` not linked to staff table | V57 migration links them; restart backend after migration runs |
+| `school-admin/lesson-plans` returns 500 | `school_id` missing from SCHOOL_ADMIN JWT | Fixed in `AuthServiceImpl` — `user_school_access` row required |
+| `GET /v1/student/results` returns empty | Results seeded in `student_marks` not `exam_results` | V58 seeds both tables; restart backend |
+| `GET /v1/student/notices` returns 500 | No student-facing notices endpoint | Use `/v1/school-admin/schools/{schoolId}/notices` as school admin |
+| Demo "Open CloudCampus Demo" button goes nowhere | `/demo/login?token=...` route not built (Phase 5) | Use `superadmin` credentials to explore a real instance |
+
+---
+
+## 11. Postman Collection
+
+Import both files from `docs/postman/`:
+
+| File | Purpose |
+|------|---------|
+| `CloudCampus.postman_collection.json` | ~180 requests across 9 folders |
+| `CloudCampus.local.postman_environment.json` | All JNV UUIDs pre-filled |
+
+Login requests auto-save tokens via test scripts — run login first.
+
+
+---
+
+# Demo Credentials
+
+_Former source: `backend/docs/DEMO_CREDENTIALS.md`._
+
+
+Enterprise demo tenant auto-seeded on every fresh startup when `app.demo.enabled=true`.
+
+---
+
+## Tenant Details
+
+| Field        | Value                              |
+|--------------|------------------------------------|
+| Tenant Code  | `greenwood-demo`                   |
+| School       | Greenwood International School     |
+| Location     | Banjara Hills, Hyderabad, Telangana|
+| Plan         | Enterprise (all features enabled)  |
+
+---
+
+## Login Credentials
+
+All demo accounts share the same password: **`Demo@1234`**
+
+| Role         | Username          | Portal                         |
+|--------------|-------------------|--------------------------------|
+| School Admin | `gw.admin`        | `/school-admin/dashboard`      |
+| Teacher 1    | `gw.teacher001`   | `/teacher/dashboard`           |
+| Teacher 2    | `gw.teacher002`   | `/teacher/dashboard`           |
+| Student      | `gw.student001`   | `/student/dashboard`           |
+| Parent       | `gw.parent001`    | `/parent/dashboard`            |
+
+Additional teachers: `gw.teacher001` to `gw.teacher040` (all use `Demo@1234`).
+
+---
+
+## Demo Data Summary
+
+| Module           | Count                                         |
+|------------------|-----------------------------------------------|
+| Grades           | 15 (Nursery, LKG, UKG, Class 1–12)           |
+| Sections         | 45 (3 per grade: A, B, C)                    |
+| Students         | 1 125 total (25 per section)                  |
+| Teachers/Staff   | 40 teachers + 1 admin                         |
+| Subjects         | 10 (Math, Science, English, Hindi, SST, CS, Physics, Chemistry, Biology, PE) |
+| Attendance       | 20 working days (90% present rate)            |
+| Exams            | 2 (Unit Test 1, Mid-Term)                     |
+| Lesson Plans     | 10 (PUBLISHED)                               |
+| Homework         | 3 assignments                                 |
+| School Notices   | 5 (published)                                 |
+| Fee Structures   | 3 tiers (Pre-Primary, Primary, Secondary)     |
+
+---
+
+## Read-Only Demo Mode
+
+The demo tenant is **read-only for write operations**.  POST / PUT / PATCH / DELETE
+requests from a `greenwood-demo` JWT are rejected with HTTP 403:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "DEMO_READ_ONLY",
+    "message": "This is a read-only demo environment. Write operations are disabled."
+  }
+}
+```
+
+Auth endpoints (`/v1/auth/**`) are always permitted so login/refresh work normally.
+
+---
+
+## Nightly Reset
+
+`DemoResetScheduler` runs at **02:00 AM** server time.  It:
+
+1. Deletes transient data: attendance, marks, exams, lesson plans, homework, notices
+2. Preserves structural data: tenant, school, classes, sections, subjects, users
+3. Re-seeds all transient data via `DemoDataSeeder`
+
+Named demo students (`GW-0001` to `GW-0005`) are preserved across resets so
+bookmarked student portal sessions remain valid.
+
+---
+
+## Development Setup
+
+Enable the demo school in `application-dev.yml`:
+
+```yaml
+app:
+  demo:
+    enabled: true
+```
+
+On startup you will see:
+
+```
+DEMO: Seeding Greenwood International School enterprise demo data...
+DEMO: Greenwood demo school seeded in 3241 ms.
+```
+
+On subsequent restarts (students already exist):
+
+```
+DEMO: Greenwood demo school already seeded — skipping.
+```
+
+To force a full re-seed, delete the students:
+
+```sql
+DELETE FROM students WHERE tenant_id = 'c0000000-0000-0000-0000-000000000001';
+```
+
+Then restart the backend.
+
+---
+
+## Known Stable UUIDs
+
+Useful for Postman / integration tests:
+
+| Resource         | UUID                                   |
+|------------------|----------------------------------------|
+| Tenant ID        | `c0000000-0000-0000-0000-000000000001` |
+| School ID        | `c0000000-0000-0000-0000-000000000002` |
+| Academic Year ID | `c0000000-0000-0000-0000-000000000003` |
+| Admin User ID    | `c0000000-0000-0000-0000-000000000010` |
+| Teacher 1 User   | `c0000000-0000-0000-0000-000000000011` |
+| Student 1 User   | `c0000000-0000-0000-0000-000000000020` |
+| Parent 1 User    | `c0000000-0000-0000-0000-000000000030` |
+
+
+---
+
+# Load & Stress Tests
+
+_Former source: `infra/load-tests/README.md`._
+
+
+k6-based load and stress test suite (CC-1703 / CC-1704).
+
+## Prerequisites
+
+```bash
+brew install k6          # macOS
+# or: https://k6.io/docs/getting-started/installation/
+```
+
+Ensure the target environment is running:
+
+```bash
+docker compose up -d     # local stack
+# backend: mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+---
+
+## Scripts
+
+| Script | Purpose | VUs | Duration |
+|--------|---------|-----|----------|
+| `smoke.js` | Sanity-check all critical paths | 3 | 30 s |
+| `load-auth.js` | Auth endpoint throughput | ramp → 50 | ~2 min |
+| `load-reports.js` | Report aggregation under load | ramp → 20 | ~3 min |
+| `stress.js` | Find the breaking point | ramp → 200 | ~6 min |
+
+---
+
+## Running
+
+### Smoke test (run first)
+
+```bash
+k6 run infra/load-tests/smoke.js
+```
+
+### Auth load test
+
+```bash
+k6 run infra/load-tests/load-auth.js
+```
+
+### Reports load test
+
+Requires school/year/exam UUIDs from your database:
+
+```bash
+k6 run \
+  --env SCHOOL_ID=<uuid> \
+  --env ACADEMIC_YEAR_ID=<uuid> \
+  --env EXAM_ID=<uuid> \
+  infra/load-tests/load-reports.js
+```
+
+### Stress test
+
+```bash
+k6 run infra/load-tests/stress.js
+```
+
+### Against staging
+
+Pass `BASE_URL` to any script:
+
+```bash
+k6 run \
+  --env BASE_URL=https://staging.cloudcampus.io \
+  --env ADMIN_USERNAME=superadmin \
+  --env ADMIN_PASSWORD=<secret> \
+  infra/load-tests/smoke.js
+```
+
+---
+
+## SLOs
+
+| Metric | Target |
+|--------|--------|
+| p95 latency — auth | < 500 ms |
+| p95 latency — reports | < 2 000 ms |
+| p95 latency — stress | < 3 000 ms |
+| Error rate (5xx) | < 1 % (load) / < 5 % (stress) |
+| Rate-limit 429s | Excluded from error SLO — expected at high VU counts |
+
+---
+
+## Output interpretation
+
+k6 prints a summary after each run. Key metrics:
+
+```
+http_req_duration ........: avg=142ms  min=11ms med=120ms  max=980ms  p(90)=310ms p(95)=450ms
+http_req_failed ..........: 0.12%  ✓ 1488  ✗ 2
+stress_rate_limited ......: 3.40%  (429s from API rate limiter — expected)
+```
+
+- `http_req_failed` — network-level failures + 4xx/5xx (except where explicitly excluded)
+- `stress_rate_limited` — 429 responses tracked separately in stress test
+- Custom `*_duration` trends show latency for specific operation types
+
+
+---
+
+# Frontend Notes
+
+_Former source: `frontend/README.md`._
+
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
