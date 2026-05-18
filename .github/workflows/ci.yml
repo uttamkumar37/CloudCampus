@@ -13,7 +13,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/cloudcampus-backend
+  IMAGE_NAME: ${{ github.repository_owner }}/cloudcampus-backend
 
 jobs:
   # ──────────────────────────────────────────────────────────────
