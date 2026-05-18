@@ -112,7 +112,6 @@ spring:
         schema-name: public
         table-name: vector_store
 
-spring:
   threads:
     virtual:
       # L-23: enable virtual threads (Project Loom) for Spring MVC thread pool.
@@ -291,4 +290,3 @@ springdoc:
     operations-sorter: alpha
     tags-sorter: alpha
   show-actuator: false
-

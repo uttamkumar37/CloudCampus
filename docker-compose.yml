@@ -118,7 +118,7 @@ services:
 
   # ── MinIO (S3-compatible object storage) ───────────────────────────────
   minio:
-    image: minio/minio:RELEASE.2024-05-28T17-19-53Z
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: cloudcampus-minio
     command: server /data --console-address ":9001"
     environment:
@@ -309,7 +309,7 @@ services:
     container_name: cloudcampus-loki
     command: -config.file=/etc/loki/loki-config.yml
     ports:
-      - "127.0.0.1:3200:3100"
+      - "127.0.0.1:3110:3100"
     volumes:
       - ./infra/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
       - loki_data:/loki
