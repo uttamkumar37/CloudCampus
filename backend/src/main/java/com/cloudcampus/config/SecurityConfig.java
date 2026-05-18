@@ -142,6 +142,8 @@ public class SecurityConfig {
                                 "/actuator/info").permitAll()
                         .requestMatchers("/v1/public/**").permitAll()
                         .requestMatchers("/v1/auth/**").permitAll()
+                        // DSEP — public experience platform endpoints (no auth required)
+                        .requestMatchers("/v1/experience/public/**").permitAll()
                         // L-09: Swagger UI / OpenAPI paths are derived from springdoc config
                         // properties so they can never drift from what springdoc actually serves.
                         .requestMatchers(

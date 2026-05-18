@@ -120,6 +120,13 @@ const ParentNoticesPage        = lazy(() => import('@/features/parent/pages/Pare
 // ── Public site ───────────────────────────────────────────────────────────────
 const PublicSitePage           = lazy(() => import('@/features/public-site/pages/PublicSitePage').then(m => ({ default: m.PublicSitePage })));
 
+// ── DSEP — Experience Platform (public, no auth) ──────────────────────────────
+const DemoPage                 = lazy(() => import('@/features/experience/pages/DemoPage'));
+const InvestorRoomPage         = lazy(() => import('@/features/experience/pages/InvestorRoomPage'));
+
+// ── DSEP — Super Admin Experience Control Center ──────────────────────────────
+const ExperienceControlCenter  = lazy(() => import('@/features/super-admin/experience/ExperienceControlCenter'));
+
 /**
  * Application router.
  *
@@ -169,6 +176,7 @@ export function AppRouter() {
             <Route path="ai/prompts/:id"   element={<PromptDetailPage />} />
             <Route path="ai/knowledge"     element={<KnowledgeBasePage />} />
             <Route path="ai/usage"         element={<AiUsagePage />} />
+            <Route path="experience"       element={<ExperienceControlCenter />} />
           </Route>
 
           {/* School Admin portal — SCHOOL_ADMIN role required */}
@@ -298,6 +306,10 @@ export function AppRouter() {
           {/* Public school website — no auth required */}
           <Route path="/sites/:tenantCode" element={<PublicSitePage />} />
           <Route path="/sites/:tenantCode/pages/:slug" element={<PublicSitePage />} />
+
+          {/* DSEP public routes — no auth required */}
+          <Route path="/demo" element={<DemoPage />} />
+          <Route path="/investor/:roomCode" element={<InvestorRoomPage />} />
 
           {/* Root and catch-all */}
           <Route path="/" element={<Navigate to="/login" replace />} />

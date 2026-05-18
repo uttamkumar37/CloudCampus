@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: 'AI Prompts',   to: '/super-admin/ai/prompts' },
   { label: 'Knowledge Base', to: '/super-admin/ai/knowledge' },
   { label: 'AI Usage',       to: '/super-admin/ai/usage' },
+  { label: '✨ Experience',  to: '/super-admin/experience' },
 ];
 
 export function SuperAdminLayout() {
