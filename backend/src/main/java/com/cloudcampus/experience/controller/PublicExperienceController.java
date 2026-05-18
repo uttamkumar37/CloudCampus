@@ -6,9 +6,19 @@ import com.cloudcampus.experience.dto.request.IngestEventsRequest;
 import com.cloudcampus.experience.dto.response.ContentBlockResponse;
 import com.cloudcampus.experience.dto.response.DemoScenarioResponse;
 import com.cloudcampus.experience.dto.response.DemoSessionResponse;
+import com.cloudcampus.experience.dto.response.MarketingCampaignResponse;
+import com.cloudcampus.experience.dto.response.PublicRenderProfileResponse;
+import com.cloudcampus.experience.dto.response.StorySceneResponse;
+import com.cloudcampus.experience.dto.response.TrustModuleResponse;
+import com.cloudcampus.experience.dto.response.WebsiteTemplateResponse;
 import com.cloudcampus.experience.service.ContentBlockService;
 import com.cloudcampus.experience.service.DemoOrchestrationService;
 import com.cloudcampus.experience.service.ExperienceEventPublisher;
+import com.cloudcampus.experience.service.ExperienceRenderProfileService;
+import com.cloudcampus.experience.service.MarketingCampaignService;
+import com.cloudcampus.experience.service.StorySceneService;
+import com.cloudcampus.experience.service.TrustModuleService;
+import com.cloudcampus.experience.service.WebsiteTemplateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
@@ -36,13 +46,28 @@ public class PublicExperienceController {
     private final ContentBlockService       contentBlockService;
     private final DemoOrchestrationService  demoService;
     private final ExperienceEventPublisher  eventPublisher;
+    private final ExperienceRenderProfileService renderProfileService;
+    private final WebsiteTemplateService templateService;
+    private final StorySceneService storySceneService;
+    private final TrustModuleService trustModuleService;
+    private final MarketingCampaignService campaignService;
 
     public PublicExperienceController(ContentBlockService contentBlockService,
                                       DemoOrchestrationService demoService,
-                                      ExperienceEventPublisher eventPublisher) {
+                                      ExperienceEventPublisher eventPublisher,
+                                      ExperienceRenderProfileService renderProfileService,
+                                      WebsiteTemplateService templateService,
+                                      StorySceneService storySceneService,
+                                      TrustModuleService trustModuleService,
+                                      MarketingCampaignService campaignService) {
         this.contentBlockService = contentBlockService;
         this.demoService         = demoService;
         this.eventPublisher      = eventPublisher;
+        this.renderProfileService = renderProfileService;
+        this.templateService = templateService;
+        this.storySceneService = storySceneService;
+        this.trustModuleService = trustModuleService;
+        this.campaignService = campaignService;
     }
 
     // ── Content Blocks ────────────────────────────────────────────────────────
@@ -77,6 +102,45 @@ public class PublicExperienceController {
     public ResponseEntity<ApiResponse<DemoSessionResponse>> validateSession(
             @PathVariable String token) {
         return ResponseEntity.ok(ApiResponse.ok(null, demoService.validateSession(token)));
+    }
+
+    // ── Dynamic Render Profile ───────────────────────────────────────────────
+
+    @Operation(summary = "Resolve dynamic render profile for audience/route")
+    @GetMapping("/render-profile")
+    public ResponseEntity<ApiResponse<PublicRenderProfileResponse>> renderProfile(
+            @RequestParam String routePath,
+            @RequestParam String audienceType,
+            @RequestParam(required = false) String brandCode) {
+        PublicRenderProfileResponse profile = renderProfileService.resolve(routePath, audienceType, brandCode);
+        return ResponseEntity.ok(ApiResponse.ok(null, profile));
+    }
+
+    // ── Expansion Domain Reads ─────────────────────────────────────────────
+
+    @Operation(summary = "List published website templates")
+    @GetMapping("/templates")
+    public ResponseEntity<ApiResponse<List<WebsiteTemplateResponse>>> publishedTemplates() {
+        return ResponseEntity.ok(ApiResponse.ok(null, templateService.listPublished()));
+    }
+
+    @Operation(summary = "List published story scenes")
+    @GetMapping("/story-scenes")
+    public ResponseEntity<ApiResponse<List<StorySceneResponse>>> publishedStoryScenes(
+            @RequestParam(required = false) String audienceType) {
+        return ResponseEntity.ok(ApiResponse.ok(null, storySceneService.listPublished(audienceType)));
+    }
+
+    @Operation(summary = "List published trust modules")
+    @GetMapping("/trust-modules")
+    public ResponseEntity<ApiResponse<List<TrustModuleResponse>>> publishedTrustModules() {
+        return ResponseEntity.ok(ApiResponse.ok(null, trustModuleService.listPublished()));
+    }
+
+    @Operation(summary = "List active campaigns")
+    @GetMapping("/campaigns")
+    public ResponseEntity<ApiResponse<List<MarketingCampaignResponse>>> activeCampaigns() {
+        return ResponseEntity.ok(ApiResponse.ok(null, campaignService.listActive()));
     }
 
     // ── Analytics Events ──────────────────────────────────────────────────────

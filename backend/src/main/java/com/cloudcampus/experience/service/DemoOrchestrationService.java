@@ -29,6 +29,9 @@ public class DemoOrchestrationService {
 
     private static final String BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String SEEDED_PARENT_DEMO_USERNAME = "gw.parent001";
+    private static final String SEEDED_DEMO_PASSWORD = "Demo@1234";
+    private static final String SEEDED_DEMO_LOGIN_URL = "/login";
 
     private final DemoScenarioRepository scenarioRepo;
     private final DemoSessionRepository  sessionRepo;
@@ -51,8 +54,9 @@ public class DemoOrchestrationService {
                 .orElseThrow(() -> new NotFoundException("Demo scenario not found: " + req.scenarioSlug()));
 
         String visitorToken = generateToken(32);
-        String demoPassword = generateToken(10);
-        String demoUsername = "demo-" + generateToken(6).toLowerCase() + "@cloudcampus.demo";
+        // Use seeded demo credentials that actually authenticate in the demo tenant.
+        String demoPassword = SEEDED_DEMO_PASSWORD;
+        String demoUsername = SEEDED_PARENT_DEMO_USERNAME;
 
         // Phase 2: full ephemeral tenant provisioning via TenantProvisioningService.
         // For now we create the session record with a placeholder tenant.
@@ -78,7 +82,7 @@ public class DemoOrchestrationService {
 
         return new DemoSessionResponse(
                 visitorToken,
-                "/demo/login?token=" + visitorToken,
+            SEEDED_DEMO_LOGIN_URL,
                 demoUsername,
                 demoPassword,
                 expiresAt,
@@ -97,7 +101,7 @@ public class DemoOrchestrationService {
 
         return new DemoSessionResponse(
                 session.getVisitorToken(),
-                "/demo/login?token=" + session.getVisitorToken(),
+            SEEDED_DEMO_LOGIN_URL,
                 session.getDemoUsername(),
                 null,
                 session.getExpiresAt(),
