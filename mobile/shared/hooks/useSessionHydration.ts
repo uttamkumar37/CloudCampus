@@ -36,7 +36,7 @@ export function useSessionHydration(): { ready: boolean } {
     async function restore() {
       try {
         const storedRefreshToken = await tokenStore.getRefreshToken();
-        const cachedUser = profileStore.getProfile();
+        const cachedUser = await profileStore.getProfile();
 
         if (!storedRefreshToken || !cachedUser) {
           // No persisted session — go straight to login

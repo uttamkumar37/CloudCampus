@@ -105,14 +105,17 @@ export default function InvestorRoomPage() {
 
 function SectionBlock({ section }: { section: InvestorRoomSection }) {
   const c = section.content;
+  const title = asString(c.title);
+  const subtitle = asString(c.subtitle);
+  const body = asString(c.body);
 
   return (
     <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
-      {c.title && (
-        <h2 className="text-lg font-bold text-white mb-1">{c.title as string}</h2>
+      {title && (
+        <h2 className="text-lg font-bold text-white mb-1">{title}</h2>
       )}
-      {c.subtitle && (
-        <p className="text-sm text-gray-400 mb-6">{c.subtitle as string}</p>
+      {subtitle && (
+        <p className="text-sm text-gray-400 mb-6">{subtitle}</p>
       )}
 
       {section.sectionType === 'METRICS_DASHBOARD' && <MetricsGrid metrics={c.metrics as MetricItem[]} />}
@@ -121,14 +124,18 @@ function SectionBlock({ section }: { section: InvestorRoomSection }) {
       {section.sectionType === 'TEAM' && <TeamSection content={c} />}
       {section.sectionType === 'PRODUCT_DEMO' && <ProductSection content={c} />}
       {section.sectionType === 'FAQ' && <FaqSection content={c} />}
-      {section.sectionType === 'CUSTOM' && (
-        <p className="text-gray-300 whitespace-pre-line leading-relaxed">{c.body as string}</p>
+      {section.sectionType === 'CUSTOM' && body && (
+        <p className="text-gray-300 whitespace-pre-line leading-relaxed">{body}</p>
       )}
     </div>
   );
 }
 
 // ── Section renderers ─────────────────────────────────────────────────────────
+
+function asString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value : null;
+}
 
 interface MetricItem { label: string; value: string; delta?: string; trend?: string; color?: string }
 
@@ -158,10 +165,11 @@ function MetricsGrid({ metrics = [] }: { metrics: MetricItem[] }) {
 function TractionSection({ content }: { content: Record<string, unknown> }) {
   const milestones = (content.milestones as { date: string; event: string }[]) ?? [];
   const logos = (content.logos as string[]) ?? [];
+  const narrative = asString(content.narrative);
   return (
     <div className="space-y-6">
-      {content.narrative && (
-        <p className="text-gray-300 leading-relaxed">{content.narrative as string}</p>
+      {narrative && (
+        <p className="text-gray-300 leading-relaxed">{narrative}</p>
       )}
       <div className="relative border-l border-gray-700 pl-6 space-y-5">
         {milestones.map((m, i) => (
@@ -306,14 +314,17 @@ interface Module { name: string; desc: string; status: string }
 
 function ProductSection({ content }: { content: Record<string, unknown> }) {
   const modules = (content.modules as Module[]) ?? [];
+  const tagline = asString(content.tagline);
+  const demoLink = asString(content.demo_link);
+  const demoCta = asString(content.demo_cta);
   const statusColor: Record<string, string> = {
     GA: 'bg-green-900/50 text-green-400 border-green-800',
     BETA: 'bg-yellow-900/50 text-yellow-400 border-yellow-800',
   };
   return (
     <div className="space-y-5">
-      {content.tagline && (
-        <p className="text-gray-300 italic">{content.tagline as string}</p>
+      {tagline && (
+        <p className="text-gray-300 italic">{tagline}</p>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {modules.map((mod, i) => (
@@ -330,14 +341,14 @@ function ProductSection({ content }: { content: Record<string, unknown> }) {
           </div>
         ))}
       </div>
-      {content.demo_link && (
+      {demoLink && (
         <a
-          href={content.demo_link as string}
+          href={demoLink}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block mt-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition"
         >
-          {(content.demo_cta as string) ?? 'Try Live Demo'} →
+          {demoCta ?? 'Try Live Demo'} →
         </a>
       )}
     </div>

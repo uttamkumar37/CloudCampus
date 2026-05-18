@@ -13,7 +13,7 @@
  * MMKV is synchronous and significantly faster than AsyncStorage.
  */
 import * as SecureStore from 'expo-secure-store';
-import { MMKV } from 'react-native-mmkv';
+import { createMMKV, type MMKV } from 'react-native-mmkv';
 import type { AuthUser } from '@/features/auth/types/auth';
 
 const SECURE_STORE_KEY = 'cc_profile_mmkv_key';
@@ -37,7 +37,7 @@ async function getStorage(): Promise<MMKV> {
     });
   }
 
-  _storage = new MMKV({ id: 'cc-profile', encryptionKey });
+  _storage = createMMKV({ id: 'cc-profile', encryptionKey });
   return _storage;
 }
 
@@ -60,6 +60,6 @@ export const profileStore = {
 
   async deleteProfile(): Promise<void> {
     const s = await getStorage();
-    s.delete(PROFILE_KEY);
+    s.remove(PROFILE_KEY);
   },
 };

@@ -5,6 +5,8 @@ import com.cloudcampus.experience.dto.request.IngestEventsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,13 +20,18 @@ public class ExperienceEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(ExperienceEventPublisher.class);
 
+    @Nullable
     private final RabbitTemplate rabbitTemplate;
 
-    public ExperienceEventPublisher(RabbitTemplate rabbitTemplate) {
+    public ExperienceEventPublisher(@Autowired(required = false) RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
     }
 
     public void publish(List<IngestEventsRequest.EventPayload> events, String countryCode, String ipHash) {
+        if (rabbitTemplate == null) {
+            log.debug("RabbitMQ not available; skipping experience event publish for {} event(s)", events.size());
+            return;
+        }
         for (IngestEventsRequest.EventPayload event : events) {
             try {
                 var message = new EnrichedEvent(event, countryCode, ipHash);

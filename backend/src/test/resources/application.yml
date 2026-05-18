@@ -18,6 +18,12 @@ spring:
   flyway:
     enabled: true
 
+  ai:
+    anthropic:
+      api-key: test-anthropic-key
+    openai:
+      api-key: test-openai-key
+
   # Async executor — keep it small for tests
   task:
     execution:
@@ -46,6 +52,9 @@ spring:
       - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
 
 app:
+  frontend:
+    base-url: http://localhost:5173
+
   minio:
     endpoint: http://localhost:9000
     access-key: minioadmin

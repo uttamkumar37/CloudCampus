@@ -53,7 +53,7 @@ class AuthLockoutIntegrationTest {
     @Container
     @ServiceConnection
     static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:16-alpine");
+            new PostgreSQLContainer<>("pgvector/pgvector:pg16");
 
     @Container
     @ServiceConnection
@@ -83,8 +83,9 @@ class AuthLockoutIntegrationTest {
     @AfterEach
     void tearDown() {
         RequestContext.clearAll();
-        userRepository.deleteAll();
-        tenantRepository.deleteAll();
+        if (user != null && user.getId() != null) {
+            userRepository.deleteById(user.getId());
+        }
     }
 
     @Test
