@@ -23,11 +23,15 @@ export const options = {
   },
 };
 
+// H-25: Refuse to run with a default/fallback credential — force explicit env vars.
+const ADMIN_USERNAME = __ENV.ADMIN_USERNAME || 'superadmin';
+const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD;
+if (!ADMIN_PASSWORD) {
+  throw new Error('ADMIN_PASSWORD env var is required — set it with --env ADMIN_PASSWORD=<value>');
+}
+
 export function setup() {
-  const token = login(
-    __ENV.ADMIN_USERNAME || 'superadmin',
-    __ENV.ADMIN_PASSWORD || 'admin123'
-  );
+  const token = login(ADMIN_USERNAME, ADMIN_PASSWORD);
   if (!token) throw new Error('Smoke test: login failed — check credentials and server');
   return { token };
 }
@@ -44,10 +48,7 @@ export default function ({ token }) {
     // Just hit login again to verify auth endpoint stays healthy under concurrency.
     const r = http.post(
       `${BASE_URL}/v1/auth/login`,
-      JSON.stringify({
-        username: __ENV.ADMIN_USERNAME || 'superadmin',
-        password: __ENV.ADMIN_PASSWORD || 'admin123',
-      }),
+      JSON.stringify({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD }),
       { headers: { 'Content-Type': 'application/json' } }
     );
     check(r, { 'login 200': (res) => res.status === 200 });

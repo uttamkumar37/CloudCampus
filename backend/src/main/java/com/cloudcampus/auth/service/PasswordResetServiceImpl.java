@@ -3,6 +3,7 @@ package com.cloudcampus.auth.service;
 import com.cloudcampus.auth.entity.User;
 import com.cloudcampus.auth.repository.UserRepository;
 import com.cloudcampus.common.exception.BadRequestException;
+import com.cloudcampus.common.exception.TooManyRequestsException;
 import com.cloudcampus.config.OtpProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,12 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
     /** Redis key prefix — matches architecture doc: cc:otp:{userId} */
     static final String OTP_KEY_PREFIX = "cc:otp:";
+
+    /** Attempt counter key prefix: cc:otp:attempts:{userId} */
+    static final String OTP_ATTEMPTS_PREFIX = "cc:otp:attempts:";
+
+    /** Maximum OTP verification attempts before the account is locked for the OTP window (H-03). */
+    private static final int MAX_OTP_ATTEMPTS = 5;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -107,6 +114,18 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         User user = userRepository.findByUsername(email)
                 .orElseThrow(() -> new BadRequestException("Invalid or expired OTP"));
 
+        String attemptsKey = OTP_ATTEMPTS_PREFIX + user.getId();
+
+        // H-03: reject if max attempts exceeded for this OTP window.
+        Long attempts = redisTemplate.opsForValue().increment(attemptsKey);
+        if (attempts == 1) {
+            // First attempt — set TTL to match OTP lifetime so the counter self-expires.
+            redisTemplate.expire(attemptsKey, Duration.ofSeconds(otpProperties.ttlSeconds()));
+        }
+        if (attempts > MAX_OTP_ATTEMPTS) {
+            throw new TooManyRequestsException("Too many OTP attempts. Request a new code.");
+        }
+
         String key = OTP_KEY_PREFIX + user.getId();
         String storedHash = redisTemplate.opsForValue().get(key);
 
@@ -117,8 +136,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // One-time use: delete immediately after successful reset.
+        // One-time use: delete OTP and attempt counter immediately after successful reset.
         redisTemplate.delete(key);
+        redisTemplate.delete(attemptsKey);
 
         log.info("Password reset completed for user {}", user.getId());
     }

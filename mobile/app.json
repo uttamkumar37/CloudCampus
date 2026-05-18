@@ -14,7 +14,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "associatedDomains": [
+        "applinks:cloudcampus.in",
+        "applinks:www.cloudcampus.in"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +26,26 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "cloudcampus.in",
+              "pathPrefix": "/app"
+            },
+            {
+              "scheme": "https",
+              "host": "www.cloudcampus.in",
+              "pathPrefix": "/app"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,7 +59,8 @@
           "color": "#1e3a5f",
           "sounds": []
         }
-      ]
+      ],
+      "./plugins/withNetworkSecurity"
     ]
   }
 }

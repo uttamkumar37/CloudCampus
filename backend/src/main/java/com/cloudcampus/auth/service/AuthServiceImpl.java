@@ -9,25 +9,31 @@ import com.cloudcampus.auth.entity.User;
 import com.cloudcampus.auth.entity.UserRole;
 import com.cloudcampus.auth.entity.UserStatus;
 import com.cloudcampus.auth.repository.UserRepository;
+import com.cloudcampus.auth.security.JwtDenylistService;
 import com.cloudcampus.auth.security.JwtUtil;
 import com.cloudcampus.auth.security.LoginRateLimiterService;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.exception.TooManyRequestsException;
 import com.cloudcampus.common.exception.UnauthorizedException;
+import com.cloudcampus.common.metrics.BusinessMetrics;
 import com.cloudcampus.feature.repository.TenantFeatureRepository;
 import com.cloudcampus.school.repository.SchoolRepository;
 import com.cloudcampus.school.service.UserSchoolAccessService;
+import io.micrometer.tracing.annotation.NewSpan;
 import org.springframework.transaction.annotation.Transactional;
 import com.cloudcampus.config.JwtProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -77,6 +83,18 @@ public class AuthServiceImpl implements AuthService {
     private static final String DUMMY_HASH =
             "$2a$12$dummyhashXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
 
+    // Atomic GET+DEL Lua script — fixes the TOCTOU race in refresh token rotation
+    // (CRIT-11). Two concurrent requests with the same token both saw a non-null
+    // GET result under the old code and both proceeded to issue new tokens.
+    // With this script, only the first caller gets the userId; the second gets nil.
+    private static final DefaultRedisScript<String> GETDEL_SCRIPT =
+            new DefaultRedisScript<>(
+                    "local v = redis.call('GET', KEYS[1])\n" +
+                    "if v == false then return nil end\n" +
+                    "redis.call('DEL', KEYS[1])\n" +
+                    "return v",
+                    String.class);
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
@@ -87,6 +105,8 @@ public class AuthServiceImpl implements AuthService {
     private final SchoolRepository schoolRepository;
     private final UserSchoolAccessService userSchoolAccessService;
     private final TenantFeatureRepository tenantFeatureRepository;
+    private final JwtDenylistService jwtDenylistService;
+    private final BusinessMetrics metrics;
 
     public AuthServiceImpl(
             UserRepository userRepository,
@@ -98,7 +118,9 @@ public class AuthServiceImpl implements AuthService {
             AuditLogService auditLog,
             SchoolRepository schoolRepository,
             UserSchoolAccessService userSchoolAccessService,
-            TenantFeatureRepository tenantFeatureRepository
+            TenantFeatureRepository tenantFeatureRepository,
+            JwtDenylistService jwtDenylistService,
+            BusinessMetrics metrics
     ) {
         this.userRepository          = userRepository;
         this.passwordEncoder         = passwordEncoder;
@@ -110,10 +132,13 @@ public class AuthServiceImpl implements AuthService {
         this.schoolRepository        = schoolRepository;
         this.userSchoolAccessService = userSchoolAccessService;
         this.tenantFeatureRepository = tenantFeatureRepository;
+        this.jwtDenylistService      = jwtDenylistService;
+        this.metrics                 = metrics;
     }
 
     // ── Login ────────────────────────────────────────────────────────────────
 
+    @NewSpan("auth.login")
     @Override
     public LoginResponse login(LoginRequest request, String clientIp) {
 
@@ -123,6 +148,7 @@ public class AuthServiceImpl implements AuthService {
             rateLimiter.checkAndRecord(clientIp, request.username());
         } catch (TooManyRequestsException ex) {
             auditLog.logLoginBlocked(request.username(), clientIp);
+            metrics.recordLoginRateLimited();
             throw ex;
         }
 
@@ -153,9 +179,11 @@ public class AuthServiceImpl implements AuthService {
                     auditLog.logAccountLocked(u.getId(), u.getTenantId(), request.username(), clientIp);
                     log.warn("Account suspended after repeated failed logins [userId={}, username={}]",
                             u.getId(), request.username());
+                    metrics.recordLoginLockedOut();
                 }
             });
 
+            metrics.recordLoginFailure();
             throw new UnauthorizedException("Invalid credentials");
         }
 
@@ -195,6 +223,7 @@ public class AuthServiceImpl implements AuthService {
                 ? tenantFeatureRepository.findEnabledKeysByTenantId(user.getTenantId())
                 : List.of();
 
+        metrics.recordLoginSuccess();
         auditLog.logLoginSuccess(user.getId(), user.getTenantId(), user.getUsername(), clientIp);
         log.info("Successful login [userId={}, role={}]", user.getId(), user.getRole());
 
@@ -217,10 +246,15 @@ public class AuthServiceImpl implements AuthService {
     public RefreshResponse refresh(RefreshRequest request) {
         String oldKey = RT_KEY_PREFIX + request.refreshToken();
 
-        // Resolve userId from Redis.
-        String userIdStr = redisTemplate.opsForValue().get(oldKey);
+        // Atomic GET+DEL via Lua script (CRIT-11).
+        // Under the old two-step GET→DEL, two concurrent requests with the same
+        // token both read a non-null userId and both issued new tokens (double-spend).
+        // The script atomically reads and deletes in a single Redis command;
+        // exactly one caller gets the userId — the other gets null and fails.
+        String userIdStr = redisTemplate.execute(
+                GETDEL_SCRIPT, List.of(oldKey));
         if (userIdStr == null) {
-            // Token expired or never existed — do not reveal which.
+            // Token expired, never existed, or already consumed by a concurrent request.
             throw new UnauthorizedException("Invalid or expired refresh token");
         }
 
@@ -230,16 +264,10 @@ public class AuthServiceImpl implements AuthService {
 
         // Guard: refuse to issue a new token to a suspended account.
         if (user.getStatus() != UserStatus.ACTIVE) {
-            // Clean up the stale token while we're here.
-            redisTemplate.delete(oldKey);
             log.warn("Refresh denied — non-active account [userId={}]", userId);
             throw new ForbiddenException("Account is not active");
         }
 
-        // Rotate: delete old token and issue a new one atomically.
-        // If the old token was already deleted by a concurrent request, the user
-        // above would not have been found — so by here we still hold the only copy.
-        redisTemplate.delete(oldKey);
         // Remove old UUID from the per-user index before issuing the new one.
         redisTemplate.opsForSet().remove(RT_USER_KEY_PREFIX + userId, request.refreshToken());
         String newRefreshToken = issueRefreshToken(userId);
@@ -279,6 +307,14 @@ public class AuthServiceImpl implements AuthService {
                     // Corrupted Redis value — audit failure is non-critical.
                 }
             }
+        }
+
+        // H-02: denylist the access token so it cannot be reused until it naturally expires.
+        // jti + expiry were written to RequestContext by JwtAuthenticationFilter.
+        String jti = RequestContext.getJwtJti();
+        Instant expiry = RequestContext.getJwtExpiry();
+        if (jti != null && expiry != null) {
+            jwtDenylistService.deny(jti, expiry);
         }
     }
 

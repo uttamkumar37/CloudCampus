@@ -22,11 +22,11 @@ public class UsageLoggingService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void record(UUID tenantId, UUID userId, String provider, String model,
+    public void record(UUID tenantId, UUID schoolId, UUID userId, String provider, String model,
                        String promptKey, int inputTokens, int outputTokens,
                        long latencyMs, boolean success, String errorMessage) {
         try {
-            repo.save(AiUsageLog.create(tenantId, userId, provider, model,
+            repo.save(AiUsageLog.create(tenantId, schoolId, userId, provider, model,
                     promptKey, inputTokens, outputTokens, (int) latencyMs, success, errorMessage));
         } catch (Exception e) {
             log.warn("Failed to record AI usage log (non-fatal): {}", e.getMessage());

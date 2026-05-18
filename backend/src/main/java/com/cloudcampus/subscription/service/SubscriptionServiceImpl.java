@@ -1,6 +1,7 @@
 package com.cloudcampus.subscription.service;
 
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.feature.service.FeatureFlagService;
 import com.cloudcampus.subscription.dto.AssignPlanRequest;
 import com.cloudcampus.subscription.dto.SubscriptionPlanResponse;
 import com.cloudcampus.subscription.dto.TenantSubscriptionResponse;
@@ -27,13 +28,16 @@ class SubscriptionServiceImpl implements SubscriptionService {
     private final TenantSubscriptionRepository subRepo;
     private final TenantRepository             tenantRepo;
     private final TenantConfigService          configService;
+    private final FeatureFlagService           featureFlagService;
 
     SubscriptionServiceImpl(TenantSubscriptionRepository subRepo,
                             TenantRepository             tenantRepo,
-                            TenantConfigService          configService) {
-        this.subRepo       = subRepo;
-        this.tenantRepo    = tenantRepo;
-        this.configService = configService;
+                            TenantConfigService          configService,
+                            FeatureFlagService           featureFlagService) {
+        this.subRepo            = subRepo;
+        this.tenantRepo         = tenantRepo;
+        this.configService      = configService;
+        this.featureFlagService = featureFlagService;
     }
 
     @Override
@@ -70,6 +74,10 @@ class SubscriptionServiceImpl implements SubscriptionService {
                     assignedByUserId, request.notes());
         }
         subRepo.save(sub);
+
+        // L-03: flush the feature-flag Redis cache so the next request re-derives
+        // flags from DB, preventing stale (over-permissive) flags after a downgrade.
+        featureFlagService.invalidateForTenant(tenantId);
 
         // Push plan limits into tenant_configs so UsageLimitEnforcer picks them up immediately.
         SubscriptionPlanCode plan = request.planCode();

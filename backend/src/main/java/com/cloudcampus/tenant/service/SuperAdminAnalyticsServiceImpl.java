@@ -17,6 +17,8 @@ import com.cloudcampus.tenant.dto.TenantAnalyticsSummary;
 import com.cloudcampus.tenant.entity.Tenant;
 import com.cloudcampus.tenant.entity.TenantStatus;
 import com.cloudcampus.tenant.repository.TenantRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,9 +63,20 @@ public class SuperAdminAnalyticsServiceImpl implements SuperAdminAnalyticsServic
 
     // ── Platform analytics ────────────────────────────────────────────────────
 
+    // H-06: cap at 2 000 tenants to prevent OOM on a misconfigured instance.
+    // A SaaS platform with >2 000 tenants needs a paginated analytics API instead.
+    private static final int MAX_TENANTS_PER_ANALYTICS_PAGE = 2_000;
+
     @Override
     public PlatformAnalyticsResponse getPlatformAnalytics() {
-        List<Tenant> tenants = tenantRepo.findAll();
+        // DB-level counts — no entity hydration needed for totals.
+        long totalTenants  = tenantRepo.count();
+        long activeTenants = tenantRepo.countByStatus(TenantStatus.ACTIVE);
+
+        // H-06: load tenants with a hard cap; full entity needed for name/code/status.
+        List<Tenant> tenants = tenantRepo.findAll(
+                PageRequest.of(0, MAX_TENANTS_PER_ANALYTICS_PAGE, Sort.by("name"))
+        ).getContent();
 
         // Per-tenant aggregates (native queries bypass Hibernate tenant filter)
         Map<String, Long>         studentsByTenant = toLongMap(studentRepo.countActiveGroupedByTenant());
@@ -95,8 +108,8 @@ public class SuperAdminAnalyticsServiceImpl implements SuperAdminAnalyticsServic
                 .toList();
 
         return new PlatformAnalyticsResponse(
-                tenants.size(),
-                tenants.stream().filter(t -> t.getStatus() == TenantStatus.ACTIVE).count(),
+                totalTenants,
+                activeTenants,
                 studentRepo.countActiveGlobal(),
                 staffRepo.countActiveGlobal(),
                 schoolRepo.countActiveGlobal(),

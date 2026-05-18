@@ -1,5 +1,6 @@
 package com.cloudcampus.notification.service;
 
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.notification.dto.DeviceRegisterRequest;
 import com.cloudcampus.notification.entity.DeviceToken;
 import com.cloudcampus.notification.repository.DeviceTokenRepository;
@@ -35,6 +36,8 @@ public class DeviceTokenServiceImpl implements DeviceTokenService {
                 .findByUserIdAndPushToken(userId, request.pushToken())
                 .orElseGet(DeviceToken::new);
 
+        String rawTenantId = RequestContext.getTenantId();
+        if (rawTenantId != null) token.setTenantId(UUID.fromString(rawTenantId));
         token.setUserId(userId);
         token.setPushToken(request.pushToken());
         token.setPlatform(request.platform());

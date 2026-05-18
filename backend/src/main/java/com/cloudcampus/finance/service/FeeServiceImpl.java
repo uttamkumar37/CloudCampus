@@ -18,10 +18,12 @@ import com.cloudcampus.finance.entity.FeePayment;
 import com.cloudcampus.finance.entity.FeeStatus;
 import com.cloudcampus.finance.entity.FeeStructure;
 import com.cloudcampus.finance.entity.StudentFeeRecord;
+import com.cloudcampus.common.metrics.BusinessMetrics;
 import com.cloudcampus.finance.repository.FeeCategoryRepository;
 import com.cloudcampus.finance.repository.FeePaymentRepository;
 import com.cloudcampus.finance.repository.FeeStructureRepository;
 import com.cloudcampus.finance.repository.StudentFeeRecordRepository;
+import io.micrometer.tracing.annotation.NewSpan;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,15 +41,18 @@ class FeeServiceImpl implements FeeService {
     private final FeeStructureRepository     structureRepo;
     private final StudentFeeRecordRepository recordRepo;
     private final FeePaymentRepository       paymentRepo;
+    private final BusinessMetrics            metrics;
 
     FeeServiceImpl(FeeCategoryRepository      categoryRepo,
                    FeeStructureRepository     structureRepo,
                    StudentFeeRecordRepository recordRepo,
-                   FeePaymentRepository       paymentRepo) {
+                   FeePaymentRepository       paymentRepo,
+                   BusinessMetrics            metrics) {
         this.categoryRepo  = categoryRepo;
         this.structureRepo = structureRepo;
         this.recordRepo    = recordRepo;
         this.paymentRepo   = paymentRepo;
+        this.metrics       = metrics;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -216,6 +221,7 @@ class FeeServiceImpl implements FeeService {
     // Payments
     // ─────────────────────────────────────────────────────────────────────────
 
+    @NewSpan("finance.recordPayment")
     @Override
     @Transactional
     public FeePaymentResponse recordPayment(UUID recordId, RecordPaymentRequest req) {
@@ -243,6 +249,7 @@ class FeeServiceImpl implements FeeService {
         record.applyPayment(req.amount());
         recordRepo.save(record);
 
+        metrics.recordPayment(req.paymentMode().name(), req.amount());
         return FeePaymentResponse.from(saved);
     }
 
@@ -264,7 +271,10 @@ class FeeServiceImpl implements FeeService {
     // ─────────────────────────────────────────────────────────────────────────
 
     private StudentFeeRecord requireRecord(UUID recordId) {
-        return recordRepo.findById(recordId)
+        // findById() bypasses the Hibernate @Filter tenant scope — always use
+        // findByIdAndTenantId() to prevent cross-tenant fee record access (CRIT-14).
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return recordRepo.findByIdAndTenantId(recordId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Fee record not found: " + recordId));
     }
 
@@ -299,14 +309,11 @@ class FeeServiceImpl implements FeeService {
                 .toList();
     }
 
-    /**
-     * Generates a receipt number in the format RCT-YYYY-XXXXXXX
-     * where XXXXXXX is a zero-padded sequential count per year prefix.
-     */
     private String generateReceiptNumber(UUID schoolId) {
-        String year   = String.valueOf(Year.now().getValue());
-        String prefix = "RCT-" + year + "-";
-        long   count  = paymentRepo.countByReceiptNumberStartingWith(prefix);
-        return prefix + String.format("%07d", count + 1);
+        String year = String.valueOf(Year.now().getValue());
+        // nextval() is atomic at the DB level — eliminates the COUNT/WRITE race
+        // condition that previously allowed duplicate receipt numbers (CRIT-13).
+        long seq = paymentRepo.nextReceiptSequence();
+        return "RCT-" + year + "-" + String.format("%07d", seq);
     }
 }

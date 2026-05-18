@@ -7,6 +7,8 @@ import com.cloudcampus.school.dto.SectionRequest;
 import com.cloudcampus.school.dto.SectionResponse;
 import com.cloudcampus.school.entity.Section;
 import com.cloudcampus.school.repository.SectionRepository;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -19,14 +21,17 @@ import java.util.UUID;
 class SectionServiceImpl implements SectionService {
 
     private final SectionRepository repo;
+    private final CacheManager cacheManager;
 
-    SectionServiceImpl(SectionRepository repo) {
+    SectionServiceImpl(SectionRepository repo, CacheManager cacheManager) {
         this.repo = repo;
+        this.cacheManager = cacheManager;
     }
 
     @Override
     @Transactional
-    @CacheEvict(value = "sections", allEntries = true)
+    // L-25: evict only the affected class's entry, not all tenants'
+    @CacheEvict(value = "sections", key = "#req.classId")
     public SectionResponse create(UUID schoolId, SectionRequest req) {
         if (repo.existsByClassIdAndName(req.classId(), req.name())) {
             throw new BadRequestException(
@@ -57,7 +62,7 @@ class SectionServiceImpl implements SectionService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "sections", allEntries = true)
+    @CacheEvict(value = "sections", key = "#result.classId")
     public SectionResponse update(UUID id, SectionRequest req) {
         Section section = findOrThrow(id);
         section.setName(req.name());
@@ -67,12 +72,13 @@ class SectionServiceImpl implements SectionService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "sections", allEntries = true)
     public void delete(UUID id) {
-        if (!repo.existsById(id)) {
-            throw new NotFoundException("Section not found: " + id);
-        }
+        Section section = findOrThrow(id);
+        UUID classId = section.getClassId();
         repo.deleteById(id);
+        // L-25: evict only the affected class, not the entire cache
+        Cache cache = cacheManager.getCache("sections");
+        if (cache != null) cache.evict(classId);
     }
 
     private Section findOrThrow(UUID id) {

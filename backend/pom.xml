@@ -124,6 +124,14 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!-- H-14: commons-pool2 enables the Lettuce connection pool.
+             Without this dependency the pool config in application.yml is silently ignored
+             and all Redis operations share a single blocking connection. -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
@@ -262,9 +270,33 @@
             <version>3.4.1</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- ShedLock — distributed scheduler locking via Redis (CRIT-19) -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+            <version>6.9.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-redis-spring</artifactId>
+            <version>6.9.1</version>
+        </dependency>
     </dependencies>
 
     <build>
+        <!-- L-30: exclude application-local.yml so it never ships inside the JAR.
+             Developers keep the file locally; it must NOT reach staging/prod images. -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>application-local.yml</exclude>
+                </excludes>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+
         <plugins>
             <!-- Surefire: pass -Dapi.version=1.41 so docker-java 3.4.1 uses
                  /v1.41/info instead of /v1.24/info (Docker Engine 29.x MinAPIVersion=1.40). -->

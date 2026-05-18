@@ -10,14 +10,19 @@ function StatCard({
   value,
   accent = 'text-gray-900',
   to,
+  testId,
 }: {
   label: string;
   value: number | string;
   accent?: string;
   to?: string;
+  testId?: string;
 }) {
   const inner = (
-    <div className={`rounded-xl border border-gray-200 bg-white p-5 ${to ? 'hover:shadow-md transition-shadow cursor-pointer' : ''}`}>
+    <div
+      data-testid={testId}
+      className={`rounded-xl border border-gray-200 bg-white p-5 ${to ? 'hover:shadow-md transition-shadow cursor-pointer' : ''}`}
+    >
       <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</p>
       <p className={`mt-2 text-3xl font-bold ${accent}`}>{value}</p>
     </div>
@@ -106,24 +111,28 @@ export function SchoolAdminDashboardPage() {
             value={isLoading ? '…' : (data?.totalStudents ?? 0)}
             accent="text-blue-700"
             to="/school-admin/students"
+            testId="stat-students"
           />
           <StatCard
             label="Active Staff"
             value={isLoading ? '…' : (data?.totalStaff ?? 0)}
             accent="text-indigo-700"
             to="/school-admin/staff"
+            testId="stat-staff"
           />
           <StatCard
             label="Classes"
             value={isLoading ? '…' : (data?.totalClasses ?? 0)}
             accent="text-gray-900"
             to="/school-admin/classes"
+            testId="stat-classes"
           />
           <StatCard
             label="Published Notices"
             value={isLoading ? '…' : (data?.publishedNotices ?? 0)}
             accent="text-green-700"
             to="/school-admin/notices"
+            testId="stat-notices"
           />
         </div>
       </div>

@@ -64,6 +64,14 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins:}")
     private String corsAllowedOrigins;
 
+    // L-09: inject actual springdoc paths so security permits exactly the paths
+    // springdoc serves — they cannot drift if application.yml is changed.
+    @Value("${springdoc.api-docs.path:/v3/api-docs}")
+    private String apiDocsPath;
+
+    @Value("${springdoc.swagger-ui.path:/swagger-ui.html}")
+    private String swaggerUiPath;
+
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
             TenantSuspensionFilter  tenantSuspensionFilter,
@@ -74,13 +82,14 @@ public class SecurityConfig {
     }
 
     /**
-     * BCrypt with strength 12 — production-safe cost factor.
-     * Cost 12 ≈ 300 ms/hash on modern hardware: slow enough to deter brute-force,
-     * fast enough for login throughput.
+     * BCrypt with strength 10 — production-safe cost factor.
+     * L-15: cost 12 (≈300 ms/hash) saturates virtual threads under concurrent login;
+     * cost 10 (≈100 ms/hash) still exceeds OWASP recommendation and allows ~10× more
+     * concurrent logins before the thread pool backs up.
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
+        return new BCryptPasswordEncoder(10);
     }
 
     /**
@@ -133,13 +142,15 @@ public class SecurityConfig {
                                 "/actuator/info").permitAll()
                         .requestMatchers("/v1/public/**").permitAll()
                         .requestMatchers("/v1/auth/**").permitAll()
-                        // Swagger UI / OpenAPI — enabled in dev profile only (springdoc.*.enabled).
-                        // Even if enabled, the paths are public so the UI is accessible without a token.
+                        // DSEP — public experience platform endpoints (no auth required)
+                        .requestMatchers("/v1/experience/public/**").permitAll()
+                        // L-09: Swagger UI / OpenAPI paths are derived from springdoc config
+                        // properties so they can never drift from what springdoc actually serves.
                         .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs",
-                                "/v3/api-docs/**").permitAll()
+                                swaggerUiPath,
+                                swaggerUiPath.replace(".html", "") + "/**",
+                                apiDocsPath,
+                                apiDocsPath + "/**").permitAll()
 
                         // ── Super-admin only ────────────────────────────────────────────
                         .requestMatchers("/v1/super-admin/**")

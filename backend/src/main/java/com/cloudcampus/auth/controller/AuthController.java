@@ -215,24 +215,16 @@ public class AuthController {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Extract the real client IP, respecting reverse-proxy headers.
+     * Returns the real client IP.
      *
-     * Priority: X-Forwarded-For (first entry) → X-Real-IP → remoteAddr.
-     *
-     * SECURITY NOTE: X-Forwarded-For can be spoofed by clients if your reverse proxy
-     * does not strip/override it. In production, ensure your load balancer sets this
-     * header and clients cannot inject arbitrary values.
+     * H-04: Do NOT read X-Forwarded-For / X-Real-IP headers directly — they are
+     * trivially spoofed. Instead, rely on Tomcat's RemoteIpValve (activated via
+     * server.forward-headers-strategy=native) which rewrites getRemoteAddr() to
+     * the real client IP after validating the proxy chain against trusted CIDR
+     * ranges. Client-injected headers arriving from non-trusted addresses are
+     * discarded by the valve before this method is ever called.
      */
     private static String extractClientIp(HttpServletRequest request) {
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) {
-            // Format: "client, proxy1, proxy2" — take the leftmost (original client).
-            return xff.split(",")[0].trim();
-        }
-        String xri = request.getHeader("X-Real-IP");
-        if (xri != null && !xri.isBlank()) {
-            return xri.trim();
-        }
         return request.getRemoteAddr();
     }
 }

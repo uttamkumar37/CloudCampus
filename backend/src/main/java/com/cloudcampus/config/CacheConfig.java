@@ -84,6 +84,9 @@ public class CacheConfig {
                         "sections",       ttl(5,  json),
                         "departments",    ttl(10, json)
                 ))
+                // L-24: enable per-cache hit/miss/put/delete statistics so Micrometer
+                // CacheMetricsAutoConfiguration can bind them to the Prometheus endpoint.
+                .enableStatistics()
                 .build();
     }
 }

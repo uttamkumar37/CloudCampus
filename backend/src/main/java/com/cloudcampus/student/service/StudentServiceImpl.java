@@ -16,6 +16,7 @@ import com.cloudcampus.student.dto.UpdateStudentRequest;
 import com.cloudcampus.student.entity.Student;
 import com.cloudcampus.student.entity.StudentStatus;
 import com.cloudcampus.student.repository.StudentRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,9 @@ import java.util.UUID;
 
 @Service
 class StudentServiceImpl implements StudentService {
+
+    // Hard cap on API list responses — prevents OOM on large tenants (CRIT-20).
+    private static final int MAX_LIST_SIZE = 200;
 
     private final StudentRepository   repo;
     private final BulkStudentImporter bulkImporter;
@@ -122,28 +126,32 @@ class StudentServiceImpl implements StudentService {
     @Override
     @Transactional(readOnly = true)
     public List<StudentSummaryResponse> listBySchool(UUID schoolId) {
-        return repo.findAllBySchoolIdOrderByLastNameAscFirstNameAsc(schoolId)
+        return repo.findAllBySchoolIdOrderByLastNameAscFirstNameAsc(
+                        schoolId, PageRequest.of(0, MAX_LIST_SIZE))
                    .stream().map(StudentSummaryResponse::from).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<StudentSummaryResponse> listBySchoolAndStatus(UUID schoolId, StudentStatus status) {
-        return repo.findAllBySchoolIdAndStatusOrderByLastNameAscFirstNameAsc(schoolId, status)
+        return repo.findAllBySchoolIdAndStatusOrderByLastNameAscFirstNameAsc(
+                        schoolId, status, PageRequest.of(0, MAX_LIST_SIZE))
                    .stream().map(StudentSummaryResponse::from).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<StudentSummaryResponse> listByClass(UUID classId) {
-        return repo.findAllByClassIdOrderByLastNameAscFirstNameAsc(classId)
+        return repo.findAllByClassIdOrderByLastNameAscFirstNameAsc(
+                        classId, PageRequest.of(0, MAX_LIST_SIZE))
                    .stream().map(StudentSummaryResponse::from).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<StudentSummaryResponse> listBySection(UUID sectionId) {
-        return repo.findAllBySectionIdOrderByLastNameAscFirstNameAsc(sectionId)
+        return repo.findAllBySectionIdOrderByLastNameAscFirstNameAsc(
+                        sectionId, PageRequest.of(0, MAX_LIST_SIZE))
                    .stream().map(StudentSummaryResponse::from).toList();
     }
 
@@ -153,7 +161,7 @@ class StudentServiceImpl implements StudentService {
         if (query == null || query.isBlank()) {
             return listBySchool(schoolId);
         }
-        return repo.searchByName(schoolId, query.trim())
+        return repo.searchByName(schoolId, query.trim(), PageRequest.of(0, MAX_LIST_SIZE))
                    .stream().map(StudentSummaryResponse::from).toList();
     }
 

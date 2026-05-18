@@ -36,16 +36,30 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: cloudcampus-prod-pool
-      maximum-pool-size: 20          # tune based on RDS max_connections
-      minimum-idle: 5
+      # M-16: pool sizing formula for multi-replica deployments:
+      #   max_pool_size = floor(max_connections / num_replicas) - 2 (safety margin)
+      #
+      # Example: RDS default max_connections = 100, 3 app replicas
+      #   → floor(100/3) - 2 = 31 per replica  (set HIKARI_MAX_POOL_SIZE=31)
+      #
+      # Set HIKARI_MAX_POOL_SIZE in your deployment manifest / task definition.
+      # Never set it higher than floor(max_connections / replica_count) or
+      # replicas will fight for connections and start rejecting requests.
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:20}
+      minimum-idle:       ${HIKARI_MIN_IDLE:5}
       connection-timeout: 3000       # 3 s — fail fast to surface pool exhaustion
       idle-timeout: 300000           # 5 min
       max-lifetime: 1800000          # 30 min — rotate before PostgreSQL kills idle
       leak-detection-threshold: 30000
+      # Validate connections on borrow to prevent stale-connection errors after
+      # network interruptions (e.g. RDS failover, VPC timeout).
+      connection-test-query: SELECT 1
       # SECURITY: never log credentials in connection strings
       data-source-properties:
         ssl: "true"
-        sslfactory: org.postgresql.ssl.NonValidatingFactory   # replace with RDS CA cert in production
+        sslmode: "verify-full"
+        sslfactory: org.postgresql.ssl.DefaultJavaSSLFactory
+        sslrootcert: ${DB_SSL_ROOT_CERT:/etc/ssl/certs/rds-ca.pem}
 
   jpa:
     open-in-view: false

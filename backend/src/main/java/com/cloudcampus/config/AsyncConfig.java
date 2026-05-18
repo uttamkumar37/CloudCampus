@@ -1,5 +1,8 @@
 package com.cloudcampus.config;
 
+import com.cloudcampus.common.web.RequestContextTaskDecorator;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -8,6 +11,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -32,6 +36,12 @@ public class AsyncConfig {
 
     private static final Logger log = LoggerFactory.getLogger(AsyncConfig.class);
 
+    private final MeterRegistry meterRegistry;
+
+    public AsyncConfig(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
     @Bean(name = "auditExecutor")
     public Executor auditExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -39,14 +49,16 @@ public class AsyncConfig {
         executor.setMaxPoolSize(8);
         executor.setQueueCapacity(50);
         executor.setThreadNamePrefix("audit-");
-        // CallerRunsPolicy: if the queue is full, the calling thread executes the task.
-        // This prevents silent audit loss under burst load. The slight latency spike
-        // is acceptable — it's better than dropping audit records.
+        // Propagate RequestContext (tenantId/schoolId/userId) to async threads (CRIT-10).
+        executor.setTaskDecorator(new RequestContextTaskDecorator());
         executor.setRejectedExecutionHandler((r, exec) -> {
             log.warn("Audit executor queue full — running task on caller thread");
             r.run();
         });
         executor.initialize();
+        // M-18: bind queue depth, active count, and pool utilisation to Prometheus.
+        ExecutorServiceMetrics.monitor(meterRegistry, executor.getThreadPoolExecutor(),
+                "audit_executor", List.of());
         return executor;
     }
 
@@ -55,24 +67,31 @@ public class AsyncConfig {
      *
      * Sizing rationale:
      *   corePoolSize  2  — most schools send a moderate volume; 2 threads handle bursts well.
-     *   maxPoolSize   6  — allow burst capacity for fee payment notifications.
-     *   queueCapacity 100 — buffer before rejection; email sends are slower than audit writes.
+     *   maxPoolSize   6    — allow burst capacity for fee payment notifications.
+     *   queueCapacity 5000 — H-16: bulk fee payment for 2000 students generates 2000 tasks;
+     *     a queue of 100 filled instantly, causing CallerRunsPolicy to block 1900 HTTP threads
+     *     on synchronous email sends. 5000 absorbs a full school-year fee posting run.
      *
-     * CallerRunsPolicy: if the queue fills (unlikely under normal load), the HTTP thread
-     * sends the email synchronously. This ensures no notifications are silently dropped.
+     * CallerRunsPolicy: if even the larger queue fills, the HTTP thread sends synchronously
+     * rather than dropping the notification silently.
      */
     @Bean(name = "notificationExecutor")
     public Executor notificationExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(2);
         executor.setMaxPoolSize(6);
-        executor.setQueueCapacity(100);
+        executor.setQueueCapacity(5000);
         executor.setThreadNamePrefix("notification-");
+        // Propagate RequestContext (tenantId/schoolId/userId) to async threads (CRIT-10).
+        executor.setTaskDecorator(new RequestContextTaskDecorator());
         executor.setRejectedExecutionHandler((r, exec) -> {
             log.warn("Notification executor queue full — running task on caller thread");
             r.run();
         });
         executor.initialize();
+        // M-18: bind queue depth, active count, and pool utilisation to Prometheus.
+        ExecutorServiceMetrics.monitor(meterRegistry, executor.getThreadPoolExecutor(),
+                "notification_executor", List.of());
         return executor;
     }
 }

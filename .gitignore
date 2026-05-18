@@ -3,6 +3,11 @@
 .env.*
 !.env.example
 
+# TLS certificates — never commit real certs or private keys
+infra/nginx/certs/*.crt
+infra/nginx/certs/*.key
+infra/nginx/certs/*.pem
+
 # Maven/Java build output
 target/
 backend/target/

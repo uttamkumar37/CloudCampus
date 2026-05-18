@@ -61,6 +61,7 @@ public class PaymentController {
     @Operation(summary = "Create payment order (school admin)",
                description = "School admin initiates a Razorpay order for a student's fee record.")
     @PostMapping("/v1/school-admin/fee-records/{recordId}/payment-order")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<CreatePaymentOrderResponse>> createOrderAdmin(
             @PathVariable UUID recordId) {
         UUID userId = RequestContext.getUserId();

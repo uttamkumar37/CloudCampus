@@ -2,7 +2,9 @@ package com.cloudcampus.school.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.exception.UnauthorizedException;
 import com.cloudcampus.common.web.CorrelationId;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.finance.entity.FeeStatus;
 import com.cloudcampus.finance.repository.StudentFeeRecordRepository;
 import com.cloudcampus.leave.entity.LeaveStatus;
@@ -75,6 +77,12 @@ public class SchoolDashboardController {
                description = "Returns aggregated counts for the school admin overview.")
     @GetMapping
     public ApiResponse<DashboardStats> dashboard(@PathVariable UUID schoolId) {
+        // L-04: Reject requests where the URL schoolId differs from the JWT school_id claim.
+        // Prevents a SCHOOL_ADMIN from reading another school's stats by crafting the URL.
+        String jwtSchoolId = RequestContext.getSchoolId();
+        if (jwtSchoolId == null || !schoolId.toString().equals(jwtSchoolId)) {
+            throw new UnauthorizedException("School access denied");
+        }
         validateSchool(schoolId);
 
         long students      = studentRepo.countBySchoolIdAndStatus(schoolId, StudentStatus.ACTIVE);

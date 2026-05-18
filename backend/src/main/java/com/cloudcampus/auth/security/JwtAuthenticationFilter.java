@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,10 +45,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
-    private final JwtUtil jwtUtil;
+    private final JwtUtil            jwtUtil;
+    private final JwtDenylistService denylistService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, JwtDenylistService denylistService) {
+        this.jwtUtil         = jwtUtil;
+        this.denylistService = denylistService;
     }
 
     @Override
@@ -80,6 +83,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // ── Private helpers ──────────────────────────────────────────────────────
 
     private void authenticate(Claims claims, HttpServletRequest request) {
+        // H-02: reject tokens that have been explicitly revoked (e.g. via logout)
+        String jti = claims.getId();
+        if (jti != null && denylistService.isDenied(jti)) {
+            log.debug("JWT jti {} is denylisted — treating as invalid", jti);
+            SecurityContextHolder.clearContext();
+            RequestContext.clearAll();
+            return;
+        }
+
         jwtUtil.extractUserId(claims).ifPresent(userId -> {
             String role = jwtUtil.extractRole(claims).orElse(null);
             if (role == null) {
@@ -110,6 +122,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 } catch (IllegalArgumentException ignored) {
                     log.debug("Invalid school_id claim format in JWT: {}", schoolIdStr);
                 }
+            }
+
+            // H-02: store jti + expiry so logout can denylist this token
+            RequestContext.setJwtJti(jti);
+            if (claims.getExpiration() != null) {
+                RequestContext.setJwtExpiry(claims.getExpiration().toInstant());
             }
 
             log.debug("Authenticated user={} role={} tenant={}", userId, role,

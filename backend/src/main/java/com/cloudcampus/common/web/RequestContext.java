@@ -1,5 +1,6 @@
 package com.cloudcampus.common.web;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -12,10 +13,12 @@ import java.util.UUID;
  */
 public final class RequestContext {
 
-    private static final ThreadLocal<String> TENANT_ID = new ThreadLocal<>();
-    private static final ThreadLocal<String> SCHOOL_ID = new ThreadLocal<>();
-    // C-18: userId — populated by JWT auth filter (CC-0102) once auth is in place.
-    private static final ThreadLocal<UUID>   USER_ID   = new ThreadLocal<>();
+    private static final ThreadLocal<String>  TENANT_ID  = new ThreadLocal<>();
+    private static final ThreadLocal<String>  SCHOOL_ID  = new ThreadLocal<>();
+    private static final ThreadLocal<UUID>    USER_ID    = new ThreadLocal<>();
+    // H-02: access token jti + expiry — set by JwtAuthenticationFilter for logout denylist
+    private static final ThreadLocal<String>  JWT_JTI    = new ThreadLocal<>();
+    private static final ThreadLocal<Instant> JWT_EXPIRY = new ThreadLocal<>();
 
     private RequestContext() {
     }
@@ -32,10 +35,18 @@ public final class RequestContext {
     public static UUID getUserId()                  { return USER_ID.get(); }
     public static void clearUserId()                { USER_ID.remove(); }
 
+    public static void setJwtJti(String jti)        { JWT_JTI.set(jti); }
+    public static String getJwtJti()                { return JWT_JTI.get(); }
+
+    public static void setJwtExpiry(Instant expiry) { JWT_EXPIRY.set(expiry); }
+    public static Instant getJwtExpiry()            { return JWT_EXPIRY.get(); }
+
     public static void clearAll() {
         clearTenantId();
         clearSchoolId();
         clearUserId();
+        JWT_JTI.remove();
+        JWT_EXPIRY.remove();
     }
 }
 

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,6 +24,23 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
 
     /** All records for a student (student attendance history). */
     List<AttendanceRecord> findAllByStudentIdOrderByCreatedAtAsc(UUID studentId);
+
+    /**
+     * H-05 / M-19: Explicit INNER JOIN avoids the Hibernate cross-join that the comma
+     * syntax generates, ensuring the tenant filter on attendance_records is applied
+     * and preventing a Cartesian product in the query plan.
+     */
+    @Query(value = """
+           SELECT ar.* FROM attendance_records ar
+           INNER JOIN attendance_sessions s ON ar.session_id = s.id
+           WHERE ar.student_id = :studentId
+             AND s.session_date BETWEEN :from AND :to
+           ORDER BY s.session_date ASC
+           """, nativeQuery = true)
+    List<AttendanceRecord> findAllByStudentIdAndSessionDateBetween(
+            @Param("studentId") UUID studentId,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
     /** Lookup for upsert — does a record already exist for this student + session? */
     Optional<AttendanceRecord> findBySessionIdAndStudentId(UUID sessionId, UUID studentId);
@@ -60,14 +78,15 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
            """, nativeQuery = true)
     Object[] countTotalAndPresentBySchool(@Param("schoolId") UUID schoolId);
 
-    /** Per-record history for a student joined with session date and period, newest first. */
-    @Query("""
-           SELECT r.status, s.sessionDate, s.periodNumber
-           FROM AttendanceRecord r, AttendanceSession s
-           WHERE r.sessionId = s.id
-             AND r.studentId = :studentId
-           ORDER BY s.sessionDate DESC, s.id DESC
-           """)
+    /** Per-record history for a student joined with session date and period, newest first.
+     *  M-19: explicit INNER JOIN replaces the implicit cross-join that bypassed Hibernate filters. */
+    @Query(value = """
+           SELECT ar.status, s.session_date, s.period_number
+           FROM attendance_records ar
+           INNER JOIN attendance_sessions s ON ar.session_id = s.id
+           WHERE ar.student_id = :studentId
+           ORDER BY s.session_date DESC, ar.session_id DESC
+           """, nativeQuery = true)
     List<Object[]> findStudentHistory(@Param("studentId") UUID studentId,
                                       org.springframework.data.domain.Pageable pageable);
 }

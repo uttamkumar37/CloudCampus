@@ -4,14 +4,17 @@
  * Flow:
  *  1. Read cached AuthUser from MMKV (synchronous — instant UI restore).
  *  2. Read refresh token from SecureStore (async).
- *  3. Exchange refresh token for a fresh access token via /v1/auth/refresh.
- *  4. If successful → hydrate Zustand store (app unlocks).
- *  5. If refresh fails → clearAuth (user sees login screen).
+ *  3. L-06: Prompt biometric re-authentication when hardware is enrolled.
+ *     If the user cancels → clear auth (login screen shown).
+ *  4. Exchange refresh token for a fresh access token via /v1/auth/refresh.
+ *  5. If successful → hydrate Zustand store (app unlocks).
+ *  6. If refresh fails → clearAuth (user sees login screen).
  *
  * Returns `{ ready }` — root layout waits until `ready === true` before
  * rendering navigation so the guard never flickers to login incorrectly.
  */
 import { useEffect, useState } from 'react';
+import * as LocalAuthentication from 'expo-local-authentication';
 import authClient from '@/shared/api/authClient';
 import { tokenStore } from '@/shared/storage/tokenStore';
 import { profileStore } from '@/shared/storage/profileStore';
@@ -38,6 +41,22 @@ export function useSessionHydration(): { ready: boolean } {
         if (!storedRefreshToken || !cachedUser) {
           // No persisted session — go straight to login
           return;
+        }
+
+        // L-06: Require biometric re-auth before restoring the session.
+        // Prevents session hijack if the device is handed to someone else.
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled  = await LocalAuthentication.isEnrolledAsync();
+        if (hasHardware && isEnrolled) {
+          const result = await LocalAuthentication.authenticateAsync({
+            promptMessage: 'Verify your identity to continue',
+            cancelLabel:   'Sign in instead',
+            fallbackLabel: 'Use passcode',
+          });
+          if (!result.success) {
+            if (!cancelled) clearAuth();
+            return;
+          }
         }
 
         const { data } = await authClient.post<RefreshResponse>(

@@ -37,11 +37,19 @@ spring:
     username: ${RABBITMQ_USERNAME:cloudcampus}
     password: ${RABBITMQ_PASSWORD:cloudcampus_dev}
     virtual-host: /
+    # H-07: publisher confirms — broker acks every message it has durably stored.
+    # Without this, a broker restart between publish and persistence silently loses messages.
+    publisher-confirm-type: correlated
+    publisher-returns: true
     listener:
       simple:
         concurrency: 1
         max-concurrency: 3
-        acknowledge-mode: auto    # auto-ack on success; nack on exception
+        acknowledge-mode: manual  # explicit basicAck/basicNack in consumer (CRIT-18)
+        # H-17: prefetch limits in-flight unacked messages per consumer.
+        # Without this the broker pushes all queued messages at once; manual-ack
+        # consumers then hold 250+ unacked messages in memory with no back-pressure.
+        prefetch: 10
 
   # ── REDIS ────────────────────────────────────────────────────────────────
   # C-20: App starts even if Redis is temporarily unavailable (lazy-connect).
@@ -52,6 +60,15 @@ spring:
       timeout: 1s
       repositories:
         enabled: false           # We use RedisTemplate directly, not Spring Data Redis repos.
+      # H-14: Lettuce connection pool — requires commons-pool2 on the classpath.
+      # Without pooling every Redis call borrows and returns a single shared connection
+      # serially, causing latency spikes under concurrent auth/cache/rate-limit load.
+      lettuce:
+        pool:
+          max-active: 20         # max simultaneous connections
+          max-idle: 10           # connections kept ready when idle
+          min-idle: 2            # always keep 2 warm connections
+          max-wait: 1000ms       # block at most 1 s waiting for a connection
 
   # ── MAIL ─────────────────────────────────────────────────────────────────
   # Production: set MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD env vars.
@@ -95,6 +112,15 @@ spring:
         schema-name: public
         table-name: vector_store
 
+  threads:
+    virtual:
+      # L-23: enable virtual threads (Project Loom) for Spring MVC thread pool.
+      # Removes the ThreadLocal migration blocker (CC-0011) by making virtual
+      # threads the default executor — each request gets its own lightweight
+      # carrier thread so blocking I/O (DB, Redis) no longer stalls a platform
+      # thread. Compatible with Spring Boot 3.2+ / Java 21.
+      enabled: true
+
 server:
   port: 8080
 
@@ -103,6 +129,13 @@ server:
     enabled: true
     mime-types: application/json,application/xml,text/html,text/xml,text/plain
     min-response-size: 1024     # Only compress responses larger than 1 KB.
+
+  # H-04: Trust forwarded-IP headers only from the nginx reverse proxy.
+  # Tomcat's RemoteIpValve processes X-Forwarded-For / X-Real-IP and rewrites
+  # request.getRemoteAddr() to the real client IP. Client-injected headers
+  # from non-trusted addresses (i.e. not the loopback / private range of the
+  # proxy) are stripped, preventing rate-limiter bypass via spoofed headers.
+  forward-headers-strategy: native
 
   # C-09: Tomcat-level payload size limit (safety net after servlet layer).
   tomcat:
@@ -183,7 +216,11 @@ app:
     api:
       per-user-requests: 20            # 20 @RateLimit calls per user per minute
       per-user-window-seconds: 60
-      per-tenant-requests: 60          # 60 @RateLimit calls per tenant per minute
+      # H-30: 60 req/min tenant ceiling blocked schools with >3 concurrent users
+      # (3 users × 20 req/user/min = 60, saturating the tenant bucket immediately).
+      # 500 req/min supports ~25 active users at full per-user throughput, while
+      # still providing a meaningful DoS barrier at the tenant level.
+      per-tenant-requests: 500         # 500 @RateLimit calls per tenant per minute
       per-tenant-window-seconds: 60
 
   # ── PII data retention (CC-1806) ──────────────────────────────────────────────
@@ -228,6 +265,11 @@ app:
     embedding-dimensions: 1536
     chat-model: ${AI_CHAT_MODEL:claude-haiku-4-5-20251001}
     embedding-model: ${AI_EMBEDDING_MODEL:text-embedding-3-small}
+    # H-23: cap LLM output to prevent runaway responses burning budget or leaking data
+    max-output-chars: ${AI_MAX_OUTPUT_CHARS:8000}
+    # H-24: per-user sliding-window limit on AI inference calls (60 s window)
+    rate-limit:
+      max-per-user-per-minute: ${AI_RATE_LIMIT_PER_USER:20}
 
   # ── Razorpay — online payment gateway (CC-0903) ───────────────────────────
   # Set RAZORPAY_ENABLED=true and provide real keys in staging/production.
@@ -248,4 +290,3 @@ springdoc:
     operations-sorter: alpha
     tags-sorter: alpha
   show-actuator: false
-
