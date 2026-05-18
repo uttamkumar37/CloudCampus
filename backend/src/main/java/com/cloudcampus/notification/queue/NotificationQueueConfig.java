@@ -14,6 +14,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -149,9 +150,20 @@ public class NotificationQueueConfig {
         // CRIT-18: manual ack — consumer must call basicAck/basicNack explicitly.
         factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         factory.setDefaultRequeueRejected(false);
-        // H-17: prefetch limits in-flight unacked messages to 10 per consumer thread,
-        // providing back-pressure and preventing memory exhaustion under queue backlogs.
+        // H-17: prefetch limits in-flight unacked messages to 10 per consumer thread.
         factory.setPrefetchCount(10);
+        // Don't crash fatally on missing queues — admin declares them on first connection.
+        factory.setMissingQueuesFatal(false);
         return factory;
+    }
+
+    /**
+     * Runs after all singletons are created but before SmartLifecycle (listener containers)
+     * starts. Forces RabbitAdmin to declare exchanges/queues/bindings on a fresh broker
+     * so passive declarations in @RabbitListener consumers don't fail at startup.
+     */
+    @Bean
+    SmartInitializingSingleton rabbitTopologyInitializer(RabbitAdmin rabbitAdmin) {
+        return rabbitAdmin::initialize;
     }
 }

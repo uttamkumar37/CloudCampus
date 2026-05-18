@@ -75,7 +75,7 @@ Each phase is intentionally narrow. Do not batch phases or skip validation. The 
 | ID | Task | Status | Risk | Validation command | Rollback notes | Acceptance criteria |
 |---|---|---:|---:|---|---|---|
 | TASK-019 | Add investor room access audit logs | DONE | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress` | Revert audit writes only; do not remove room access logic. | Metadata access, unlock attempts, successes, failures, and expirations are logged. |
-| TASK-020 | Add expiry validation tests | TODO | LOW | `cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Investor*Test` | Revert tests if fixtures need redesign. | Expired rooms never expose protected content, including link-only rooms. |
+| TASK-020 | Add expiry validation tests | DONE | LOW | `cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Investor*Test` | Revert tests if fixtures need redesign. | Expired rooms never expose protected content, including link-only rooms. |
 | TASK-021 | Add watermark/download control plan | TODO | LOW | `rg -n "watermark\|download control\|investor room" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan defines watermarking, download policy, access event tracking, and future signed-file controls. |
 
 ### PHASE 6 - AI Safety
