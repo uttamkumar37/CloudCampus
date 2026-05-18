@@ -225,7 +225,8 @@ public class SecurityConfig {
                 "Content-Type",
                 "Accept",
                 "Origin",
-                "X-Requested-With"
+                "X-Requested-With",
+                "X-Tenant-Id"
         ));
         config.setExposedHeaders(List.of(
                 "X-Correlation-Id",
