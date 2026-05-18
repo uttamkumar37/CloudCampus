@@ -9,7 +9,7 @@
  *   4. All students default to PRESENT; teacher taps to change status.
  *   5. Submit → POST /v1/teacher/attendance/sessions (atomic create + mark).
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -24,10 +25,13 @@ import {
 } from 'react-native';
 import {
   getStudentsForAttendance,
+  generateQrAttendanceSession,
   submitTeacherAttendance,
   type AttendanceStatus,
+  type QrAttendanceResponse,
   type StudentMark,
   type TeacherStudentRow,
+  type TakeAttendancePayload,
 } from '../api/teacherApi';
 import { getTeacherTimetable, type TimetableSlot } from '@/features/timetable/api/timetableApi';
 
@@ -128,6 +132,113 @@ function StudentRow({
           );
         })}
       </View>
+    </View>
+  );
+}
+
+// ── QR generate card ──────────────────────────────────────────────────────────
+
+const QR_TTL = 300; // 5 minutes in seconds
+
+function QrGenerateCard({ payload }: { payload: TakeAttendancePayload }) {
+  const [qrData, setQrData]     = useState<QrAttendanceResponse | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function startCountdown() {
+    setSecondsLeft(QR_TTL);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          clearInterval(timerRef.current!);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  }
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, []);
+
+  const mutation = useMutation({
+    mutationFn: () => generateQrAttendanceSession(payload),
+    onSuccess: (res) => {
+      setQrData(res);
+      startCountdown();
+    },
+  });
+
+  const expired = qrData !== null && secondsLeft === 0;
+
+  function formatTime(s: number) {
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const sec = (s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
+  }
+
+  function handleShare() {
+    if (!qrData) return;
+    Share.share({ message: qrData.qrDeepLink, url: qrData.qrDeepLink });
+  }
+
+  function handleRegenerate() {
+    setQrData(null);
+    setSecondsLeft(0);
+    mutation.mutate();
+  }
+
+  return (
+    <View style={styles.qrCard}>
+      <Text style={styles.qrCardTitle}>QR ATTENDANCE</Text>
+
+      {!qrData ? (
+        <TouchableOpacity
+          style={[styles.qrGenerateBtn, mutation.isPending && styles.saveBtnDisabled]}
+          onPress={() => mutation.mutate()}
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveBtnText}>Generate QR Attendance</Text>
+          )}
+        </TouchableOpacity>
+      ) : expired ? (
+        <View style={styles.qrExpiredBox}>
+          <Text style={styles.qrExpiredText}>QR Expired — generate again</Text>
+          <TouchableOpacity style={styles.qrGenerateBtn} onPress={handleRegenerate}>
+            <Text style={styles.saveBtnText}>Regenerate QR</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.qrActiveBox}>
+          <View style={styles.qrLinkBox}>
+            <Text style={styles.qrLinkText} numberOfLines={2} selectable>
+              {qrData.qrDeepLink}
+            </Text>
+          </View>
+          <View style={styles.qrFooter}>
+            <View style={styles.qrTimerBox}>
+              <Text style={styles.qrTimerLabel}>Expires in</Text>
+              <Text style={[styles.qrTimerValue, secondsLeft < 60 && styles.qrTimerUrgent]}>
+                {formatTime(secondsLeft)}
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.qrShareBtn} onPress={handleShare}>
+              <Text style={styles.qrShareBtnText}>Share Link</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {mutation.isError && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>Failed to generate QR. Please try again.</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -267,6 +378,21 @@ export default function TeacherAttendanceScreen() {
             ))}
           </ScrollView>
         </View>
+      )}
+
+      {/* QR attendance generation */}
+      {selectedSlot && (
+        <QrGenerateCard
+          payload={{
+            classId:        selectedSlot.classId,
+            sectionId:      selectedSlot.sectionId ?? undefined,
+            academicYearId: selectedSlot.academicYearId,
+            subjectId:      selectedSlot.subjectId ?? undefined,
+            sessionDate:    todayStr(),
+            periodNumber:   selectedSlot.periodNumber,
+            marks:          [],
+          }}
+        />
       )}
 
       {/* Student roster */}
@@ -429,4 +555,43 @@ const styles = StyleSheet.create({
   saveBtn:         { backgroundColor: '#1e3a5f', borderRadius: 12, padding: 15, alignItems: 'center' },
   saveBtnDisabled: { backgroundColor: '#93c5fd' },
   saveBtnText:     { color: '#fff', fontWeight: '700', fontSize: 15 },
+
+  qrCard: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    padding: 16,
+    marginBottom: 20,
+  },
+  qrCardTitle: { fontSize: 11, fontWeight: '700', color: '#9ca3af', letterSpacing: 0.8, marginBottom: 12 },
+
+  qrGenerateBtn: { backgroundColor: '#1e3a5f', borderRadius: 12, padding: 13, alignItems: 'center' },
+
+  qrActiveBox:  { gap: 12 },
+  qrLinkBox: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    padding: 12,
+  },
+  qrLinkText: { fontSize: 12, color: '#374151', fontFamily: 'monospace', lineHeight: 18 },
+
+  qrFooter:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  qrTimerBox:  { alignItems: 'flex-start' },
+  qrTimerLabel: { fontSize: 10, color: '#9ca3af', marginBottom: 2 },
+  qrTimerValue: { fontSize: 22, fontWeight: '800', color: '#1e3a5f', fontFamily: 'monospace' },
+  qrTimerUrgent: { color: '#dc2626' },
+
+  qrShareBtn: {
+    backgroundColor: '#1e3a5f',
+    borderRadius: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+  },
+  qrShareBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+
+  qrExpiredBox: { gap: 10, alignItems: 'flex-start' },
+  qrExpiredText: { fontSize: 13, color: '#dc2626', fontWeight: '600' },
 });

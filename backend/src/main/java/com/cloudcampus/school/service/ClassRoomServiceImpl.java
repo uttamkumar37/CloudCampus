@@ -84,7 +84,8 @@ class ClassRoomServiceImpl implements ClassRoomService {
     }
 
     private ClassRoom findOrThrow(UUID id) {
-        return repo.findById(id)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return repo.findByIdAndTenantId(id, tenantId)
                    .orElseThrow(() -> new NotFoundException("Class not found: " + id));
     }
 }

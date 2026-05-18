@@ -16,6 +16,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -35,21 +36,31 @@ public class InvestorRoomService {
     }
 
     public InvestorRoomResponse getRoom(String roomCode) {
-        InvestorRoom room = repo.findByRoomCodeAndStatus(roomCode, "ACTIVE")
-                .orElseThrow(() -> new NotFoundException("Investor room not found: " + roomCode));
+        return fullRoom(loadActiveRoom(roomCode));
+    }
 
-        List<InvestorRoomSectionResponse> sections = sectionRepo
-                .findByRoomIdAndVisibilityOrderByPosition(room.getId(), "VISIBLE")
-                .stream()
-                .map(InvestorRoomSectionResponse::from)
-                .toList();
-
-        return InvestorRoomResponse.from(room, sections);
+    public InvestorRoomResponse getPublicRoom(String roomCode) {
+        InvestorRoom room = loadActiveRoom(roomCode);
+        if ("LINK_ONLY".equals(room.getAccessMode())) {
+            return fullRoom(room);
+        }
+        return InvestorRoomResponse.metadata(room);
     }
 
     public List<InvestorRoomResponse> listActive() {
         return repo.findByStatusOrderByCreatedAtDesc("ACTIVE")
-                .stream().map(InvestorRoomResponse::from).toList();
+                .stream()
+                .filter(this::notExpired)
+                .map(InvestorRoomResponse::from)
+                .toList();
+    }
+
+    public List<InvestorRoomResponse> listPublicActive() {
+        return repo.findByStatusOrderByCreatedAtDesc("ACTIVE")
+                .stream()
+                .filter(this::notExpired)
+                .map(InvestorRoomResponse::metadata)
+                .toList();
     }
 
     @Transactional
@@ -76,11 +87,45 @@ public class InvestorRoomService {
         return room.getRoomCode();
     }
 
+    public Optional<InvestorRoomResponse> unlockRoom(String roomCode, String candidatePassword) {
+        InvestorRoom room = loadActiveRoom(roomCode);
+        if ("LINK_ONLY".equals(room.getAccessMode())) {
+            return Optional.of(fullRoom(room));
+        }
+        if ("PASSWORD".equals(room.getAccessMode())
+                && room.getAccessSecret() != null
+                && candidatePassword != null
+                && BCrypt.checkpw(candidatePassword, room.getAccessSecret())) {
+            return Optional.of(fullRoom(room));
+        }
+        return Optional.empty();
+    }
+
     public boolean verifyPassword(String roomCode, String candidatePassword) {
-        return repo.findByRoomCodeAndStatus(roomCode, "ACTIVE")
-                .map(r -> r.getAccessSecret() != null &&
-                          BCrypt.checkpw(candidatePassword, r.getAccessSecret()))
-                .orElse(false);
+        return unlockRoom(roomCode, candidatePassword).isPresent();
+    }
+
+    private InvestorRoom loadActiveRoom(String roomCode) {
+        InvestorRoom room = repo.findByRoomCodeAndStatus(roomCode, "ACTIVE")
+                .orElseThrow(() -> new NotFoundException("Investor room not found: " + roomCode));
+        if (!notExpired(room)) {
+            throw new NotFoundException("Investor room not found: " + roomCode);
+        }
+        return room;
+    }
+
+    private boolean notExpired(InvestorRoom room) {
+        return room.getExpiresAt() == null || !Instant.now().isAfter(room.getExpiresAt());
+    }
+
+    private InvestorRoomResponse fullRoom(InvestorRoom room) {
+        List<InvestorRoomSectionResponse> sections = sectionRepo
+                .findByRoomIdAndVisibilityOrderByPosition(room.getId(), "VISIBLE")
+                .stream()
+                .map(InvestorRoomSectionResponse::from)
+                .toList();
+
+        return InvestorRoomResponse.from(room, sections);
     }
 
     private static String generateRoomCode() {

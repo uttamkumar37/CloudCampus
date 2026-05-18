@@ -81,8 +81,8 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
     }
 
     private void validateStudent(UUID studentId, UUID schoolId) {
-        studentRepo.findById(studentId)
-                .filter(s -> s.getSchoolId().equals(schoolId))
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        studentRepo.findByIdAndSchoolIdAndTenantId(studentId, schoolId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Student not found in this school"));
     }
 

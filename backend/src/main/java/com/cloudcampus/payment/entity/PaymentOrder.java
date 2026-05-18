@@ -1,5 +1,6 @@
 package com.cloudcampus.payment.entity;
 
+import com.cloudcampus.common.tenant.TenantFilter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Filter;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -21,6 +23,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "payment_orders")
+@Filter(name = TenantFilter.NAME, condition = TenantFilter.CONDITION)
 public class PaymentOrder {
 
     @Id
@@ -105,6 +108,10 @@ public class PaymentOrder {
 
     public void markFailed() {
         this.status = PaymentOrderStatus.FAILED;
+    }
+
+    public void markExpired() {
+        this.status = PaymentOrderStatus.EXPIRED;
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────────

@@ -22,6 +22,8 @@ export default function AppLayout() {
     user?.role === 'SCHOOL_ADMIN' ||
     user?.role === 'SUPER_ADMIN';
   const canMarkTeacherAttendance = user?.role === 'TEACHER'; // timetable-based teacher flow
+  const canScanQr               = user?.role === 'STUDENT';
+  const canPromoteStudents      = user?.role === 'SCHOOL_ADMIN';
 
   const canViewTimetable         = user?.role === 'TEACHER' || user?.role === 'STUDENT';
   const canViewLeave             = user?.role === 'TEACHER';
@@ -140,6 +142,18 @@ export default function AppLayout() {
         <Tabs.Screen
           name="admin-notices"
           options={{ title: 'Notices', tabBarLabel: 'Notices' }}
+        />
+      )}
+      {canScanQr && (
+        <Tabs.Screen
+          name="qr-attendance"
+          options={{ title: 'Scan QR', tabBarLabel: 'Scan QR' }}
+        />
+      )}
+      {canPromoteStudents && (
+        <Tabs.Screen
+          name="student-promotion"
+          options={{ title: 'Promote Students', tabBarLabel: 'Promote' }}
         />
       )}
     </Tabs>

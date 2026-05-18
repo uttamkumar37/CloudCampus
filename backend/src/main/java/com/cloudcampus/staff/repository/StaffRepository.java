@@ -37,6 +37,9 @@ public interface StaffRepository extends JpaRepository<Staff, UUID> {
     List<Staff> findAllByDepartmentIdAndStatusOrderByLastNameAscFirstNameAsc(
             UUID departmentId, StaffStatus status);
 
+    /** Tenant-scoped lookup — use instead of findById() in authenticated flows. */
+    Optional<Staff> findByIdAndTenantId(UUID id, UUID tenantId);
+
     /** Lookup by unique employee number within a school. */
     Optional<Staff> findBySchoolIdAndEmployeeNumber(UUID schoolId, String employeeNumber);
 

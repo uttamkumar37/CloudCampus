@@ -153,14 +153,13 @@ public class StaffAttendanceController {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void validateSchool(UUID schoolId) {
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
-        schoolRepo.findByTenantIdAndCode(tenantId, "MAIN")
-                .filter(s -> s.getId().equals(schoolId))
+        schoolRepo.findByIdFiltered(schoolId)
                 .orElseThrow(() -> new NotFoundException("School not found"));
     }
 
     private void ensureStaffBelongsToSchool(UUID schoolId, UUID staffId) {
-        Staff s = staffRepo.findById(staffId)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        Staff s = staffRepo.findByIdAndTenantId(staffId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Staff not found"));
         if (!s.getSchoolId().equals(schoolId)) {
             throw new NotFoundException("Staff not in this school");

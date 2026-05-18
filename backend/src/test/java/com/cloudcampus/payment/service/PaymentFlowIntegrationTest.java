@@ -1,5 +1,6 @@
 package com.cloudcampus.payment.service;
 
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.finance.dto.FeePaymentResponse;
 import com.cloudcampus.finance.entity.PaymentMode;
 import com.cloudcampus.finance.service.FeeService;
@@ -169,10 +170,14 @@ class PaymentFlowIntegrationTest {
                 RZP_ORDER_ID, 50000L);
         order = orderRepo.save(order);
         paymentOrderId = order.getId();
+
+        RequestContext.setTenantId(tenantId.toString());
+        RequestContext.setUserId(userId);
     }
 
     @AfterEach
     void tearDown() {
+        RequestContext.clearAll();
         // Delete in reverse FK order
         jdbc.update("DELETE FROM payment_orders  WHERE tenant_id = ?", tenantId);
         jdbc.update("DELETE FROM student_fee_records WHERE tenant_id = ?", tenantId);

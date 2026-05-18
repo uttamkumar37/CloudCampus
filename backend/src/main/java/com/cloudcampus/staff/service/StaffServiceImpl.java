@@ -4,7 +4,12 @@ import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.usage.UsageLimitEnforcer;
 import com.cloudcampus.common.web.RequestContext;
+import com.cloudcampus.school.entity.School;
+import com.cloudcampus.school.repository.SchoolRepository;
+import com.cloudcampus.tenant.entity.Tenant;
+import com.cloudcampus.tenant.repository.TenantRepository;
 import com.cloudcampus.staff.dto.CreateStaffRequest;
+import com.cloudcampus.staff.dto.SchoolAdminMeResponse;
 import com.cloudcampus.staff.dto.StaffResponse;
 import com.cloudcampus.staff.dto.StaffSummaryResponse;
 import com.cloudcampus.staff.dto.UpdateStaffRequest;
@@ -24,10 +29,15 @@ class StaffServiceImpl implements StaffService {
 
     private final StaffRepository    repo;
     private final UsageLimitEnforcer limitEnforcer;
+    private final SchoolRepository   schoolRepo;
+    private final TenantRepository   tenantRepo;
 
-    StaffServiceImpl(StaffRepository repo, UsageLimitEnforcer limitEnforcer) {
+    StaffServiceImpl(StaffRepository repo, UsageLimitEnforcer limitEnforcer,
+                     SchoolRepository schoolRepo, TenantRepository tenantRepo) {
         this.repo          = repo;
         this.limitEnforcer = limitEnforcer;
+        this.schoolRepo    = schoolRepo;
+        this.tenantRepo    = tenantRepo;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -166,7 +176,8 @@ class StaffServiceImpl implements StaffService {
     // ─────────────────────────────────────────────────────────────────────────
 
     private Staff findOrThrow(UUID id) {
-        return repo.findById(id)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return repo.findByIdAndTenantId(id, tenantId)
                    .orElseThrow(() -> new NotFoundException("Staff not found: " + id));
     }
 
@@ -201,5 +212,20 @@ class StaffServiceImpl implements StaffService {
             seq++;
         } while (repo.existsBySchoolIdAndEmployeeNumber(schoolId, candidate));
         return candidate;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SchoolAdminMeResponse getMe() {
+        UUID userId   = RequestContext.getUserId();
+        UUID schoolId = UUID.fromString(RequestContext.getSchoolId());
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        Staff staff = repo.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundException("Staff profile not found for current user"));
+        School school = schoolRepo.findByIdFiltered(schoolId)
+                .orElseThrow(() -> new NotFoundException("School not found"));
+        Tenant tenant = tenantRepo.findById(tenantId)
+                .orElseThrow(() -> new NotFoundException("Tenant not found"));
+        return SchoolAdminMeResponse.from(staff, school, tenant);
     }
 }

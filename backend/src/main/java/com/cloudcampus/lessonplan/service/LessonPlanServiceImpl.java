@@ -71,8 +71,7 @@ public class LessonPlanServiceImpl implements LessonPlanService {
     }
 
     private LessonPlan findOwned(UUID tenantId, UUID planId) {
-        return repository.findById(planId)
-                .filter(lp -> lp.getTenantId().equals(tenantId))
+        return repository.findByIdAndTenantId(planId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Lesson plan not found"));
     }
 }

@@ -4,6 +4,7 @@ import AiExperienceManager from './AiExperienceManager';
 import BrandingSystemManager from './BrandingSystemManager';
 import ContentBlockEditor from './ContentBlockEditor';
 import DemoScenarioManager from './DemoScenarioManager';
+import ExperienceAnalyticsDashboard from './ExperienceAnalyticsDashboard';
 import InvestorRoomBuilder from './InvestorRoomBuilder';
 import MarketingAutomationManager from './MarketingAutomationManager';
 import PresentationBuilderManager from './PresentationBuilderManager';
@@ -24,6 +25,7 @@ type Tab =
   | 'demo'
   | 'investor'
   | 'ai'
+  | 'analytics'
   | 'storytelling'
   | 'presentation'
   | 'marketing'
@@ -38,6 +40,7 @@ const TABS: { id: Tab; label: string; icon: string; description: string }[] = [
   { id: 'demo', label: 'Demo Scenarios', icon: 'DM', description: 'Configure self-serve interactive ERP demonstrations' },
   { id: 'investor', label: 'Investor Rooms', icon: 'IR', description: 'Manage private data rooms for investor stakeholders' },
   { id: 'ai', label: 'AI Experience', icon: 'AI', description: 'Manage AI prompts, knowledge, guardrails, and usage governance' },
+  { id: 'analytics', label: 'Analytics', icon: 'AN', description: 'Track page views, CTA clicks, demo starts, and investor engagement' },
   { id: 'storytelling', label: 'Storytelling Scenes', icon: 'ST', description: 'Publish narrative scenes with proof points and animations' },
   { id: 'presentation', label: 'Presentation Builder', icon: 'PR', description: 'Create and publish role-specific dynamic presentation decks' },
   { id: 'marketing', label: 'Marketing Campaigns', icon: 'MK', description: 'Launch and orchestrate campaign funnels and automation steps' },
@@ -395,6 +398,7 @@ export default function ExperienceControlCenter() {
           {activeTab === 'demo'     && <DemoScenarioManager />}
           {activeTab === 'investor' && <InvestorRoomBuilder />}
           {activeTab === 'ai' && <AiExperienceManager />}
+          {activeTab === 'analytics' && <ExperienceAnalyticsDashboard />}
           {activeTab === 'storytelling' && <StorytellingManager />}
           {activeTab === 'presentation' && <PresentationBuilderManager />}
           {activeTab === 'marketing' && <MarketingAutomationManager />}

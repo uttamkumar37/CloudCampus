@@ -93,6 +93,12 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     /** Look up the student profile linked to a login account (for student self-service). */
     Optional<Student> findBySchoolIdAndUserId(UUID schoolId, UUID userId);
 
+    /** Tenant-scoped lookup — use instead of findById() in authenticated flows. */
+    Optional<Student> findByIdAndTenantId(UUID id, UUID tenantId);
+
+    /** School + tenant scoped lookup for document and admin workflows. */
+    Optional<Student> findByIdAndSchoolIdAndTenantId(UUID id, UUID schoolId, UUID tenantId);
+
     /** Look up the student profile by login account across any school (tenant-filtered by Hibernate). */
     Optional<Student> findByUserId(UUID userId);
 

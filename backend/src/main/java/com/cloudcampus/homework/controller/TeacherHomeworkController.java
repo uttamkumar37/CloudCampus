@@ -134,8 +134,8 @@ public class TeacherHomeworkController {
         homeworkRepo.findBySchoolIdAndId(school.getId(), homeworkId)
                 .orElseThrow(() -> new NotFoundException("Homework not found"));
 
-        var sub = submissionRepo.findById(subId)
-                .filter(s -> s.getHomeworkId().equals(homeworkId))
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        var sub = submissionRepo.findByIdAndHomeworkIdAndTenantId(subId, homeworkId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Submission not found"));
 
         sub.markReviewed();

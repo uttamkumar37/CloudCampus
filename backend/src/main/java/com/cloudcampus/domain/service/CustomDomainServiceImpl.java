@@ -42,8 +42,7 @@ public class CustomDomainServiceImpl implements CustomDomainService {
     @Override
     @Transactional
     public DomainResponse verify(UUID tenantId, UUID domainId) {
-        CustomDomain cd = repository.findById(domainId)
-                .filter(d -> d.getTenantId().equals(tenantId))
+        CustomDomain cd = repository.findByIdAndTenantId(domainId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Domain not found"));
 
         cd.recordCheck();
@@ -70,8 +69,7 @@ public class CustomDomainServiceImpl implements CustomDomainService {
     @Override
     @Transactional
     public void delete(UUID tenantId, UUID domainId) {
-        CustomDomain cd = repository.findById(domainId)
-                .filter(d -> d.getTenantId().equals(tenantId))
+        CustomDomain cd = repository.findByIdAndTenantId(domainId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Domain not found"));
         repository.delete(cd);
     }

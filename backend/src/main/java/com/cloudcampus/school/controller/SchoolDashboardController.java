@@ -100,7 +100,7 @@ public class SchoolDashboardController {
     }
 
     private void validateSchool(UUID schoolId) {
-        schoolRepo.findById(schoolId)
+        schoolRepo.findByIdFiltered(schoolId)
                 .orElseThrow(() -> new NotFoundException("School not found"));
     }
 }

@@ -26,6 +26,8 @@ const AiUsagePage              = lazy(() => import('@/features/super-admin/pages
 // ── School Admin ──────────────────────────────────────────────────────────────
 const SchoolAdminLayout        = lazy(() => import('@/features/school-admin/layouts/SchoolAdminLayout').then(m => ({ default: m.SchoolAdminLayout })));
 const SchoolAdminDashboardPage = lazy(() => import('@/features/school-admin/pages/SchoolAdminDashboardPage').then(m => ({ default: m.SchoolAdminDashboardPage })));
+const AiCopilotPage            = lazy(() => import('@/features/school-admin/pages/AiCopilotPage').then(m => ({ default: m.AiCopilotPage })));
+const SchoolAdminProfilePage   = lazy(() => import('@/features/school-admin/pages/SchoolAdminProfilePage').then(m => ({ default: m.SchoolAdminProfilePage })));
 const AcademicYearListPage     = lazy(() => import('@/features/school-admin/pages/AcademicYearListPage').then(m => ({ default: m.AcademicYearListPage })));
 const ClassListPage            = lazy(() => import('@/features/school-admin/pages/ClassListPage').then(m => ({ default: m.ClassListPage })));
 const SectionListPage          = lazy(() => import('@/features/school-admin/pages/SectionListPage').then(m => ({ default: m.SectionListPage })));
@@ -126,6 +128,14 @@ const InvestorRoomPage         = lazy(() => import('@/features/experience/pages/
 
 // ── DSEP — Super Admin Experience Control Center ──────────────────────────────
 const ExperienceControlCenter  = lazy(() => import('@/features/super-admin/experience/ExperienceControlCenter'));
+const PublicWebsiteDashboardPage = lazy(() => import('@/features/super-admin/public-website/pages/PublicWebsiteDashboardPage').then(m => ({ default: m.PublicWebsiteDashboardPage })));
+const PublicWebsitePagesPage = lazy(() => import('@/features/super-admin/public-website/pages/PublicWebsitePagesPage').then(m => ({ default: m.PublicWebsitePagesPage })));
+const PublicWebsiteBrandingPage = lazy(() => import('@/features/super-admin/public-website/pages/PublicWebsiteBrandingPage').then(m => ({ default: m.PublicWebsiteBrandingPage })));
+const PublicWebsiteSeoPage = lazy(() => import('@/features/super-admin/public-website/pages/PublicWebsiteSeoPage').then(m => ({ default: m.PublicWebsiteSeoPage })));
+const PublicWebsiteAnalyticsPage = lazy(() => import('@/features/super-admin/public-website/pages/PublicWebsiteAnalyticsPage').then(m => ({ default: m.PublicWebsiteAnalyticsPage })));
+const PublicWebsiteMediaPage = lazy(() => import('@/features/super-admin/public-website/pages/PublicWebsiteMediaPage').then(m => ({ default: m.PublicWebsiteMediaPage })));
+const PublicWebsitePublishPage = lazy(() => import('@/features/super-admin/public-website/pages/PublicWebsitePublishPage').then(m => ({ default: m.PublicWebsitePublishPage })));
+const CloudCampusPublicWebsitePage = lazy(() => import('@/features/public-site/pages/CloudCampusPublicWebsitePage'));
 
 /**
  * Application router.
@@ -177,6 +187,13 @@ export function AppRouter() {
             <Route path="ai/knowledge"     element={<KnowledgeBasePage />} />
             <Route path="ai/usage"         element={<AiUsagePage />} />
             <Route path="experience"       element={<ExperienceControlCenter />} />
+            <Route path="public-website" element={<PublicWebsiteDashboardPage />} />
+            <Route path="public-website/pages" element={<PublicWebsitePagesPage />} />
+            <Route path="public-website/branding" element={<PublicWebsiteBrandingPage />} />
+            <Route path="public-website/seo" element={<PublicWebsiteSeoPage />} />
+            <Route path="public-website/analytics" element={<PublicWebsiteAnalyticsPage />} />
+            <Route path="public-website/media" element={<PublicWebsiteMediaPage />} />
+            <Route path="public-website/publish" element={<PublicWebsitePublishPage />} />
           </Route>
 
           {/* School Admin portal — SCHOOL_ADMIN role required */}
@@ -230,6 +247,8 @@ export function AppRouter() {
             <Route path="departments" element={<DepartmentListPage />} />
             <Route path="website" element={<WebsiteBuilderPage />} />
             <Route path="custom-domain" element={<CustomDomainPage />} />
+            <Route path="ai-copilot" element={<AiCopilotPage />} />
+            <Route path="profile" element={<SchoolAdminProfilePage />} />
             <Route path="settings" element={<SchoolSettingsPage />} />
           </Route>
 
@@ -312,7 +331,14 @@ export function AppRouter() {
           <Route path="/investor/:roomCode" element={<InvestorRoomPage />} />
 
           {/* Root and catch-all */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<CloudCampusPublicWebsitePage />} />
+          <Route path="/features" element={<CloudCampusPublicWebsitePage />} />
+          <Route path="/platform" element={<CloudCampusPublicWebsitePage />} />
+          <Route path="/ai" element={<CloudCampusPublicWebsitePage />} />
+          <Route path="/investors" element={<CloudCampusPublicWebsitePage />} />
+          <Route path="/contact" element={<CloudCampusPublicWebsitePage />} />
+          <Route path="/pricing" element={<CloudCampusPublicWebsitePage />} />
+          <Route path="/about" element={<CloudCampusPublicWebsitePage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Suspense>

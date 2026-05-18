@@ -1,24 +1,30 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useInvestorRoom, useVerifyInvestorAccess, type InvestorRoomSection } from '../api/experienceApi';
+import { useInvestorRoom, useVerifyInvestorAccess, type InvestorRoom, type InvestorRoomSection } from '../api/experienceApi';
 
 export default function InvestorRoomPage() {
   const { roomCode = '' } = useParams<{ roomCode: string }>();
   const { data: room, isLoading, isError } = useInvestorRoom(roomCode);
 
   const [unlocked, setUnlocked] = useState(false);
+  const [unlockedRoom, setUnlockedRoom] = useState<InvestorRoom | null>(null);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const { mutate: verifyAccess, isPending } = useVerifyInvestorAccess(roomCode);
+  const displayRoom = unlockedRoom ?? room;
 
   function handleUnlock() {
     setAuthError(null);
     verifyAccess(
       { password },
       {
-        onSuccess: ({ granted }) => {
-          if (granted) setUnlocked(true);
-          else setAuthError('Incorrect password. Please try again.');
+        onSuccess: ({ granted, room: grantedRoom }) => {
+          if (granted && grantedRoom) {
+            setUnlockedRoom(grantedRoom);
+            setUnlocked(true);
+          } else {
+            setAuthError('Incorrect password. Please try again.');
+          }
         },
         onError: () => setAuthError('Verification failed. Please try again.'),
       }
@@ -78,23 +84,23 @@ export default function InvestorRoomPage() {
       <header className="border-b border-gray-800 px-8 py-5 flex items-center justify-between sticky top-0 bg-gray-950/95 backdrop-blur z-10">
         <div>
           <p className="text-xs text-gray-500 uppercase tracking-widest mb-0.5">CloudCampus · Investor Room</p>
-          <h1 className="text-xl font-bold">{room.title}</h1>
+          <h1 className="text-xl font-bold">{displayRoom?.title}</h1>
         </div>
-        {room.expiresAt && (
+        {displayRoom?.expiresAt && (
           <span className="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-full">
-            Expires {new Date(room.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+            Expires {new Date(displayRoom.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
           </span>
         )}
       </header>
 
       <main className="max-w-6xl mx-auto px-8 py-12 space-y-10">
-        {room.sections.length === 0 ? (
+        {(displayRoom?.sections ?? []).length === 0 ? (
           <div className="text-center text-gray-500 py-20">
             <p className="text-4xl mb-4">📊</p>
             <p>Room content is being prepared.</p>
           </div>
         ) : (
-          room.sections.map((section) => (
+          displayRoom?.sections.map((section) => (
             <SectionBlock key={section.id} section={section} />
           ))
         )}

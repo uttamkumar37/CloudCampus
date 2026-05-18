@@ -87,3 +87,19 @@ export async function submitTeacherAttendance(
 ): Promise<void> {
   await axiosInstance.post('/v1/teacher/attendance/sessions', payload);
 }
+
+export interface QrAttendanceResponse {
+  sessionId:   string;
+  qrToken:     string;
+  qrDeepLink:  string;
+}
+
+export async function generateQrAttendanceSession(
+  payload: TakeAttendancePayload,
+): Promise<QrAttendanceResponse> {
+  const { data } = await axiosInstance.post<{ data: QrAttendanceResponse }>(
+    '/v1/teacher/attendance/sessions/with-qr',
+    payload,
+  );
+  return data.data;
+}

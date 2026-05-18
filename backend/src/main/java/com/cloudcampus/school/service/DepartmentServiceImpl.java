@@ -101,7 +101,8 @@ class DepartmentServiceImpl implements DepartmentService {
     }
 
     private Department findOrThrow(UUID id) {
-        return repo.findById(id)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return repo.findByIdAndTenantId(id, tenantId)
                    .orElseThrow(() -> new NotFoundException("Department not found: " + id));
     }
 }

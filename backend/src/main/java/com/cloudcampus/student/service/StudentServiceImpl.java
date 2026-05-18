@@ -176,7 +176,8 @@ class StudentServiceImpl implements StudentService {
     // ─────────────────────────────────────────────────────────────────────────
 
     private Student findOrThrow(UUID id) {
-        return repo.findById(id)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return repo.findByIdAndTenantId(id, tenantId)
                    .orElseThrow(() -> new NotFoundException("Student not found: " + id));
     }
 

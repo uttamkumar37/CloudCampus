@@ -81,8 +81,7 @@ public class OnlineClassServiceImpl implements OnlineClassService {
     }
 
     private OnlineClass findOwned(UUID tenantId, UUID classId) {
-        return repository.findById(classId)
-                .filter(oc -> oc.getTenantId().equals(tenantId))
+        return repository.findByIdAndTenantId(classId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Online class not found"));
     }
 }

@@ -107,8 +107,7 @@ public class MarksServiceImpl implements MarksService {
         ExamSubject paper = examSubjectRepository.findByIdAndExamId(subjectEntryId, examId)
                 .orElseThrow(() -> new NotFoundException("Exam subject not found"));
 
-        StudentMark sm = studentMarkRepository.findById(markId)
-                .filter(m -> m.getExamSubjectId().equals(subjectEntryId))
+        StudentMark sm = studentMarkRepository.findByIdAndExamSubjectId(markId, subjectEntryId)
                 .orElseThrow(() -> new NotFoundException("Mark entry not found"));
 
         BigDecimal marks = resolveMarks(request, paper.getTotalMarks());
@@ -124,8 +123,7 @@ public class MarksServiceImpl implements MarksService {
         examSubjectRepository.findByIdAndExamId(subjectEntryId, examId)
                 .orElseThrow(() -> new NotFoundException("Exam subject not found"));
 
-        StudentMark sm = studentMarkRepository.findById(markId)
-                .filter(m -> m.getExamSubjectId().equals(subjectEntryId))
+        StudentMark sm = studentMarkRepository.findByIdAndExamSubjectId(markId, subjectEntryId)
                 .orElseThrow(() -> new NotFoundException("Mark entry not found"));
 
         studentMarkRepository.delete(sm);

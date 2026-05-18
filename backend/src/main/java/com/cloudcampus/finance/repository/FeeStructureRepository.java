@@ -3,12 +3,20 @@ package com.cloudcampus.finance.repository;
 import com.cloudcampus.finance.entity.FeeStructure;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface FeeStructureRepository extends JpaRepository<FeeStructure, UUID> {
 
     List<FeeStructure> findBySchoolId(UUID schoolId);
+
+    Optional<FeeStructure> findByIdAndTenantId(UUID id, UUID tenantId);
+
+    Optional<FeeStructure> findByIdAndSchoolIdAndTenantId(UUID id, UUID schoolId, UUID tenantId);
+
+    List<FeeStructure> findByIdInAndTenantId(Collection<UUID> ids, UUID tenantId);
 
     List<FeeStructure> findBySchoolIdAndAcademicYearId(UUID schoolId, UUID academicYearId);
 

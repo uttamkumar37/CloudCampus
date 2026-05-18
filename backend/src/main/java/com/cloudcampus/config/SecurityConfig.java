@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -35,12 +36,15 @@ import java.util.List;
  *   GET  /actuator/health/**   — load-balancer health checks
  *   GET  /actuator/info        — version metadata
  *        /v1/public/**         — future public endpoints (school search, etc.)
- *        /v1/auth/**           — login, refresh, logout
+ *   POST /v1/auth/login        — username/password login
+ *   POST /v1/auth/refresh      — refresh-token rotation
+ *   POST /v1/auth/logout       — best-effort refresh-token revocation
+ *   POST /v1/auth/forgot-password, /reset-password — OTP password reset
  *
  * Role-restricted routes:
  *   /v1/super-admin/**  → SUPER_ADMIN only
  *   /v1/admin/**        → TENANT_ADMIN or SUPER_ADMIN
- *   /v1/school-admin/** → SCHOOL_ADMIN, TENANT_ADMIN, or SUPER_ADMIN
+ *   /v1/school-admin/** → SCHOOL_ADMIN or TENANT_ADMIN
  *
  * Everything else: authenticated (any valid JWT is sufficient).
  *
@@ -50,6 +54,7 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @EnableConfigurationProperties({JwtProperties.class, RateLimitProperties.class, OtpProperties.class,
         com.cloudcampus.common.ratelimit.ApiRateLimitProperties.class,
         com.cloudcampus.common.crypto.EncryptionProperties.class,
@@ -141,7 +146,14 @@ public class SecurityConfig {
                                 "/actuator/health/**",
                                 "/actuator/info").permitAll()
                         .requestMatchers("/v1/public/**").permitAll()
-                        .requestMatchers("/v1/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/v1/auth/login",
+                                "/v1/auth/refresh",
+                                "/v1/auth/logout",
+                                "/v1/auth/forgot-password",
+                                "/v1/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/v1/payment/webhooks/razorpay").permitAll()
                         // DSEP — public experience platform endpoints (no auth required)
                         .requestMatchers("/v1/experience/public/**").permitAll()
                         // L-09: Swagger UI / OpenAPI paths are derived from springdoc config
@@ -160,9 +172,9 @@ public class SecurityConfig {
                         .requestMatchers("/v1/admin/**")
                                 .hasAnyRole("TENANT_ADMIN", "SUPER_ADMIN")
 
-                        // ── School admin (and above) ────────────────────────────────────
+                        // ── School admin / tenant admin ──────────────────────────────────
                         .requestMatchers("/v1/school-admin/**")
-                                .hasAnyRole("SCHOOL_ADMIN", "TENANT_ADMIN", "SUPER_ADMIN")
+                                .hasAnyRole("SCHOOL_ADMIN", "TENANT_ADMIN")
 
                         // ── Everything else: any valid JWT ──────────────────────────────
                         .anyRequest().authenticated()

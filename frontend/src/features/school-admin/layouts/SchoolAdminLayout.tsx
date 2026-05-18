@@ -4,6 +4,13 @@ import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useFeatureFlag } from '@/shared/hooks/useFeatureFlag';
 import { useBranding } from '@/shared/hooks/useBranding';
 import { listMySchoolsApi, switchSchoolApi } from '../api/schoolAccessApi';
+import axiosInstance from '@/shared/api/axiosInstance';
+import type { ApiResponse } from '@/shared/types/api';
+
+async function fetchAdminMe() {
+  const { data } = await axiosInstance.get<ApiResponse<{ firstName: string; lastName: string; schoolName: string }>>('/v1/school-admin/me');
+  return data.data!;
+}
 
 // ── Nav item definition ───────────────────────────────────────────────────────
 
@@ -40,6 +47,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Reports', to: '/school-admin/reports', feature: 'REPORTS' },
   { label: 'Website',       to: '/school-admin/website',        feature: 'WEBSITE_BUILDER' },
   { label: 'Custom Domain', to: '/school-admin/custom-domain',  feature: 'WEBSITE_BUILDER' },
+  { label: 'AI Copilot',    to: '/school-admin/ai-copilot' },
+  { label: 'My Profile',    to: '/school-admin/profile' },
   { label: 'Settings',      to: '/school-admin/settings' },
 ];
 
@@ -79,6 +88,14 @@ export function SchoolAdminLayout() {
     queryFn:  listMySchoolsApi,
     enabled:  user?.role === 'SCHOOL_ADMIN',
     staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: adminMe } = useQuery({
+    queryKey: ['school-admin-me'],
+    queryFn:  fetchAdminMe,
+    enabled:  user?.role === 'SCHOOL_ADMIN',
+    staleTime: 10 * 60 * 1000,
+    retry: false,
   });
 
   const { mutate: switchSchool, isPending: isSwitching } = useMutation({
@@ -167,8 +184,21 @@ export function SchoolAdminLayout() {
       <div className="flex flex-1 flex-col">
         {/* Topbar */}
         <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-6">
-          <h1 className="text-sm font-medium text-gray-500">School Admin</h1>
-          <span className="text-sm text-gray-700">{user?.userId ?? ''}</span>
+          <div>
+            <p className="text-sm font-semibold text-gray-800">
+              {adminMe ? `${adminMe.firstName} ${adminMe.lastName}` : 'School Admin'}
+            </p>
+            {adminMe?.schoolName && (
+              <p className="text-xs text-gray-400">{adminMe.schoolName}</p>
+            )}
+          </div>
+          <Link
+            to="/school-admin/profile"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white hover:bg-blue-700"
+            title="My Profile"
+          >
+            {adminMe ? `${adminMe.firstName[0]}${adminMe.lastName[0]}`.toUpperCase() : 'A'}
+          </Link>
         </header>
 
         {/* Page content */}

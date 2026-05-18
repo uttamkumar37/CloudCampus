@@ -167,9 +167,17 @@ app:
     secret-key: ${MINIO_SECRET_KEY}
     bucket:     ${MINIO_BUCKET:cloudcampus-documents}
     presign-expiry-minutes: 60
+  razorpay:
+    key-id: ${RAZORPAY_KEY_ID}
+    key-secret: ${RAZORPAY_KEY_SECRET}
+    webhook-secret: ${RAZORPAY_WEBHOOK_SECRET}
+    order-expiry-minutes: ${RAZORPAY_ORDER_EXPIRY_MINUTES:30}
+    enabled: ${RAZORPAY_ENABLED:false}
   bootstrap:
     admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
     admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}
+  demo:
+    public-credentials-enabled: false
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:}

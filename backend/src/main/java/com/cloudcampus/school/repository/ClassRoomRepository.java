@@ -13,6 +13,8 @@ public interface ClassRoomRepository extends JpaRepository<ClassRoom, UUID> {
 
     List<ClassRoom> findAllBySchoolIdOrderByGradeOrderAscNameAsc(UUID schoolId);
 
+    Optional<ClassRoom> findByIdAndTenantId(UUID id, UUID tenantId);
+
     Optional<ClassRoom> findBySchoolIdAndAcademicYearIdAndName(UUID schoolId, UUID academicYearId, String name);
 
     boolean existsBySchoolIdAndAcademicYearIdAndName(UUID schoolId, UUID academicYearId, String name);

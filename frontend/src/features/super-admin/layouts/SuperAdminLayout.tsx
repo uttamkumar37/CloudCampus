@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { label: 'Knowledge Base', to: '/super-admin/ai/knowledge' },
   { label: 'AI Usage',       to: '/super-admin/ai/usage' },
   { label: 'Experience Studio', to: '/super-admin/experience' },
+  { label: 'Public Website', to: '/super-admin/public-website' },
 ];
 
 export function SuperAdminLayout() {

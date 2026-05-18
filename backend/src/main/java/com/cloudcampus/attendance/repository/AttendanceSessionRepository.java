@@ -21,6 +21,8 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     List<AttendanceSession> findAllBySchoolIdAndSessionDateOrderByPeriodNumberAsc(
             UUID schoolId, LocalDate sessionDate);
 
+    Optional<AttendanceSession> findByIdAndTenantId(UUID id, UUID tenantId);
+
     /** Sessions for a class over a date range (report drill-down). */
     List<AttendanceSession> findAllByClassIdAndSessionDateBetweenOrderBySessionDateAscPeriodNumberAsc(
             UUID classId, LocalDate from, LocalDate to);

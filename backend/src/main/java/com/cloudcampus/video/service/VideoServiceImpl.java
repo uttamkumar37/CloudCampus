@@ -105,8 +105,7 @@ public class VideoServiceImpl implements VideoService {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private VideoResource findOwned(UUID tenantId, UUID videoId) {
-        return repository.findById(videoId)
-                .filter(vr -> vr.getTenantId().equals(tenantId))
+        return repository.findByIdAndTenantId(videoId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Video not found"));
     }
 

@@ -1,4 +1,4 @@
--- V59: Greenwood International School — Enterprise Demo Tenant Foundation
+-- V59: Jawahar Navodaya Vidyalaya Lucknow — Enterprise Demo Tenant Foundation
 --
 -- Creates the tenant + school rows so the Java DemoDataSeeder (ApplicationRunner)
 -- can guard-check on startup and populate all bulk data.
@@ -12,35 +12,33 @@
 DO $v59$
 BEGIN
 
-    -- 1. Tenant row (created_at has no DEFAULT in V1 schema — must be explicit)
+    -- 1. Tenant row
     INSERT INTO tenants (id, code, name, status, created_at)
     VALUES ('c0000000-0000-0000-0000-000000000001',
-            'greenwood-demo',
-            'Greenwood International School',
+            'jnv-lucknow-demo',
+            'Jawahar Navodaya Vidyalaya Lucknow',
             'ACTIVE',
             NOW())
     ON CONFLICT (code) DO NOTHING;
 
-    -- 2. School row (mirrors what TenantServiceImpl auto-creates on tenant registration)
+    -- 2. School row
     INSERT INTO schools (id, tenant_id, code, name, address, phone, email, status)
     VALUES ('c0000000-0000-0000-0000-000000000002',
             'c0000000-0000-0000-0000-000000000001',
             'MAIN',
-            'Greenwood International School',
-            '42, Greenwood Avenue, Banjara Hills, Hyderabad, Telangana - 500034',
-            '040-27890000',
-            'admin@greenwood-intl.edu.in',
+            'Jawahar Navodaya Vidyalaya Lucknow',
+            'Sector 15, Indira Nagar, Lucknow, Uttar Pradesh - 226016',
+            '+917905025730',
+            'uttamkumar3797@gmail.com',
             'ACTIVE')
     ON CONFLICT ON CONSTRAINT uq_schools_tenant_code DO NOTHING;
 
     -- 3. Enterprise subscription (all features ON)
-    --    Inserts a row for every feature that exists, marks it enabled.
-    --    ON CONFLICT DO UPDATE so re-running after adding new features works.
     INSERT INTO tenant_features (tenant_id, feature_key, enabled)
     SELECT 'c0000000-0000-0000-0000-000000000001', key, true
     FROM   features
     ON CONFLICT (tenant_id, feature_key) DO UPDATE SET enabled = true;
 
-    RAISE NOTICE 'V59: Greenwood demo tenant foundation ready.';
+    RAISE NOTICE 'V59: JNV Lucknow demo tenant foundation ready.';
 
 END $v59$;

@@ -6,6 +6,7 @@ import com.cloudcampus.attendance.repository.AttendanceRecordRepository;
 import com.cloudcampus.attendance.repository.AttendanceSessionRepository;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.student.repository.StudentRepository;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -70,7 +71,8 @@ public class QrAttendanceService {
     public record QrResponse(String token, String qrBase64, Instant expiresAt) {}
 
     public QrResponse generate(UUID sessionId) {
-        sessionRepo.findById(sessionId)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        sessionRepo.findByIdAndTenantId(sessionId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Attendance session not found"));
 
         String token      = UUID.randomUUID().toString();
@@ -100,7 +102,8 @@ public class QrAttendanceService {
         }
 
         UUID sessionId = UUID.fromString(sessionIdStr);
-        var session = sessionRepo.findById(sessionId)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        var session = sessionRepo.findByIdAndTenantId(sessionId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Attendance session not found"));
 
         if (session.isFinalized()) {

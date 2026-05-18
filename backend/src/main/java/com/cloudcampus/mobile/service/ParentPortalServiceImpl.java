@@ -64,11 +64,12 @@ class ParentPortalServiceImpl implements ParentPortalService {
     @Override
     public List<ChildSummary> getLinkedChildren() {
         UUID parentUserId = RequestContext.getUserId();
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         return linkRepo
                 .findAllByParentUserIdOrderByCreatedAtAsc(parentUserId)
                 .stream()
                 .map(link -> {
-                    Student s = studentRepo.findById(link.getStudentId()).orElse(null);
+                    Student s = studentRepo.findByIdAndTenantId(link.getStudentId(), tenantId).orElse(null);
                     if (s == null) return null;
                     long total   = attendanceRepo.countByStudentId(s.getId());
                     long present = attendanceRepo.countByStudentIdAndStatus(s.getId(), AttendanceStatus.PRESENT);
@@ -147,7 +148,8 @@ class ParentPortalServiceImpl implements ParentPortalService {
     }
 
     private Student requireStudent(UUID studentId) {
-        return studentRepo.findById(studentId)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return studentRepo.findByIdAndTenantId(studentId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Student not found"));
     }
 

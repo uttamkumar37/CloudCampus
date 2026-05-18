@@ -344,3 +344,43 @@ export async function publishTrustModule(id: string): Promise<TrustModule> {
   const res = await api.post<ApiEnvelope<TrustModule>>(`${BASE}/trust-modules/${id}/publish`);
   return res.data.data;
 }
+
+// ── Experience Analytics ─────────────────────────────────────────────────────
+
+export type ExperienceAnalytics = {
+  totalPageViews: number;
+  totalCtaClicks: number;
+  totalDemoStarts: number;
+  totalInvestorViews: number;
+  totalEvents: number;
+  eventsByType: Record<string, number>;
+  periodLabel: string;
+};
+
+export async function getExperienceAnalytics(days: number): Promise<ExperienceAnalytics> {
+  const res = await api.get<ApiEnvelope<ExperienceAnalytics>>(`${BASE}/analytics`, { params: { days } });
+  return res.data.data;
+}
+
+// ── AI Content Generation ─────────────────────────────────────────────────────
+
+export type AiContentGenerateRequest = {
+  prompt: string;
+  contentType: string;
+};
+
+export type AiContentGenerateResponse = {
+  generatedContent: string;
+  tokensUsed: number;
+};
+
+export async function generateAiContent(
+  blockId: string,
+  req: AiContentGenerateRequest,
+): Promise<AiContentGenerateResponse> {
+  const res = await api.post<ApiEnvelope<AiContentGenerateResponse>>(
+    `${BASE}/content-blocks/${blockId}/ai-generate`,
+    req,
+  );
+  return res.data.data;
+}

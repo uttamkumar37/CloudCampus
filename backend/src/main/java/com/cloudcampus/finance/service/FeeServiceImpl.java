@@ -83,7 +83,8 @@ class FeeServiceImpl implements FeeService {
     @Override
     @Transactional
     public FeeCategoryResponse deactivateCategory(UUID categoryId) {
-        FeeCategory cat = categoryRepo.findById(categoryId)
+        UUID tenantId = currentTenantId();
+        FeeCategory cat = categoryRepo.findByIdAndTenantId(categoryId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Fee category not found: " + categoryId));
         cat.deactivate();
         return FeeCategoryResponse.from(categoryRepo.save(cat));
@@ -96,12 +97,10 @@ class FeeServiceImpl implements FeeService {
     @Override
     @Transactional
     public FeeStructureResponse createStructure(UUID schoolId, CreateFeeStructureRequest req) {
+        UUID tenantId = currentTenantId();
         // Verify category exists and belongs to this school
-        FeeCategory category = categoryRepo.findById(req.feeCategoryId())
+        FeeCategory category = categoryRepo.findByIdAndSchoolIdAndTenantId(req.feeCategoryId(), schoolId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Fee category not found: " + req.feeCategoryId()));
-        if (!category.getSchoolId().equals(schoolId)) {
-            throw new BadRequestException("Fee category does not belong to this school");
-        }
 
         // Guard duplicate
         if (structureRepo.existsBySchoolIdAndAcademicYearIdAndClassIdAndFeeCategoryId(
@@ -109,7 +108,6 @@ class FeeServiceImpl implements FeeService {
             throw new BadRequestException("Fee structure already exists for this category/class/year combination");
         }
 
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         FeeFrequency freq = req.frequency() == null ? FeeFrequency.ANNUAL : req.frequency();
 
         FeeStructure saved = structureRepo.save(
@@ -148,21 +146,21 @@ class FeeServiceImpl implements FeeService {
     @Override
     @Transactional
     public StudentFeeRecordResponse createRecord(UUID schoolId, CreateStudentFeeRecordRequest req) {
+        UUID tenantId = currentTenantId();
         // Guard duplicate
         if (recordRepo.existsByStudentIdAndFeeStructureId(req.studentId(), req.feeStructureId())) {
             throw new BadRequestException("Fee record already exists for this student and fee structure");
         }
 
-        FeeStructure structure = structureRepo.findById(req.feeStructureId())
+        FeeStructure structure = structureRepo.findByIdAndSchoolIdAndTenantId(req.feeStructureId(), schoolId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Fee structure not found: " + req.feeStructureId()));
 
-        String categoryName = categoryRepo.findById(structure.getFeeCategoryId())
+        String categoryName = categoryRepo.findByIdAndTenantId(structure.getFeeCategoryId(), tenantId)
                 .map(FeeCategory::getName)
                 .orElse("");
 
         BigDecimal discount = req.discount() == null ? BigDecimal.ZERO : req.discount();
 
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         StudentFeeRecord saved = recordRepo.save(
                 StudentFeeRecord.create(tenantId, schoolId,
                         req.studentId(), req.feeStructureId(), req.academicYearId(),
@@ -273,14 +271,15 @@ class FeeServiceImpl implements FeeService {
     private StudentFeeRecord requireRecord(UUID recordId) {
         // findById() bypasses the Hibernate @Filter tenant scope — always use
         // findByIdAndTenantId() to prevent cross-tenant fee record access (CRIT-14).
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        UUID tenantId = currentTenantId();
         return recordRepo.findByIdAndTenantId(recordId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Fee record not found: " + recordId));
     }
 
     private String resolveCategoryName(StudentFeeRecord record) {
-        return structureRepo.findById(record.getFeeStructureId())
-                .flatMap(s -> categoryRepo.findById(s.getFeeCategoryId()))
+        UUID tenantId = currentTenantId();
+        return structureRepo.findByIdAndTenantId(record.getFeeStructureId(), tenantId)
+                .flatMap(s -> categoryRepo.findByIdAndTenantId(s.getFeeCategoryId(), tenantId))
                 .map(FeeCategory::getName)
                 .orElse("");
     }
@@ -292,12 +291,13 @@ class FeeServiceImpl implements FeeService {
                 .distinct()
                 .toList();
         Map<UUID, UUID> structureToCat = new HashMap<>();
-        structureRepo.findAllById(structureIds)
+        UUID tenantId = currentTenantId();
+        structureRepo.findByIdInAndTenantId(structureIds, tenantId)
                 .forEach(s -> structureToCat.put(s.getId(), s.getFeeCategoryId()));
 
         List<UUID> catIds = structureToCat.values().stream().distinct().toList();
         Map<UUID, String> catNames = new HashMap<>();
-        categoryRepo.findAllById(catIds)
+        categoryRepo.findByIdInAndTenantId(catIds, tenantId)
                 .forEach(c -> catNames.put(c.getId(), c.getName()));
 
         return records.stream()
@@ -315,5 +315,9 @@ class FeeServiceImpl implements FeeService {
         // condition that previously allowed duplicate receipt numbers (CRIT-13).
         long seq = paymentRepo.nextReceiptSequence();
         return "RCT-" + year + "-" + String.format("%07d", seq);
+    }
+
+    private UUID currentTenantId() {
+        return UUID.fromString(RequestContext.getTenantId());
     }
 }

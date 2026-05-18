@@ -1,6 +1,7 @@
 package com.cloudcampus.finance.scheduler;
 
 import com.cloudcampus.auth.repository.UserRepository;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.finance.entity.FeeStatus;
 import com.cloudcampus.finance.entity.StudentFeeRecord;
 import com.cloudcampus.finance.repository.StudentFeeRecordRepository;
@@ -20,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Daily fee reminder job (CC-0903).
@@ -81,35 +83,52 @@ class FeeReminderScheduler {
     }
 
     private int notifyParents(StudentFeeRecord record) {
-        var student = studentRepo.findById(record.getStudentId()).orElse(null);
-        if (student == null) return 0;
+        String previousTenant = RequestContext.getTenantId();
+        String previousSchool = RequestContext.getSchoolId();
+        UUID previousUser = RequestContext.getUserId();
+        try {
+            RequestContext.setTenantId(record.getTenantId().toString());
+            RequestContext.setSchoolId(record.getSchoolId().toString());
 
-        String schoolName = schoolRepo.findById(record.getSchoolId())
-                .map(s -> s.getName())
-                .orElse("School");
+            var student = studentRepo.findByIdAndTenantId(record.getStudentId(), record.getTenantId()).orElse(null);
+            if (student == null) return 0;
 
-        BigDecimal balance = record.getAmountDue()
-                .subtract(record.getDiscount())
-                .subtract(record.getAmountPaid());
+            String schoolName = schoolRepo.findByIdFiltered(record.getSchoolId())
+                    .map(s -> s.getName())
+                    .orElse("School");
 
-        Map<String, String> vars = Map.of(
-                "studentName", student.getFirstName() + " " + student.getLastName(),
-                "amount",      balance.toPlainString(),
-                "dueDate",     record.getDueDate() != null ? record.getDueDate().toString() : "—",
-                "schoolName",  schoolName
-        );
+            BigDecimal balance = record.getAmountDue()
+                    .subtract(record.getDiscount())
+                    .subtract(record.getAmountPaid());
 
-        var links = linkRepo.findAllByStudentIdOrderByIsPrimaryDescCreatedAtAsc(record.getStudentId());
-        int count = 0;
-        for (var link : links) {
-            var user = userRepo.findById(link.getParentUserId()).orElse(null);
-            if (user == null) continue;
-            publisher.publishEmail(
-                    record.getTenantId(), record.getSchoolId(),
-                    user.getUsername(),
-                    NotificationTemplateCode.FEE_REMINDER, vars);
-            count++;
+            Map<String, String> vars = Map.of(
+                    "studentName", student.getFirstName() + " " + student.getLastName(),
+                    "amount",      balance.toPlainString(),
+                    "dueDate",     record.getDueDate() != null ? record.getDueDate().toString() : "—",
+                    "schoolName",  schoolName
+            );
+
+            var links = linkRepo.findAllByStudentIdOrderByIsPrimaryDescCreatedAtAsc(record.getStudentId());
+            int count = 0;
+            for (var link : links) {
+                var user = userRepo.findByIdAndTenantId(link.getParentUserId(), record.getTenantId()).orElse(null);
+                if (user == null) continue;
+                publisher.publishEmail(
+                        record.getTenantId(), record.getSchoolId(),
+                        user.getUsername(),
+                        NotificationTemplateCode.FEE_REMINDER, vars);
+                count++;
+            }
+            return count;
+        } finally {
+            restoreContext(previousTenant, previousSchool, previousUser);
         }
-        return count;
+    }
+
+    private void restoreContext(String tenantId, String schoolId, UUID userId) {
+        RequestContext.clearAll();
+        if (tenantId != null) RequestContext.setTenantId(tenantId);
+        if (schoolId != null) RequestContext.setSchoolId(schoolId);
+        if (userId != null) RequestContext.setUserId(userId);
     }
 }

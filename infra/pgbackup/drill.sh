@@ -13,6 +13,7 @@
 # Environment variables (same as backup.sh — can share the same env_file):
 #   PG_HOST, PG_PORT, PG_DB, PG_USER, PGPASSWORD   (PostgreSQL connection)
 #   MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET
+#   BACKUP_PASSPHRASE                             (GPG decrypt passphrase)
 #
 # Optional:
 #   DRILL_SKIP_BACKUP   Set to "1" to skip running backup.sh and use the
@@ -31,11 +32,13 @@ MINIO_ENDPOINT="${MINIO_ENDPOINT:-http://minio:9000}"
 MINIO_ACCESS_KEY="${MINIO_ACCESS_KEY:-minioadmin}"
 MINIO_SECRET_KEY="${MINIO_SECRET_KEY:-minioadmin}"
 MINIO_BUCKET="${MINIO_BUCKET:-cloudcampus-backups}"
+BACKUP_PASSPHRASE="${BACKUP_PASSPHRASE:?BACKUP_PASSPHRASE is required for encrypted backup drills}"
 DRILL_SKIP_BACKUP="${DRILL_SKIP_BACKUP:-0}"
 DRILL_DB_SUFFIX="${DRILL_DB_SUFFIX:-_drilltest}"
 
 DRILL_DB="${PG_DB}${DRILL_DB_SUFFIX}"
 MINIO_ALIAS="drillcheck"
+ENC_RESTORE_FILE="/tmp/drill_restore.dump.gpg"
 RESTORE_FILE="/tmp/drill_restore.dump"
 PASS=0
 FAIL=1
@@ -48,7 +51,7 @@ fail() { err "$*"; cleanup; exit ${FAIL}; }
 # ── Cleanup (always runs, even on error) ─────────────────────────────────────
 cleanup() {
     log "Cleaning up drill artifacts..."
-    rm -f "${RESTORE_FILE}"
+    rm -f "${ENC_RESTORE_FILE}" "${RESTORE_FILE}"
     psql \
         --host="${PG_HOST}" --port="${PG_PORT}" \
         --username="${PG_USER}" --dbname=postgres \
@@ -75,7 +78,7 @@ mc alias set "${MINIO_ALIAS}" "${MINIO_ENDPOINT}" "${MINIO_ACCESS_KEY}" "${MINIO
 
 LATEST_OBJECT="$(
     mc find "${MINIO_ALIAS}/${MINIO_BUCKET}/pg/${PG_DB}/" \
-        --name "*.dump" 2>/dev/null \
+        --name "*.dump.gpg" 2>/dev/null \
     | sort \
     | tail -n 1
 )"
@@ -86,9 +89,19 @@ fi
 ok "Latest dump: ${LATEST_OBJECT}"
 
 # ── 3. Download dump ──────────────────────────────────────────────────────────
-log "Step 3/6: Downloading dump → ${RESTORE_FILE}..."
-mc cp "${LATEST_OBJECT}" "${RESTORE_FILE}" --quiet
-ok "Downloaded ($(du -sh "${RESTORE_FILE}" | cut -f1))"
+log "Step 3/6: Downloading encrypted dump -> ${ENC_RESTORE_FILE}..."
+mc cp "${LATEST_OBJECT}" "${ENC_RESTORE_FILE}" --quiet
+ok "Downloaded ($(du -sh "${ENC_RESTORE_FILE}" | cut -f1))"
+
+log "Decrypting dump -> ${RESTORE_FILE}..."
+gpg --batch \
+    --yes \
+    --passphrase "${BACKUP_PASSPHRASE}" \
+    --decrypt \
+    --output "${RESTORE_FILE}" \
+    "${ENC_RESTORE_FILE}" \
+    || fail "GPG decrypt failed — passphrase may be wrong or dump is corrupt"
+ok "Decrypted ($(du -sh "${RESTORE_FILE}" | cut -f1))"
 
 # ── 4. Create scratch database ────────────────────────────────────────────────
 log "Step 4/6: Creating scratch database '${DRILL_DB}'..."

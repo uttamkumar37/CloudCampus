@@ -225,7 +225,8 @@ class AttendanceServiceImpl implements AttendanceService {
     // ─────────────────────────────────────────────────────────────────────────
 
     private AttendanceSession findSessionOrThrow(UUID sessionId) {
-        return sessionRepo.findById(sessionId)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return sessionRepo.findByIdAndTenantId(sessionId, tenantId)
                 .orElseThrow(() -> new NotFoundException(
                         "Attendance session not found: " + sessionId));
     }

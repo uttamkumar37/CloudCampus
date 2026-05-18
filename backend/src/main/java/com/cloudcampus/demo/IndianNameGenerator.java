@@ -88,14 +88,14 @@ public final class IndianNameGenerator {
     public String email(String firstName, String lastName) {
         return (firstName.toLowerCase() + "." + lastName.toLowerCase())
                .replaceAll("[^a-z.]", "") + rng.nextInt(999)
-               + "@greenwood-intl.edu.in";
+               + "@jnv-lucknow.edu.in";
     }
 
     /** Employee email for staff. */
     public String staffEmail(String firstName, String lastName) {
         return (firstName.toLowerCase() + "." + lastName.toLowerCase())
                .replaceAll("[^a-z.]", "")
-               + "@staff.greenwood-intl.edu.in";
+               + "@staff.jnv-lucknow.edu.in";
     }
 
     /** Indian city from Hyderabad area (the school's location). */

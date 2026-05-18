@@ -3,6 +3,7 @@ package com.cloudcampus.staff.controller;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.staff.dto.CreateStaffRequest;
+import com.cloudcampus.staff.dto.SchoolAdminMeResponse;
 import com.cloudcampus.staff.dto.StaffResponse;
 import com.cloudcampus.staff.dto.StaffSummaryResponse;
 import com.cloudcampus.staff.dto.UpdateStaffRequest;
@@ -93,6 +94,13 @@ public class StaffController {
             @PathVariable UUID departmentId) {
         return ResponseEntity.ok(
                 ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.listByDepartment(departmentId)));
+    }
+
+    @Operation(summary = "Profile of the currently authenticated school admin")
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<SchoolAdminMeResponse>> getMe() {
+        return ResponseEntity.ok(
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.getMe()));
     }
 
     @Operation(summary = "Get full staff profile")

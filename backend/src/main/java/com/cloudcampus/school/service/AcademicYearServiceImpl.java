@@ -106,7 +106,8 @@ class AcademicYearServiceImpl implements AcademicYearService {
     // ─────────────────────────────────────────────────────────────────────────
 
     private AcademicYear findOrThrow(UUID id) {
-        return repo.findById(id)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return repo.findByIdAndTenantId(id, tenantId)
                    .orElseThrow(() -> new NotFoundException("Academic year not found: " + id));
     }
 }

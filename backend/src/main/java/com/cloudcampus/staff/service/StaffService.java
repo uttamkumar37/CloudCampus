@@ -1,6 +1,7 @@
 package com.cloudcampus.staff.service;
 
 import com.cloudcampus.staff.dto.CreateStaffRequest;
+import com.cloudcampus.staff.dto.SchoolAdminMeResponse;
 import com.cloudcampus.staff.dto.StaffResponse;
 import com.cloudcampus.staff.dto.StaffSummaryResponse;
 import com.cloudcampus.staff.dto.UpdateStaffRequest;
@@ -50,4 +51,7 @@ public interface StaffService {
 
     /** Terminate — involuntary exit. */
     StaffResponse terminate(UUID id);
+
+    /** Profile of the currently authenticated school-admin. */
+    SchoolAdminMeResponse getMe();
 }

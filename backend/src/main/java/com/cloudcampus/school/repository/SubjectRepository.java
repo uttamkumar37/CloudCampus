@@ -13,6 +13,8 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID> {
 
     List<Subject> findAllBySchoolIdAndIsActiveOrderByNameAsc(UUID schoolId, boolean isActive);
 
+    Optional<Subject> findByIdAndTenantId(UUID id, UUID tenantId);
+
     Optional<Subject> findBySchoolIdAndCode(UUID schoolId, String code);
 
     boolean existsBySchoolIdAndCode(UUID schoolId, String code);

@@ -13,6 +13,8 @@ public interface SectionRepository extends JpaRepository<Section, UUID> {
 
     List<Section> findAllBySchoolIdOrderByNameAsc(UUID schoolId);
 
+    Optional<Section> findByIdAndTenantId(UUID id, UUID tenantId);
+
     Optional<Section> findByClassIdAndName(UUID classId, String name);
 
     boolean existsByClassIdAndName(UUID classId, String name);

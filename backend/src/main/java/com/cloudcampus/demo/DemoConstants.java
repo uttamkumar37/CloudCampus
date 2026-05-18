@@ -3,7 +3,7 @@ package com.cloudcampus.demo;
 import java.util.UUID;
 
 /**
- * Stable UUID constants for the Greenwood International School demo tenant.
+ * Stable UUID constants for the Jawahar Navodaya Vidyalaya Lucknow demo tenant.
  *
  * All IDs use the hex-safe prefix c000000x-… so they are valid UUIDs and
  * easily recognisable in logs / DB queries.
@@ -18,8 +18,8 @@ public final class DemoConstants {
     // ── Tenant & School ───────────────────────────────────────────────────────
     public static final UUID   TENANT_ID   = UUID.fromString("c0000000-0000-0000-0000-000000000001");
     public static final UUID   SCHOOL_ID   = UUID.fromString("c0000000-0000-0000-0000-000000000002");
-    public static final String TENANT_CODE = "greenwood-demo";
-    public static final String SCHOOL_NAME = "Greenwood International School";
+    public static final String TENANT_CODE = "jnv-lucknow-demo";
+    public static final String SCHOOL_NAME = "Jawahar Navodaya Vidyalaya Lucknow";
 
     // ── Stable user IDs (used for teacher portal tests + user_school_access) ─
     public static final UUID ADMIN_USER_ID    = UUID.fromString("c0000000-0000-0000-0000-000000000010");

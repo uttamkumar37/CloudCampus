@@ -60,7 +60,6 @@ class FeeServiceImplTest {
     void waiveRecord_whenPending_setsStatusToWaived() {
         StudentFeeRecord record = pendingRecord();
         stubFoundRecord(record);
-        when(structureRepo.findById(any())).thenReturn(Optional.empty());
         when(recordRepo.save(record)).thenReturn(record);
 
         try (MockedStatic<RequestContext> ctx = tenantContext()) {

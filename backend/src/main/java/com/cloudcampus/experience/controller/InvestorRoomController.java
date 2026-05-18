@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Public investor room endpoints — room metadata is public; content requires access token.
@@ -31,16 +32,22 @@ public class InvestorRoomController {
     @GetMapping("/{roomCode}")
     public ResponseEntity<ApiResponse<InvestorRoomResponse>> getRoom(
             @PathVariable String roomCode) {
-        return ResponseEntity.ok(ApiResponse.ok(null, investorRoomService.getRoom(roomCode)));
+        return ResponseEntity.ok(ApiResponse.ok(null, investorRoomService.getPublicRoom(roomCode)));
     }
 
     @Operation(summary = "Verify password access for a PASSWORD-mode room")
     @SecurityRequirements
     @PostMapping("/{roomCode}/access")
-    public ResponseEntity<ApiResponse<Map<String, Boolean>>> verifyAccess(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> verifyAccess(
             @PathVariable String roomCode,
             @RequestBody Map<String, String> body) {
-        boolean granted = investorRoomService.verifyPassword(roomCode, body.getOrDefault("password", ""));
-        return ResponseEntity.ok(ApiResponse.ok(null, Map.of("granted", granted)));
+        Optional<InvestorRoomResponse> room =
+                investorRoomService.unlockRoom(roomCode, body.getOrDefault("password", ""));
+        if (room.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.ok(null, Map.of("granted", false)));
+        }
+        return ResponseEntity.ok(ApiResponse.ok(null, Map.of(
+                "granted", true,
+                "room", room.get())));
     }
 }

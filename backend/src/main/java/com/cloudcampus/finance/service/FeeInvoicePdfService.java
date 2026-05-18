@@ -1,6 +1,7 @@
 package com.cloudcampus.finance.service;
 
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.finance.dto.FeeReceiptResponse;
 import com.cloudcampus.finance.repository.StudentFeeRecordRepository;
 import com.cloudcampus.school.repository.SchoolRepository;
@@ -52,16 +53,17 @@ public class FeeInvoicePdfService {
     }
 
     public byte[] generate(UUID recordId) {
-        var record = recordRepo.findById(recordId)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        var record = recordRepo.findByIdAndTenantId(recordId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Fee record not found"));
 
         FeeReceiptResponse receipt = feeService.getReceipt(recordId);
 
-        String studentName = studentRepo.findById(record.getStudentId())
+        String studentName = studentRepo.findByIdAndTenantId(record.getStudentId(), tenantId)
                 .map(s -> s.getFirstName() + " " + s.getLastName() + " (" + s.getStudentNumber() + ")")
                 .orElse("Unknown Student");
 
-        String schoolName = schoolRepo.findById(record.getSchoolId())
+        String schoolName = schoolRepo.findByIdFiltered(record.getSchoolId())
                 .map(s -> s.getName())
                 .orElse("CloudCampus School");
 

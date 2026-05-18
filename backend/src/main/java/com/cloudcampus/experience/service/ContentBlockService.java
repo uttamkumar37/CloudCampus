@@ -62,6 +62,12 @@ public class ContentBlockService {
                 .stream().map(ContentBlockResponse::from).toList();
     }
 
+    public ContentBlockResponse getById(UUID id) {
+        return repo.findById(id)
+                .map(ContentBlockResponse::from)
+                .orElseThrow(() -> new NotFoundException("Content block not found: " + id));
+    }
+
     @Transactional
     public ContentBlockResponse create(ContentBlockCreateRequest req, UUID actorId) {
         ContentBlock block = ContentBlock.create(

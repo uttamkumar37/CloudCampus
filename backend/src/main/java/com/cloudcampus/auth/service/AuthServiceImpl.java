@@ -200,17 +200,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Step 4: Resolve schoolId for SCHOOL_ADMIN so it is embedded in the JWT.
-        // Prefer the user's primary school from user_school_access (CC-0214).
-        // Fall back to the tenant's "MAIN" school for backward compatibility
-        // with accounts that pre-date the cross-school access model.
-        UUID schoolId = null;
-        if (user.getRole() == UserRole.SCHOOL_ADMIN && user.getTenantId() != null) {
-            schoolId = userSchoolAccessService.getPrimarySchoolId(user.getId())
-                    .orElseGet(() -> schoolRepository
-                            .findByTenantIdAndCode(user.getTenantId(), "MAIN")
-                            .map(s -> s.getId())
-                            .orElse(null));
-        }
+        UUID schoolId = resolveSchoolId(user);
 
         // Step 5: Issue tokens (schoolId is now resolved and included in the JWT).
         String accessToken  = jwtUtil.generateAccessToken(
@@ -273,7 +263,7 @@ public class AuthServiceImpl implements AuthService {
         String newRefreshToken = issueRefreshToken(userId);
 
         String newAccessToken = jwtUtil.generateAccessToken(
-                user.getId(), user.getTenantId(), null, user.getRole().name());
+                user.getId(), user.getTenantId(), resolveSchoolId(user), user.getRole().name());
 
         auditLog.logTokenRefreshed(user.getId(), user.getTenantId());
         log.info("Token refreshed [userId={}]", userId);
@@ -359,12 +349,31 @@ public class AuthServiceImpl implements AuthService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setForcePasswordChange(false);
         userRepository.save(user);
+        revokeAllSessions(userId, user.getTenantId(), "password-change");
 
         auditLog.logPasswordChanged(userId, user.getTenantId());
         log.info("Password changed [userId={}]", userId);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * Resolve school context for SCHOOL_ADMIN JWTs.
+     *
+     * Prefer the user's primary school from user_school_access (CC-0214). Fall
+     * back to the tenant's "MAIN" school for older accounts that pre-date the
+     * cross-school access model.
+     */
+    private UUID resolveSchoolId(User user) {
+        if (user.getRole() != UserRole.SCHOOL_ADMIN || user.getTenantId() == null) {
+            return null;
+        }
+        return userSchoolAccessService.getPrimarySchoolId(user.getId())
+                .orElseGet(() -> schoolRepository
+                        .findByTenantIdAndCode(user.getTenantId(), "MAIN")
+                        .map(s -> s.getId())
+                        .orElse(null));
+    }
 
     /**
      * Generate an opaque refresh token UUID and persist it in Redis.

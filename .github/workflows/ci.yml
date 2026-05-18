@@ -155,9 +155,10 @@ jobs:
           mvn org.owasp:dependency-check-maven:10.0.4:check \
             -DfailBuildOnCVSS=7 \
             -DsuppressionsFile=.owasp-suppressions.xml \
-            --batch-mode --no-transfer-progress || true
-        # '|| true' prevents the step from failing when NVD rate-limits the feed.
-        # The artifact upload below lets reviewers inspect the report regardless.
+            --batch-mode --no-transfer-progress
+        # This step intentionally fails the workflow on HIGH+ CVEs. If the NVD
+        # feed rate-limits CI, fix the feed/API-key configuration instead of
+        # bypassing the security gate.
 
       - name: Upload dependency-check report
         if: always()

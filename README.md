@@ -52,7 +52,7 @@ Browser / Mobile
 | Runtime | Java 21 (Temurin) |
 | Framework | Spring Boot 3.4.5 |
 | AI | Spring AI 1.0.0 · Anthropic Claude · OpenAI Embeddings · pgvector |
-| Database | PostgreSQL 16 + pgvector · Flyway migrations V1–V46 |
+| Database | PostgreSQL 16 + pgvector · Flyway migrations V1–V82 |
 | Cache / Session | Redis 7 |
 | Object Storage | MinIO (S3-compatible) |
 | Auth | JWT (HS256) · Spring Security |
@@ -155,7 +155,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 
 ## Feature Status
 
-> **As of 2026-05-16 (E88 complete) — ~165 of 193 tasks done (85%)**
+> **As of 2026-05-18 — ~207 of 213 tasks done (97%)**
 
 ### Backend (Java / Spring Boot)
 
@@ -208,6 +208,20 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | **AI Gateway** — wraps ChatModel, logs token usage to `ai_usage_logs` | ✅ Done (CC-1600) |
 | **AI Embedding Service** — tenant-scoped similarity search via pgvector | ✅ Done (CC-1602) |
 | JNV Lucknow demo seed (V42) — 560 students, 23 staff, 5 working logins | ✅ Done |
+| **AI Copilot (CC-1603)** — `POST /v1/school-admin/ai/query`: natural-language Q&A for school admins, feature-gated, CRIT-15 prompt injection compliant | ✅ Done |
+| **Experience Studio — Analytics** — `GET /v1/super-admin/experience/analytics?days=N`: aggregates PAGE_VIEW / CTA_CLICK / DEMO_START / INVESTOR_ROOM_VIEW event counts | ✅ Done |
+| **Experience Studio — AI Content Generation** — `POST /v1/super-admin/experience/content-blocks/{id}/ai-generate`: AI-powered copy generation with mock fallback | ✅ Done |
+| **Experience Studio — Brand System** — tenant branding CRUD + seed data (V75/V76) | ✅ Done |
+| **Experience Studio — Stakeholder Journey Engine** — journey + audience segmentation CRUD | ✅ Done |
+| **Experience Studio — Story Scene Engine** — scene builder with type, content, CTA | ✅ Done |
+| **Experience Studio — Trust Module Engine** — trust/social-proof module management | ✅ Done |
+| **Experience Studio — Website Route & Template Marketplace** — route configs + template catalog (V77/V78) | ✅ Done |
+| **Experience Studio — Marketing Campaign Engine** — drip campaign builder with steps | ✅ Done |
+| **Experience Studio — Seed Health Monitor** — `/v1/super-admin/experience/seed-health` reports seeded entity counts | ✅ Done |
+| **Experience Studio — Public Render Profile** — `/v1/experience/public/render-profile` unified public API | ✅ Done |
+| **Public Website** — platform_public_website tables + seed (V79/V80) | ✅ Done |
+| Experience event partition extension through 2028 (V81) | ✅ Done |
+| Payment gateway idempotency keys (V82) | ✅ Done |
 
 ### Web Frontend (React / TypeScript)
 
@@ -221,6 +235,20 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Super-admin analytics + cross-school comparison | ✅ Done |
 | **Super-admin AI prompt registry** — list by key, version history, activate/deactivate | ✅ Done (CC-1601) |
 | **Super-admin prompt detail + playground** — render prompt with live AI, countdown timer | ✅ Done (CC-1601) |
+| **AI Copilot page** — school-admin chat UI, suggested-question chips, message history, token counter, export conversation | ✅ Done (CC-1603) |
+| **Experience Control Center** — 10-domain Studio shell (Branding, Journeys, Stories, Trust, Routes, Templates, Campaigns, AI, Presentations, Seed Health) | ✅ Done |
+| **BrandingSystemManager** — global brand config UI | ✅ Done |
+| **StakeholderJourneyManager** — journey editor + audience picker | ✅ Done |
+| **StorytellingManager** — scene cards + type badges | ✅ Done |
+| **TrustPlatformManager** — trust module cards | ✅ Done |
+| **WebsiteRouteManager** — route table + create/edit modal | ✅ Done |
+| **TemplateMarketplaceManager** — template grid + usage count | ✅ Done |
+| **MarketingAutomationManager** — campaign list + step count | ✅ Done |
+| **AiExperienceManager** — AI content generation UI with block-ID picker, content-type selector, structured JSON preview, copy-to-clipboard | ✅ Done |
+| **PresentationBuilderManager** — presentation list + slide builder | ✅ Done |
+| **SeedHealthPanel** — entity count dashboard with status badges | ✅ Done |
+| **RenderProfilePreview** — live preview of public-facing render profile | ✅ Done |
+| **ExperienceAnalyticsDashboard** — stat cards + CSS bar chart for event funnel, period selector (7/14/30/90 days) | ✅ Done |
 | School-admin dashboard (live stats), academic management | ✅ Done |
 | Student management (admit / profile / list / bulk import / promotion) | ✅ Done |
 | Staff management (list / create / profile) | ✅ Done |
@@ -254,6 +282,9 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Parent screens: children list with attendance, homework, fees, exam results | ✅ Done |
 | Forgot password + reset password (OTP-based) | ✅ Done |
 | Change password screen + forced-change navigation guard | ✅ Done |
+| **QR attendance scan screen** — deep-link handler: reads `?token=` from URL params, auto-submits to `POST /v1/student/attendance/qr-mark`, manual paste fallback | ✅ Done (CC-0802) |
+| **Teacher QR display** — Generate QR Attendance button in attendance screen, shareable deep-link, 5-min countdown, Share API | ✅ Done (CC-0802) |
+| **Student promotion screen** — school-admin bulk promotion with cascading class/section pickers, result card | ✅ Done |
 
 ### DevOps / Observability
 
@@ -268,20 +299,13 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 
 ---
 
-## Remaining Work (~28 tasks, 15%)
+## Remaining Work (~6 tasks, 3%)
 
-| Area | Pending |
-|------|---------|
-| Mobile QR scan screen | Not built (CC-0802 mobile integration) |
-| Teacher mobile attendance QR display | Not built |
-| AI Copilot school-admin UI | Not built (CC-1603) |
-| Student promotion workflow UI (mobile) | Not built |
-| Razorpay online payment flow | Not built (CC-0903) |
-| Website builder | Not started (CC-2001 — Phase 3) |
-| Demo tenant auto-reset | Not built (EUP-100) |
-| Log aggregation (Loki/Promtail) | Not configured (Phase 2 observability) |
-| Distributed tracing (Tempo full setup) | Not configured (Phase 2 observability) |
-| Virtual thread / ScopedValue migration | Not started (EUP-007) |
+| Area | Pending | Notes |
+|------|---------|-------|
+| Experience Studio — Ephemeral tenant provisioning | Phase 5 — not built (EUP-100) | Isolated school per demo session |
+| Experience Studio — Analytics funnel full detail view | Phase 6 — partial | Dashboard exists; cohort/funnel drill-down not built |
+| AI Copilot ScopedValue migration | EUP-007 partial | Virtual threads enabled via `spring.threads.virtual.enabled=true`; ScopedValue refactor of RequestContext pending |
 
 ---
 

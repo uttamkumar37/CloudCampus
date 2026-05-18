@@ -46,6 +46,18 @@ public class SecretsGuardConfig {
             "admin123", "password", "changeme", "secret"
     );
 
+    private static final Set<String> UNSAFE_API_KEYS = Set.of(
+            "dev-placeholder",
+            "placeholder",
+            "cloudcampus",
+            "cloudcampus_dev",
+            "minioadmin",
+            "rzp_test_placeholder",
+            "rzp_test_dev_placeholder",
+            "placeholder_secret",
+            "dev_secret_placeholder"
+    );
+
     private final Environment environment;
     private final JwtProperties jwtProperties;
     private final EncryptionProperties encryptionProperties;
@@ -98,6 +110,32 @@ public class SecretsGuardConfig {
             violations.add("spring.datasource.password (SPRING_DATASOURCE_PASSWORD) is blank — set via env var");
         }
 
+        // ── Redis / RabbitMQ / object storage ────────────────────────────────
+        requirePresent(environment, violations, "spring.data.redis.host", "REDIS_HOST");
+        requirePresent(environment, violations, "app.minio.endpoint", "MINIO_ENDPOINT");
+        requireStrong(environment, violations, "app.minio.access-key", "MINIO_ACCESS_KEY", 12);
+        requireStrong(environment, violations, "app.minio.secret-key", "MINIO_SECRET_KEY", 24);
+
+        requirePresent(environment, violations, "spring.rabbitmq.host", "RABBITMQ_HOST");
+        requireStrong(environment, violations, "spring.rabbitmq.username", "RABBITMQ_USERNAME", 4);
+        requireStrong(environment, violations, "spring.rabbitmq.password", "RABBITMQ_PASSWORD", MIN_SECRET_LENGTH);
+
+        // ── Payment gateway ──────────────────────────────────────────────────
+        boolean razorpayEnabled = Boolean.parseBoolean(
+                environment.getProperty("app.razorpay.enabled", "false"));
+        if (razorpayEnabled) {
+            requireStrong(environment, violations, "app.razorpay.key-id", "RAZORPAY_KEY_ID", 8);
+            requireStrong(environment, violations, "app.razorpay.key-secret", "RAZORPAY_KEY_SECRET", MIN_SECRET_LENGTH);
+            requireStrong(environment, violations, "app.razorpay.webhook-secret", "RAZORPAY_WEBHOOK_SECRET", MIN_SECRET_LENGTH);
+        }
+
+        // ── AI provider keys when live AI is enabled ─────────────────────────
+        boolean aiEnabled = Boolean.parseBoolean(environment.getProperty("app.ai.enabled", "false"));
+        if (aiEnabled) {
+            requireStrong(environment, violations, "spring.ai.anthropic.api-key", "ANTHROPIC_API_KEY", 20);
+            requireStrong(environment, violations, "spring.ai.openai.api-key", "OPENAI_API_KEY", 20);
+        }
+
         if (!violations.isEmpty()) {
             String msg = "\n\n" +
                     "╔══════════════════════════════════════════════════════════════╗\n" +
@@ -119,5 +157,30 @@ public class SecretsGuardConfig {
     private static String padRight(String s, int width) {
         if (s.length() >= width) return s.substring(0, width);
         return s + " ".repeat(width - s.length());
+    }
+
+    private static void requirePresent(Environment environment,
+                                       List<String> violations,
+                                       String property,
+                                       String envName) {
+        String value = environment.getProperty(property, "");
+        if (value == null || value.isBlank()) {
+            violations.add(envName + " is required for non-dev deployments");
+        }
+    }
+
+    private static void requireStrong(Environment environment,
+                                      List<String> violations,
+                                      String property,
+                                      String envName,
+                                      int minLength) {
+        String value = environment.getProperty(property, "");
+        if (value == null || value.isBlank()) {
+            violations.add(envName + " is required for non-dev deployments");
+            return;
+        }
+        if (UNSAFE_API_KEYS.contains(value) || value.length() < minLength) {
+            violations.add(envName + " is weak or uses a placeholder value");
+        }
     }
 }

@@ -19,4 +19,10 @@ public interface PaymentService {
      * In dev/test mode the signature check is skipped.
      */
     FeePaymentResponse verifyAndCapture(VerifyPaymentRequest request);
+
+    /**
+     * Handles signed Razorpay webhook events. Duplicate gateway event ids are
+     * ignored idempotently.
+     */
+    void handleRazorpayWebhook(String rawBody, String signature);
 }

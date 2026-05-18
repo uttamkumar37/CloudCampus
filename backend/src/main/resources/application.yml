@@ -222,6 +222,9 @@ app:
       # still providing a meaningful DoS barrier at the tenant level.
       per-tenant-requests: 500         # 500 @RateLimit calls per tenant per minute
       per-tenant-window-seconds: 60
+    public:
+      max-requests: 120
+      window-seconds: 60
 
   # ── PII data retention (CC-1806) ──────────────────────────────────────────────
   # Nightly job (02:00 UTC) hard-deletes user rows soft-deleted for longer than
@@ -277,6 +280,8 @@ app:
   razorpay:
     key-id:     ${RAZORPAY_KEY_ID:rzp_test_placeholder}
     key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
+    webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
+    order-expiry-minutes: ${RAZORPAY_ORDER_EXPIRY_MINUTES:30}
     enabled:    ${RAZORPAY_ENABLED:false}
 
 springdoc:

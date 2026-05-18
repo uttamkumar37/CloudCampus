@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import axiosInstance from '@/shared/api/axiosInstance';
+import type { ApiResponse } from '@/shared/types/api';
 import {
   getWebsiteApi,
   setPublishedApi,
@@ -346,6 +348,21 @@ export function WebsiteBuilderPage() {
   const schoolId = user?.schoolId ?? '';
   const qc = useQueryClient();
 
+  const { data: adminMe } = useQuery({
+    queryKey: ['school-admin-me'],
+    queryFn: async () => {
+      const { data } = await axiosInstance.get<ApiResponse<{ tenantCode: string; schoolName: string }>>('/v1/school-admin/me');
+      return data.data!;
+    },
+    enabled: !!user,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  });
+
+  const websiteUrl = adminMe?.tenantCode
+    ? `${window.location.origin}/sites/${adminMe.tenantCode}`
+    : null;
+
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [addingPage, setAddingPage] = useState(false);
   const [editingPage, setEditingPage] = useState<PageResponse | null>(null);
@@ -398,35 +415,66 @@ export function WebsiteBuilderPage() {
     <div className="flex h-full min-h-screen">
       {/* Left pane — page list */}
       <aside className="flex w-72 shrink-0 flex-col border-r border-gray-200 bg-white">
-        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-gray-800">Pages</h2>
-          <button
-            onClick={() => { setAddingPage(true); setEditingPage(null); setSelectedPageId(null); }}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-          >
-            + New Page
-          </button>
-        </div>
+        {/* Site header */}
+        <div className="border-b border-gray-100 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-800">
+                {adminMe?.schoolName ?? 'Website Builder'}
+              </h2>
+              <div className="mt-0.5 flex items-center gap-2">
+                <span className={[
+                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                  website?.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500',
+                ].join(' ')}>
+                  <span className={['h-1.5 w-1.5 rounded-full', website?.published ? 'bg-green-500' : 'bg-gray-400'].join(' ')} />
+                  {website?.published ? 'Published' : 'Unpublished'}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => { setAddingPage(true); setEditingPage(null); setSelectedPageId(null); }}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+            >
+              + New Page
+            </button>
+          </div>
 
-        {/* Publish toggle */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2">
-          <span className="text-xs font-medium text-gray-600">Site published</span>
-          <button
-            disabled={publishMut.isPending}
-            onClick={() => publishMut.mutate(!(website?.published ?? false))}
-            className={[
-              'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none disabled:opacity-50',
-              website?.published ? 'bg-green-500' : 'bg-gray-300',
-            ].join(' ')}
-            aria-label="Toggle site publish"
-          >
-            <span
-              className={[
-                'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform mt-0.5',
-                website?.published ? 'translate-x-4' : 'translate-x-0.5',
-              ].join(' ')}
-            />
-          </button>
+          {/* View website + publish toggle row */}
+          <div className="mt-3 flex items-center justify-between gap-2">
+            {websiteUrl ? (
+              <a
+                href={websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                View Website
+              </a>
+            ) : <span />}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Publish</span>
+              <button
+                disabled={publishMut.isPending}
+                onClick={() => publishMut.mutate(!(website?.published ?? false))}
+                className={[
+                  'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none disabled:opacity-50',
+                  website?.published ? 'bg-green-500' : 'bg-gray-300',
+                ].join(' ')}
+                aria-label="Toggle site publish"
+              >
+                <span
+                  className={[
+                    'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform mt-0.5',
+                    website?.published ? 'translate-x-4' : 'translate-x-0.5',
+                  ].join(' ')}
+                />
+              </button>
+            </div>
+          </div>
         </div>
 
         {pagesLoading ? (

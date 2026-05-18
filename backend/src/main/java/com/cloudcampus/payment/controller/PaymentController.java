@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -61,7 +62,7 @@ public class PaymentController {
     @Operation(summary = "Create payment order (school admin)",
                description = "School admin initiates a Razorpay order for a student's fee record.")
     @PostMapping("/v1/school-admin/fee-records/{recordId}/payment-order")
-    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<CreatePaymentOrderResponse>> createOrderAdmin(
             @PathVariable UUID recordId) {
         UUID userId = RequestContext.getUserId();
@@ -76,9 +77,22 @@ public class PaymentController {
                description = "Verifies the Razorpay HMAC signature and records the payment "
                            + "against the fee record. Idempotent if already captured.")
     @PostMapping("/v1/payment/verify")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<FeePaymentResponse>> verify(
             @Valid @RequestBody VerifyPaymentRequest request) {
         FeePaymentResponse body = service.verifyAndCapture(request);
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
+    }
+
+    // ── Gateway webhook (signed public endpoint) ─────────────────────────────
+
+    @Operation(summary = "Razorpay payment webhook",
+               description = "Processes signed Razorpay payment events idempotently.")
+    @PostMapping("/v1/payment/webhooks/razorpay")
+    public ResponseEntity<Void> razorpayWebhook(
+            @RequestHeader("X-Razorpay-Signature") String signature,
+            @RequestBody String rawBody) {
+        service.handleRazorpayWebhook(rawBody, signature);
+        return ResponseEntity.noContent().build();
     }
 }

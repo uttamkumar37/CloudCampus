@@ -27,6 +27,15 @@ public record InvestorRoomResponse(
         );
     }
 
+    public static InvestorRoomResponse metadata(InvestorRoom r) {
+        return new InvestorRoomResponse(
+                r.getId(), r.getRoomCode(), r.getTitle(),
+                r.getAccessMode(), r.getExpiresAt(),
+                Map.of(), r.getBrandingJson(), r.getStatus(),
+                List.of()
+        );
+    }
+
     public static InvestorRoomResponse from(InvestorRoom r, List<InvestorRoomSectionResponse> sections) {
         return new InvestorRoomResponse(
                 r.getId(), r.getRoomCode(), r.getTitle(),

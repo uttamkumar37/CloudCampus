@@ -1,6 +1,7 @@
 package com.cloudcampus.attendance.service;
 
 import com.cloudcampus.auth.repository.UserRepository;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.notification.entity.NotificationTemplateCode;
 import com.cloudcampus.notification.queue.NotificationQueuePublisher;
 import com.cloudcampus.school.repository.SchoolRepository;
@@ -51,12 +52,18 @@ class AttendanceAlertServiceImpl implements AttendanceAlertService {
     @Transactional(readOnly = true)
     public void alertParentsAsync(UUID tenantId, UUID schoolId,
                                   UUID studentId, LocalDate sessionDate) {
+        String previousTenant = RequestContext.getTenantId();
+        String previousSchool = RequestContext.getSchoolId();
+        UUID previousUser = RequestContext.getUserId();
         try {
-            var student = studentRepo.findById(studentId).orElse(null);
+            RequestContext.setTenantId(tenantId.toString());
+            RequestContext.setSchoolId(schoolId.toString());
+
+            var student = studentRepo.findByIdAndTenantId(studentId, tenantId).orElse(null);
             if (student == null) return;
 
             String studentName = student.getFirstName() + " " + student.getLastName();
-            String schoolName  = schoolRepo.findById(schoolId)
+            String schoolName  = schoolRepo.findByIdFiltered(schoolId)
                     .map(s -> s.getName())
                     .orElse("School");
 
@@ -68,7 +75,7 @@ class AttendanceAlertServiceImpl implements AttendanceAlertService {
 
             var links = linkRepo.findAllByStudentIdOrderByIsPrimaryDescCreatedAtAsc(studentId);
             for (var link : links) {
-                userRepo.findById(link.getParentUserId()).ifPresent(user -> {
+                userRepo.findByIdAndTenantId(link.getParentUserId(), tenantId).ifPresent(user -> {
                     String email = user.getUsername(); // username == email in this system
                     publisher.publishEmail(tenantId, schoolId, email,
                             NotificationTemplateCode.ATTENDANCE_ALERT, vars);
@@ -77,6 +84,15 @@ class AttendanceAlertServiceImpl implements AttendanceAlertService {
             }
         } catch (Exception ex) {
             log.warn("Failed to send absence alerts for student={}: {}", studentId, ex.getMessage());
+        } finally {
+            restoreContext(previousTenant, previousSchool, previousUser);
         }
+    }
+
+    private void restoreContext(String tenantId, String schoolId, UUID userId) {
+        RequestContext.clearAll();
+        if (tenantId != null) RequestContext.setTenantId(tenantId);
+        if (schoolId != null) RequestContext.setSchoolId(schoolId);
+        if (userId != null) RequestContext.setUserId(userId);
     }
 }

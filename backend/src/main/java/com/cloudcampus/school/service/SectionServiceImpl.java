@@ -82,7 +82,8 @@ class SectionServiceImpl implements SectionService {
     }
 
     private Section findOrThrow(UUID id) {
-        return repo.findById(id)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return repo.findByIdAndTenantId(id, tenantId)
                    .orElseThrow(() -> new NotFoundException("Section not found: " + id));
     }
 }

@@ -24,6 +24,9 @@ public interface StudentMarkRepository extends JpaRepository<StudentMark, UUID> 
     /** Lookup existing mark for upsert logic. */
     Optional<StudentMark> findByExamSubjectIdAndStudentId(UUID examSubjectId, UUID studentId);
 
+    /** Tenant/school-safe lookup constrained by the already-validated paper. */
+    Optional<StudentMark> findByIdAndExamSubjectId(UUID id, UUID examSubjectId);
+
     /** Remove all marks for a paper (called when ExamSubject is removed). */
     void deleteByExamSubjectId(UUID examSubjectId);
 

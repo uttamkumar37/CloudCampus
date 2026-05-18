@@ -1,6 +1,6 @@
 # CloudCampus — Architecture Reference
 
-**Version:** 2.0 | **Updated:** 2026-05-18 | **Branch:** `remediation/phase-1-critical-security`
+**Version:** 2.1 | **Updated:** 2026-05-18 | **Branch:** `main`
 
 Multi-tenant SaaS school management platform — Java 21 + Spring Boot 3 + React 19 + React Native.
 
@@ -26,7 +26,7 @@ CloudCampus powers complete digital school operations for 1,000+ schools, 1M+ st
 | Cache | Redis 7 — Spring Data Redis, `GenericJackson2JsonRedisSerializer` |
 | Messaging | RabbitMQ — topic exchange per domain |
 | Storage | MinIO (S3-compatible) |
-| Migrations | Flyway 10 — V1–V74 applied in order |
+| Migrations | Flyway 10 — V1–V82 applied in order |
 | AI | Spring AI 1.0.0 — Anthropic (chat) + OpenAI (embeddings) |
 | Build | Maven, `spring-boot:run -Dspring-boot.run.profiles=dev` |
 
@@ -121,10 +121,11 @@ All under `com.cloudcampus.*`:
 | `auth` | Authentication | `AuthController`, `AuthServiceImpl`, `JwtUtil`, `JwtAuthenticationFilter`, `LoginRateLimiterService` |
 | `tenant` | Tenant lifecycle | `Tenant`, `TenantService`, `SuperAdminTenantController` |
 | `school` | School structure | `School`, `AcademicYear`, `ClassRoom`, `Section`, `Subject`, `Department` |
-| `student` | Student lifecycle | `Student`, `StudentParentLink`, `StudentController` |
+| `student` | Student lifecycle | `Student`, `StudentParentLink`, `StudentController` (bulk promote at `POST /v1/school-admin/schools/{id}/students/promote`) |
 | `staff` | Staff & HR | `Staff`, `StaffService`, `StaffController` |
 | `attendance` | Attendance | `AttendanceSession`, `AttendanceRecord`, QR self-mark flow |
-| `finance` | Fees & Payments | `FeeCategory`, `FeeStructure`, `StudentFeeRecord`, `FeePayment` |
+| `finance` | Fees & Payments | `FeeCategory`, `FeeStructure`, `StudentFeeRecord`, `FeePayment`, `PaymentService` (Razorpay) |
+| `payment` | Online payments | `PaymentController`, `PaymentServiceImpl`, Razorpay HMAC verify, webhook idempotency |
 | `exam` | Examinations | `Exam`, `ExamSubject`, `StudentMark`, `ExamResult` |
 | `timetable` | Timetable | `TimetableSlot` — conflict detection built into service |
 | `homework` | Homework | `HomeworkAssignment`, `HomeworkSubmission` |
@@ -132,9 +133,10 @@ All under `com.cloudcampus.*`:
 | `notice` | Notice board | `SchoolNotice` |
 | `notification` | Notifications | `NotificationLog`, `WhatsAppMessageLog`, RabbitMQ queue |
 | `feature` | Feature flags | `FeatureFlag`, `TenantFeature`, `@RequiresFeature` AOP, dependency engine |
-| `ai` | AI Foundation | Spring AI 1.0.0, prompt registry, pgvector embeddings, mock mode |
-| `experience` | DSEP | See Section 8 |
-| `config` | Cross-cutting | `SecurityConfig`, `CacheConfig`, `AsyncConfig`, `JwtProperties` |
+| `ai` | AI Foundation | Spring AI 1.0.0, prompt registry, pgvector embeddings, mock mode, `AiGatewayService` |
+| `ai.copilot` | AI Copilot | `SchoolAdminAiCopilotController` — `POST /v1/school-admin/ai/query` (CC-1603) |
+| `experience` | DSEP + Studio | See Section 8 |
+| `config` | Cross-cutting | `SecurityConfig`, `CacheConfig`, `AsyncConfig` (virtual threads), `JwtProperties` |
 | `common` | Shared | `ApiResponse`, `RequestContext`, `TenantSuspensionFilter`, `RestExceptionHandler` |
 
 ---
@@ -160,9 +162,21 @@ Security hardening, notifications (RabbitMQ), website builder, custom domains, r
 | V69 | `platform_presentations`, `platform_presentation_slides` |
 | V70 | `platform_demo_scenarios`, `platform_demo_sessions` |
 | V71 | `platform_investor_rooms`, `platform_investor_room_sections` |
-| V72 | `platform_campaigns`, `platform_campaign_steps` (schema only) |
+| V72 | `platform_campaigns`, `platform_campaign_steps` |
 | V73 | `platform_experience_events` — partitioned by quarter through 2027 Q1 |
 | V74 | Seed — 3 demo scenarios + 10 default content blocks |
+
+### Experience Studio Schema — V75–V82
+| Migration | Table(s) |
+|-----------|----------|
+| V75 | `experience_brand_systems`, `experience_stakeholder_journeys` — Studio foundations |
+| V76 | Seed — brand system + stakeholder journey baseline data |
+| V77 | `experience_story_scenes`, `experience_trust_modules`, `experience_website_routes`, `experience_website_templates` — expansion domains |
+| V78 | Seed — story scenes, trust modules, website routes, template marketplace data |
+| V79 | `platform_public_website` — public-facing website builder tables |
+| V80 | Seed — default public website pages and nav config |
+| V81 | Extend `platform_experience_events` partitions through 2028 Q4 |
+| V82 | Add idempotency keys to `payment_orders` for gateway deduplication |
 
 ### Key Schema Patterns
 - **Soft delete:** `deleted_at` timestamp — all queries filter `WHERE deleted_at IS NULL`
@@ -215,17 +229,24 @@ Analytics events (async)
 
 ### Backend Package: `com.cloudcampus.experience`
 ```
-config/    ExperienceQueueConfig       ← RabbitMQ topology
-controller/ PublicExperienceController  ← public content + demo + events
-            InvestorRoomController      ← room metadata + password verify
-            SuperAdminExperienceController ← full CRUD for all DSEP resources
-dto/       request/ + response/         ← InvestorRoomResponse embeds sections list
+config/    ExperienceQueueConfig          ← RabbitMQ topology
+controller/ PublicExperienceController    ← public content + demo + events + render profile
+            InvestorRoomController        ← room metadata + password verify
+            SuperAdminExperienceController← full CRUD for all DSEP + Studio resources
+dto/       request/ + response/           ← InvestorRoomResponse embeds sections list
 entity/    ContentBlock, DemoScenario, DemoSession, ExperienceEvent,
-           InvestorRoom, InvestorRoomSection, Presentation
-repository/ includes InvestorRoomSectionRepository
+           InvestorRoom, InvestorRoomSection, Presentation,
+           BrandSystem, StakeholderJourney, StoryScene, TrustModule,
+           WebsiteRouteConfig, WebsiteTemplate,
+           MarketingCampaign, MarketingCampaignStep
+repository/ includes all entity repositories (tenant-scoped)
 service/   ContentBlockService (@Cacheable exp:block, 2 min)
            DemoOrchestrationService (Base62 tokens, @Scheduled cleanup)
            InvestorRoomService (joins sections; NOT cached — nested records)
+           BrandSystemService, StakeholderJourneyService, StorySceneService
+           TrustModuleService, WebsiteRouteService, WebsiteTemplateService
+           MarketingCampaignService, ExperienceRenderProfileService
+           ExperienceSeedHealthService (entity count reporting)
            ExperienceEventPublisher (fire-and-forget — never throws)
 listener/  ExperienceEventListener (manual ack, DLX on failure)
 ```
@@ -241,28 +262,82 @@ listener/  ExperienceEventListener (manual ack, DLX on failure)
 | POST | `/v1/experience/public/events` | Ingest analytics events (async) |
 
 ### Super Admin API Endpoints (SUPER_ADMIN role)
-| Method | Path |
-|--------|------|
-| GET / POST | `/v1/super-admin/experience/content-blocks` |
-| PUT / POST `:id/publish` | `/v1/super-admin/experience/content-blocks/{id}` |
-| GET | `/v1/super-admin/experience/demo-scenarios` |
-| GET / POST / DELETE | `/v1/super-admin/experience/investor-rooms` |
-| GET / POST `:id/publish` | `/v1/super-admin/experience/presentations` |
+| Method | Path | Notes |
+|--------|------|-------|
+| GET / POST | `/v1/super-admin/experience/content-blocks` | |
+| PUT / POST `:id/publish` | `/v1/super-admin/experience/content-blocks/{id}` | |
+| POST | `/v1/super-admin/experience/content-blocks/{id}/ai-generate` | AI copy generation |
+| GET | `/v1/super-admin/experience/analytics?days=7` | Event funnel metrics |
+| GET | `/v1/super-admin/experience/demo-scenarios` | |
+| GET / POST / DELETE | `/v1/super-admin/experience/investor-rooms` | |
+| GET / POST `:id/publish` | `/v1/super-admin/experience/presentations` | |
+| GET / POST / PUT / DELETE | `/v1/super-admin/experience/brand-systems` | Studio domains |
+| GET / POST / PUT / DELETE | `/v1/super-admin/experience/stakeholder-journeys` | Studio domains |
+| GET / POST / PUT / DELETE | `/v1/super-admin/experience/story-scenes` | Studio domains |
+| GET / POST / PUT / DELETE | `/v1/super-admin/experience/trust-modules` | Studio domains |
+| GET / POST / PUT / DELETE | `/v1/super-admin/experience/website-routes` | Studio domains |
+| GET / POST / PUT / DELETE | `/v1/super-admin/experience/website-templates` | Studio domains |
+| GET / POST / PUT / DELETE | `/v1/super-admin/experience/campaigns` | Studio domains |
+| GET | `/v1/super-admin/experience/seed-health` | Entity count report |
+| GET | `/v1/super-admin/experience/render-profile` | Public render profile |
 
 ### Frontend Structure
 ```
 features/experience/
-  api/experienceApi.ts      ← React Query hooks via authClient (public, no token)
-  api/analyticsTracker.ts   ← event batching, debounce 2s, max 10, keepalive
-  pages/DemoPage.tsx         ← scenario picker → email capture → credential reveal
-  pages/InvestorRoomPage.tsx ← dark theme; 7 section type renderers; collapsible FAQ
-  store/experienceStore.ts   ← Zustand persist: visitorId, consent, UTM params
+  api/experienceApi.ts           ← React Query hooks via authClient (public, no token)
+  api/analyticsTracker.ts        ← event batching, debounce 2s, max 10, keepalive
+  api/experienceStudioApi.ts     ← all super-admin Studio CRUD hooks
+  pages/DemoPage.tsx             ← scenario picker → email capture → credential reveal
+  pages/InvestorRoomPage.tsx     ← dark theme; 7 section type renderers; collapsible FAQ
+  store/experienceStore.ts       ← Zustand persist: visitorId, consent, UTM params
 
 features/super-admin/experience/
-  ExperienceControlCenter.tsx  ← 3-tab shell
-  ContentBlockEditor.tsx       ← list + search + JSON modal + publish
-  DemoScenarioManager.tsx      ← scenario cards with feature pills
-  InvestorRoomBuilder.tsx      ← room list + create modal + copy link
+  ExperienceControlCenter.tsx    ← 10-domain Studio shell
+  ContentBlockEditor.tsx         ← list + search + JSON modal + publish
+  DemoScenarioManager.tsx        ← scenario cards with feature pills
+  InvestorRoomBuilder.tsx        ← room list + create modal + copy link
+  BrandingSystemManager.tsx      ← global brand config
+  StakeholderJourneyManager.tsx  ← journey editor + audience picker
+  StorytellingManager.tsx        ← scene cards + type badges
+  TrustPlatformManager.tsx       ← trust module cards
+  WebsiteRouteManager.tsx        ← route table + create/edit modal
+  TemplateMarketplaceManager.tsx ← template grid + usage count
+  MarketingAutomationManager.tsx ← campaign list + step count
+  AiExperienceManager.tsx        ← AI content generation UI
+  PresentationBuilderManager.tsx ← presentation list + slide builder
+  SeedHealthPanel.tsx            ← entity count dashboard with status badges
+  RenderProfilePreview.tsx       ← live public render profile preview
+  ExperienceAnalyticsDashboard.tsx ← stat cards + CSS bar chart, period selector
+```
+
+### School Admin — AI Copilot (CC-1603)
+```
+backend:  POST /v1/school-admin/ai/query
+          SchoolAdminAiCopilotController → AiGatewayService
+          Feature-gated (app.ai.enabled); CRIT-15 prompt injection prevention
+          Mock response when AI disabled (safe for CI/dev)
+
+frontend: features/school-admin/api/aiCopilotApi.ts
+          features/school-admin/pages/AiCopilotPage.tsx
+          Chat UI: suggested-question chips, message history, token counter,
+          export conversation (.txt), retry:false mutation
+          Route: /school-admin/ai-copilot
+```
+
+### Mobile — QR Attendance + Student Promotion
+```
+student QR scan:  app/(app)/qr-attendance.tsx
+                  Reads ?token= via useLocalSearchParams → auto-submits
+                  POST /v1/student/attendance/qr-mark
+                  Manual paste fallback for non-deep-link entry
+
+teacher QR:       QrGenerateCard in TeacherAttendanceScreen
+                  POST /v1/teacher/attendance/sessions/with-qr
+                  Shows shareable qrDeepLink + 5-min countdown + Share API
+
+student promotion: app/(app)/student-promotion.tsx (SCHOOL_ADMIN)
+                   Cascading class/section pickers
+                   POST /v1/school-admin/schools/{id}/students/promote
 ```
 
 ### Investor Room Section Types
@@ -291,10 +366,11 @@ features/super-admin/experience/
 | 1 — Foundation | Content blocks + public API + Redis cache | ✅ Complete |
 | 2 — Demo Platform | Session management + 3 scenarios | ✅ Complete |
 | 3 — Investor Rooms | Rooms + sections + password gate | ✅ Complete |
+| 3b — Studio Expansion | Brand System, Stakeholder Journeys, Story Scenes, Trust Modules, Website Routes, Templates, Campaigns, Seed Health, Render Profile | ✅ Complete (V75–V78) |
+| 3c — Public Website | Platform public website tables + seed (V79/V80) | ✅ Complete |
 | 4 — AI Content Gen | Claude API for block copy generation | 🔲 Planned |
 | 5 — Ephemeral Tenants | Real isolated tenant per demo session | 🔲 Planned |
-| 6 — Campaigns | Drip engine (V72 schema exists) | 🔲 Planned |
-| 7 — Analytics Dashboard | Funnel + cohort analysis UI | 🔲 Planned |
+| 6 — Analytics Dashboard | Funnel + cohort analysis UI | 🔲 Planned |
 
 > **Note:** `POST /demo/start` returns credentials and a session record. Full ephemeral tenant provisioning (real isolated school per demo) is Phase 5.
 
@@ -383,6 +459,6 @@ GitHub Actions — 4-job pipeline:
 |------------|--------|
 | Redis cache + nested Java records | `NON_FINAL` typing omits `@class` from `final` record types. Cache flat DTOs, not `List<Record>` where elements contain records. |
 | Demo tenant provisioning | Phase 5 — not yet built. `POST /demo/start` returns session metadata; `loginUrl` points to `/demo/login?token=...` (no route yet). |
-| Campaign tables V72 | Schema exists; `Campaign` / `CampaignStep` entities not implemented — Phase 6. |
 | Presentation viewer | Public `/presentation/:slug` React page is Phase 4. |
 | pgvector image | Must use `pgvector/pgvector:pg16` — plain `postgres:16-alpine` will fail V46. |
+| Experience Studio AI (Phase 4) | `AiExperienceManager` UI shell is built; Claude-backed content generation endpoint is not yet wired. |

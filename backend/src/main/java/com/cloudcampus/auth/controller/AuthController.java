@@ -34,8 +34,8 @@ import org.springframework.web.bind.annotation.RestController;
  * POST /v1/auth/refresh — refresh token → new JWT pair (token rotated)
  * POST /v1/auth/logout  — invalidate refresh token in Redis
  *
- * All endpoints are publicly accessible — the /v1/auth/** permitAll rule in
- * SecurityConfig allows unauthenticated access. This is correct by design.
+ * Login, refresh, logout, and password-reset endpoints are public. Password
+ * change and revoke-all require a valid JWT and are enforced by method security.
  */
 @RestController
 @RequestMapping("/v1/auth")

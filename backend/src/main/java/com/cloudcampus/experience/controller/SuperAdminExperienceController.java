@@ -1,6 +1,8 @@
 package com.cloudcampus.experience.controller;
 
+import com.cloudcampus.ai.gateway.AiGatewayService;
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.experience.dto.request.AiContentGenerateRequest;
 import com.cloudcampus.experience.dto.request.ContentBlockCreateRequest;
 import com.cloudcampus.experience.dto.request.ContentBlockUpdateRequest;
 import com.cloudcampus.experience.dto.request.InvestorRoomCreateRequest;
@@ -19,9 +21,11 @@ import com.cloudcampus.experience.dto.request.WebsiteTemplateCreateRequest;
 import com.cloudcampus.experience.dto.request.WebsiteTemplateUpdateRequest;
 import com.cloudcampus.experience.dto.request.WebsiteRouteCreateRequest;
 import com.cloudcampus.experience.dto.request.WebsiteRouteUpdateRequest;
+import com.cloudcampus.experience.dto.response.AiContentGenerateResponse;
 import com.cloudcampus.experience.dto.response.BrandSystemResponse;
 import com.cloudcampus.experience.dto.response.ContentBlockResponse;
 import com.cloudcampus.experience.dto.response.DemoScenarioResponse;
+import com.cloudcampus.experience.dto.response.ExperienceAnalyticsResponse;
 import com.cloudcampus.experience.dto.response.ExperienceSeedHealthResponse;
 import com.cloudcampus.experience.dto.response.InvestorRoomResponse;
 import com.cloudcampus.experience.dto.response.MarketingCampaignResponse;
@@ -31,6 +35,7 @@ import com.cloudcampus.experience.dto.response.StakeholderJourneyResponse;
 import com.cloudcampus.experience.dto.response.TrustModuleResponse;
 import com.cloudcampus.experience.dto.response.WebsiteTemplateResponse;
 import com.cloudcampus.experience.dto.response.WebsiteRouteResponse;
+import com.cloudcampus.experience.repository.ExperienceEventRepository;
 import com.cloudcampus.experience.service.BrandSystemService;
 import com.cloudcampus.experience.service.ContentBlockService;
 import com.cloudcampus.experience.service.DemoOrchestrationService;
@@ -45,11 +50,16 @@ import com.cloudcampus.experience.service.WebsiteTemplateService;
 import com.cloudcampus.experience.service.WebsiteRouteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -63,18 +73,25 @@ import java.util.UUID;
 @Tag(name = "Super Admin — Experience", description = "DSEP content management: blocks, demos, investor rooms, presentations")
 public class SuperAdminExperienceController {
 
-    private final BrandSystemService      brandSystemService;
-    private final ContentBlockService      contentBlockService;
-    private final DemoOrchestrationService demoService;
-    private final InvestorRoomService      investorRoomService;
-    private final PresentationService      presentationService;
-    private final WebsiteRouteService      websiteRouteService;
-    private final StakeholderJourneyService stakeholderJourneyService;
-    private final ExperienceSeedHealthService seedHealthService;
-    private final MarketingCampaignService marketingCampaignService;
-    private final WebsiteTemplateService websiteTemplateService;
-    private final StorySceneService storySceneService;
-    private final TrustModuleService trustModuleService;
+    private static final int MAX_ANALYTICS_DAYS = 90;
+
+    private final BrandSystemService          brandSystemService;
+    private final ContentBlockService          contentBlockService;
+    private final DemoOrchestrationService     demoService;
+    private final InvestorRoomService          investorRoomService;
+    private final PresentationService          presentationService;
+    private final WebsiteRouteService          websiteRouteService;
+    private final StakeholderJourneyService    stakeholderJourneyService;
+    private final ExperienceSeedHealthService  seedHealthService;
+    private final MarketingCampaignService     marketingCampaignService;
+    private final WebsiteTemplateService       websiteTemplateService;
+    private final StorySceneService            storySceneService;
+    private final TrustModuleService           trustModuleService;
+    private final ExperienceEventRepository    eventRepository;
+    private final AiGatewayService             aiGatewayService;
+
+    @Value("${app.ai.enabled:false}")
+    private boolean aiEnabled;
 
     public SuperAdminExperienceController(BrandSystemService brandSystemService,
                                           ContentBlockService contentBlockService,
@@ -87,19 +104,23 @@ public class SuperAdminExperienceController {
                                           MarketingCampaignService marketingCampaignService,
                                           WebsiteTemplateService websiteTemplateService,
                                           StorySceneService storySceneService,
-                                          TrustModuleService trustModuleService) {
-        this.brandSystemService = brandSystemService;
-        this.contentBlockService = contentBlockService;
-        this.demoService         = demoService;
-        this.investorRoomService = investorRoomService;
-        this.presentationService = presentationService;
-        this.websiteRouteService = websiteRouteService;
+                                          TrustModuleService trustModuleService,
+                                          ExperienceEventRepository eventRepository,
+                                          AiGatewayService aiGatewayService) {
+        this.brandSystemService        = brandSystemService;
+        this.contentBlockService       = contentBlockService;
+        this.demoService               = demoService;
+        this.investorRoomService       = investorRoomService;
+        this.presentationService       = presentationService;
+        this.websiteRouteService       = websiteRouteService;
         this.stakeholderJourneyService = stakeholderJourneyService;
-        this.seedHealthService = seedHealthService;
-        this.marketingCampaignService = marketingCampaignService;
-        this.websiteTemplateService = websiteTemplateService;
-        this.storySceneService = storySceneService;
-        this.trustModuleService = trustModuleService;
+        this.seedHealthService         = seedHealthService;
+        this.marketingCampaignService  = marketingCampaignService;
+        this.websiteTemplateService    = websiteTemplateService;
+        this.storySceneService         = storySceneService;
+        this.trustModuleService        = trustModuleService;
+        this.eventRepository           = eventRepository;
+        this.aiGatewayService          = aiGatewayService;
     }
 
     @Operation(summary = "Experience seed health", description = "Returns readiness checks for Experience Studio baseline data")
@@ -415,5 +436,75 @@ public class SuperAdminExperienceController {
     @PostMapping("/trust-modules/{id}/publish")
     public ResponseEntity<ApiResponse<TrustModuleResponse>> publishTrustModule(@PathVariable UUID id) {
         return ResponseEntity.ok(ApiResponse.ok(null, trustModuleService.publish(id)));
+    }
+
+    // ── Experience Analytics ──────────────────────────────────────────────────
+
+    @Operation(summary = "Experience analytics",
+               description = "Returns event counts and per-type breakdown for the requested period. Max 90 days.")
+    @GetMapping("/analytics")
+    public ResponseEntity<ApiResponse<ExperienceAnalyticsResponse>> getAnalytics(
+            @RequestParam(defaultValue = "7") int days) {
+
+        int safeDays = Math.min(Math.max(days, 1), MAX_ANALYTICS_DAYS);
+        Instant to   = Instant.now();
+        Instant from = to.minus(safeDays, ChronoUnit.DAYS);
+
+        long pageViews     = eventRepository.countByType("PAGE_VIEW",          from, to);
+        long ctaClicks     = eventRepository.countByType("CTA_CLICK",          from, to);
+        long demoStarts    = eventRepository.countByType("DEMO_START",         from, to);
+        long investorViews = eventRepository.countByType("INVESTOR_ROOM_VIEW", from, to);
+
+        List<Object[]> rows = eventRepository.countByEventTypeBetween(from, to);
+        Map<String, Long> eventsByType = new LinkedHashMap<>();
+        long totalEvents = 0L;
+        for (Object[] row : rows) {
+            String type  = String.valueOf(row[0]);
+            long   count = ((Number) row[1]).longValue();
+            eventsByType.put(type, count);
+            totalEvents += count;
+        }
+
+        String periodLabel = "Last " + safeDays + " day" + (safeDays == 1 ? "" : "s");
+
+        ExperienceAnalyticsResponse response = new ExperienceAnalyticsResponse(
+                pageViews, ctaClicks, demoStarts, investorViews,
+                totalEvents, eventsByType, periodLabel);
+
+        return ResponseEntity.ok(ApiResponse.ok(null, response));
+    }
+
+    // ── AI Content Generation ─────────────────────────────────────────────────
+
+    @Operation(summary = "Generate marketing copy with AI",
+               description = "Uses the configured AI provider to generate structured marketing content for a content block.")
+    @PostMapping("/content-blocks/{id}/ai-generate")
+    public ResponseEntity<ApiResponse<AiContentGenerateResponse>> aiGenerateContent(
+            @PathVariable UUID id,
+            @Valid @RequestBody AiContentGenerateRequest req) {
+
+        // Verify the block exists before attempting generation
+        contentBlockService.getById(id);
+
+        if (!aiEnabled) {
+            String mockContent = """
+                    {"title":"[AI Disabled] Sample Title","subtitle":"AI provider not configured","body":"Enable app.ai.enabled=true and configure a provider API key to use live generation.","ctaText":"Get Started"}
+                    """.strip();
+            return ResponseEntity.ok(ApiResponse.ok(null, new AiContentGenerateResponse(mockContent, 0)));
+        }
+
+        String systemText = """
+                You are a professional marketing copywriter for a school management SaaS platform called CloudCampus.
+                Your task is to generate compelling, conversion-focused marketing copy.
+                Always respond with valid JSON only — no markdown, no extra prose.
+                Required JSON keys: title, subtitle, body, ctaText.
+                """.strip();
+
+        String userText = "Content type: " + req.contentType() + ". User prompt: " + req.prompt();
+
+        String generatedContent = aiGatewayService.completeStructured(
+                systemText, userText, "exp:ai-content-generate", null);
+
+        return ResponseEntity.ok(ApiResponse.ok(null, new AiContentGenerateResponse(generatedContent, 0)));
     }
 }

@@ -60,6 +60,11 @@ export interface DemoStartPayload {
   utmCampaign?: string | null;
 }
 
+export interface InvestorAccessResult {
+  granted: boolean;
+  room?: InvestorRoom;
+}
+
 // ── API helpers ───────────────────────────────────────────────────────────────
 
 async function get<T>(path: string): Promise<T> {
@@ -113,8 +118,8 @@ export function useStartDemo() {
 }
 
 export function useVerifyInvestorAccess(roomCode: string) {
-  return useMutation<{ granted: boolean }, Error, { password: string }>({
-    mutationFn: (body) => post(`${BASE}/investor/${roomCode}/access`, body),
+  return useMutation<InvestorAccessResult, Error, { password: string }>({
+    mutationFn: (body) => post<InvestorAccessResult>(`${BASE}/investor/${roomCode}/access`, body),
     retry: false,
   });
 }

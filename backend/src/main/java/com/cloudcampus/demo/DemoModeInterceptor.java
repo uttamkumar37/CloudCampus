@@ -13,7 +13,7 @@ import java.util.Base64;
 import java.util.Set;
 
 /**
- * Read-only guard for the Greenwood demo tenant.
+ * Read-only guard for the JNV Lucknow demo tenant.
  *
  * Any write request (POST / PUT / PATCH / DELETE) whose JWT carries the
  * demo tenant ID is rejected with 403.  Auth endpoints are always allowed

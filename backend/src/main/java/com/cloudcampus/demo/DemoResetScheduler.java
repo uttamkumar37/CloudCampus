@@ -13,7 +13,7 @@ import static com.cloudcampus.demo.DemoConstants.SCHOOL_ID;
 import static com.cloudcampus.demo.DemoConstants.TENANT_ID;
 
 /**
- * Nightly reset for the Greenwood demo tenant.
+ * Nightly reset for the JNV Lucknow demo tenant.
  *
  * Runs at 02:00 AM server time.  Deletes transient demo data (attendance,
  * marks, lesson plans, homework) and re-seeds via {@link DemoDataSeeder}.

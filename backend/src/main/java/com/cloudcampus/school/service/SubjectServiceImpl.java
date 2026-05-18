@@ -118,7 +118,8 @@ class SubjectServiceImpl implements SubjectService {
     }
 
     private Subject findOrThrow(UUID id) {
-        return repo.findById(id)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return repo.findByIdAndTenantId(id, tenantId)
                    .orElseThrow(() -> new NotFoundException("Subject not found: " + id));
     }
 }

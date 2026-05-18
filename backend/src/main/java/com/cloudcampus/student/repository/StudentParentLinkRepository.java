@@ -26,6 +26,8 @@ public interface StudentParentLinkRepository extends JpaRepository<StudentParent
     /** Look up a specific link between a student and a parent user. */
     Optional<StudentParentLink> findByStudentIdAndParentUserId(UUID studentId, UUID parentUserId);
 
+    Optional<StudentParentLink> findByIdAndTenantId(UUID id, UUID tenantId);
+
     /** Check if a parent is already linked to a student. */
     boolean existsByStudentIdAndParentUserId(UUID studentId, UUID parentUserId);
 

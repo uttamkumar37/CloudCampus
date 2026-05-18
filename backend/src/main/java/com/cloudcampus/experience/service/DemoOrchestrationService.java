@@ -1,5 +1,6 @@
 package com.cloudcampus.experience.service;
 
+import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.experience.dto.request.DemoStartRequest;
 import com.cloudcampus.experience.dto.response.DemoScenarioResponse;
@@ -10,6 +11,7 @@ import com.cloudcampus.experience.repository.DemoScenarioRepository;
 import com.cloudcampus.experience.repository.DemoSessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,11 +37,15 @@ public class DemoOrchestrationService {
 
     private final DemoScenarioRepository scenarioRepo;
     private final DemoSessionRepository  sessionRepo;
+    private final boolean publicCredentialsEnabled;
 
     public DemoOrchestrationService(DemoScenarioRepository scenarioRepo,
-                                    DemoSessionRepository sessionRepo) {
-        this.scenarioRepo = scenarioRepo;
-        this.sessionRepo  = sessionRepo;
+                                    DemoSessionRepository sessionRepo,
+                                    @Value("${app.demo.public-credentials-enabled:false}")
+                                    boolean publicCredentialsEnabled) {
+        this.scenarioRepo              = scenarioRepo;
+        this.sessionRepo               = sessionRepo;
+        this.publicCredentialsEnabled  = publicCredentialsEnabled;
     }
 
     public List<DemoScenarioResponse> listActiveScenarios() {
@@ -49,6 +55,10 @@ public class DemoOrchestrationService {
 
     @Transactional
     public DemoSessionResponse startSession(DemoStartRequest req) {
+        if (!publicCredentialsEnabled) {
+            throw new ForbiddenException("Public demo credential issuance is disabled");
+        }
+
         DemoScenario scenario = scenarioRepo
                 .findBySlugAndStatus(req.scenarioSlug(), "ACTIVE")
                 .orElseThrow(() -> new NotFoundException("Demo scenario not found: " + req.scenarioSlug()));

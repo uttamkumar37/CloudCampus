@@ -35,13 +35,14 @@ class ParentLinkServiceImpl implements ParentLinkService {
     @Override
     @Transactional
     public ParentLinkResponse addLink(UUID studentId, ParentLinkRequest req) {
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         // Verify student exists.
-        if (!studentRepo.existsById(studentId)) {
+        if (studentRepo.findByIdAndTenantId(studentId, tenantId).isEmpty()) {
             throw new NotFoundException("Student not found: " + studentId);
         }
 
         // Verify parent user exists and has PARENT role.
-        User parent = userRepo.findById(req.parentUserId())
+        User parent = userRepo.findByIdAndTenantId(req.parentUserId(), tenantId)
                 .orElseThrow(() -> new NotFoundException("User not found: " + req.parentUserId()));
         if (parent.getRole() != UserRole.PARENT) {
             throw new BadRequestException(
@@ -52,8 +53,6 @@ class ParentLinkServiceImpl implements ParentLinkService {
         if (linkRepo.existsByStudentIdAndParentUserId(studentId, req.parentUserId())) {
             throw new BadRequestException("Parent is already linked to this student");
         }
-
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
 
         // Clear existing primary if this link is to be the new primary.
         if (req.makePrimary()) {
@@ -83,9 +82,9 @@ class ParentLinkServiceImpl implements ParentLinkService {
     @Override
     @Transactional
     public void removeLink(UUID linkId) {
-        if (!linkRepo.existsById(linkId)) {
-            throw new NotFoundException("Parent link not found: " + linkId);
-        }
-        linkRepo.deleteById(linkId);
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        StudentParentLink link = linkRepo.findByIdAndTenantId(linkId, tenantId)
+                .orElseThrow(() -> new NotFoundException("Parent link not found: " + linkId));
+        linkRepo.delete(link);
     }
 }

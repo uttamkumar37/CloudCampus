@@ -34,7 +34,10 @@ public class UserSchoolAccessServiceImpl implements UserSchoolAccessService {
     public void grant(UUID userId, UUID schoolId, UUID tenantId,
                       UUID grantedByUserId, boolean isPrimary) {
         // Validate school exists; derive tenantId from school when caller is super-admin (null).
-        School school = schoolRepo.findById(schoolId)
+        Optional<School> maybeSchool = tenantId != null
+                ? schoolRepo.findByIdFiltered(schoolId)
+                : schoolRepo.findById(schoolId);
+        School school = maybeSchool
                 .orElseThrow(() -> new NotFoundException("School not found"));
         UUID resolvedTenantId = (tenantId != null) ? tenantId : school.getTenantId();
         if (tenantId != null && !school.getTenantId().equals(tenantId)) {

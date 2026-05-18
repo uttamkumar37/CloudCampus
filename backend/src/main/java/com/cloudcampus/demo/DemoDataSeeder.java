@@ -19,12 +19,12 @@ import java.util.*;
 import static com.cloudcampus.demo.DemoConstants.*;
 
 /**
- * Enterprise demo-school seeder for Greenwood International School.
+ * Enterprise demo-school seeder for Jawahar Navodaya Vidyalaya Lucknow.
  *
  * Runs once on startup when {@code app.demo.enabled=true}.
  * Idempotent: guard-checked via student-count before seeding.
  *
- * Data seeded (all scoped to greenwood-demo tenant):
+ * Data seeded (all scoped to jnv-lucknow-demo tenant):
  *   • 1 academic year (2025-26)
  *   • 5 departments, 10 subjects
  *   • 14 grades × 3 sections = 42 sections
@@ -49,7 +49,8 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     private final JdbcTemplate       jdbc;
     private final PasswordEncoder     encoder;
-    private final IndianNameGenerator names = new IndianNameGenerator(RNG_SEED);
+    private final IndianNameGenerator names    = new IndianNameGenerator(RNG_SEED);
+    private final Map<String, UUID>   uuidCache = new HashMap<>();
 
     public DemoDataSeeder(JdbcTemplate jdbc, PasswordEncoder encoder) {
         this.jdbc    = jdbc;
@@ -62,20 +63,20 @@ public class DemoDataSeeder implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         if (isAlreadySeeded()) {
-            log.debug("DEMO: Greenwood demo school already seeded — skipping.");
+            log.debug("DEMO: JNV Lucknow demo school already seeded — skipping.");
             return;
         }
-        log.info("DEMO: Seeding Greenwood International School enterprise demo data...");
+        log.info("DEMO: Seeding Jawahar Navodaya Vidyalaya Lucknow enterprise demo data...");
         long start = System.currentTimeMillis();
 
         String hash = encoder.encode(DEMO_PASSWORD);
 
         UUID ayId   = seedAcademicYear();
-        seedDepartmentsAndFeeCategories();
+        List<UUID> deptIds = seedDepartmentsAndFeeCategories();
         List<UUID> subjectIds = seedSubjects();
         List<SectionRef> sections = seedClassesAndSections(ayId);
         seedAdminUser(hash);
-        List<UUID> staffIds = seedTeachers(hash);
+        List<UUID> staffIds = seedTeachers(hash, deptIds);
         UUID teacher1StaffId = staffIds.get(0);
         seedDemoStudentUsers(hash, sections);
         seedAllStudents(sections);
@@ -93,8 +94,9 @@ public class DemoDataSeeder implements ApplicationRunner {
         seedNotificationLogs();
         seedWhatsAppLogs();
         seedAiUsageLogs();
+        seedWebsite();
 
-        log.info("DEMO: Greenwood demo school seeded in {} ms.", System.currentTimeMillis() - start);
+        log.info("DEMO: JNV Lucknow demo school seeded in {} ms.", System.currentTimeMillis() - start);
     }
 
     // ── Guard ─────────────────────────────────────────────────────────────────
@@ -119,14 +121,15 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     // ── Departments & fee categories ──────────────────────────────────────────
 
-    private void seedDepartmentsAndFeeCategories() {
-        // Departments
+    private List<UUID> seedDepartmentsAndFeeCategories() {
+        // Departments — capture IDs so seedTeachers can reference them by position
+        UUID[] depUuids = { uuid("dep-0001"), uuid("dep-0002"), uuid("dep-0003"), uuid("dep-0004"), uuid("dep-0005") };
         Object[][] depts = {
-            {uuid("dep-0001"), "Academic",          "ACAD",  "Core academic instruction"},
-            {uuid("dep-0002"), "Science",            "SCI",   "Science and laboratory subjects"},
-            {uuid("dep-0003"), "Arts & Humanities",  "ARTS",  "Languages, humanities, and arts"},
-            {uuid("dep-0004"), "Administration",     "ADMIN", "Administrative and support"},
-            {uuid("dep-0005"), "Sports",             "SPT",   "Physical education and sports"}
+            {depUuids[0], "Academic",          "ACAD",  "Core academic instruction"},
+            {depUuids[1], "Science",            "SCI",   "Science and laboratory subjects"},
+            {depUuids[2], "Arts & Humanities",  "ARTS",  "Languages, humanities, and arts"},
+            {depUuids[3], "Administration",     "ADMIN", "Administrative and support"},
+            {depUuids[4], "Sports",             "SPT",   "Physical education and sports"}
         };
         for (Object[] d : depts) {
             jdbc.update("""
@@ -150,6 +153,7 @@ public class DemoDataSeeder implements ApplicationRunner {
                 ON CONFLICT (id) DO NOTHING
                 """, c[0], TENANT_ID, SCHOOL_ID, c[1], c[2]);
         }
+        return List.of(depUuids);
     }
 
     // ── Subjects ──────────────────────────────────────────────────────────────
@@ -219,16 +223,18 @@ public class DemoDataSeeder implements ApplicationRunner {
         // User account
         jdbc.update("""
             INSERT INTO users (id, tenant_id, username, password_hash, role, status)
-            VALUES (?, ?, 'gw.admin', ?, 'SCHOOL_ADMIN', 'ACTIVE')
+            VALUES (?, ?, 'jnv.admin', ?, 'SCHOOL_ADMIN', 'ACTIVE')
             ON CONFLICT (username) DO NOTHING
             """, ADMIN_USER_ID, TENANT_ID, hash);
 
         // Staff record for the admin
         jdbc.update("""
             INSERT INTO staff (id, tenant_id, school_id, user_id, employee_number,
-                               staff_type, status, first_name, last_name, joining_date)
-            VALUES (?, ?, ?, ?, 'GW-ADMIN-001', 'ADMIN_STAFF', 'ACTIVE',
-                    'Greenwood', 'Admin', '2020-04-01')
+                               staff_type, status, first_name, last_name, joining_date,
+                               email, phone)
+            VALUES (?, ?, ?, ?, 'JNV-ADMIN-001', 'ADMIN_STAFF', 'ACTIVE',
+                    'Uttam', 'Kumar', '2020-04-01',
+                    'uttamkumar3797@gmail.com', '+917905025730')
             ON CONFLICT ON CONSTRAINT uq_staff_school_employee_number DO NOTHING
             """, uuid("stf-admin"), TENANT_ID, SCHOOL_ID, ADMIN_USER_ID);
 
@@ -242,16 +248,16 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     // ── Teachers ──────────────────────────────────────────────────────────────
 
-    private List<UUID> seedTeachers(String hash) {
+    private List<UUID> seedTeachers(String hash, List<UUID> deptIds) {
         List<UUID> staffIds = new ArrayList<>();
 
         for (int i = 1; i <= 40; i++) {
             boolean male    = (i % 2 == 1);
             String[] name   = male ? names.maleName() : names.femaleName();
-            String username = String.format("gw.teacher%03d", i);
+            String username = String.format("jnv.teacher%03d", i);
             UUID userId     = uuid("usr-t-" + String.format("%04d", i));
             UUID staffId    = uuid("stf-t-" + String.format("%04d", i));
-            String empNo    = String.format("GW-TCH-%03d", i);
+            String empNo    = String.format("JNV-TCH-%03d", i);
 
             jdbc.update("""
                 INSERT INTO users (id, tenant_id, username, password_hash, role, status)
@@ -267,7 +273,7 @@ public class DemoDataSeeder implements ApplicationRunner {
                 ON CONFLICT ON CONSTRAINT uq_staff_school_employee_number DO NOTHING
                 """,
                 staffId, TENANT_ID, SCHOOL_ID, userId,
-                uuid("dep-" + String.format("%04d", (i % 5) + 1)),
+                deptIds.get(i % 5),
                 empNo, name[0], name[1],
                 male ? "MALE" : "FEMALE",
                 names.staffEmail(name[0], name[1]),
@@ -303,11 +309,11 @@ public class DemoDataSeeder implements ApplicationRunner {
     private void seedDemoStudentUsers(String hash, List<SectionRef> sections) {
         // 5 named demo students with user accounts (for parent / student portal testing)
         String[][] students = {
-            {"Aarav",  "Sharma",  "GW-0001"},
-            {"Priya",  "Patel",   "GW-0002"},
-            {"Rohit",  "Gupta",   "GW-0003"},
-            {"Ananya", "Singh",   "GW-0004"},
-            {"Dev",    "Mehta",   "GW-0005"}
+            {"Aarav",  "Sharma",  "JNV-0001"},
+            {"Priya",  "Patel",   "JNV-0002"},
+            {"Rohit",  "Gupta",   "JNV-0003"},
+            {"Ananya", "Singh",   "JNV-0004"},
+            {"Dev",    "Mehta",   "JNV-0005"}
         };
         SectionRef firstSection = sections.get(9); // Class 4-A (index 9)
 
@@ -322,7 +328,7 @@ public class DemoDataSeeder implements ApplicationRunner {
                 VALUES (?, ?, ?, ?, 'STUDENT', 'ACTIVE')
                 ON CONFLICT (username) DO NOTHING
                 """, sUserId, TENANT_ID,
-                String.format("gw.student%03d", i + 1), hash);
+                String.format("jnv.student%03d", i + 1), hash);
 
             // Student record
             jdbc.update("""
@@ -341,7 +347,7 @@ public class DemoDataSeeder implements ApplicationRunner {
                 VALUES (?, ?, ?, ?, 'PARENT', 'ACTIVE')
                 ON CONFLICT (username) DO NOTHING
                 """, pUserId, TENANT_ID,
-                String.format("gw.parent%03d", i + 1), hash);
+                String.format("jnv.parent%03d", i + 1), hash);
 
             // Parent-student link (schema: student_id, parent_user_id, relationship, is_primary)
             jdbc.update("""
@@ -365,7 +371,7 @@ public class DemoDataSeeder implements ApplicationRunner {
             ON CONFLICT ON CONSTRAINT uq_students_school_number DO NOTHING
             """;
 
-        int seqNo = 100; // Start after demo students (GW-0001 to GW-0005)
+        int seqNo = 100; // Start after demo students (JNV-0001 to JNV-0005)
         List<Object[]> batch = new ArrayList<>(500);
 
         for (SectionRef sec : sections) {
@@ -943,21 +949,21 @@ public class DemoDataSeeder implements ApplicationRunner {
     private void seedNotificationLogs() {
         // {channel, templateCode, recipient, subject, status}
         Object[][] logs = {
-            {"EMAIL","WELCOME_EMAIL",       "gw.parent001@greenwood.demo","Welcome to Greenwood International School",       "SENT"},
-            {"SMS",  "FEE_REMINDER",        "+919876543210",              null,                                              "SENT"},
-            {"EMAIL","EXAM_SCHEDULE",       "gw.parent002@greenwood.demo","Mid-Term Examination Schedule — 2025-26",        "SENT"},
+            {"EMAIL","WELCOME_EMAIL",       "uttamkumar3797@gmail.com",   "Welcome to Jawahar Navodaya Vidyalaya Lucknow",   "SENT"},
+            {"SMS",  "FEE_REMINDER",        "+917905025730",              null,                                              "SENT"},
+            {"EMAIL","EXAM_SCHEDULE",       "jnv.parent002@jnv.demo",     "Mid-Term Examination Schedule — 2025-26",        "SENT"},
             {"SMS",  "ATTENDANCE_ALERT",    "+919876543211",              null,                                              "SENT"},
-            {"EMAIL","RESULT_NOTIFICATION", "gw.parent003@greenwood.demo","Unit Test 1 Results Published",                  "SENT"},
-            {"SMS",  "OTP_AUTH",            "+919876543212",              null,                                              "SENT"},
-            {"EMAIL","PT_MEETING",          "gw.parent004@greenwood.demo","Parent-Teacher Meeting — 5 October 2025",       "SENT"},
+            {"EMAIL","RESULT_NOTIFICATION", "jnv.parent003@jnv.demo",     "Unit Test 1 Results Published",                  "SENT"},
+            {"SMS",  "OTP_AUTH",            "+917905025730",              null,                                              "SENT"},
+            {"EMAIL","PT_MEETING",          "jnv.parent004@jnv.demo",     "Parent-Teacher Meeting — 5 October 2025",        "SENT"},
             {"SMS",  "HOLIDAY_NOTICE",      "+919876543213",              null,                                              "SENT"},
-            {"EMAIL","REPORT_CARD",         "gw.parent005@greenwood.demo","Report Card — Term 1, 2025-26",                 "SENT"},
-            {"EMAIL","FEE_REMINDER",        "gw.parent001@greenwood.demo","Fee Payment Reminder — August 2025",            "FAILED"},
+            {"EMAIL","REPORT_CARD",         "jnv.parent005@jnv.demo",     "Report Card — Term 1, 2025-26",                  "SENT"},
+            {"EMAIL","FEE_REMINDER",        "uttamkumar3797@gmail.com",   "Fee Payment Reminder — August 2025",             "FAILED"},
             {"SMS",  "EMERGENCY_ALERT",     "+919876543214",              null,                                              "SENT"},
-            {"EMAIL","CIRCULAR",            "gw.parent002@greenwood.demo","Circular — Library Hour Changes",               "SENT"},
+            {"EMAIL","CIRCULAR",            "jnv.parent002@jnv.demo",     "Circular — Library Hour Changes",                "SENT"},
             {"SMS",  "FEE_REMINDER",        "+919876543215",              null,                                              "FAILED"},
-            {"EMAIL","HOMEWORK_ALERT",      "gw.parent003@greenwood.demo","Homework Submission Reminder",                  "SENT"},
-            {"SMS",  "ATTENDANCE_ALERT",    "+919876543216",              null,                                              "SENT"}
+            {"EMAIL","HOMEWORK_ALERT",      "jnv.parent003@jnv.demo",     "Homework Submission Reminder",                   "SENT"},
+            {"SMS",  "ATTENDANCE_ALERT",    "+917905025730",              null,                                              "SENT"}
         };
         List<Object[]> batch = new ArrayList<>();
         for (int i = 0; i < logs.length; i++) {
@@ -992,10 +998,10 @@ public class DemoDataSeeder implements ApplicationRunner {
             {"+919876543213","result_ready",     "[\"Rohit\",\"Unit Test 1\",\"A+\"]",           "SENT"},
             {"+919876543214","holiday_notice",   "[\"Dussehra\",\"2 Oct 2025\"]",                "SENT"},
             {"+919876543215","fee_reminder",     "[\"September 2025\",\"2000\",\"10 Sep 2025\"]","FAILED"},
-            {"+919876543216","welcome_parent",   "[\"Ananya\",\"Greenwood International\"]",      "SENT"},
+            {"+917905025730","welcome_parent",   "[\"Ananya\",\"Jawahar Navodaya Vidyalaya\"]",   "SENT"},
             {"+919876543217","pt_meeting",       "[\"5 Oct 2025\",\"10:00 AM\",\"Room 12\"]",   "SENT"},
             {"+919876543218","homework_alert",   "[\"Mathematics\",\"tomorrow\"]",               "SENT"},
-            {"+919876543219","fee_receipt",      "[\"RCP-GW-200001\",\"2000\",\"1 Aug 2025\"]", "SENT"}
+            {"+917905025730","fee_receipt",      "[\"RCP-JNV-200001\",\"2000\",\"1 Aug 2025\"]","SENT"}
         };
         List<Object[]> batch = new ArrayList<>();
         for (int i = 0; i < logs.length; i++) {
@@ -1056,15 +1062,183 @@ public class DemoDataSeeder implements ApplicationRunner {
         log.debug("DEMO: Seeded {} AI usage log entries.", batch.size());
     }
 
+    // ── School public website ─────────────────────────────────────────────────
+
+    private void seedWebsite() {
+        UUID websiteId = uuid("website-jnv");
+
+        // Website root (published)
+        jdbc.update("""
+            INSERT INTO websites (id, tenant_id, school_id, published)
+            VALUES (?, ?, ?, true)
+            ON CONFLICT ON CONSTRAINT uq_website_school DO NOTHING
+            """, websiteId, TENANT_ID, SCHOOL_ID);
+
+        // Pages
+        UUID pgHome    = uuid("wp-home");
+        UUID pgAbout   = uuid("wp-about");
+        UUID pgAdmit   = uuid("wp-admissions");
+        UUID pgContact = uuid("wp-contact");
+
+        Object[][] pages = {
+            {pgHome,    "Home",       "home",       "JNV Lucknow — Welcome",        "Official website of Jawahar Navodaya Vidyalaya Lucknow", 1},
+            {pgAbout,   "About Us",   "about",      "About JNV Lucknow",             "Our history, vision, mission and values",                 2},
+            {pgAdmit,   "Admissions", "admissions", "Admissions — JNV Lucknow",      "Eligibility, process and important dates for admissions",  3},
+            {pgContact, "Contact",    "contact",    "Contact JNV Lucknow",           "Address, phone and email for JNV Lucknow",                 4},
+        };
+        for (Object[] p : pages) {
+            jdbc.update("""
+                INSERT INTO website_pages
+                    (id, tenant_id, school_id, title, slug, seo_title, seo_description, published, display_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, true, ?)
+                ON CONFLICT DO NOTHING
+                """, p[0], TENANT_ID, SCHOOL_ID, p[1], p[2], p[3], p[4], p[5]);
+        }
+
+        // ── Home sections ────────────────────────────────────────────────────
+        upsertSection(uuid("ws-home-hero"), pgHome, "HERO", 0,
+            """
+            {"heading":"Jawahar Navodaya Vidyalaya Lucknow",
+             "subheading":"Excellence in Education Since 1986 · Free Residential Schooling for Rural Talent",
+             "badge":"Govt. of India Residential School",
+             "ctaText":"Explore Admissions",
+             "ctaUrl":"/sites/jnv-lucknow-demo/admissions"}
+            """);
+
+        upsertSection(uuid("ws-home-stats"), pgHome, "STATS", 1,
+            """
+            {"stats":[
+              {"value":"1050+","label":"Students Enrolled","icon":"👨‍🎓"},
+              {"value":"42","label":"Faculty Members","icon":"👩‍🏫"},
+              {"value":"Cls 6–12","label":"Classes Offered","icon":"📚"},
+              {"value":"1986","label":"Year Established","icon":"🏫"}
+            ]}
+            """);
+
+        upsertSection(uuid("ws-home-text"), pgHome, "TEXT", 2,
+            """
+            {"heading":"Why JNV Lucknow?",
+             "body":"Jawahar Navodaya Vidyalaya Lucknow is a premier co-educational residential school run by Navodaya Vidyalaya Samiti under the Ministry of Education, Government of India. We provide free, quality education to meritorious students from rural areas, nurturing them into future leaders.",
+             "features":[
+               {"icon":"🎓","title":"Academic Excellence","desc":"Consistent 95%+ results in CBSE Board examinations with subject toppers every year."},
+               {"icon":"⚽","title":"Sports & Fitness","desc":"Olympic-size play grounds, kabaddi, football, volleyball, athletics and NCC training."},
+               {"icon":"🎨","title":"Arts & Culture","desc":"Annual cultural programmes, folk dance, music, painting and theatre workshops."},
+               {"icon":"💻","title":"Technology Lab","desc":"State-of-the-art computer labs with broadband internet and STEM project facilities."},
+               {"icon":"🌿","title":"Eco Campus","desc":"Green, pollution-free residential campus spread over 20 acres with a herbal garden."},
+               {"icon":"🤝","title":"National Integration","desc":"Students from every state live together — a living model of national unity."}
+             ]}
+            """);
+
+        // ── About sections ───────────────────────────────────────────────────
+        upsertSection(uuid("ws-about-vision"), pgAbout, "TEXT", 0,
+            """
+            {"heading":"Our Vision & Mission",
+             "body":"To nurture talent from rural India through quality residential education, fostering academic excellence, cultural values, and national integration.",
+             "sections":[
+               {"icon":"🎯","title":"Vision","body":"Empowering every rural child with world-class education and transforming them into responsible citizens of India."},
+               {"icon":"📖","title":"Mission","body":"Provide free, high-quality residential education to meritorious students from Classes 6–12, promoting holistic development through academics, sports, arts and social service."},
+               {"icon":"⚖️","title":"Values","body":"Integrity, discipline, inclusivity, respect for diversity, and commitment to academic and personal excellence."}
+             ]}
+            """);
+
+        upsertSection(uuid("ws-about-principal"), pgAbout, "TEXT", 1,
+            """
+            {"heading":"Message from the Principal",
+             "team":[
+               {"name":"Dr. Ramesh Kumar Sharma","title":"Principal, JNV Lucknow","bio":"With over 25 years in the NVS system, Dr. Sharma leads JNV Lucknow with a focus on holistic education. Under his leadership, the school has consistently achieved 100% board results and won national-level sports and cultural competitions."}
+             ]}
+            """);
+
+        upsertSection(uuid("ws-about-facts"), pgAbout, "TEXT", 2,
+            """
+            {"heading":"School at a Glance",
+             "highlights":[
+               "Established in 1986 under Navodaya Vidyalaya Samiti",
+               "Affiliated to CBSE (Affiliation No. 2100037)",
+               "Co-educational residential school for Classes 6–12",
+               "Free education, boarding, lodging, uniform and textbooks",
+               "100% scholarship — no fees for admitted students",
+               "National Sports & Cultural competitions participation every year",
+               "Dedicated Science, Math and Computer labs",
+               "20-acre green campus in Lucknow"
+             ]}
+            """);
+
+        // ── Admissions sections ──────────────────────────────────────────────
+        upsertSection(uuid("ws-admit-info"), pgAdmit, "TEXT", 0,
+            """
+            {"heading":"Admission Process — JNVST",
+             "body":"Admission to Class 6 is through the Jawahar Navodaya Vidyalaya Selection Test (JNVST), a single-stage objective test. Seats are reserved for SC/ST and differently-abled students as per Government norms.",
+             "steps":[
+               {"step":1,"title":"Check Eligibility","desc":"Candidate must be studying in Class 5 in a Govt./Govt.-aided school in Lucknow district, aged 9–13 years as on 1 May of the admission year."},
+               {"step":2,"title":"Fill Application","desc":"Submit the prescribed application form through the school or online NVS portal. No application fee is charged."},
+               {"step":3,"title":"Appear in JNVST","desc":"The selection test is held in November (Phase I) and January (Phase II) each year. The test covers Mental Ability, Arithmetic and Language."},
+               {"step":4,"title":"Result & Merit List","desc":"Results are published on the NVS official website. Selected students must submit original documents for verification."},
+               {"step":5,"title":"Admission & Joining","desc":"Selected students report with parents/guardians. All boarding, meals, uniforms and books are provided free by NVS from day one."}
+             ]}
+            """);
+
+        upsertSection(uuid("ws-admit-eligibility"), pgAdmit, "TEXT", 1,
+            """
+            {"heading":"Key Eligibility Criteria",
+             "highlights":[
+               "Must be a resident of Lucknow district",
+               "Studying in Class 5 in a Govt. or Govt.-aided school",
+               "Age between 9 and 13 years as on 1 May",
+               "Only one attempt allowed for JNVST",
+               "Reservation: 75% rural area, 33% girls, SC/ST as per population ratio",
+               "No re-admission once a student leaves the Vidyalaya"
+             ]}
+            """);
+
+        // ── Contact section ──────────────────────────────────────────────────
+        upsertSection(uuid("ws-contact-info"), pgContact, "CONTACT", 0,
+            """
+            {"address":"Sector 15, Indira Nagar, Lucknow, Uttar Pradesh - 226016",
+             "phone":"+91 7905025730",
+             "email":"uttamkumar3797@gmail.com"}
+            """);
+
+        // Nav items
+        Object[][] navItems = {
+            {"Home",       null,   pgHome,    0},
+            {"About Us",   null,   pgAbout,   1},
+            {"Admissions", null,   pgAdmit,   2},
+            {"Contact",    null,   pgContact, 3},
+        };
+        for (Object[] n : navItems) {
+            jdbc.update("""
+                INSERT INTO website_nav_items (id, tenant_id, school_id, label, url, page_id, position)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT DO NOTHING
+                """, uuid("wn-" + n[0]), TENANT_ID, SCHOOL_ID, n[0], n[1], n[2], n[3]);
+        }
+
+        log.debug("DEMO: Seeded JNV Lucknow public website with 4 pages.");
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /** Insert or update a website section so re-seeding always refreshes content. */
+    private void upsertSection(UUID id, UUID pageId, String sectionType, int position, String contentJson) {
+        jdbc.update("""
+            INSERT INTO website_sections (id, tenant_id, page_id, section_type, position, content, visible)
+            VALUES (?, ?, ?, ?, ?, ?::jsonb, true)
+            ON CONFLICT (id) DO UPDATE
+              SET content = EXCLUDED.content,
+                  position = EXCLUDED.position,
+                  section_type = EXCLUDED.section_type
+            """, id, TENANT_ID, pageId, sectionType, position, contentJson.strip());
+    }
+
     /**
-     * L-11: previously used UUID.nameUUIDFromBytes("greenwood-demo:" + tag) which
-     * produced predictable UUIDs — anyone knowing the scheme could enumerate demo
-     * tenants by ID. Now generates a random UUID per seed run.
+     * Returns a UUID that is stable for a given tag within one seeder run.
+     * Each seed run produces different UUIDs (no predictable enumeration),
+     * but repeated calls with the same tag in the same run return the same UUID
+     * so cross-method FK references resolve correctly.
      */
-    static UUID uuid(String ignoredTag) {
-        return UUID.randomUUID();
+    private UUID uuid(String tag) {
+        return uuidCache.computeIfAbsent(tag, k -> UUID.randomUUID());
     }
 
     /** Returns the last 20 working days (Mon-Fri) ending yesterday. */

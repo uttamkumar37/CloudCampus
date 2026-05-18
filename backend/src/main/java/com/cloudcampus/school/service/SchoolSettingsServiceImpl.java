@@ -1,6 +1,7 @@
 package com.cloudcampus.school.service;
 
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.school.dto.SchoolSettingsRequest;
 import com.cloudcampus.school.dto.SchoolSettingsResponse;
 import com.cloudcampus.school.entity.SchoolSettings;
@@ -22,8 +23,9 @@ class SchoolSettingsServiceImpl implements SchoolSettingsService {
     @Override
     @Transactional
     public SchoolSettingsResponse get(UUID schoolId) {
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         return SchoolSettingsResponse.from(
-                repo.findById(schoolId)
+                repo.findBySchoolIdAndTenantId(schoolId, tenantId)
                     .orElseThrow(() -> new NotFoundException("School settings not found for school: " + schoolId))
         );
     }
@@ -31,7 +33,8 @@ class SchoolSettingsServiceImpl implements SchoolSettingsService {
     @Override
     @Transactional
     public SchoolSettingsResponse update(UUID schoolId, SchoolSettingsRequest req) {
-        SchoolSettings settings = repo.findById(schoolId)
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        SchoolSettings settings = repo.findBySchoolIdAndTenantId(schoolId, tenantId)
                 .orElseThrow(() -> new NotFoundException("School settings not found for school: " + schoolId));
 
         settings.setTimezone(req.timezone());
