@@ -146,3 +146,25 @@ groups:
         annotations:
           summary: "Disk usage > 85 % on {{ $labels.mountpoint }}"
           description: "Disk space on {{ $labels.mountpoint }} is critically low. Clean up or expand volume."
+
+      # AI budget alert — tenant has used at least 90 % of monthly token budget
+      # Emitted by AiUsageMetricsPublisher as cloudcampus_ai_budget_utilization_percent.
+      - alert: AIBudgetBurnRateHigh
+        expr: cloudcampus_ai_budget_utilization_percent >= 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI budget burn is high for tenant {{ $labels.tenant_code }}"
+          description: "Tenant {{ $labels.tenant_code }} has used {{ $value | humanize }}% of its configured monthly AI token budget. Review AI usage dashboard and tenant budget configuration."
+
+      # AI usage anomaly alert — tenant AI request failure rate is elevated
+      # Emitted by AiUsageMetricsPublisher as cloudcampus_ai_request_failure_rate_percent.
+      - alert: AIUsageFailureRateHigh
+        expr: cloudcampus_ai_request_failure_rate_percent >= 25
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI usage anomaly for tenant {{ $labels.tenant_code }}"
+          description: "Tenant {{ $labels.tenant_code }} has an AI request failure rate of {{ $value | humanize }}% this month. Check provider errors, prompt failures, and budget enforcement events."

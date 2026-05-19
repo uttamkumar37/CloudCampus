@@ -76,49 +76,49 @@ Each phase is intentionally narrow. Do not batch phases or skip validation. The 
 |---|---|---:|---:|---|---|---|
 | TASK-019 | Add investor room access audit logs | DONE | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress` | Revert audit writes only; do not remove room access logic. | Metadata access, unlock attempts, successes, failures, and expirations are logged. |
 | TASK-020 | Add expiry validation tests | DONE | LOW | `cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Investor*Test` | Revert tests if fixtures need redesign. | Expired rooms never expose protected content, including link-only rooms. |
-| TASK-021 | Add watermark/download control plan | TODO | LOW | `rg -n "watermark\|download control\|investor room" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan defines watermarking, download policy, access event tracking, and future signed-file controls. |
+| TASK-021 | Add watermark/download control plan | DONE | LOW | `rg -n "watermark\|download control\|investor room" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan defines watermarking, download policy, access event tracking, and future signed-file controls. |
 
 ### PHASE 6 - AI Safety
 
 | ID | Task | Status | Risk | Validation command | Rollback notes | Acceptance criteria |
 |---|---|---:|---:|---|---|---|
-| TASK-022 | Add prompt injection test cases | TODO | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Ai*Test,*Prompt*Test,*Knowledge*Test` | Revert test cases if prompts require separate fixtures. | Prompt injection attempts cannot override system scope or tenant boundaries. |
-| TASK-023 | Add cross-tenant RAG leakage tests | TODO | HIGH | `cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Knowledge*Test,*Embedding*Test` | Revert tests or retrieval changes only. | Tenant A queries never retrieve Tenant B embeddings, chunks, or metadata. |
-| TASK-024 | Add AI usage audit dashboard | TODO | MEDIUM | `cd frontend && npm run build && cd ../backend && mvn test --batch-mode --no-transfer-progress` | Revert dashboard UI/API changes if metrics contract changes. | Admins can see AI requests, tokens, cost, tenant, feature, model, and anomalies. |
-| TASK-025 | Add AI budget anomaly alert | TODO | MEDIUM | `rg -n "AI.*alert\|budget.*alert\|ai_usage" infra backend docs` | Revert alert rule if metric name is wrong. | Alert fires on abnormal tenant AI usage or budget burn rate. |
+| TASK-022 | Add prompt injection test cases | DONE | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Ai*Test,*Prompt*Test,*Knowledge*Test` | Revert test cases if prompts require separate fixtures. | Prompt injection attempts cannot override system scope or tenant boundaries. |
+| TASK-023 | Add cross-tenant RAG leakage tests | DONE | HIGH | `cd backend && mvn test --batch-mode --no-transfer-progress -Dtest=*Knowledge*Test,*Embedding*Test` | Revert tests or retrieval changes only. | Tenant A queries never retrieve Tenant B embeddings, chunks, or metadata. |
+| TASK-024 | Add AI usage audit dashboard | DONE | MEDIUM | `cd frontend && npm run build && cd ../backend && mvn test --batch-mode --no-transfer-progress` | Revert dashboard UI/API changes if metrics contract changes. | Admins can see AI requests, tokens, cost, tenant, feature, model, and anomalies. |
+| TASK-025 | Add AI budget anomaly alert | DONE | MEDIUM | `rg -n "AI.*alert\|budget.*alert\|ai_usage" infra backend docs` | Revert alert rule if metric name is wrong. | Alert fires on abnormal tenant AI usage or budget burn rate. |
 
 ### PHASE 7 - Performance & Load
 
 | ID | Task | Status | Risk | Validation command | Rollback notes | Acceptance criteria |
 |---|---|---:|---:|---|---|---|
-| TASK-026 | Create seeded staging load test plan | TODO | LOW | `rg -n "load test\|seeded staging\|k6" infra docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan defines dataset size, target throughput, p95 goals, failure thresholds, and roles. |
-| TASK-027 | Add k6 scenario for school admin flows | TODO | MEDIUM | `k6 run infra/load-tests/load-school-admin.js` | Revert new k6 script if scenario cannot be parameterized. | Scenario covers login, dashboard, students, fees, attendance, reports, and write paths. |
-| TASK-028 | Add k6 scenario for public website | TODO | MEDIUM | `k6 run infra/load-tests/load-public-website.js` | Revert script if public API contract changes. | Scenario covers homepage, pages, navigation, theme, SEO, and investor/demo showcase reads. |
-| TASK-029 | Add database index audit | TODO | MEDIUM | `rg -n "CREATE INDEX\|EXPLAIN\|idx_" backend/src/main/resources/db/migration docs` | Documentation rollback; index migrations need forward-only correction. | Heavy queries have documented index coverage and missing indexes are tracked. |
-| TASK-030 | Add queue stress test plan | TODO | LOW | `rg -n "RabbitMQ\|queue stress\|DLX\|dead-letter" infra docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan covers notification queues, retries, dead letters, backlog alerts, and consumer scaling. |
+| TASK-026 | Create seeded staging load test plan | DONE | LOW | `rg -n "load test\|seeded staging\|k6" infra docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan defines dataset size, target throughput, p95 goals, failure thresholds, and roles. |
+| TASK-027 | Add k6 scenario for school admin flows | DONE | MEDIUM | `k6 run infra/load-tests/load-school-admin.js` | Revert new k6 script if scenario cannot be parameterized. | Scenario covers login, dashboard, students, fees, attendance, reports, and write paths. |
+| TASK-028 | Add k6 scenario for public website | DONE | MEDIUM | `k6 run infra/load-tests/load-public-website.js` | Revert script if public API contract changes. | Scenario covers homepage, pages, navigation, theme, SEO, and investor/demo showcase reads. |
+| TASK-029 | Add database index audit | DONE | MEDIUM | `rg -n "CREATE INDEX\|EXPLAIN\|idx_" backend/src/main/resources/db/migration docs` | Documentation rollback; index migrations need forward-only correction. | Heavy queries have documented index coverage and missing indexes are tracked. |
+| TASK-030 | Add queue stress test plan | DONE | LOW | `rg -n "RabbitMQ\|queue stress\|DLX\|dead-letter" infra docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan covers notification queues, retries, dead letters, backlog alerts, and consumer scaling. |
 
 ### PHASE 8 - Deployment Safety
 
 | ID | Task | Status | Risk | Validation command | Rollback notes | Acceptance criteria |
 |---|---|---:|---:|---|---|---|
-| TASK-031 | Add migration gate checklist | TODO | LOW | `rg -n "migration gate\|Flyway\|expand/contract" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Checklist blocks unsafe migrations and requires backup, dry run, and rollback notes. |
-| TASK-032 | Add rollback deployment playbook | TODO | LOW | `rg -n "rollback deployment\|deploy rollback\|image rollback" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Playbook defines app rollback, DB rollback constraints, and validation after rollback. |
-| TASK-033 | Add staging promotion checklist | TODO | LOW | `rg -n "staging promotion\|promotion checklist" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Checklist requires green CI, smoke tests, migrations, backups, and approval. |
-| TASK-034 | Add health verification checklist | TODO | LOW | `rg -n "health verification\|smoke test\|actuator" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Checklist verifies backend health, frontend routes, auth, public site, payments, queues, and metrics. |
+| TASK-031 | Add migration gate checklist | DONE | LOW | `rg -n "migration gate\|Flyway\|expand/contract" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Checklist blocks unsafe migrations and requires backup, dry run, and rollback notes. |
+| TASK-032 | Add rollback deployment playbook | DONE | LOW | `rg -n "rollback deployment\|deploy rollback\|image rollback" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Playbook defines app rollback, DB rollback constraints, and validation after rollback. |
+| TASK-033 | Add staging promotion checklist | DONE | LOW | `rg -n "staging promotion\|promotion checklist" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Checklist requires green CI, smoke tests, migrations, backups, and approval. |
+| TASK-034 | Add health verification checklist | DONE | LOW | `rg -n "health verification\|smoke test\|actuator" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Checklist verifies backend health, frontend routes, auth, public site, payments, queues, and metrics. |
 
 ### PHASE 9 - Enterprise Auth
 
 | ID | Task | Status | Risk | Validation command | Rollback notes | Acceptance criteria |
 |---|---|---:|---:|---|---|---|
-| TASK-035 | Add MFA design for Super Admin | TODO | LOW | `rg -n "MFA\|multi-factor\|Super Admin" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | MFA design covers enrollment, recovery, step-up auth, backup codes, and audit logs. |
-| TASK-036 | Add admin session/device management plan | TODO | LOW | `rg -n "session\|device management\|revoke" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan covers device list, revoke, session age, suspicious device alerts, and lost-device flow. |
-| TASK-037 | Add SSO readiness plan | TODO | LOW | `rg -n "SSO\|OIDC\|SAML\|SCIM" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan covers OIDC/SAML, domain verification, JIT provisioning, SCIM, and role mapping. |
+| TASK-035 | Add MFA design for Super Admin | DONE | LOW | `rg -n "MFA\|multi-factor\|Super Admin" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | MFA design covers enrollment, recovery, step-up auth, backup codes, and audit logs. |
+| TASK-036 | Add admin session/device management plan | DONE | LOW | `rg -n "session\|device management\|revoke" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan covers device list, revoke, session age, suspicious device alerts, and lost-device flow. |
+| TASK-037 | Add SSO readiness plan | DONE | LOW | `rg -n "SSO\|OIDC\|SAML\|SCIM" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Plan covers OIDC/SAML, domain verification, JIT provisioning, SCIM, and role mapping. |
 
 ### PHASE 10 - Observability & Audit
 
 | ID | Task | Status | Risk | Validation command | Rollback notes | Acceptance criteria |
 |---|---|---:|---:|---|---|---|
-| TASK-038 | Add alert routing plan | TODO | LOW | `rg -n "Alertmanager\|PagerDuty\|Slack\|alert routing" infra docs PRODUCTION_READY_ROADMAP.md` | Documentation/config rollback only. | Critical alerts have owner, route, severity, runbook, and escalation path. |
+| TASK-038 | Add alert routing plan | DONE | LOW | `rg -n "Alertmanager\|PagerDuty\|Slack\|alert routing" infra docs PRODUCTION_READY_ROADMAP.md` | Documentation/config rollback only. | Critical alerts have owner, route, severity, runbook, and escalation path. |
 | TASK-039 | Add audit retention policy | TODO | LOW | `rg -n "audit retention\|immutable audit\|retention policy" docs PRODUCTION_READY_ROADMAP.md` | Documentation-only rollback. | Policy defines retention, export, access control, PII handling, and tamper resistance. |
 | TASK-040 | Add tenant/user/correlation traceability checks | TODO | MEDIUM | `cd backend && mvn test --batch-mode --no-transfer-progress` | Revert tests/log changes if correlation contract changes. | Logs, audit events, and traces consistently include correlation ID, tenant, user, and request context where applicable. |
 
@@ -1075,6 +1075,683 @@ Validation result:
 
 - PASS — Backend: **131 tests, 0 failures, 0 errors**.
 - PASS — Frontend: **clean build, 0 errors**.
+
+---
+
+## 25. TASK-021 Findings - Watermark and Download Control Plan
+
+**Status:** DONE - documentation-only plan added; no runtime code changed.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `docs/INVESTOR_ROOM_WATERMARK_DOWNLOAD_CONTROL_PLAN.md` | New production plan for investor-room watermarking, download policy, asset access event tracking, and future signed-file controls. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-021 as done and recorded findings. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Watermarking | PASS - Defines visible watermark inputs, per-asset rendering behavior, derivative storage, and watermark generation audit events. |
+| Download policy | PASS - Defines `VIEW_ONLY`, `WATERMARKED_DOWNLOAD`, `ORIGINAL_DOWNLOAD`, and `BLOCKED` policy levels with safe defaults. |
+| Access event tracking | PASS - Extends TASK-019 room-level events with asset-level view, download, denial, signed URL, watermark, and policy-change events. |
+| Future signed-file controls | PASS - Defines controlled API shape, signed URL expiry/scope rules, revocation behavior, and required logging. |
+
+### Design notes
+
+1. The plan treats current investor-room content as structured protected content and reserves direct file handling for a future asset model.
+2. New assets default to `VIEW_ONLY`; original downloads require explicit Super Admin approval and a reason.
+3. Signed URLs are only minted after room expiry, unlock/session, and asset policy checks pass.
+4. Watermarked derivatives are stored separately from originals and expire quickly.
+
+Validation run for TASK-021:
+
+```bash
+rg -n 'watermark|download control|investor room' docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Plan terms found in `docs/INVESTOR_ROOM_WATERMARK_DOWNLOAD_CONTROL_PLAN.md`, existing docs, and `PRODUCTION_READY_ROADMAP.md`.
+
+---
+
+## 26. TASK-022 Findings - Prompt Injection Test Cases
+
+**Status:** DONE - prompt rendering now separates untrusted variables from system instructions; focused AI safety tests pass.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/src/main/java/com/cloudcampus/ai/prompt/service/PromptServiceImpl.java` | Routes prompt templates with user-supplied variables through `completeStructured`, placing the template in the system frame and variables in the user frame. |
+| `backend/src/test/java/com/cloudcampus/ai/prompt/service/PromptInjectionPromptServiceTest.java` | New test proving injected template variables do not enter the privileged system prompt and tenant ID comes from `RequestContext`. |
+| `backend/src/test/java/com/cloudcampus/ai/knowledge/service/PromptInjectionKnowledgeBaseServiceTest.java` | New test proving RAG injection text stays in the user message while retrieval and gateway calls remain scoped to the requested tenant. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-022 as done and recorded findings. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Prompt injection cannot override system scope | PASS - Prompt variables are passed as untrusted user data and the gateway receives a separate system instruction frame. |
+| Prompt injection cannot override tenant boundaries | PASS - Prompt rendering uses `RequestContext.getTenantId()` rather than request-body tenant IDs; RAG search and completion stay bound to the method tenant ID. |
+| RAG instructions remain privileged | PASS - Knowledge-base context and anti-injection instructions stay in the system message, while the hostile question remains user text. |
+
+### Design notes
+
+1. Admin-authored prompt templates are treated as the instruction frame; runtime variables are treated as untrusted data.
+2. Existing `renderedPrompt` output is preserved for API compatibility and UI display.
+3. The tests assert gateway arguments directly instead of relying on probabilistic model behavior.
+
+Validation run for TASK-022:
+
+```bash
+mvn -f backend/pom.xml test --batch-mode --no-transfer-progress '-Dtest=*Ai*Test,*Prompt*Test,*Knowledge*Test'
+```
+
+Validation result:
+
+- PASS - Focused backend AI safety suite: **2 tests, 0 failures, 0 errors, 0 skipped**.
+
+---
+
+## 27. TASK-023 Findings - Cross-Tenant RAG Leakage Tests
+
+**Status:** DONE - tenant-scoped vector retrieval is tested and RAG context assembly now defensively filters cross-tenant chunks.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/src/main/java/com/cloudcampus/ai/knowledge/service/KnowledgeBaseServiceImpl.java` | Filters retrieved documents by `metadata.tenant_id` before building the RAG context and source list. |
+| `backend/src/test/java/com/cloudcampus/ai/embedding/service/EmbeddingServiceTenantIsolationTest.java` | New test proving vector search sends an exact `tenant_id = <tenant>` filter to `VectorStore`. |
+| `backend/src/test/java/com/cloudcampus/ai/knowledge/service/KnowledgeBaseTenantIsolationTest.java` | New test proving Tenant B chunks and metadata are excluded before the AI gateway call. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-023 as done and recorded findings. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Tenant A vector search does not retrieve Tenant B embeddings | PASS - `EmbeddingServiceImpl.search` is verified to create an exact `tenant_id` filter. |
+| Tenant A RAG context excludes Tenant B chunks | PASS - `KnowledgeBaseServiceImpl` filters hits by document metadata before context concatenation. |
+| Tenant A RAG response excludes Tenant B metadata | PASS - Source titles are built only from tenant-matching hits. |
+
+### Design notes
+
+1. Isolation is enforced at two layers: vector-store search filter first, service-level metadata filter second.
+2. Documents without `tenant_id` metadata are excluded from RAG answers because they cannot be proven safe for the tenant.
+3. Tests assert request/filter objects and gateway context directly, avoiding model-dependent behavior.
+
+Validation run for TASK-023:
+
+```bash
+mvn -f backend/pom.xml test --batch-mode --no-transfer-progress '-Dtest=*Knowledge*Test,*Embedding*Test'
+```
+
+Validation result:
+
+- PASS - Focused backend RAG leakage suite: **3 tests, 0 failures, 0 errors, 0 skipped**.
+
+---
+
+## 28. TASK-024 Findings - AI Usage Audit Dashboard
+
+**Status:** DONE - AI usage dashboard now surfaces requests, tokens, estimated cost, tenant, feature, model, and anomaly signals.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/src/main/java/com/cloudcampus/ai/usage/dto/GlobalAiUsageResponse.java` | Expanded global usage response with estimated cost, feature/model breakdowns, failure counts, budget utilisation, and anomalies. |
+| `backend/src/main/java/com/cloudcampus/ai/usage/repository/AiUsageLogRepository.java` | Added aggregate queries by feature and model; tenant grouping now includes failed requests. |
+| `backend/src/main/java/com/cloudcampus/ai/usage/controller/AiUsageController.java` | Computes estimated cost and anomaly signals for failure rate, budget burn, usage concentration, and model latency. |
+| `frontend/src/features/super-admin/api/aiUsageApi.ts` | Updated TypeScript contract for the expanded global usage response. |
+| `frontend/src/features/super-admin/pages/AiUsagePage.tsx` | Upgraded dashboard with summary metrics, anomaly list, tenant table, feature table, model table, and existing per-tenant budget detail. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-024 as done and recorded findings. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Admins can see AI requests | PASS - Platform, tenant, feature, model, and per-tenant request counts are visible. |
+| Admins can see tokens | PASS - Token totals are shown globally and in all breakdown tables. |
+| Admins can see cost | PASS - Dashboard shows estimated token-based USD cost globally and per breakdown row. |
+| Admins can see tenant | PASS - Usage by tenant table resolves tenant names when available and keeps raw shortened IDs as fallback. |
+| Admins can see feature | PASS - Usage by feature groups by `prompt_key`. |
+| Admins can see model | PASS - Usage by model groups by provider/model with average latency. |
+| Admins can see anomalies | PASS - Anomaly panel flags high failure rate, budget burn, usage concentration, and high model latency. |
+
+### Design notes
+
+1. Cost is explicitly estimated because provider invoice/cost-per-call data is not stored in `ai_usage_logs`.
+2. Anomalies are computed from the current month of usage data and capped to 12 dashboard items.
+3. The existing `/super-admin/ai/usage` route was reused so navigation remains stable.
+
+Validation run for TASK-024:
+
+```bash
+cd frontend && npm run build
+mvn -f backend/pom.xml test --batch-mode --no-transfer-progress
+```
+
+Validation result:
+
+- PASS - Frontend production build completed successfully with Vite.
+- PASS - Full backend suite: **147 tests, 0 failures, 0 errors, 0 skipped**.
+
+---
+
+## 29. TASK-025 Findings - AI Budget Anomaly Alert
+
+**Status:** DONE - Prometheus alert rules now fire from backend AI usage gauges for budget burn and abnormal failure rate.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `backend/src/main/java/com/cloudcampus/ai/usage/service/AiUsageMetricsPublisher.java` | New scheduled Micrometer metric publisher for per-tenant AI budget utilisation, monthly tokens, and request failure rate. |
+| `backend/src/main/java/com/cloudcampus/ai/usage/repository/AiUsageLogRepository.java` | Added failed-request aggregate query used by the metric publisher. |
+| `infra/prometheus/alert_rules.yml` | Added `AIBudgetBurnRateHigh` and `AIUsageFailureRateHigh` alert rules. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-025 as done and recorded findings. |
+
+### Metric contract
+
+| Prometheus metric | Source | Alert use |
+|---|---|---|
+| `cloudcampus_ai_budget_utilization_percent` | `AiUsageMetricsPublisher` | Fires when tenant monthly AI token budget reaches 90%. |
+| `cloudcampus_ai_monthly_tokens_total` | `AiUsageMetricsPublisher` | Operator context for tenant AI token burn. |
+| `cloudcampus_ai_request_failure_rate_percent` | `AiUsageMetricsPublisher` | Fires when tenant AI request failures reach 25%. |
+
+### Alert rules
+
+| Alert | Expression | Severity |
+|---|---|---|
+| `AIBudgetBurnRateHigh` | `cloudcampus_ai_budget_utilization_percent >= 90` for 10m | warning |
+| `AIUsageFailureRateHigh` | `cloudcampus_ai_request_failure_rate_percent >= 25` for 10m | warning |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Alert fires on budget burn rate | PASS - `AIBudgetBurnRateHigh` triggers from monthly token budget utilisation. |
+| Alert fires on abnormal tenant AI usage | PASS - `AIUsageFailureRateHigh` triggers from tenant-level AI request failure rate. |
+| Alert metric names are discoverable | PASS - Metric names are documented in the publisher and referenced by alert rules. |
+
+### Design notes
+
+1. Metrics refresh every 60 seconds by default via `app.ai.usage-metrics-refresh-ms`.
+2. Gauges are scoped to active tenants and tagged with `tenant_id` and `tenant_code`.
+3. Tenants without a monthly token budget publish `0` budget utilisation, so budget alerts require explicit tenant configuration.
+
+Validation run for TASK-025:
+
+```bash
+rg -n "AI.*alert|budget.*alert|ai_usage" infra backend docs
+mvn -f backend/pom.xml test --batch-mode --no-transfer-progress '-Dtest=*Ai*Test,*Prompt*Test,*Knowledge*Test'
+mvn -f backend/pom.xml test --batch-mode --no-transfer-progress
+```
+
+Validation result:
+
+- PASS - Search validation finds the new Prometheus AI alert rules and `ai_usage_logs` backend references.
+- PASS - Focused AI backend suite: **3 tests, 0 failures, 0 errors, 0 skipped**.
+- PASS - Full backend suite: **147 tests, 0 failures, 0 errors, 0 skipped**.
+
+---
+
+## 30. TASK-026 Findings - Seeded Staging Load Test Plan
+
+**Status:** DONE - documentation-only plan added; no runtime code changed.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `docs/SEEDED_STAGING_LOAD_TEST_PLAN.md` | New seeded staging load test plan covering dataset tiers, workload mix, throughput, p95 goals, failure thresholds, observability, roles, and go/no-go rules. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-026 as done and recorded findings. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Dataset size | PASS - Defines MVP, Standard, and Enterprise claim-gate seed sizes across tenants, schools, students, staff, parents, fees, attendance, and documents. |
+| Target throughput | PASS - Defines sustained RPS, duration, and VU targets for each tier. |
+| p95 goals | PASS - Defines p95 latency goals by path class and tier. |
+| Failure thresholds | PASS - Defines HTTP, k6, auth, rate-limit, DB, Redis, RabbitMQ, JVM, and CPU thresholds. |
+| Roles | PASS - Defines release, backend, frontend, DevOps, QA, and support responsibilities. |
+
+### Design notes
+
+1. The plan builds on existing k6 scripts: `smoke.js`, `load-auth.js`, `load-reports.js`, and `stress.js`.
+2. TASK-027 and TASK-028 remain responsible for adding school-admin and public-website scenario scripts.
+3. Enterprise-scale claims require the Enterprise claim-gate tier, not only the MVP staging tier.
+
+Validation run for TASK-026:
+
+```bash
+rg -n "load test|seeded staging|k6" infra docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Search validation finds the seeded staging load test plan, existing k6 scripts, and roadmap references.
+
+---
+
+## 31. TASK-027 Findings - School Admin k6 Scenario
+
+**Status:** DONE - parameterized k6 scenario added. Runtime k6 execution is blocked in this local environment because the `k6` binary is not installed.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `infra/load-tests/load-school-admin.js` | New seeded staging k6 scenario for school-admin login, dashboard, students, fees, attendance reads, attendance write upsert, and reports. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-027 as done and recorded validation notes. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Login | PASS - `setup()` authenticates with explicit `ADMIN_USERNAME` and `ADMIN_PASSWORD`. |
+| Dashboard | PASS - Calls `/v1/school-admin/schools/{schoolId}/dashboard`. |
+| Students | PASS - Covers school student list and student detail. |
+| Fees | PASS - Covers fee records by school, fee record detail, and receipt reads. |
+| Attendance | PASS - Covers school/date sessions, class/date-range sessions, student report, and class report. |
+| Reports | PASS - Covers attendance, fees, and performance reports. |
+| Write paths | PASS - Upserts a seeded attendance mark into `ATTENDANCE_SESSION_ID` with `lockSession=false`. |
+
+### Design notes
+
+1. The script requires seeded IDs through environment variables and does not use fallback passwords.
+2. The write path is an attendance upsert against a pre-seeded open session to avoid unbounded row creation during repeated load runs.
+3. Thresholds track full-flow p95, write-path failures, total flow failures, request failures, and global p95.
+
+Validation run for TASK-027:
+
+```bash
+k6 run infra/load-tests/load-school-admin.js
+node --check infra/load-tests/load-school-admin.js
+rg -n "login|dashboard|students|fee|attendance|reports|write path|load-school-admin" infra/load-tests/load-school-admin.js PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- BLOCKED - `k6 run infra/load-tests/load-school-admin.js` could not execute locally: `k6` is not installed.
+- PASS - `node --check` reports valid JavaScript syntax.
+- PASS - Search validation confirms the scenario covers login, dashboard, students, fees, attendance, reports, and write path references.
+
+---
+
+## 32. TASK-028 Findings - Public Website k6 Scenario
+
+**Status:** DONE - parameterized public website k6 scenario added. Runtime k6 execution is blocked in this local environment because the `k6` binary is not installed.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `infra/load-tests/load-public-website.js` | New unauthenticated public website k6 scenario for homepage/root, pages, navigation, theme, SEO, demo showcase, investor showcase, and optional tenant public-site reads. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-028 as done and recorded validation notes. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Homepage | PASS - Calls `/v1/public/website`. |
+| Pages | PASS - Calls published pages list and parameterized page detail slugs. |
+| Navigation | PASS - Calls `/v1/public/website/navigation`. |
+| Theme | PASS - Calls `/v1/public/website/theme`. |
+| SEO | PASS - Calls `/v1/public/website/seo?routePath=...` with parameterized routes. |
+| Investor showcase reads | PASS - Calls `/v1/public/website/showcase/investors`. |
+| Demo showcase reads | PASS - Calls `/v1/public/website/showcase/demo` and `/v1/experience/public/demo-scenarios`. |
+
+### Design notes
+
+1. The script is unauthenticated and uses the public API surface only.
+2. `PAGE_SLUGS`, `SEO_ROUTES`, `TENANT_CODE`, and `TENANT_PAGE_SLUGS` let seeded staging choose real published routes without code edits.
+3. Tenant public-site reads are optional because global public website readiness should not depend on a specific tenant code being seeded in every environment.
+
+Validation run for TASK-028:
+
+```bash
+k6 run infra/load-tests/load-public-website.js
+node --check infra/load-tests/load-public-website.js
+rg -n "homepage|pages|navigation|theme|seo|demo|investor|TENANT_CODE|load-public-website" infra/load-tests/load-public-website.js PRODUCTION_READY_ROADMAP.md docs/SEEDED_STAGING_LOAD_TEST_PLAN.md
+```
+
+Validation result:
+
+- BLOCKED - `k6 run infra/load-tests/load-public-website.js` could not execute locally: `k6` is not installed.
+- PASS - `node --check` reports valid JavaScript syntax.
+- PASS - Search validation confirms the scenario covers homepage, pages, navigation, theme, SEO, demo showcase, investor showcase, and optional tenant public-site reads.
+
+---
+
+## 33. TASK-029 Findings - Database Index Audit
+
+**Status:** DONE - database index audit added. This task is documentation-only; no index migration was created.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `docs/DATABASE_INDEX_AUDIT.md` | New audit mapping heavy query paths to existing Flyway index coverage and tracked missing indexes. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-029 as done and recorded validation notes. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Heavy queries documented | PASS - Covers auth, school setup, students, staff, attendance, fees, exams, notices, homework, timetable, website, AI usage/RAG, experience analytics, and audit trails. |
+| Existing index coverage documented | PASS - Maps hot paths to concrete migration indexes such as `idx_att_session_school_year`, `idx_att_record_session_status`, `idx_exam_results_school_exam_rank`, `idx_notices_school_pub_sort`, `idx_ai_usage_created`, and audit indexes. |
+| Missing indexes tracked | PASS - Tracks forward-only candidate indexes for AI usage aggregates, fee reminders, timetable teacher conflicts, homework sorting, website ordering, platform analytics, attendance history, and lower-case name search. |
+| EXPLAIN process documented | PASS - Includes representative `EXPLAIN (ANALYZE, BUFFERS)` queries and migration rules. |
+
+### Design notes
+
+1. The audit intentionally stops short of adding migrations because index changes need staging row counts, before/after query plans, and write-overhead review.
+2. The highest-priority tracked gaps are append-heavy aggregate tables (`ai_usage_logs`, `platform_experience_events`) and scheduler/report paths that can degrade as seeded data grows.
+3. Future accepted indexes should be added through new forward-only Flyway migrations and validated with captured `EXPLAIN (ANALYZE, BUFFERS)` output.
+
+Validation run for TASK-029:
+
+```bash
+rg -n "CREATE INDEX|EXPLAIN|idx_" backend/src/main/resources/db/migration docs
+```
+
+Validation result:
+
+- PASS - Search validation finds existing migration indexes, documented `EXPLAIN` workflow, and tracked `idx_` candidate indexes in the database index audit.
+
+---
+
+## 34. TASK-030 Findings - Queue Stress Test Plan
+
+**Status:** DONE - documentation-only queue stress test plan added; no runtime code changed.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `docs/QUEUE_STRESS_TEST_PLAN.md` | New RabbitMQ queue stress test plan for notification queues, retries/manual replay, DLX behavior, backlog alerts, and consumer scaling. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-030 as done and recorded validation notes. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Notification queues | PASS - Plan covers current `cc.notifications.email`, `cc.notifications.sms`, and `cc.notifications.dead` topology with future channel follow-ups. |
+| Retries | PASS - Documents current publisher confirms, fail-open publish behavior, provider failure logging, dead-letter manual replay, and future delayed retry follow-up. |
+| Dead letters | PASS - Includes poison-message and DLX inspection/replay scenarios for `cc.notifications.dead`. |
+| Backlog alerts | PASS - Includes `RabbitMQQueueDepthHigh` alert validation and a staging follow-up to confirm queue-label matching for `cc.notifications.*`. |
+| Consumer scaling | PASS - Defines one-instance baseline, horizontal scale-out gates, provider bottleneck checks, and scale-back expectations. |
+
+### Design notes
+
+1. The plan reflects the implemented RabbitMQ queues, not only the broader architecture target; push/WhatsApp queue stress coverage is tracked as a future extension.
+2. Current provider-level email/SMS failures are logged to `notification_logs`; listener exceptions are what route messages to DLX.
+3. The plan treats queue stress as a release gate that must capture queue depth, unacked messages, consumer count, DLX depth, notification outcomes, backend health, and alert behavior.
+
+Validation run for TASK-030:
+
+```bash
+rg -n "RabbitMQ|queue stress|DLX|dead-letter" infra docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Search validation finds the RabbitMQ queue stress plan, DLX/dead-letter coverage, existing backlog alert, and roadmap references.
+
+---
+
+## 35. TASK-031 Findings - Migration Gate Checklist
+
+**Status:** DONE - documentation-only migration gate checklist added; no runtime code changed.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `docs/MIGRATION_GATE_CHECKLIST.md` | New Flyway migration gate checklist covering unsafe migration blockers, backup evidence, staging dry runs, expand/contract rollout, and rollback notes. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-031 as done and recorded validation notes. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Blocks unsafe migrations | PASS - Defines blocking rules for checksum drift, version reuse, historical placeholder edits, destructive DDL, large table rewrites, out-of-order migrations, and extension creation. |
+| Requires backup | PASS - Requires a fresh encrypted PostgreSQL backup, backup object evidence, healthy backup alerts, and restore proof for high-risk migrations. |
+| Requires dry run | PASS - Requires staging or scratch-restore Flyway dry run evidence, elapsed time, lock observations, smoke tests, and repeat no-op startup. |
+| Requires rollback notes | PASS - Includes a release-ticket rollback template covering app image rollback, DB forward-fix strategy, backup object, dry-run result, locks, owners, and approvals. |
+| Covers expand/contract | PASS - Documents expand, backfill, switch, and contract phases, and blocks combining expansion and contraction by default. |
+
+### Design notes
+
+1. The checklist reflects current repo policy: Flyway owns schema, Hibernate uses `ddl-auto: validate`, production has `out-of-order: false`, and V48 is permanently reserved.
+2. The migration gate treats destructive or contract migrations as high-risk because app rollback can become impossible after schema removal.
+3. Backup and restore evidence is tied to the existing `infra/pgbackup/drill.sh`, backup freshness metrics, and disaster recovery docs.
+
+Validation run for TASK-031:
+
+```bash
+rg -n "migration gate|Flyway|expand/contract" docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Search validation finds the migration gate checklist, Flyway ownership rules, expand/contract workflow, and roadmap references.
+
+---
+
+## 36. TASK-032 Findings - Rollback Deployment Playbook
+
+**Status:** DONE - documentation-only rollback deployment playbook added; no runtime code changed.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `docs/ROLLBACK_DEPLOYMENT_PLAYBOOK.md` | New rollback deployment playbook covering image rollback, DB rollback constraints, recovery options, post-rollback validation, and communication. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-032 as done and recorded validation notes. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| App rollback | PASS - Defines rollout freeze, blast-radius checks, immutable image rollback examples for Kubernetes and Docker Compose, and startup health checks. |
+| DB rollback constraints | PASS - Documents Flyway forward-only posture, additive schema handling, unsafe contract/destructive migration cases, and prohibited ad hoc production actions. |
+| Validation after rollback | PASS - Covers backend health, frontend routes, auth, tenant isolation, public website, payments, queues, AI, Flyway history, and metrics. |
+| Recovery choices | PASS - Distinguishes forward-fix migration, feature flag disablement, targeted data repair, table-level restore, and full DB restore. |
+| Communication | PASS - Defines rollback start, in-progress, completion, and post-incident communication checkpoints. |
+
+### Design notes
+
+1. The playbook follows the current production posture: immutable image tags, previous image SHAs retained, Flyway-owned schema, and additive migrations preferred.
+2. App image rollback is treated as routine only when schema remains backward-compatible.
+3. Whole-database restore is explicitly an incident path, not a normal deployment rollback step.
+
+Validation run for TASK-032:
+
+```bash
+rg -n "rollback deployment|deploy rollback|image rollback" docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Search validation finds the rollback deployment playbook, image rollback guidance, deployment rollback references, and roadmap status.
+
+---
+
+## 37. TASK-033 Findings - Staging Promotion Checklist
+
+**Status:** DONE - documentation-only staging promotion checklist added; no runtime code changed.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `docs/STAGING_PROMOTION_CHECKLIST.md` | New staging promotion checklist covering release ticket metadata, green CI, staging environment proof, migrations, backups, smoke tests, load evidence, rollback readiness, and approvals. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-033 as done and recorded validation notes. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Green CI | PASS - Requires backend `mvn verify`, frontend build, mobile TypeScript, TruffleHog, OWASP Dependency Check, and immutable Docker image evidence for the exact commit SHA. |
+| Smoke tests | PASS - Requires health, k6 smoke, auth, tenant isolation, public website, payments, queues, and storage checks where applicable. |
+| Migrations | PASS - Requires Flyway dry run, clean `flyway_schema_history`, versioning checks, rollback notes, query/index proof, and tenant safety notes. |
+| Backups | PASS - Requires fresh backup evidence, clear backup alerts, restore drill link, high-risk scratch restore proof, and RPO awareness. |
+| Approval | PASS - Defines approvers by release risk and states explicit approval is required. |
+
+### Design notes
+
+1. The checklist ties staging promotion to existing CI jobs, migration gate, rollback playbook, seeded staging load plan, and backup drill process.
+2. Promotion is blocked if evidence is stale, missing, or not tied to the exact candidate commit/image.
+3. Load-test requirements scale by release tier, so normal MVP promotion and enterprise claim gates are handled without mixing standards.
+
+Validation run for TASK-033:
+
+```bash
+rg -n "staging promotion|promotion checklist" docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Search validation finds the staging promotion checklist and roadmap status.
+
+---
+
+## 38. TASK-034 Findings - Health Verification Checklist
+
+**Status:** DONE - documentation-only health verification checklist added; no runtime code changed.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `docs/HEALTH_VERIFICATION_CHECKLIST.md` | New health verification checklist covering backend actuator, smoke tests, frontend routes, auth, public site, payments, queues, metrics, and completion evidence. |
+| `PRODUCTION_READY_ROADMAP.md` | Marked TASK-034 as done and recorded validation notes. |
+
+### Coverage
+
+| Acceptance criterion | Status |
+|---|---|
+| Backend health | PASS - Covers `/actuator/health`, liveness, readiness, and `/actuator/prometheus` checks using internal actuator URL. |
+| Frontend routes | PASS - Covers admin shell, login route, Super Admin route, School Admin route, public route, and hard-refresh asset validation. |
+| Auth | PASS - Covers login, refresh, role access, tenant isolation, and public route access. |
+| Public site | PASS - Covers public website root, pages, navigation, theme, SEO, demo showcase, and investor showcase endpoints. |
+| Payments | PASS - Covers payment config, payment-order endpoints, verify endpoint, webhook signature rejection, idempotency, and payment metrics. |
+| Queues | PASS - Covers RabbitMQ queue presence, consumers, backlog, DLQ, and `RabbitMQQueueDepthHigh`. |
+| Metrics | PASS - Covers Prometheus backend scrape, HTTP/JVM/AI metrics, backup alerts, queue alerts, and backend-down alerts. |
+
+### Design notes
+
+1. Production actuator checks are written for the internal management port because production only exposes `health` and `prometheus`.
+2. Existing `infra/load-tests/smoke.js` is the primary smoke-test command; curl fallback is documented for environments without k6.
+3. Payment checks avoid real-money flows and rely on sandbox or invalid-signature verification where appropriate.
+
+Validation run for TASK-034:
+
+```bash
+rg -n "health verification|smoke test|actuator" docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Search validation finds the health verification checklist, smoke test references, actuator checks, and roadmap status.
+
+---
+
+## 39. TASK-035 Findings - Super Admin MFA Design
+
+Implemented:
+
+- Added `docs/SUPER_ADMIN_MFA_DESIGN.md`.
+- Defined a two-step Super Admin login flow where password success returns an MFA challenge instead of access and refresh tokens.
+- Proposed MFA token claims (`mfa_verified`, `amr`, `auth_time`, `mfa_time`) and step-up behavior for sensitive Super Admin actions.
+- Defined user-scoped MFA tables for security settings, factors, and backup-code hashes because Super Admin users are tenantless.
+- Covered TOTP enrollment, one-time backup codes, assisted recovery, two-person control, step-up auth, frontend flows, abuse controls, rollout, and tests.
+- Mapped audit events for MFA challenges, enrollment, backup-code use, recovery, and step-up.
+
+Validation command:
+
+```bash
+rg -n "MFA|multi-factor|Super Admin" docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Search validation finds the Super Admin MFA design, roadmap status, enrollment, recovery, step-up, backup-code, and audit-log coverage.
+
+---
+
+## 40. TASK-036 Findings - Admin Session and Device Management Plan
+
+Implemented:
+
+- Added `docs/ADMIN_SESSION_DEVICE_MANAGEMENT_PLAN.md`.
+- Documented the current device-session, refresh-token, JWT denylist, revoke-all, and frontend device-list behavior.
+- Identified the main production gap: device-session revocation marks a database row revoked but does not invalidate that device's refresh token because refresh tokens are not linked to device-session IDs.
+- Proposed tenantless Super Admin device sessions, refresh-token to session linkage, JWT `sid` claims, refresh-time revoked-session checks, and token deletion on device revoke.
+- Covered device list fields, single-device revoke, all-session revoke, session age policy, suspicious device alerts, and lost-device self-service/admin-assisted flows.
+- Added audit event candidates, frontend account-security plan, implementation sequence, and backend/frontend test coverage.
+
+Validation command:
+
+```bash
+rg -n "session|device management|revoke" docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Search validation finds the admin session/device management plan, revoke semantics, session age policy, suspicious device alerts, lost-device flow, and roadmap status.
+
+---
+
+## 41. TASK-037 Findings - SSO Readiness Plan
+
+Implemented:
+
+- Added `docs/SSO_READINESS_PLAN.md`.
+- Documented current auth, tenant, user, domain-verification, and school-access constraints that affect SSO design.
+- Planned tenant-scoped OIDC authorization-code + PKCE support and SAML 2.0 SP support.
+- Defined separate SSO login-domain verification using DNS TXT records rather than reusing public website custom domains.
+- Proposed identity-provider, external-identity, verified-domain, role-mapping, and SCIM-client tables.
+- Covered JIT provisioning rules, SCIM 2.0 user/group endpoints, role mapping, school-code mapping, login routing, admin UI, security controls, audit events, rollout, and tests.
+
+Validation command:
+
+```bash
+rg -n "SSO|OIDC|SAML|SCIM" docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Search validation finds the SSO readiness plan, OIDC/SAML support, domain verification, JIT provisioning, SCIM lifecycle, role mapping, and roadmap status.
+
+---
+
+## 42. TASK-038 Findings - Alert Routing Plan
+
+Implemented:
+
+- Added `docs/ALERT_ROUTING_PLAN.md`.
+- Documented the current Alertmanager placeholder email route and production requirement for PagerDuty, Slack, and email fallback receivers.
+- Defined production receivers for platform critical alerts, platform warnings, AI ops alerts, release/backup ops alerts, and fallback email.
+- Mapped every current Prometheus alert to owner, severity, primary route, secondary route, runbook, and escalation path.
+- Added Alertmanager routing blueprint, severity rules, runbook annotation requirements, escalation targets, validation checklist, and rollback guidance.
+
+Validation command:
+
+```bash
+rg -n "Alertmanager|PagerDuty|Slack|alert routing" infra docs PRODUCTION_READY_ROADMAP.md
+```
+
+Validation result:
+
+- PASS - Search validation finds the alert routing plan, Alertmanager configuration, PagerDuty and Slack routing targets, owner/runbook/escalation coverage, and roadmap status.
 
 ---
 

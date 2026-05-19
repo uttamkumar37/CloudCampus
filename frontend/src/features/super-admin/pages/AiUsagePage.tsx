@@ -5,10 +5,27 @@ import {
   getGlobalAiUsage,
   getTenantAiUsage,
   type AiUsageSummaryResponse,
+  type AiUsageAnomaly,
+  type FeatureAiUsage,
+  type ModelAiUsage,
+  type TenantAiUsage,
 } from '../api/aiUsageApi';
 
 function fmt(n: number) {
   return n.toLocaleString('en-IN');
+}
+
+function money(n: number) {
+  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`;
+}
+
+function pct(part: number, total: number) {
+  return total > 0 ? Math.round((part / total) * 100) : 0;
+}
+
+function tenantLabel(tenantId: string | null, tenantMap: Record<string, string>) {
+  if (!tenantId) return 'Unassigned';
+  return tenantMap[tenantId] ?? `${tenantId.substring(0, 8)}...`;
 }
 
 function StatCard({
@@ -30,6 +47,17 @@ function StatCard({
       </p>
       {sub && <p className="mt-0.5 text-xs text-gray-500">{sub}</p>}
     </div>
+  );
+}
+
+function SeverityBadge({ severity }: { severity: string }) {
+  const cls = severity === 'HIGH'
+    ? 'border-red-200 bg-red-50 text-red-700'
+    : 'border-amber-200 bg-amber-50 text-amber-700';
+  return (
+    <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${cls}`}>
+      {severity}
+    </span>
   );
 }
 
@@ -119,6 +147,171 @@ function TenantUsagePanel({ tenantId }: { tenantId: string }) {
   );
 }
 
+function TenantTable({
+  rows,
+  tenantMap,
+}: {
+  rows: TenantAiUsage[];
+  tenantMap: Record<string, string>;
+}) {
+  if (rows.length === 0) {
+    return <p className="text-sm text-gray-400">No tenant AI activity this month.</p>;
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-lg border border-gray-100">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-gray-50">
+          <tr>
+            {['Tenant', 'Tokens', 'Requests', 'Failures', 'Cost', 'Budget'].map((h) => (
+              <th key={h} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map((row, index) => {
+            const failurePct = pct(row.failedRequests, row.requests);
+            return (
+              <tr key={row.tenantId ?? `tenant-${index}`} className="hover:bg-gray-50">
+                <td className="px-4 py-2 font-medium text-gray-900">{tenantLabel(row.tenantId, tenantMap)}</td>
+                <td className="px-4 py-2 text-gray-700">{fmt(row.tokens)}</td>
+                <td className="px-4 py-2 text-gray-700">{fmt(row.requests)}</td>
+                <td className={`px-4 py-2 ${failurePct >= 25 ? 'text-red-600' : 'text-gray-700'}`}>
+                  {fmt(row.failedRequests)} ({failurePct}%)
+                </td>
+                <td className="px-4 py-2 text-gray-700">{money(row.estimatedCostUsd)}</td>
+                <td className="px-4 py-2 text-gray-700">
+                  {row.budgetUtilisationPct === null ? 'Unlimited' : `${row.budgetUtilisationPct}%`}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function FeatureTable({ rows }: { rows: FeatureAiUsage[] }) {
+  if (rows.length === 0) {
+    return <p className="text-sm text-gray-400">No feature usage recorded yet.</p>;
+  }
+  return (
+    <div className="overflow-x-auto rounded-lg border border-gray-100">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-gray-50">
+          <tr>
+            {['Feature', 'Tokens', 'Requests', 'Failures', 'Cost'].map((h) => (
+              <th key={h} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map((row) => {
+            const failurePct = pct(row.failedRequests, row.requests);
+            return (
+              <tr key={row.feature} className="hover:bg-gray-50">
+                <td className="px-4 py-2 font-medium text-gray-900">{row.feature}</td>
+                <td className="px-4 py-2 text-gray-700">{fmt(row.tokens)}</td>
+                <td className="px-4 py-2 text-gray-700">{fmt(row.requests)}</td>
+                <td className={`px-4 py-2 ${failurePct >= 25 ? 'text-red-600' : 'text-gray-700'}`}>
+                  {fmt(row.failedRequests)} ({failurePct}%)
+                </td>
+                <td className="px-4 py-2 text-gray-700">{money(row.estimatedCostUsd)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ModelTable({ rows }: { rows: ModelAiUsage[] }) {
+  if (rows.length === 0) {
+    return <p className="text-sm text-gray-400">No model usage recorded yet.</p>;
+  }
+  return (
+    <div className="overflow-x-auto rounded-lg border border-gray-100">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-gray-50">
+          <tr>
+            {['Provider / Model', 'Tokens', 'Requests', 'Failures', 'Latency', 'Cost'].map((h) => (
+              <th key={h} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map((row) => {
+            const failurePct = pct(row.failedRequests, row.requests);
+            return (
+              <tr key={`${row.provider}-${row.model}`} className="hover:bg-gray-50">
+                <td className="px-4 py-2 font-medium text-gray-900">
+                  {row.provider} / {row.model}
+                </td>
+                <td className="px-4 py-2 text-gray-700">{fmt(row.tokens)}</td>
+                <td className="px-4 py-2 text-gray-700">{fmt(row.requests)}</td>
+                <td className={`px-4 py-2 ${failurePct >= 25 ? 'text-red-600' : 'text-gray-700'}`}>
+                  {fmt(row.failedRequests)} ({failurePct}%)
+                </td>
+                <td className={`px-4 py-2 ${row.avgLatencyMs >= 5000 ? 'text-amber-600' : 'text-gray-700'}`}>
+                  {fmt(row.avgLatencyMs)} ms
+                </td>
+                <td className="px-4 py-2 text-gray-700">{money(row.estimatedCostUsd)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function AnomalyList({
+  rows,
+  tenantMap,
+}: {
+  rows: AiUsageAnomaly[];
+  tenantMap: Record<string, string>;
+}) {
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-lg border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-700">
+        No AI usage anomalies detected for the current month.
+      </div>
+    );
+  }
+  return (
+    <div className="divide-y divide-gray-100 rounded-lg border border-gray-100">
+      {rows.map((row, index) => (
+        <div key={`${row.scope}-${row.signal}-${index}`} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <SeverityBadge severity={row.severity} />
+              <p className="text-sm font-semibold text-gray-900">{row.signal}</p>
+              <span className="text-xs text-gray-400">{row.scope}</span>
+            </div>
+            <p className="mt-1 text-sm text-gray-600">{row.detail}</p>
+            {row.tenantId && (
+              <p className="mt-1 text-xs text-gray-400">Tenant: {tenantLabel(row.tenantId, tenantMap)}</p>
+            )}
+          </div>
+          <div className="text-left text-xs text-gray-500 sm:text-right">
+            <p>{fmt(row.tokens)} tokens</p>
+            <p>{fmt(row.requests)} requests</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AiUsagePage() {
   const [selectedTenantId, setSelectedTenantId] = useState('');
 
@@ -159,7 +352,7 @@ export function AiUsagePage() {
           <p className="text-sm text-gray-400">Loading…</p>
         ) : global ? (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <StatCard
                 label="Total tokens"
                 value={fmt(global.totalTokensThisMonth)}
@@ -171,38 +364,38 @@ export function AiUsagePage() {
                 sub="this month (all tenants)"
               />
               <StatCard
+                label="Estimated cost"
+                value={money(global.estimatedCostUsd)}
+                sub="token-based estimate"
+              />
+              <StatCard
                 label="Active tenants"
                 value={String(global.byTenant.length)}
                 sub="with AI activity this month"
+                highlight={global.anomalies.some((a) => a.severity === 'HIGH')}
               />
             </div>
 
-            {global.byTenant.length > 0 && (
-              <div className="overflow-x-auto rounded-lg border border-gray-100">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      {['Tenant', 'Tokens', 'Requests'].map((h) => (
-                        <th key={h} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {global.byTenant.map((row) => (
-                      <tr key={row.tenantId} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 font-medium text-gray-900">
-                          {tenantMap[row.tenantId] ?? row.tenantId.substring(0, 8) + '…'}
-                        </td>
-                        <td className="px-4 py-2 text-gray-700">{fmt(row.tokens)}</td>
-                        <td className="px-4 py-2 text-gray-700">{fmt(row.requests)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <section className="space-y-2">
+              <h3 className="text-sm font-semibold text-gray-800">Anomalies</h3>
+              <AnomalyList rows={global.anomalies} tenantMap={tenantMap} />
+            </section>
+
+            <section className="space-y-2">
+              <h3 className="text-sm font-semibold text-gray-800">Usage by tenant</h3>
+              <TenantTable rows={global.byTenant} tenantMap={tenantMap} />
+            </section>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-gray-800">Usage by feature</h3>
+                <FeatureTable rows={global.byFeature} />
+              </section>
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold text-gray-800">Usage by model</h3>
+                <ModelTable rows={global.byModel} />
+              </section>
+            </div>
           </div>
         ) : null}
       </div>

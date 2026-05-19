@@ -89,7 +89,11 @@ class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     @Override
     public RagQueryResponse query(UUID tenantId, String question) {
-        List<Document> hits = embeddings.search(tenantId, question, RAG_TOP_K);
+        List<Document> hits = embeddings.search(tenantId, question, RAG_TOP_K)
+                .stream()
+                .filter(d -> belongsToTenant(d, tenantId))
+                .limit(RAG_TOP_K)
+                .toList();
 
         if (hits.isEmpty()) {
             return new RagQueryResponse(
@@ -144,5 +148,13 @@ class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
             start += CHUNK_SIZE - CHUNK_OVERLAP;
         }
         return chunks;
+    }
+
+    private static boolean belongsToTenant(Document document, UUID tenantId) {
+        if (document.getMetadata() == null) {
+            return false;
+        }
+        Object documentTenantId = document.getMetadata().get("tenant_id");
+        return tenantId.toString().equals(String.valueOf(documentTenantId));
     }
 }

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +35,8 @@ import java.util.UUID;
 @PreAuthorize("hasRole('SUPER_ADMIN')")
 @Tag(name = "AI — Usage & Budgets", description = "AI token usage metering and budget enforcement (CC-1605)")
 public class AiUsageController {
+
+    private static final double ESTIMATED_COST_USD_PER_1K_TOKENS = 0.0005d;
 
     private final AiUsageLogRepository   usageRepo;
     private final TenantConfigRepository configRepo;
@@ -55,14 +58,62 @@ public class AiUsageController {
 
         List<GlobalAiUsageResponse.TenantAiUsage> byTenant =
                 usageRepo.groupedByTenantSince(monthStart).stream()
-                        .map(row -> new GlobalAiUsageResponse.TenantAiUsage(
-                                (String) row[0],
-                                ((Number) row[1]).longValue(),
-                                ((Number) row[2]).longValue()))
+                        .map(row -> {
+                            String tenantId = (String) row[0];
+                            long tokens = longAt(row, 1);
+                            long requests = longAt(row, 2);
+                            long failedRequests = longAt(row, 3);
+                            Integer budgetPct = budgetUtilisationPct(tenantId, tokens);
+                            return new GlobalAiUsageResponse.TenantAiUsage(
+                                    tenantId,
+                                    tokens,
+                                    requests,
+                                    failedRequests,
+                                    estimatedCost(tokens),
+                                    budgetPct);
+                        })
                         .toList();
 
+        List<GlobalAiUsageResponse.FeatureAiUsage> byFeature =
+                usageRepo.groupedByFeatureSince(monthStart).stream()
+                        .map(row -> {
+                            long tokens = longAt(row, 1);
+                            return new GlobalAiUsageResponse.FeatureAiUsage(
+                                    (String) row[0],
+                                    tokens,
+                                    longAt(row, 2),
+                                    longAt(row, 3),
+                                    estimatedCost(tokens));
+                        })
+                        .toList();
+
+        List<GlobalAiUsageResponse.ModelAiUsage> byModel =
+                usageRepo.groupedByModelSince(monthStart).stream()
+                        .map(row -> {
+                            long tokens = longAt(row, 2);
+                            return new GlobalAiUsageResponse.ModelAiUsage(
+                                    (String) row[0],
+                                    (String) row[1],
+                                    tokens,
+                                    longAt(row, 3),
+                                    longAt(row, 4),
+                                    longAt(row, 5),
+                                    estimatedCost(tokens));
+                        })
+                        .toList();
+
+        List<GlobalAiUsageResponse.AiUsageAnomaly> anomalies =
+                detectAnomalies(totalTokens, byTenant, byFeature, byModel);
+
         GlobalAiUsageResponse body = new GlobalAiUsageResponse(
-                monthStart, totalTokens, totalRequests, byTenant);
+                monthStart,
+                totalTokens,
+                totalRequests,
+                estimatedCost(totalTokens),
+                byTenant,
+                byFeature,
+                byModel,
+                anomalies);
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
     }
 
@@ -107,5 +158,86 @@ public class AiUsageController {
                 .map(c -> c.getConfigValue())
                 .orElse(key.getDefaultValue());
         try { return Long.parseLong(raw.trim()); } catch (NumberFormatException e) { return 0L; }
+    }
+
+    private Integer budgetUtilisationPct(String tenantId, long tokens) {
+        if (tenantId == null || tenantId.isBlank()) {
+            return null;
+        }
+        try {
+            UUID id = UUID.fromString(tenantId);
+            long budget = longConfig(id, TenantConfigKey.AI_MONTHLY_TOKEN_BUDGET);
+            return budget > 0 ? (int) Math.min(100, tokens * 100L / budget) : null;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private static List<GlobalAiUsageResponse.AiUsageAnomaly> detectAnomalies(
+            long totalTokens,
+            List<GlobalAiUsageResponse.TenantAiUsage> byTenant,
+            List<GlobalAiUsageResponse.FeatureAiUsage> byFeature,
+            List<GlobalAiUsageResponse.ModelAiUsage> byModel) {
+        List<GlobalAiUsageResponse.AiUsageAnomaly> out = new ArrayList<>();
+
+        for (GlobalAiUsageResponse.TenantAiUsage row : byTenant) {
+            int failureRate = percentage(row.failedRequests(), row.requests());
+            if (row.requests() >= 4 && failureRate >= 25) {
+                out.add(new GlobalAiUsageResponse.AiUsageAnomaly(
+                        "HIGH", row.tenantId(), "tenant", "High failure rate",
+                        failureRate + "% of AI requests failed this month.",
+                        row.tokens(), row.requests()));
+            }
+            if (row.budgetUtilisationPct() != null && row.budgetUtilisationPct() >= 90) {
+                out.add(new GlobalAiUsageResponse.AiUsageAnomaly(
+                        "HIGH", row.tenantId(), "budget", "Budget nearly exhausted",
+                        row.budgetUtilisationPct() + "% of the monthly token budget is used.",
+                        row.tokens(), row.requests()));
+            } else if (row.budgetUtilisationPct() != null && row.budgetUtilisationPct() >= 75) {
+                out.add(new GlobalAiUsageResponse.AiUsageAnomaly(
+                        "MEDIUM", row.tenantId(), "budget", "Budget burn elevated",
+                        row.budgetUtilisationPct() + "% of the monthly token budget is used.",
+                        row.tokens(), row.requests()));
+            }
+            if (totalTokens > 0 && byTenant.size() > 1 && row.tokens() * 100L / totalTokens >= 60) {
+                out.add(new GlobalAiUsageResponse.AiUsageAnomaly(
+                        "MEDIUM", row.tenantId(), "tenant", "Usage concentration",
+                        "This tenant accounts for at least 60% of platform AI tokens this month.",
+                        row.tokens(), row.requests()));
+            }
+        }
+
+        for (GlobalAiUsageResponse.FeatureAiUsage row : byFeature) {
+            int failureRate = percentage(row.failedRequests(), row.requests());
+            if (row.requests() >= 4 && failureRate >= 25) {
+                out.add(new GlobalAiUsageResponse.AiUsageAnomaly(
+                        "MEDIUM", null, "feature", "Feature failure rate",
+                        row.feature() + " has a " + failureRate + "% AI failure rate.",
+                        row.tokens(), row.requests()));
+            }
+        }
+
+        for (GlobalAiUsageResponse.ModelAiUsage row : byModel) {
+            if (row.requests() >= 3 && row.avgLatencyMs() >= 5_000) {
+                out.add(new GlobalAiUsageResponse.AiUsageAnomaly(
+                        "MEDIUM", null, "model", "High model latency",
+                        row.provider() + "/" + row.model() + " averages " + row.avgLatencyMs() + " ms.",
+                        row.tokens(), row.requests()));
+            }
+        }
+
+        return out.stream().limit(12).toList();
+    }
+
+    private static int percentage(long part, long total) {
+        return total > 0 ? (int) Math.min(100, part * 100L / total) : 0;
+    }
+
+    private static long longAt(Object[] row, int index) {
+        return row[index] instanceof Number n ? n.longValue() : 0L;
+    }
+
+    private static double estimatedCost(long tokens) {
+        return Math.round(tokens * ESTIMATED_COST_USD_PER_1K_TOKENS / 1000d * 10000d) / 10000d;
     }
 }

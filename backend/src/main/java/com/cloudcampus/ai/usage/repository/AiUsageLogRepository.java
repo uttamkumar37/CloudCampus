@@ -48,11 +48,45 @@ public interface AiUsageLogRepository extends JpaRepository<AiUsageLog, UUID> {
     @Query(value = """
             SELECT tenant_id::text,
                    COALESCE(SUM(input_tokens + output_tokens), 0) AS total_tokens,
-                   COUNT(*) AS total_requests
+                   COUNT(*) AS total_requests,
+                   COALESCE(SUM(CASE WHEN success = false THEN 1 ELSE 0 END), 0) AS failed_requests
             FROM ai_usage_logs
             WHERE created_at >= :since
             GROUP BY tenant_id
             ORDER BY total_tokens DESC
             """, nativeQuery = true)
     List<Object[]> groupedByTenantSince(@Param("since") Instant since);
+
+    @Query(value = """
+            SELECT COALESCE(SUM(CASE WHEN success = false THEN 1 ELSE 0 END), 0)
+            FROM ai_usage_logs
+            WHERE tenant_id = :tenantId AND created_at >= :since
+            """, nativeQuery = true)
+    long countFailedRequestsByTenantSince(@Param("tenantId") UUID tenantId, @Param("since") Instant since);
+
+    @Query(value = """
+            SELECT COALESCE(prompt_key, 'unknown') AS feature,
+                   COALESCE(SUM(input_tokens + output_tokens), 0) AS total_tokens,
+                   COUNT(*) AS total_requests,
+                   COALESCE(SUM(CASE WHEN success = false THEN 1 ELSE 0 END), 0) AS failed_requests
+            FROM ai_usage_logs
+            WHERE created_at >= :since
+            GROUP BY COALESCE(prompt_key, 'unknown')
+            ORDER BY total_tokens DESC
+            """, nativeQuery = true)
+    List<Object[]> groupedByFeatureSince(@Param("since") Instant since);
+
+    @Query(value = """
+            SELECT provider,
+                   model,
+                   COALESCE(SUM(input_tokens + output_tokens), 0) AS total_tokens,
+                   COUNT(*) AS total_requests,
+                   COALESCE(SUM(CASE WHEN success = false THEN 1 ELSE 0 END), 0) AS failed_requests,
+                   COALESCE(AVG(latency_ms), 0) AS avg_latency_ms
+            FROM ai_usage_logs
+            WHERE created_at >= :since
+            GROUP BY provider, model
+            ORDER BY total_tokens DESC
+            """, nativeQuery = true)
+    List<Object[]> groupedByModelSince(@Param("since") Instant since);
 }
