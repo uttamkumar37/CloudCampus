@@ -174,6 +174,20 @@ public class AuditLogService {
                 .build());
     }
 
+    @Async("auditExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logStudentProfileSectionUpdated(UUID actorId, UUID tenantId, UUID studentId, String sectionKey) {
+        persist(AuditLog.builder()
+                .actorId(actorId)
+                .tenantId(tenantId)
+                .eventType(AuditAction.DATA_STUDENT_PROFILE_UPDATED)
+                .resourceType("Student")
+                .resourceId(studentId.toString())
+                .description("Student profile section updated: " + sectionKey)
+                .metadata(Map.of("sectionKey", sectionKey))
+                .build());
+    }
+
     // ── Internal ─────────────────────────────────────────────────────────────
 
     /**

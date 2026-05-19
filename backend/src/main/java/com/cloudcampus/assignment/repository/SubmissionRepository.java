@@ -2,6 +2,7 @@ package com.cloudcampus.assignment.repository;
 
 import com.cloudcampus.assignment.entity.AssignmentSubmission;
 import com.cloudcampus.assignment.entity.SubmissionStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,6 +24,11 @@ public interface SubmissionRepository extends JpaRepository<AssignmentSubmission
 
     /** Fetch all submissions for a student across a batch of assignment IDs (avoids N+1 in student view). */
     List<AssignmentSubmission> findByAssignmentIdInAndStudentId(Collection<UUID> assignmentIds, UUID studentId);
+
+    /** Recent assignment submissions for a student profile activity feed. */
+    List<AssignmentSubmission> findByStudentIdAndSchoolIdOrderByUpdatedAtDesc(UUID studentId, UUID schoolId, Pageable pageable);
+
+    long countByStudentIdAndSchoolId(UUID studentId, UUID schoolId);
 
     /** Per-assignment submission count for a batch of assignment IDs. */
     @Query("SELECT s.assignmentId, COUNT(s) FROM AssignmentSubmission s WHERE s.assignmentId IN :ids GROUP BY s.assignmentId")

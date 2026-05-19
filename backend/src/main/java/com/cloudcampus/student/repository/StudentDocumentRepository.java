@@ -12,6 +12,8 @@ public interface StudentDocumentRepository extends JpaRepository<StudentDocument
 
     List<StudentDocument> findByStudentIdOrderByUploadedAtDesc(UUID studentId);
 
+    long countByStudentId(UUID studentId);
+
     Optional<StudentDocument> findByIdAndStudentId(UUID id, UUID studentId);
 
     @Query("SELECT COALESCE(SUM(d.sizeBytes), 0) FROM StudentDocument d WHERE d.tenantId = :tenantId")

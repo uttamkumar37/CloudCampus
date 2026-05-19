@@ -59,25 +59,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
+        SecurityContextHolder.clearContext();
+        RequestContext.clearAll();
+
         String token = extractBearerToken(request);
 
-        if (token == null) {
-            // No Authorization header — proceed as anonymous (permit-all Phase 1)
+        try {
+            if (token == null) {
+                // No Authorization header — proceed as anonymous (permit-all Phase 1)
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            jwtUtil.validateAndParse(token).ifPresentOrElse(
+                    claims -> authenticate(claims, request),
+                    () -> {
+                        // Token present but invalid/expired — clear any stale context
+                        log.debug("Invalid or expired JWT on {} {}", request.getMethod(), request.getRequestURI());
+                        SecurityContextHolder.clearContext();
+                        RequestContext.clearAll();
+                    }
+            );
+
             filterChain.doFilter(request, response);
-            return;
+        } finally {
+            SecurityContextHolder.clearContext();
+            RequestContext.clearAll();
         }
-
-        jwtUtil.validateAndParse(token).ifPresentOrElse(
-                claims -> authenticate(claims, request),
-                () -> {
-                    // Token present but invalid/expired — clear any stale context
-                    log.debug("Invalid or expired JWT on {} {}", request.getMethod(), request.getRequestURI());
-                    SecurityContextHolder.clearContext();
-                    RequestContext.clearAll();
-                }
-        );
-
-        filterChain.doFilter(request, response);
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────

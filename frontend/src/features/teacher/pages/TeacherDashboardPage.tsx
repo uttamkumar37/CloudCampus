@@ -1,178 +1,206 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { getTeacherDashboard } from '../api/teacherDashboardApi';
+import { listMyAssignments } from '../api/teacherAssignmentApi';
+import { listMyHomework } from '../api/teacherHomeworkApi';
+import {
+  PortalEmptyState,
+  PortalErrorState,
+  PortalInsightGrid,
+  PortalPanel,
+  PortalQuickActions,
+  PortalShell,
+  PortalSkeleton,
+  PortalStatCard,
+  PortalTimeline,
+} from '@/features/role-portals/components/PortalDashboard';
+import type { PortalInsight, PortalTimelineItem } from '@/features/role-portals/types/portal';
 import type { TimetableSlot } from '@/features/timetable/types/timetable';
 
-function formatTime(t: string | null) {
-  if (!t) return '—';
-  const [h, m] = t.split(':');
-  const hour = parseInt(h, 10);
+function formatTime(value: string | null) {
+  if (!value) return '-';
+  const [hours = '0', minutes = '00'] = value.split(':');
+  const hour = Number.parseInt(hours, 10);
   const suffix = hour >= 12 ? 'PM' : 'AM';
-  const display = hour % 12 || 12;
-  return `${display}:${m} ${suffix}`;
+  return `${hour % 12 || 12}:${minutes} ${suffix}`;
 }
 
-function StatCard({
-  label,
-  value,
-  accent,
-  to,
-}: {
-  label: string;
-  value: number;
-  accent: string;
-  to?: string;
-}) {
-  const inner = (
-    <div className={`rounded-xl border bg-white p-5 shadow-sm ${to ? 'hover:shadow-md transition-shadow' : ''}`}>
-      <div className={`text-3xl font-bold ${accent}`}>{value}</div>
-      <div className="mt-1 text-sm text-gray-500">{label}</div>
-    </div>
-  );
-  return to ? <Link to={to}>{inner}</Link> : <>{inner}</>;
-}
-
-function SlotCard({ slot }: { slot: TimetableSlot }) {
-  return (
-    <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-sm font-bold text-blue-700">
-        P{slot.periodNumber}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-gray-900">Period {slot.periodNumber}</div>
-        <div className="text-xs text-gray-500">
-          {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
-        </div>
-      </div>
-    </div>
-  );
+function slotLabel(slot: TimetableSlot) {
+  return slot.subjectName ?? slot.subjectCode ?? `Subject ${slot.subjectId.slice(0, 8)}`;
 }
 
 export default function TeacherDashboardPage() {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['teacher-dashboard'],
-    queryFn: getTeacherDashboard,
-  });
+  const dashboardQuery = useQuery({ queryKey: ['teacher-dashboard'], queryFn: getTeacherDashboard });
+  const homeworkQuery = useQuery({ queryKey: ['teacher-homework-dashboard', 0], queryFn: () => listMyHomework(0, 8) });
+  const assignmentQuery = useQuery({ queryKey: ['teacher-assignments-dashboard', 0], queryFn: () => listMyAssignments(0, 8) });
 
-  const today = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long', day: 'numeric', month: 'long',
-  });
+  const isLoading = dashboardQuery.isLoading || homeworkQuery.isLoading || assignmentQuery.isLoading;
+  const isError = dashboardQuery.isError || homeworkQuery.isError || assignmentQuery.isError;
 
-  if (isLoading) {
-    return <div className="p-6 text-sm text-gray-400">Loading dashboard…</div>;
-  }
+  const dashboard = dashboardQuery.data;
+  const homework = homeworkQuery.data?.items ?? [];
+  const assignments = assignmentQuery.data?.items ?? [];
 
-  if (isError || !data) {
+  const todaySlots = (dashboard?.todaySlots ?? []).slice().sort((a, b) => a.periodNumber - b.periodNumber);
+  const reviewQueue = dashboard ? dashboard.pendingHomeworkReview + dashboard.pendingAssignmentGrading : 0;
+  const publishedWork = dashboard ? dashboard.totalHomeworkPosted + dashboard.totalAssignmentsPosted : 0;
+  const completionAverage = assignments.length
+    ? Math.round(assignments.reduce((sum, item) => sum + (item.submissionCount ? (item.gradedCount / item.submissionCount) * 100 : 0), 0) / assignments.length)
+    : 0;
+  const workloadScore = Math.min(100, todaySlots.length * 12 + reviewQueue * 6 + publishedWork * 2);
+
+  const chartData = [
+    { label: 'Classes', value: todaySlots.length },
+    { label: 'Review', value: dashboard?.pendingHomeworkReview ?? 0 },
+    { label: 'Grading', value: dashboard?.pendingAssignmentGrading ?? 0 },
+    { label: 'Posted', value: publishedWork },
+  ];
+
+  const insights: PortalInsight[] = [
+    {
+      title: 'Teaching Load',
+      severity: workloadScore > 80 ? 'HIGH' : workloadScore > 55 ? 'MEDIUM' : 'LOW',
+      summary: `Today's workload score is ${workloadScore} based on classes, pending review, and posted work.`,
+      recommendation: workloadScore > 80 ? 'Prioritize grading windows and defer non-urgent uploads.' : 'Current workload is manageable.',
+      confidence: 78,
+    },
+    {
+      title: 'Evaluation Queue',
+      severity: reviewQueue > 10 ? 'HIGH' : reviewQueue > 0 ? 'MEDIUM' : 'LOW',
+      summary: `${reviewQueue} item(s) are waiting for review or grading.`,
+      recommendation: reviewQueue ? 'Clear the oldest submissions first to reduce student feedback delay.' : 'No pending evaluation queue right now.',
+      confidence: 86,
+    },
+    {
+      title: 'Class Engagement',
+      severity: publishedWork > 0 ? 'LOW' : 'INFO',
+      summary: `${publishedWork} homework/assignment item(s) are linked to your teacher account.`,
+      recommendation: publishedWork ? 'Review submission patterns to identify students needing help.' : 'Create homework or assignments to unlock engagement analytics.',
+      confidence: publishedWork ? 72 : 45,
+    },
+  ];
+
+  const timeline: PortalTimelineItem[] = [
+    ...todaySlots.slice(0, 4).map((slot) => ({
+      id: `slot-${slot.id}`,
+      title: slotLabel(slot),
+      summary: `Period ${slot.periodNumber} | ${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`,
+      category: 'CLASS',
+    })),
+    ...homework.slice(0, 3).map((item) => ({
+      id: `homework-${item.homeworkId}`,
+      title: item.title,
+      summary: `${item.submissionCount} submission(s) | Due ${new Date(item.dueDate).toLocaleDateString()}`,
+      category: 'HOMEWORK',
+      occurredAt: item.dueDate,
+    })),
+    ...assignments.slice(0, 3).map((item) => ({
+      id: `assignment-${item.assignmentId}`,
+      title: item.title,
+      summary: `${item.gradedCount}/${item.submissionCount} graded | Due ${new Date(item.dueDate).toLocaleDateString()}`,
+      category: 'ASSIGNMENT',
+      occurredAt: item.dueDate,
+    })),
+  ].slice(0, 9);
+
+  if (isLoading) return <PortalSkeleton />;
+  if (isError || !dashboard) {
     return (
-      <div className="p-6">
-        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-          Failed to load dashboard. Please refresh.
-        </div>
-      </div>
+      <PortalShell title="Teacher 360 Dashboard" subtitle="Faculty intelligence and classroom operations." eyebrow="Teacher Portal" tone="blue">
+        <PortalErrorState message="Failed to load teacher dashboard. Please refresh." />
+      </PortalShell>
     );
   }
 
-  const hasPending = data.pendingHomeworkReview > 0 || data.pendingAssignmentGrading > 0;
-
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Good morning!</h1>
-        <p className="mt-0.5 text-sm text-gray-500">{today}</p>
+    <PortalShell
+      title="Teacher 360 Dashboard"
+      subtitle={`You have ${todaySlots.length} class(es) today and ${reviewQueue} review item(s) waiting.`}
+      eyebrow="Faculty Experience"
+      tone="blue"
+    >
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <PortalStatCard label="Today's Classes" value={todaySlots.length} helper="scheduled" tone="blue" />
+        <PortalStatCard label="Attendance Tasks" value={todaySlots.length} helper="class-ready" tone="cyan" />
+        <PortalStatCard label="Pending Review" value={reviewQueue} helper="homework + assignments" tone={reviewQueue ? 'amber' : 'emerald'} />
+        <PortalStatCard label="Completion" value={`${completionAverage}%`} helper="grading efficiency" tone="violet" />
       </div>
 
-      {/* Pending alert */}
-      {hasPending && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          You have{' '}
-          {data.pendingHomeworkReview > 0 && (
-            <><strong>{data.pendingHomeworkReview}</strong> homework submission{data.pendingHomeworkReview !== 1 ? 's' : ''} to review</>
-          )}
-          {data.pendingHomeworkReview > 0 && data.pendingAssignmentGrading > 0 && ' and '}
-          {data.pendingAssignmentGrading > 0 && (
-            <><strong>{data.pendingAssignmentGrading}</strong> assignment submission{data.pendingAssignmentGrading !== 1 ? 's' : ''} to grade</>
-          )}
-          {' '}pending.
-        </div>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard
-          label="Homework to Review"
-          value={data.pendingHomeworkReview}
-          accent={data.pendingHomeworkReview > 0 ? 'text-amber-600' : 'text-gray-700'}
-          to="/teacher/homework"
-        />
-        <StatCard
-          label="Assignments to Grade"
-          value={data.pendingAssignmentGrading}
-          accent={data.pendingAssignmentGrading > 0 ? 'text-red-600' : 'text-gray-700'}
-          to="/teacher/assignments"
-        />
-        <StatCard
-          label="Homework Posted"
-          value={data.totalHomeworkPosted}
-          accent="text-blue-700"
-          to="/teacher/homework"
-        />
-        <StatCard
-          label="Assignments Posted"
-          value={data.totalAssignmentsPosted}
-          accent="text-indigo-700"
-          to="/teacher/assignments"
-        />
-      </div>
-
-      {/* Today's schedule */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Today's Schedule
-        </h2>
-
-        {data.todaySlots.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-400">
-            No classes scheduled for today.
-          </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.todaySlots
-              .slice()
-              .sort((a, b) => a.periodNumber - b.periodNumber)
-              .map((slot) => (
-                <SlotCard key={slot.id} slot={slot} />
+      <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+        <PortalPanel title="Today's Classes" subtitle="Classroom plan for the day">
+          {todaySlots.length ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              {todaySlots.map((slot) => (
+                <div key={slot.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-bold uppercase text-slate-500">Period {slot.periodNumber}</p>
+                  <p className="mt-2 font-semibold text-slate-950">{slotLabel(slot)}</p>
+                  <p className="mt-1 text-sm text-slate-500">{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</p>
+                </div>
               ))}
+            </div>
+          ) : (
+            <PortalEmptyState title="No classes scheduled" message="Use this time for planning, feedback, or parent communication." />
+          )}
+        </PortalPanel>
+
+        <PortalPanel title="Faculty Analytics" subtitle="Workload and classroom operations">
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#2563eb" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        )}
+        </PortalPanel>
       </div>
 
-      {/* Quick links */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Quick Actions
-        </h2>
-        <div className="flex flex-wrap gap-3">
-          <Link
-            to="/teacher/homework"
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            View Homework
-          </Link>
-          <Link
-            to="/teacher/assignments"
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            View Assignments
-          </Link>
-          <Link
-            to="/teacher/timetable"
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Full Timetable
-          </Link>
-        </div>
+      <PortalPanel title="AI Teaching Insights" subtitle="Teaching operations, workload, and feedback intelligence">
+        <PortalInsightGrid insights={insights} />
+      </PortalPanel>
+
+      <PortalPanel title="Quick Actions" subtitle="Role-safe teacher workflows">
+        <PortalQuickActions
+          actions={[
+            { label: 'Mark Attendance', to: '/teacher/attendance' },
+            { label: 'Create Homework', to: '/teacher/homework' },
+            { label: 'Enter Marks', to: '/school-admin/exams', disabled: true, hint: 'Use school-admin marks workflow' },
+            { label: 'Upload Material', to: '/teacher/videos' },
+            { label: 'Lesson Plans', to: '/teacher/lesson-plans' },
+            { label: 'Review Leave', disabled: true, hint: 'Approval workflow is admin-owned' },
+            { label: 'Add Student Remark', disabled: true, hint: 'Behavior notes not configured' },
+            { label: 'Message Parents', disabled: true, hint: 'Messaging not configured' },
+          ]}
+        />
+      </PortalPanel>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        <PortalPanel title="Activity Timeline" subtitle="Classes, homework, and assignment operations">
+          <PortalTimeline items={timeline} />
+        </PortalPanel>
+        <PortalPanel title="Review Queues" subtitle="Submission work that may need attention">
+          <div className="space-y-3">
+            {homework.slice(0, 4).map((item) => (
+              <div key={item.homeworkId} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <p className="font-semibold text-slate-950">{item.title}</p>
+                <p className="mt-1 text-sm text-slate-600">{item.submissionCount} homework submission(s)</p>
+              </div>
+            ))}
+            {assignments.slice(0, 4).map((item) => (
+              <div key={item.assignmentId} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <p className="font-semibold text-slate-950">{item.title}</p>
+                <p className="mt-1 text-sm text-slate-600">{item.gradedCount}/{item.submissionCount} assignment submission(s) graded</p>
+              </div>
+            ))}
+            {!homework.length && !assignments.length && (
+              <PortalEmptyState title="No review items" message="Homework and assignment activity will appear here." />
+            )}
+          </div>
+        </PortalPanel>
       </div>
-    </div>
+    </PortalShell>
   );
 }

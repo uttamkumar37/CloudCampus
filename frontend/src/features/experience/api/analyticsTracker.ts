@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useExperienceStore } from '../store/experienceStore';
+import { useExperienceStore, type AnalyticsConsentStatus } from '../store/experienceStore';
 
 export interface TrackEvent {
   eventType: string;
@@ -20,6 +20,10 @@ interface BatchedEvent extends TrackEvent {
   utmMedium?: string | null;
   utmCampaign?: string | null;
   deviceType: string;
+}
+
+export function hasAnalyticsConsent(consentGiven: boolean, consentStatus: AnalyticsConsentStatus): boolean {
+  return consentGiven || consentStatus === 'accepted';
 }
 
 function getDeviceType(): string {
@@ -44,13 +48,34 @@ async function flush(events: BatchedEvent[]) {
 }
 
 export function useExperienceTracker() {
-  const { visitorId, sessionId, consentGiven, utmSource, utmMedium, utmCampaign } =
+  const { visitorId, sessionId, consentStatus, consentGiven, utmSource, utmMedium, utmCampaign } =
     useExperienceStore();
+  const analyticsEnabled = hasAnalyticsConsent(consentGiven, consentStatus);
 
   const buffer = useRef<BatchedEvent[]>([]);
   const timer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const analyticsEnabledRef = useRef(analyticsEnabled);
+
+  useEffect(() => {
+    analyticsEnabledRef.current = analyticsEnabled;
+    if (!analyticsEnabled) {
+      buffer.current = [];
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
+    }
+  }, [analyticsEnabled]);
 
   const doFlush = useCallback(() => {
+    const currentConsent = useExperienceStore.getState();
+    if (
+      !analyticsEnabledRef.current ||
+      !hasAnalyticsConsent(currentConsent.consentGiven, currentConsent.consentStatus)
+    ) {
+      buffer.current = [];
+      return;
+    }
     if (!buffer.current.length) return;
     const batch = buffer.current.splice(0);
     flush(batch);
@@ -58,7 +83,13 @@ export function useExperienceTracker() {
 
   const track = useCallback(
     (event: TrackEvent) => {
-      if (!consentGiven) return;
+      const currentConsent = useExperienceStore.getState();
+      if (
+        !analyticsEnabled ||
+        !hasAnalyticsConsent(currentConsent.consentGiven, currentConsent.consentStatus)
+      ) {
+        return;
+      }
 
       const enriched: BatchedEvent = {
         ...event,
@@ -80,7 +111,7 @@ export function useExperienceTracker() {
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(doFlush, 2000);
     },
-    [consentGiven, sessionId, visitorId, utmSource, utmMedium, utmCampaign, doFlush]
+    [analyticsEnabled, sessionId, visitorId, utmSource, utmMedium, utmCampaign, doFlush]
   );
 
   // Flush on unmount / page unload

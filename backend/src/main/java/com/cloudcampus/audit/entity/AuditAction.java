@@ -46,6 +46,7 @@ public enum AuditAction {
 
     // ── DATA ──────────────────────────────────────────────────────────────
     DATA_PURGE_COMPLETED,            // nightly retention job hard-deleted expired soft-deleted rows
+    DATA_STUDENT_PROFILE_UPDATED,
 
     // ── SYSTEM ────────────────────────────────────────────────────────────
     SYSTEM_BOOTSTRAP,

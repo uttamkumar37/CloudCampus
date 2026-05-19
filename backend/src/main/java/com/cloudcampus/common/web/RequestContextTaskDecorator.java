@@ -1,7 +1,9 @@
 package com.cloudcampus.common.web;
 
 import org.springframework.core.task.TaskDecorator;
+import org.slf4j.MDC;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -25,9 +27,16 @@ public class RequestContextTaskDecorator implements TaskDecorator {
         String tenantId = RequestContext.getTenantId();
         String schoolId = RequestContext.getSchoolId();
         UUID   userId   = RequestContext.getUserId();
+        Map<String, String> mdcContext = MDC.getCopyOfContextMap();
 
         return () -> {
+            Map<String, String> previousMdcContext = MDC.getCopyOfContextMap();
             try {
+                if (mdcContext == null) {
+                    MDC.clear();
+                } else {
+                    MDC.setContextMap(mdcContext);
+                }
                 RequestContext.setTenantId(tenantId);
                 RequestContext.setSchoolId(schoolId);
                 RequestContext.setUserId(userId);
@@ -35,6 +44,11 @@ public class RequestContextTaskDecorator implements TaskDecorator {
             } finally {
                 // Prevent stale context leaking to the next task on this pool thread.
                 RequestContext.clearAll();
+                if (previousMdcContext == null) {
+                    MDC.clear();
+                } else {
+                    MDC.setContextMap(previousMdcContext);
+                }
             }
         };
     }

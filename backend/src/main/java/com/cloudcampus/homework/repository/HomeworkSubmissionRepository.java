@@ -2,6 +2,7 @@ package com.cloudcampus.homework.repository;
 
 import com.cloudcampus.homework.entity.HomeworkSubmission;
 import com.cloudcampus.homework.entity.SubmissionStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +19,11 @@ public interface HomeworkSubmissionRepository extends JpaRepository<HomeworkSubm
     Optional<HomeworkSubmission> findByIdAndHomeworkIdAndTenantId(UUID id, UUID homeworkId, UUID tenantId);
 
     List<HomeworkSubmission> findAllByHomeworkIdOrderBySubmittedAtAsc(UUID homeworkId);
+
+    /** Recent homework submissions for a student profile activity feed. */
+    List<HomeworkSubmission> findByStudentIdOrderBySubmittedAtDesc(UUID studentId, Pageable pageable);
+
+    long countByStudentId(UUID studentId);
 
     boolean existsByHomeworkIdAndStudentId(UUID homeworkId, UUID studentId);
 

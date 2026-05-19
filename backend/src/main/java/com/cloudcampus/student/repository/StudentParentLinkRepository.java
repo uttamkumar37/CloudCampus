@@ -20,6 +20,8 @@ public interface StudentParentLinkRepository extends JpaRepository<StudentParent
     /** All parent links for a student (ordered for deterministic display). */
     List<StudentParentLink> findAllByStudentIdOrderByIsPrimaryDescCreatedAtAsc(UUID studentId);
 
+    long countByStudentId(UUID studentId);
+
     /** All student links for a parent (parent portal — "my children"). */
     List<StudentParentLink> findAllByParentUserIdOrderByCreatedAtAsc(UUID parentUserId);
 

@@ -1,5 +1,7 @@
 package com.cloudcampus.common.web;
 
+import org.slf4j.MDC;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -20,20 +22,44 @@ public final class RequestContext {
     private static final ThreadLocal<String>  JWT_JTI    = new ThreadLocal<>();
     private static final ThreadLocal<Instant> JWT_EXPIRY = new ThreadLocal<>();
 
+    public static final String MDC_TENANT_ID = "tenantId";
+    public static final String MDC_SCHOOL_ID = "schoolId";
+    public static final String MDC_USER_ID   = "userId";
+
     private RequestContext() {
     }
 
-    public static void setTenantId(String tenantId) { TENANT_ID.set(tenantId); }
+    public static void setTenantId(String tenantId) {
+        setOrClear(TENANT_ID, MDC_TENANT_ID, tenantId);
+    }
     public static String getTenantId()              { return TENANT_ID.get(); }
-    public static void clearTenantId()              { TENANT_ID.remove(); }
+    public static void clearTenantId() {
+        TENANT_ID.remove();
+        MDC.remove(MDC_TENANT_ID);
+    }
 
-    public static void setSchoolId(String schoolId) { SCHOOL_ID.set(schoolId); }
+    public static void setSchoolId(String schoolId) {
+        setOrClear(SCHOOL_ID, MDC_SCHOOL_ID, schoolId);
+    }
     public static String getSchoolId()              { return SCHOOL_ID.get(); }
-    public static void clearSchoolId()              { SCHOOL_ID.remove(); }
+    public static void clearSchoolId() {
+        SCHOOL_ID.remove();
+        MDC.remove(MDC_SCHOOL_ID);
+    }
 
-    public static void setUserId(UUID userId)       { USER_ID.set(userId); }
+    public static void setUserId(UUID userId) {
+        if (userId == null) {
+            clearUserId();
+            return;
+        }
+        USER_ID.set(userId);
+        MDC.put(MDC_USER_ID, userId.toString());
+    }
     public static UUID getUserId()                  { return USER_ID.get(); }
-    public static void clearUserId()                { USER_ID.remove(); }
+    public static void clearUserId() {
+        USER_ID.remove();
+        MDC.remove(MDC_USER_ID);
+    }
 
     public static void setJwtJti(String jti)        { JWT_JTI.set(jti); }
     public static String getJwtJti()                { return JWT_JTI.get(); }
@@ -48,5 +74,14 @@ public final class RequestContext {
         JWT_JTI.remove();
         JWT_EXPIRY.remove();
     }
-}
 
+    private static void setOrClear(ThreadLocal<String> holder, String mdcKey, String value) {
+        if (value == null || value.isBlank()) {
+            holder.remove();
+            MDC.remove(mdcKey);
+            return;
+        }
+        holder.set(value);
+        MDC.put(mdcKey, value);
+    }
+}

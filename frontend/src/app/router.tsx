@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/shared/components/ProtectedRoute';
+import { AnalyticsConsentBanner } from '@/features/experience/components/AnalyticsConsentBanner';
 
 // ── Auth pages ────────────────────────────────────────────────────────────────
 const LoginPage            = lazy(() => import('@/features/auth/pages/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -342,6 +343,7 @@ export function AppRouter() {
           <Route path="/about" element={<CloudCampusPublicWebsitePage />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+        <AnalyticsConsentBanner />
       </Suspense>
     </BrowserRouter>
   );

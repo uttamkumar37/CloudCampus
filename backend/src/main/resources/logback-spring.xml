@@ -11,7 +11,7 @@
     <springProfile name="dev">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) %cyan([%thread]) %yellow(%logger{36}) - %msg [cid=%X{correlationId}]%n</pattern>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) %cyan([%thread]) %yellow(%logger{36}) - %msg [cid=%X{correlationId} tenant=%X{tenantId} school=%X{schoolId} user=%X{userId}]%n</pattern>
             </encoder>
         </appender>
 
@@ -34,6 +34,7 @@
                 <!-- L-22: include traceId/spanId injected by Micrometer Tracing -->
                 <includeMdcKeyName>correlationId</includeMdcKeyName>
                 <includeMdcKeyName>tenantId</includeMdcKeyName>
+                <includeMdcKeyName>schoolId</includeMdcKeyName>
                 <includeMdcKeyName>userId</includeMdcKeyName>
                 <includeMdcKeyName>traceId</includeMdcKeyName>
                 <includeMdcKeyName>spanId</includeMdcKeyName>
