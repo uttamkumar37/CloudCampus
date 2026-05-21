@@ -193,5 +193,5 @@ Before production release, prove:
 TASK-044 validation command:
 
 ```bash
-rg -n "invoice|refund|GST|tax" docs PRODUCTION_READY_ROADMAP.md
+rg -n "invoice|refund|GST|tax" docs
 ```

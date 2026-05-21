@@ -13,12 +13,10 @@ Use this playbook for day-to-day support, launch hypercare, release monitoring, 
 | Area | Source |
 |---|---|
 | Incident response | `docs/INCIDENT_RUNBOOK.md` |
-| Health verification | `docs/HEALTH_VERIFICATION_CHECKLIST.md` |
 | Deployment support handoff | `docs/DEPLOYMENT_SOP.md` |
-| Alert routing | `docs/ALERT_ROUTING_PLAN.md` |
-| Billing reconciliation | `docs/BILLING_RECONCILIATION_CHECKLIST.md` |
-| Admin sessions and devices | `docs/ADMIN_SESSION_DEVICE_MANAGEMENT_PLAN.md` |
+| Disaster recovery | `docs/DISASTER_RECOVERY.md` |
 | Audit retention | `docs/AUDIT_RETENTION_POLICY.md` |
+| Invoice / refund / GST | `docs/INVOICE_REFUND_GST_ROADMAP.md` |
 
 ## Support Roles
 
@@ -126,7 +124,7 @@ Payment tickets require finance evidence and careful reconciliation. Use sandbox
 | Refund request | Collect original receipt/payment, amount, reason, school approval, and bank/gateway evidence. | Route to finance according to refund policy. | Refund status mismatch, partial refund ambiguity, or settlement already closed. |
 | Settlement or month-end mismatch | Collect date range, gateway report, internal export, and tenant/school scope. | Link to reconciliation ticket. | Cross-tenant mismatch, amount mismatch, duplicate receipt, or unresolved failed webhook. |
 
-For payment exceptions, follow `docs/BILLING_RECONCILIATION_CHECKLIST.md`. Do not mark payment records paid, issue receipts, or process refunds manually without finance and engineering approval.
+For payment exceptions, escalate to the finance team via the support ticket. Do not mark payment records paid, issue receipts, or process refunds manually without finance and engineering approval.
 
 ## Data Correction
 
@@ -194,5 +192,5 @@ A support ticket can be closed only when:
 TASK-051 validation command:
 
 ```bash
-rg -n "support playbook|ticket|incident triage" docs PRODUCTION_READY_ROADMAP.md
+rg -n "support playbook|ticket|incident triage" docs
 ```

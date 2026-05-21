@@ -1,7 +1,7 @@
 # CloudCampus — Incident Recovery Runbook
 
 **Version:** 1.0 | **Updated:** 2026-05-18 | **Owner:** Platform Ops  
-**Related:** `docs/DISASTER_RECOVERY.md` · `infra/pgbackup/drill.sh` · `PRODUCTION_READY_ROADMAP.md`
+**Related:** `docs/DISASTER_RECOVERY.md` · `infra/pgbackup/drill.sh`
 
 ---
 
