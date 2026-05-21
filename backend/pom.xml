@@ -25,6 +25,10 @@
         <spring-ai.version>1.0.7</spring-ai.version>
         <springdoc.version>2.8.17</springdoc.version>
         <jacocoArgLine></jacocoArgLine>
+        <!-- T-13: Coverage gate is opt-in via `-Dcoverage.enforce=true`.
+             Default is `false` so day-to-day `mvn verify` does not block on
+             coverage while the test suite is still being built out. -->
+        <coverage.enforce>false</coverage.enforce>
     </properties>
 
     <dependencyManagement>
@@ -274,6 +278,16 @@
             <version>3.4.1</version>
             <scope>test</scope>
         </dependency>
+        <!-- T-24: ArchUnit — architectural fitness functions executed as tests.
+             Used to enforce: controllers must have @PreAuthorize, entities
+             must not appear in controller signatures, services must not
+             access EntityManager directly, etc. -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>1.3.0</version>
+            <scope>test</scope>
+        </dependency>
 
         <!-- ShedLock — distributed scheduler locking via Redis (CRIT-19) -->
         <dependency>
@@ -333,6 +347,55 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                    </execution>
+                    <!-- T-13: Coverage gates for security-critical packages.
+                         These thresholds are conservative starting points;
+                         ratchet upward as test coverage grows. The build will
+                         fail when coverage drops below the floor.
+                         Toggle on via -Dcoverage.enforce=true on the mvn cli
+                         once the team agrees on the baseline. -->
+                    <execution>
+                        <id>check-coverage</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <haltOnFailure>${coverage.enforce}</haltOnFailure>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <!-- Overall bar — modest until we add more tests. -->
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.30</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <includes>
+                                        <include>com.cloudcampus.auth.*</include>
+                                        <include>com.cloudcampus.tenant.*</include>
+                                        <include>com.cloudcampus.subscription.*</include>
+                                        <include>com.cloudcampus.payment.*</include>
+                                        <include>com.cloudcampus.finance.*</include>
+                                        <include>com.cloudcampus.common.usage</include>
+                                        <include>com.cloudcampus.common.crypto</include>
+                                    </includes>
+                                    <limits>
+                                        <!-- Security-critical packages: higher bar. -->
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

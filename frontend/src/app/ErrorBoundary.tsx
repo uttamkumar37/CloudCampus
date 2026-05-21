@@ -23,6 +23,20 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error('[ErrorBoundary] uncaught render error', error, info.componentStack);
+
+    // Optional external reporter (Sentry, Rollbar, Datadog RUM, …). Wired via
+    // `window.__cloudcampus_report_error` so the bundle stays slim by default
+    // and the wiring can be set up from a separate script tag at deploy time.
+    const reporter = (window as unknown as {
+      __cloudcampus_report_error?: (err: Error, info: ErrorInfo) => void;
+    }).__cloudcampus_report_error;
+    if (typeof reporter === 'function') {
+      try {
+        reporter(error, info);
+      } catch (e) {
+        console.warn('[ErrorBoundary] external error reporter threw', e);
+      }
+    }
   }
 
   private handleReload = () => {

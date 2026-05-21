@@ -1,0 +1,143 @@
+name: Deploy
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Deploys a previously-built image to staging or production.
+#
+# Never runs from a normal development push — only triggered by:
+#   • workflow_dispatch (manual, with explicit environment + tag inputs)
+#   • release publish (deploys the released image tag to production)
+#
+# Branch protection: this workflow is not a required check.
+#
+# Environments:
+#   • staging    — auto-deploys when workflow_dispatch chooses `staging`
+#   • production — guarded by GitHub Environment protection rules. The first
+#                  time this workflow targets `production`, an authorised
+#                  reviewer must approve in the GitHub UI.
+#
+# How to use:
+#   1. Push to main → ci.yml + docker-publish.yml produce `ghcr.io/...:sha-abcdef`
+#   2. (Optional) cut a release tag vX.Y.Z → docker-publish.yml adds the semver tag
+#   3. Trigger this workflow via the Actions UI:
+#        Environment: staging | production
+#        Image tag:   sha-abcdef OR vX.Y.Z OR latest
+#   4. For production, wait for the approval prompt and confirm.
+#
+# IMPORTANT: the actual `kubectl` / `helm` / `aws ecs` invocation is left as
+# placeholder steps. Replace them with your real deployment commands and wire
+# the matching cloud credentials via GitHub repository secrets.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options: ['staging', 'production']
+      image_tag:
+        description: 'Image tag (e.g. sha-abcdef or v1.4.2 or latest)'
+        required: true
+        default: 'latest'
+  release:
+    types: [published]
+
+concurrency:
+  # One deploy per environment at a time.
+  group: deploy-${{ github.event.inputs.environment || 'production' }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ${{ github.repository_owner }}/cloudcampus-backend
+  FRONTEND_IMAGE: ${{ github.repository_owner }}/cloudcampus-frontend
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'production' }}
+    runs-on: ubuntu-latest
+    # `environment:` triggers required reviewers for production (configure in
+    # repo settings → Environments → production → "Required reviewers").
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+      # Optional URL displayed in the deployment status — wire to your domain.
+      # url: https://app.cloudcampus.io
+
+    permissions:
+      contents: read
+      packages: read
+      deployments: write
+      id-token: write   # for AWS / GCP OIDC if you use it
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+            # Strip the leading 'v' (release tag) to match the semver image tag.
+            TAG="${TAG#v}"
+          else
+            TAG="${{ github.event.inputs.image_tag }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Resolved deploy tag: $TAG"
+
+      - name: Verify image exists in GHCR
+        run: |
+          # Probe both backend and frontend image manifests so we fail fast if
+          # someone typed a tag that was never built.
+          for image in "${{ env.BACKEND_IMAGE }}" "${{ env.FRONTEND_IMAGE }}"; do
+            url="https://${{ env.REGISTRY }}/v2/${image}/manifests/${{ steps.tag.outputs.tag }}"
+            echo "→ checking $url"
+            if ! curl -sf -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                      -H "Accept: application/vnd.oci.image.manifest.v1+json" \
+                      "$url" > /dev/null; then
+              echo "::error::Image $image:${{ steps.tag.outputs.tag }} not found in registry"
+              exit 1
+            fi
+          done
+
+      # ──────────────────────────────────────────────────────────────────────
+      # Real deploy steps go here. Pick the one that matches your runtime and
+      # replace the placeholder commands. Keep `--dry-run` until you've tested
+      # the full workflow end-to-end at least once on staging.
+      # ──────────────────────────────────────────────────────────────────────
+
+      - name: '[k8s] Configure kubectl context'
+        if: ${{ false }}   # toggle to `true` once cluster credentials are wired
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > "$HOME/.kube/config"
+          kubectl get nodes
+
+      - name: '[k8s] Apply rolling update'
+        if: ${{ false }}
+        run: |
+          ENV="${{ github.event.inputs.environment || 'production' }}"
+          kubectl -n cloudcampus-$ENV set image deployment/backend \
+            backend=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ steps.tag.outputs.tag }}
+          kubectl -n cloudcampus-$ENV set image deployment/frontend \
+            frontend=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ steps.tag.outputs.tag }}
+          kubectl -n cloudcampus-$ENV rollout status deployment/backend  --timeout=5m
+          kubectl -n cloudcampus-$ENV rollout status deployment/frontend --timeout=5m
+
+      - name: '[ecs] Update service'
+        if: ${{ false }}
+        run: |
+          echo "Replace with: aws ecs update-service --cluster ... --service ... --force-new-deployment"
+
+      # ──────────────────────────────────────────────────────────────────────
+      # Placeholder smoke test. Replace with a real curl against /actuator/health
+      # via your ingress URL.
+      # ──────────────────────────────────────────────────────────────────────
+      - name: Smoke test
+        run: |
+          echo "TODO: curl https://api-${{ github.event.inputs.environment || 'production' }}.cloudcampus.io/actuator/health"
+
+      - name: Annotate deployment
+        run: |
+          echo "::notice::Deployed ${{ steps.tag.outputs.tag }} to ${{ github.event.inputs.environment || 'production' }}"
