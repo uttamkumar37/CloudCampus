@@ -28,7 +28,7 @@ const AI_FEATURES = new Set(['AI_COPILOT', 'AI_WEBSITE_GENERATION']);
 
 export function useEntitlement(input: UseEntitlementInput = {}) {
   const user = useAuthStore((state) => state.user);
-  const features = user?.features ?? [];
+  const features = useMemo(() => user?.features ?? [], [user?.features]);
   const requiredPlan = input.requiredPlan ?? (input.feature ? FEATURE_PLAN_MAP[input.feature] : undefined) ?? 'FREE';
 
   return useMemo(() => {

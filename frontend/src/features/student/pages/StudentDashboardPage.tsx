@@ -83,7 +83,7 @@ export default function StudentDashboardPage() {
   const homework = homeworkQuery.data ?? [];
   const assignments = assignmentsQuery.data ?? [];
   const notices = noticesQuery.data?.items ?? [];
-  const timetable = timetableQuery.data ?? [];
+  const timetable = useMemo(() => timetableQuery.data ?? [], [timetableQuery.data]);
   const attendance = attendanceQuery.data;
   const fees = feesQuery.data ?? [];
   const results = resultsQuery.data ?? [];
