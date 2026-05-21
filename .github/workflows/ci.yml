@@ -98,34 +98,15 @@ jobs:
         run: npm run build
 
   # ────────────────────────────────────────────────────────────────────────────
-  # Job 3 — Mobile: TypeScript check (Expo / React Native)
-  # Required check for branch protection.
+  # (Removed) Job 3 — Mobile: TypeScript check
+  #   The React Native mobile app was removed from the repo; native mobile is
+  #   planned for a future release and will be rebuilt fresh. Restore a job
+  #   here when that work begins. The backend mobile API namespace
+  #   (/v1/mobile/*) is unaffected and lives in the backend job.
   # ────────────────────────────────────────────────────────────────────────────
-  mobile:
-    name: Mobile — TypeScript Check
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Set up Node 20
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      - name: Install dependencies
-        working-directory: mobile
-        run: npm ci
-
-      - name: TypeScript check
-        working-directory: mobile
-        run: npx tsc --noEmit
 
   # ────────────────────────────────────────────────────────────────────────────
-  # Job 4 — Secret scan: TruffleHog
+  # Job 3 — Secret scan: TruffleHog
   # Required check for branch protection.
   # Fast (< 60 s) and catches accidental commits of credentials.
   # ────────────────────────────────────────────────────────────────────────────
