@@ -31,6 +31,12 @@ spring:
   flyway:
     enabled: true
     out-of-order: true
+    # Dev loads schema migrations PLUS demo-only seed migrations.
+    # Staging / prod (see application-{staging,prod}.yml) only load db/migration,
+    # so seed data never lands in customer DBs. See db/seed/README.md.
+    locations:
+      - classpath:db/migration
+      - classpath:db/seed
 
   # RabbitMQ — Docker Compose instance (CC-1504)
   rabbitmq:

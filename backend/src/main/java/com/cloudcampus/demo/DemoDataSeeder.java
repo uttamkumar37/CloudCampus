@@ -233,8 +233,8 @@ public class DemoDataSeeder implements ApplicationRunner {
                                staff_type, status, first_name, last_name, joining_date,
                                email, phone)
             VALUES (?, ?, ?, ?, 'JNV-ADMIN-001', 'ADMIN_STAFF', 'ACTIVE',
-                    'Uttam', 'Kumar', '2020-04-01',
-                    'uttamkumar3797@gmail.com', '+917905025730')
+                    'Demo', 'Administrator', '2020-04-01',
+                    'admin@jnv-lucknow-demo.test', '+910000000000')
             ON CONFLICT ON CONSTRAINT uq_staff_school_employee_number DO NOTHING
             """, uuid("stf-admin"), TENANT_ID, SCHOOL_ID, ADMIN_USER_ID);
 

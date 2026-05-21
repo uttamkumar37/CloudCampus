@@ -1,0 +1,178 @@
+name: Docker — Build & Publish
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Container image build and push to GHCR.
+#
+# Why this is its own workflow:
+#   Image build + push takes minutes and adds no signal for feature branches.
+#   It should only run for code that's actually a candidate for deployment:
+#
+#     • Push to main          — produces `:sha-<short>` and `:latest`
+#     • Push to release/**    — produces `:sha-<short>` and `:release-<branch>`
+#     • Tag push v*           — produces semver tags `:1.4.2`, `:1.4`, `:1`
+#     • workflow_dispatch     — on-demand builds for hot-fix branches
+#
+# This workflow does NOT run on feature pushes or regular PRs.
+# Branch protection should NOT mark these jobs as required for PR merge.
+#
+# It depends on CI (ci.yml) having already passed via repository rules /
+# branch protection — if main is protected to require ci.yml, this workflow
+# only runs after merge, i.e. on already-green code.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_override:
+        description: 'Override image tag (default: sha + latest/branch tags)'
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false   # Don't cancel a push to main if a tag fires.
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ${{ github.repository_owner }}/cloudcampus-backend
+  FRONTEND_IMAGE: ${{ github.repository_owner }}/cloudcampus-frontend
+
+jobs:
+  docker:
+    name: Build & push backend image
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      - name: Package JAR (tests already ran in ci.yml)
+        working-directory: backend
+        run: mvn package -DskipTests --batch-mode --no-transfer-progress
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ──────────────────────────────────────────────────────────────────────
+      # Tagging strategy:
+      #   • sha-<short> on every push (immutable)
+      #   • latest only when pushing to main (mutable, deploy-friendly)
+      #   • semver tags 1.4.2, 1.4, 1 when pushing a `vX.Y.Z` git tag
+      #   • release-<branch> when pushing to a release/** branch
+      # ──────────────────────────────────────────────────────────────────────
+      - name: Extract Docker metadata (tags + labels)
+        id: meta
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=ref,event=branch,enable=${{ startsWith(github.ref, 'refs/heads/release/') }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Trivy fast-fail scan on the freshly-built image. The exhaustive nightly
+      # scan lives in security-nightly.yml; this one keeps obviously-broken
+      # images from being tagged `:latest`.
+      - name: Trivy container scan (HIGH + CRITICAL)
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -e TRIVY_USERNAME=${{ github.actor }} \
+            -e TRIVY_PASSWORD=${{ secrets.GITHUB_TOKEN }} \
+            aquasec/trivy:0.61.0 image \
+            --exit-code 1 \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            "$IMAGE"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Frontend image — Vite static build served by nginx (multi-stage).
+  # Same tagging/triggering rules as the backend image.
+  # ────────────────────────────────────────────────────────────────────────────
+  frontend-docker:
+    name: Build & push frontend image
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract frontend Docker metadata
+        id: meta
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=ref,event=branch,enable=${{ startsWith(github.ref, 'refs/heads/release/') }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VITE_API_URL=${{ vars.VITE_API_URL || 'https://api.cloudcampus.io' }}
+            VITE_PUBLIC_APP_NAME=CloudCampus
