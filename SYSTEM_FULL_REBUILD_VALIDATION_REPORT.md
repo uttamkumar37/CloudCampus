@@ -5,6 +5,8 @@
 **Scope:** all 12 phases from the user's runbook
 **Final verdict:** ✅ **System is rebuildable, stable, and ready for end-to-end demo**
 
+> **2026-05-21 update:** Shortly after this rebuild completed successfully, the React Native mobile app was removed from the repo (commit `f6090fd`). Phase 6 below — which records a passing mobile typecheck — was true at the time of the run but is now obsolete; there is no longer a `mobile/` directory to typecheck. The native client is planned to be rebuilt fresh in a future release.
+
 > Companion document: `FULL_PROJECT_PRODUCTION_AUDIT.md` (the upstream audit that informed the work).
 
 ---
@@ -283,7 +285,7 @@ Recommended next step: add the 5 highest-traffic smoke flows as Playwright tests
 | Severity | Item | Owner / next step |
 |---|---|---|
 | 🟥 high | T-04 self-serve subscription not implemented | scaffold endpoints exist; complete proration + Razorpay order linkage |
-| 🟥 high | Test coverage low: 30 backend tests / 130 entities; 10 frontend tests / 96 pages; 0 mobile tests | grow coverage; flip the audit's T-13 coverage gate (`-Dcoverage.enforce=true`) |
+| 🟥 high | Test coverage low: 30 backend tests / 130 entities; 10 frontend tests / 96 pages | grow coverage; flip the audit's T-13 coverage gate (`-Dcoverage.enforce=true`) |
 | 🟧 med  | 311 endpoints rely on URL-pattern auth, no per-method `@PreAuthorize` (F-1) | optional ArchUnit baseline-freeze rule |
 | 🟧 med  | 19 controllers return JPA entities (F-2) | introduce DTOs incrementally |
 | 🟧 med  | `BOOTSTRAP_ADMIN_PASSWORD=admin123` baked into `.env` | implement Phase 1 of `docs/BOOTSTRAP_ADMIN_HARDENING.md` before first production deploy |

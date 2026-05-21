@@ -5,6 +5,8 @@
 **Commit at audit time:** `e512e76`
 **Audit scope:** backend, frontend, mobile, DB, CI/CD, infra, security, subscription, UX, deployment.
 
+> **2026-05-21 update:** The React Native mobile app has been removed from the repo (commit `f6090fd`) and will be rebuilt fresh in a future release. All mobile-specific findings below — H-10 (zero mobile tests), T-12 (mobile snapshot tests), the §10 Mobile Review, L-7 (OTA strategy) — are **OBSOLETE / DEFERRED** until the new mobile codebase exists. The backend `/v1/mobile/*` API namespace remains intact for any future client.
+
 > **Operating mode:** This document is the discovery output. **No code has been modified.** Fixes will be applied **one task at a time**, and each fix waits for explicit approval before the next.
 
 ---
@@ -21,7 +23,7 @@
 | Test coverage | **Weak** | 4.0 / 10 |
 | CI/CD development ergonomics | **Weak** (heavy jobs run on every push) | 5.5 / 10 |
 | Frontend code quality | Good | 7.5 / 10 |
-| Mobile code quality | Adequate | 7.0 / 10 |
+| Mobile code quality | _n/a — module removed_ | — |
 | Subscription model | **Incomplete** (no self-serve) | 5.0 / 10 |
 | Payment readiness | Partial | 6.0 / 10 |
 | Deployment readiness | Partial (no FE image, no deploy WF) | 6.0 / 10 |
@@ -127,10 +129,8 @@
 - **Risk:** Demo data should not embed the maintainer's PII. If this seed ships to a customer instance for demo, the customer sees the project owner's real name.
 - **Fix:** Replace with a generic demo persona (e.g., "Demo Admin", "Principal Sharma").
 
-### H-10. Mobile has zero automated tests in CI
-- **Where:** `.github/workflows/ci.yml` → mobile job runs `tsc --noEmit` only.
-- **Risk:** UI logic in 28 mobile screens has no regression net.
-- **Fix:** At minimum, snapshot tests for the 5 highest-traffic screens (Login, Home, Attendance, Notices, Profile).
+### H-10. ~~Mobile has zero automated tests in CI~~ — **OBSOLETE**
+- The React Native app and its CI job have been removed from the repo. This finding will be re-evaluated once the new mobile codebase is started.
 
 ---
 
@@ -311,17 +311,7 @@
 
 ## 10. Mobile Review
 
-**Strengths:**
-- 11 feature folders; 28 screens.
-- TypeScript only; Expo managed workflow.
-- `mobile/features/auth/api/authApi.ts` mirrors the web client pattern (per graph).
-- Shared `getMyTimetable`, `getMyHomework`, `getMyAttendance` patterns used (per community 17).
-
-**Issues:**
-- H-10 (zero tests).
-- No EAS update / OTA strategy documented in CI.
-- No signing/notarisation pipeline visible.
-- No deep-link → web-app fallback documented for in-app links from notifications.
+**Status: deferred (module removed 2026-05-21).** The React Native / Expo app is no longer in the repo. Re-do this section once the rebuilt mobile codebase exists. The original findings (zero tests, no OTA strategy, no signing pipeline, no deep-link fallback) are recorded here as design guidance for the next iteration so they aren't lost.
 
 ---
 
@@ -374,7 +364,7 @@
 |---|---|---|---|
 | Backend | ~700 java files (main) | 30 test files | Includes some mfa/ai/auth/rbac integration tests |
 | Frontend | 96 pages + ~? hooks | 10 test files | Heavily under-tested |
-| Mobile | 28 screens | 0 tests | Type-only check in CI |
+| Mobile | _removed_ | _n/a_ | Module deleted 2026-05-21; rebuild planned |
 | Integration / e2e | None visible | 0 | No Cypress/Playwright in CI |
 
 **Existing test directories (backend):**
@@ -444,7 +434,6 @@ tenant
 |---|---|
 | Backend code quality | 8 |
 | Frontend code quality | 7.5 |
-| Mobile code quality | 7 |
 | API design | 8 |
 | Security | 7.5 |
 | Tenant isolation | 8 |
@@ -478,7 +467,7 @@ tenant
 | T-09 | H-6 | Integration tests covering subscription limit enforcement on every create entry-point | TODO |
 | T-10 | H-7 | Razorpay webhook idempotency test (Testcontainers) | TODO |
 | T-11 | H-9 | Replace "Uttam Kumar" with generic demo persona in seed | TODO |
-| T-12 | H-10 | Add 5 mobile snapshot tests (Login, Home, Attendance, Notices, Profile) | TODO |
+| T-12 | H-10 | ~~Add 5 mobile snapshot tests~~ — OBSOLETE (mobile module removed) | OBSOLETE |
 | T-13 | H-1 | Backend coverage gate: 60% line coverage minimum on `auth`, `tenant`, `subscription`, `payment`, `finance` | TODO |
 | T-14 | M-1 | Standardise `hasRole` vs `hasAuthority`; ArchUnit test | TODO |
 | T-15 | M-2 | Move seed migrations to `db/seed/` (profile-gated) | TODO |
