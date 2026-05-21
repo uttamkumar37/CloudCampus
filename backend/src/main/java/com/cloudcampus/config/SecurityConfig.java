@@ -202,6 +202,8 @@ public class SecurityConfig {
 
         List<String> patterns = new ArrayList<>(List.of(
                 "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://[::1]:*",
                 "https://*.cloudcampus.io"
         ));
         if (corsAllowedOrigins != null && !corsAllowedOrigins.isBlank()) {

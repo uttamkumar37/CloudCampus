@@ -1,29 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type ToastVariant = 'success' | 'error' | 'warning' | 'info';
-
-interface Toast {
-  id: string;
-  variant: ToastVariant;
-  title?: string;
-  message: string;
-  duration?: number;
-}
-
-interface ToastContextValue {
-  toast: (opts: Omit<Toast, 'id'>) => void;
-  success: (message: string, title?: string) => void;
-  error: (message: string, title?: string) => void;
-  warning: (message: string, title?: string) => void;
-  info: (message: string, title?: string) => void;
-}
-
-// ── Context ───────────────────────────────────────────────────────────────────
-
-const ToastContext = createContext<ToastContextValue | null>(null);
+import { ToastContext, type Toast, type ToastVariant } from './ToastContext';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -115,12 +92,4 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       )}
     </ToastContext.Provider>
   );
-}
-
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
-export function useToast(): ToastContextValue {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error('useToast must be used inside <ToastProvider>');
-  return ctx;
 }

@@ -41,7 +41,7 @@ export default function ParentDashboardPage() {
     queryFn: getMyChildren,
   });
 
-  const children = childrenQuery.data ?? [];
+  const children = useMemo(() => childrenQuery.data ?? [], [childrenQuery.data]);
   const activeChild = children.find((child) => child.studentId === selectedChildId) ?? children[0];
 
   const feeQueries = useQueries({

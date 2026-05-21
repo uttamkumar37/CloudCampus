@@ -12,4 +12,5 @@ export { PageHeader } from './PageHeader';
 export { SensitiveField } from './SensitiveField';
 export { Skeleton, SkeletonCard, SkeletonPage, SkeletonTable, SkeletonText } from './Skeleton';
 export { Spinner, PageSpinner } from './Spinner';
-export { ToastProvider, useToast } from './Toast';
+export { ToastProvider } from './Toast';
+export { useToast } from './useToast';

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   getPublicSiteApi,
@@ -314,12 +314,8 @@ function RenderSection({ section, schoolName }: { section: PublicSectionResponse
 
 export function PublicSitePage() {
   const { tenantCode = '', slug } = useParams<{ tenantCode: string; slug?: string }>();
-  const [activeSlug, setActiveSlug] = useState<string>(slug ?? '');
+  const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-
-  useEffect(() => {
-    if (slug) setActiveSlug(slug);
-  }, [slug]);
 
   const { data: site, isLoading: siteLoading, isError: siteError } = useQuery({
     queryKey: ['public-site', tenantCode],
@@ -327,7 +323,7 @@ export function PublicSitePage() {
     enabled: !!tenantCode,
   });
 
-  const resolvedSlug = activeSlug || site?.pages[0]?.slug || '';
+  const resolvedSlug = slug || site?.pages[0]?.slug || '';
 
   const { data: pageData, isLoading: pageLoading } = useQuery({
     queryKey: ['public-page', tenantCode, resolvedSlug],
@@ -378,7 +374,7 @@ export function PublicSitePage() {
     <div className="min-h-screen bg-white font-sans text-slate-900">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
-          <button type="button" onClick={() => setActiveSlug(site.pages[0]?.slug ?? '')} className="flex min-w-0 items-center gap-3 text-left">
+          <button type="button" onClick={() => navigate(`/sites/${tenantCode}`)} className="flex min-w-0 items-center gap-3 text-left">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white">
               {initials(site.schoolName)}
             </div>
@@ -393,7 +389,7 @@ export function PublicSitePage() {
               item.slug ? (
                 <button
                   key={item.id}
-                  onClick={() => setActiveSlug(item.slug ?? '')}
+                  onClick={() => navigate(`/sites/${tenantCode}/pages/${item.slug}`)}
                   className={`rounded-full px-4 py-2 text-sm font-bold transition ${resolvedSlug === item.slug ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
                 >
                   {item.label}
@@ -425,7 +421,10 @@ export function PublicSitePage() {
                 item.slug ? (
                   <button
                     key={item.id}
-                    onClick={() => { setActiveSlug(item.slug ?? ''); setMobileNavOpen(false); }}
+                    onClick={() => {
+                      navigate(`/sites/${tenantCode}/pages/${item.slug}`);
+                      setMobileNavOpen(false);
+                    }}
                     className="rounded-lg bg-slate-50 px-3 py-2 text-left text-sm font-bold text-slate-700"
                   >
                     {item.label}
@@ -472,7 +471,7 @@ export function PublicSitePage() {
             <p className="text-sm font-bold text-white">Explore</p>
             <div className="mt-3 grid gap-2">
               {site.pages.slice(0, 5).map((page) => (
-                <button key={page.id} onClick={() => setActiveSlug(page.slug)} className="text-left text-sm text-slate-400 hover:text-white">
+                <button key={page.id} onClick={() => navigate(`/sites/${tenantCode}/pages/${page.slug}`)} className="text-left text-sm text-slate-400 hover:text-white">
                   {page.title}
                 </button>
               ))}

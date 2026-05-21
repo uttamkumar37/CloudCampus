@@ -62,6 +62,42 @@ BEGIN
         RETURN;
     END IF;
 
+    IF NOT EXISTS (
+            SELECT 1
+            FROM academic_years
+            WHERE id = v_ay
+              AND tenant_id = v_tid
+              AND school_id = v_sid
+       )
+       OR NOT EXISTS (
+            SELECT 1
+            FROM students
+            WHERE tenant_id = v_tid
+              AND school_id = v_sid
+            LIMIT 1
+       )
+       OR NOT EXISTS (
+            SELECT 1
+            FROM fee_categories
+            WHERE id IN (v_fc_tuition, v_fc_exam, v_fc_library, v_fc_sports)
+              AND tenant_id = v_tid
+              AND school_id = v_sid
+            GROUP BY school_id
+            HAVING COUNT(*) = 4
+       )
+       OR NOT EXISTS (
+            SELECT 1
+            FROM classes
+            WHERE id IN (v_cls6, v_cls7, v_cls8, v_cls9, v_cls10, v_cls11, v_cls12)
+              AND tenant_id = v_tid
+              AND school_id = v_sid
+            GROUP BY school_id
+            HAVING COUNT(*) = 7
+       ) THEN
+        RAISE NOTICE 'V91: JNV bulk demo data not present yet — skipping enrichment seed.';
+        RETURN;
+    END IF;
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 1. Fee structures — Classes 6–12 (4 categories each)
 -- ─────────────────────────────────────────────────────────────────────────────

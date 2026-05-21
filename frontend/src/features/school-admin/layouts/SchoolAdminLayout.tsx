@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { NavLink, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import type React from 'react';
+import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useFeatureFlag } from '@/shared/hooks/useFeatureFlag';
 import { useBranding } from '@/shared/hooks/useBranding';
+import { useRouteScopedDisclosure } from '@/shared/hooks/useRouteScopedDisclosure';
 import { listMySchoolsApi, switchSchoolApi } from '../api/schoolAccessApi';
 import axiosInstance from '@/shared/api/axiosInstance';
 import type { ApiResponse } from '@/shared/types/api';
@@ -164,14 +165,11 @@ const OTHER_ITEMS: NavItemDef[] = [
 // ── Layout shell ──────────────────────────────────────────────────────────────
 
 export function SchoolAdminLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location  = useLocation();
+  const { isOpen: sidebarOpen, open: openSidebar, close: closeSidebar } = useRouteScopedDisclosure();
   const user      = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate  = useNavigate();
   const branding  = useBranding();
-
-  useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
   const { data: mySchools } = useQuery({
     queryKey: ['my-schools'],
@@ -291,7 +289,7 @@ export function SchoolAdminLayout() {
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={closeSidebar}
           aria-hidden="true"
         />
       )}
@@ -306,7 +304,7 @@ export function SchoolAdminLayout() {
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
           {brandLogo}
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={closeSidebar}
             aria-label="Close navigation"
             className="rounded-lg p-1 text-gray-400 hover:bg-gray-100"
           >
@@ -321,7 +319,7 @@ export function SchoolAdminLayout() {
         {/* Topbar */}
         <header className="flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 shrink-0">
           <button
-            onClick={() => setSidebarOpen(true)}
+            onClick={openSidebar}
             className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 lg:hidden"
             aria-label="Open navigation"
             aria-expanded={sidebarOpen}

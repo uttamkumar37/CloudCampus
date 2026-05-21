@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { NavLink, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import type React from 'react';
+import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useRouteScopedDisclosure } from '@/shared/hooks/useRouteScopedDisclosure';
 
 // ── Icon helpers ──────────────────────────────────────────────────────────────
 
@@ -61,13 +62,10 @@ function NavSection({ title, children }: { title: string; children: React.ReactN
 // ── Layout ────────────────────────────────────────────────────────────────────
 
 export function SuperAdminLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location  = useLocation();
+  const { isOpen: sidebarOpen, open: openSidebar, close: closeSidebar } = useRouteScopedDisclosure();
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate  = useNavigate();
   const publicWebsiteUrl = getPublicWebsiteUrl();
-
-  useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
   function handleLogout() {
     clearAuth();
@@ -132,7 +130,7 @@ export function SuperAdminLayout() {
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={closeSidebar}
           aria-hidden="true"
         />
       )}
@@ -147,7 +145,7 @@ export function SuperAdminLayout() {
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
           <span className="font-bold text-blue-700">CloudCampus</span>
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={closeSidebar}
             aria-label="Close navigation"
             className="rounded-lg p-1 text-gray-400 hover:bg-gray-100"
           >
@@ -161,7 +159,7 @@ export function SuperAdminLayout() {
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 shrink-0">
           <button
-            onClick={() => setSidebarOpen(true)}
+            onClick={openSidebar}
             className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 lg:hidden"
             aria-label="Open navigation"
             aria-expanded={sidebarOpen}
