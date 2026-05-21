@@ -12,13 +12,14 @@ Enterprise Digital School SaaS — multi-tenant, schema-based architecture.
 CloudCampus/
 ├── backend/          # Spring Boot API (Java 21)
 ├── frontend/         # React 19 + TypeScript web app (Vite)
-├── mobile/           # Expo / React Native mobile app (SDK 54)
 ├── infra/
 │   ├── prometheus/   # Prometheus config + alert rules
 │   └── grafana/      # Grafana provisioning + dashboards
 ├── docs/             # Consolidated architecture, audit, and remediation docs
 └── docker-compose.yml
 ```
+
+> **Mobile app:** the native mobile app (React Native / Expo) is on the roadmap and will be rebuilt fresh in a future release. The backend exposes a stable `/v1/mobile/*` API namespace any future client can consume.
 
 ---
 
@@ -27,7 +28,7 @@ CloudCampus/
 CloudCampus uses a **multi-tenant, schema-based** model. Every tenant gets row-level isolation via Hibernate `@Filter`. A `RequestContext` (ThreadLocal) carries `tenantId`, `schoolId`, and `userId` through every request.
 
 ```
-Browser / Mobile
+Browser (web)  /  Future native client (via /v1/mobile/*)
       │
       ▼
   Load Balancer (HTTPS)
@@ -57,9 +58,8 @@ Browser / Mobile
 | Object Storage | MinIO (S3-compatible) |
 | Auth | JWT (HS256) · Spring Security |
 | Web App | React 19 · TypeScript · Vite · TanStack Query v5 |
-| Mobile | Expo SDK 54 · React Native 0.81.5 (New Architecture) |
-| Offline sync | WatermelonDB + custom sync queue |
-| Push notifications | Expo Notifications + FCM / APNs |
+| Native mobile | Planned (was Expo / React Native; module removed pending fresh rebuild) |
+| Push notifications | FCM / APNs (backend infra in place; client app pending) |
 | Observability | Micrometer · OpenTelemetry (OTLP) · Prometheus · Grafana · Tempo |
 | Local infra | Docker Compose |
 
@@ -121,11 +121,7 @@ Public web routes:
 
 ### 4 — Run the mobile app
 
-```bash
-cd mobile
-npm install --legacy-peer-deps
-npx expo start
-```
+> **Removed.** The native mobile app is not currently in this repo; it will be rebuilt fresh in a future release. The backend already exposes a `/v1/mobile/*` API that any future client (Expo, native iOS/Android, third-party integrations) can consume.
 
 ---
 
@@ -279,24 +275,18 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Feature-flag-driven sidebar navigation | ✅ Done |
 | Tenant branding (logo, favicon, CSS custom properties applied at runtime) | ✅ Done |
 
-### Mobile (Expo / React Native)
+### Native mobile (planned)
 
-| Area | Status |
-|------|--------|
-| Navigation scaffold (Expo Router) | ✅ Done |
-| Secure token storage (SecureStore + MMKV) | ✅ Done |
-| Proactive JWT refresh | ✅ Done |
-| Offline-first attendance (WatermelonDB) | ✅ Done |
-| Push notifications (FCM / APNs) | ✅ Done |
-| Role-aware dashboard (Student / Teacher / Parent sections) | ✅ Done |
-| Student screens: assignments, results, fees, attendance, timetable | ✅ Done |
-| Teacher screens: timetable, homework, assignments | ✅ Done |
-| Parent screens: children list with attendance, homework, fees, exam results | ✅ Done |
-| Forgot password + reset password (OTP-based) | ✅ Done |
-| Change password screen + forced-change navigation guard | ✅ Done |
-| **QR attendance scan screen** — deep-link handler: reads `?token=` from URL params, auto-submits to `POST /v1/student/attendance/qr-mark`, manual paste fallback | ✅ Done (CC-0802) |
-| **Teacher QR display** — Generate QR Attendance button in attendance screen, shareable deep-link, 5-min countdown, Share API | ✅ Done (CC-0802) |
-| **Student promotion screen** — school-admin bulk promotion with cascading class/section pickers, result card | ✅ Done |
+The previous React Native / Expo app has been removed and will be rebuilt fresh in a future release. The backend already provides the supporting API surface so the rebuild can be a pure client effort:
+
+| Backend capability for any future mobile client | Status |
+|---|---|
+| `/v1/mobile/*` role-aware API (notices, assignments, results, attendance, …) | ✅ in backend |
+| Secure JWT (15 min access + 30 day rotated refresh) | ✅ |
+| Forgot-password OTP flow | ✅ |
+| QR attendance endpoints (`/v1/student/attendance/qr-mark`, generator) | ✅ |
+| Push notification infra (FCM / APNs targets) | ✅ |
+| Forced password change flag (`requiresPasswordChange` on login response) | ✅ |
 
 ### DevOps / Observability
 
@@ -307,7 +297,7 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Grafana dashboards (9 panels) | ✅ Done |
 | Staging / production profiles | ✅ Done |
 | pg_dump backup sidecar + disaster recovery drill script | ✅ Done |
-| CI/CD pipeline (4-job GitHub Actions: backend / frontend / mobile / docker) | ✅ Done |
+| CI/CD pipeline (GitHub Actions: backend / frontend / secret-scan required; docker + dep-check on schedule/main) | ✅ Done |
 
 ---
 
@@ -597,10 +587,7 @@ cd frontend
 npm install && npm run dev
 # Runs on http://localhost:5173
 
-# 4. Mobile (optional)
-cd mobile
-npm install --legacy-peer-deps
-npx expo start
+# 4. Mobile app — removed; will be rebuilt fresh in a future release.
 ```
 
 > **First boot:** `superadmin` is bootstrapped automatically from `BOOTSTRAP_ADMIN_PASSWORD`.
