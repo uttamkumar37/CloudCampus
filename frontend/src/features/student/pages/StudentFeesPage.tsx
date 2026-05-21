@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getMyFees, type StudentFeeRecord, type FeeStatus } from '../api/studentPortalApi';
 import { useRazorpay } from '../hooks/useRazorpay';
+import { PageHeader, PageSpinner, EmptyState } from '@/shared/ui';
 
 function statusLabel(s: FeeStatus) {
   return { PENDING: 'Unpaid', PARTIAL: 'Partial', PAID: 'Paid', WAIVED: 'Waived', OVERDUE: 'Overdue' }[s] ?? s;
@@ -67,7 +68,7 @@ export default function StudentFeesPage() {
   });
 
   if (isLoading) {
-    return <div className="p-6 text-sm text-gray-400">Loading fees…</div>;
+    return <PageSpinner />;
   }
 
   const totalDue     = fees.reduce((s, r) => s + r.amountDue, 0);
@@ -96,7 +97,7 @@ export default function StudentFeesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900">My Fees</h2>
+      <PageHeader title="My Fees" />
 
       {paySuccess && (
         <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
@@ -124,7 +125,7 @@ export default function StudentFeesPage() {
       </div>
 
       {fees.length === 0 ? (
-        <p className="text-sm text-gray-500">No fee records found.</p>
+        <EmptyState title="No fee records" description="No fee records found for your account." />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <table className="w-full text-left">

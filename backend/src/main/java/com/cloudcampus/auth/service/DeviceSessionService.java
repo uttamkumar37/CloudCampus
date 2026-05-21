@@ -12,4 +12,6 @@ public interface DeviceSessionService {
     List<DeviceSessionResponse> listActive(UUID userId);
 
     void revoke(UUID sessionId, UUID userId);
+
+    int revokeAll(UUID userId);
 }

@@ -8,6 +8,7 @@ import {
   type LeaveStatus,
   type TeacherLeaveRecord,
 } from '../api/teacherLeaveApi';
+import { useToast, PageSpinner, ConfirmDialog, PageHeader } from '@/shared/ui';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -155,7 +156,7 @@ function RequestForm({
 
 // ── Leave row ─────────────────────────────────────────────────────────────────
 
-function LeaveRow({ record, onCancel }: { record: TeacherLeaveRecord; onCancel: () => void }) {
+function LeaveRow({ record, onCancelRequest }: { record: TeacherLeaveRecord; onCancelRequest: () => void }) {
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-4 py-3 text-sm font-medium text-gray-800">{record.leaveType.replace('_', ' ')}</td>
@@ -172,7 +173,7 @@ function LeaveRow({ record, onCancel }: { record: TeacherLeaveRecord; onCancel: 
       <td className="px-4 py-3">
         {record.status === 'PENDING' && (
           <button
-            onClick={onCancel}
+            onClick={onCancelRequest}
             className="text-xs text-red-600 hover:underline"
           >
             Cancel
@@ -186,7 +187,9 @@ function LeaveRow({ record, onCancel }: { record: TeacherLeaveRecord; onCancel: 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function TeacherLeavePage() {
+  const { success, error: toastError } = useToast();
   const [showForm, setShowForm] = useState(false);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: records = [], isLoading, isError } = useQuery({
@@ -197,14 +200,20 @@ export default function TeacherLeavePage() {
   const submitMutation = useMutation({
     mutationFn: submitLeave,
     onSuccess: () => {
+      success('Leave request submitted successfully');
       queryClient.invalidateQueries({ queryKey: ['teacher-leave'] });
       setShowForm(false);
     },
+    onError: () => { toastError('Failed to submit leave request. Please try again.'); },
   });
 
   const cancelMutation = useMutation({
     mutationFn: cancelLeave,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['teacher-leave'] }),
+    onSuccess: () => {
+      success('Leave request cancelled');
+      queryClient.invalidateQueries({ queryKey: ['teacher-leave'] });
+    },
+    onError: () => { toastError('Failed to cancel leave request.'); },
   });
 
   const pending  = records.filter((r) => r.status === 'PENDING').length;
@@ -214,7 +223,7 @@ export default function TeacherLeavePage() {
     <div className="p-6">
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">My Leave</h1>
+          <PageHeader title="My Leave" />
           <p className="mt-0.5 text-sm text-gray-500">View your leave requests and submit new ones</p>
         </div>
         {!showForm && (
@@ -261,7 +270,7 @@ export default function TeacherLeavePage() {
 
       {/* Table */}
       {isLoading ? (
-        <div className="py-12 text-center text-sm text-gray-400">Loading…</div>
+        <PageSpinner />
       ) : isError ? (
         <div className="py-12 text-center text-sm text-red-500">Failed to load leave requests.</div>
       ) : records.length === 0 ? (
@@ -271,6 +280,7 @@ export default function TeacherLeavePage() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-100 text-sm">
             <thead className="bg-gray-50">
               <tr>
@@ -286,15 +296,24 @@ export default function TeacherLeavePage() {
                 <LeaveRow
                   key={r.id}
                   record={r}
-                  onCancel={() => {
-                    if (confirm('Cancel this leave request?')) cancelMutation.mutate(r.id);
-                  }}
+                  onCancelRequest={() => setConfirmCancelId(r.id)}
                 />
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmCancelId !== null}
+        onClose={() => setConfirmCancelId(null)}
+        onConfirm={() => { if (confirmCancelId) cancelMutation.mutate(confirmCancelId); setConfirmCancelId(null); }}
+        title="Cancel leave request"
+        description="Are you sure you want to cancel this leave request?"
+        confirmLabel="Cancel Request"
+        loading={cancelMutation.isPending}
+      />
     </div>
   );
 }

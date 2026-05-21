@@ -6,6 +6,7 @@ import { listStudentsBySection } from '@/features/student/api/studentApi';
 import { listStudentsByClass } from '@/features/student/api/studentApi';
 import type { AttendanceStatus } from '../types/attendance';
 import type { StudentSummaryResponse } from '@/features/student/types/student';
+import { useToast, PageSpinner, ConfirmDialog } from '@/shared/ui';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,8 @@ interface RowState {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function AttendanceMarkPage() {
+  const { success, error: toastError } = useToast();
+  const [lockConfirmOpen, setLockConfirmOpen] = useState(false);
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -94,10 +97,12 @@ export function AttendanceMarkPage() {
         })),
         lockSession,
       }),
-    onSuccess: () => {
+    onSuccess: (_data, { lockSession }) => {
+      success(lockSession ? 'Attendance saved and session locked' : 'Attendance saved successfully');
       queryClient.invalidateQueries({ queryKey: ['attendance-session', sessionId] });
       queryClient.invalidateQueries({ queryKey: ['attendance-sessions'] });
     },
+    onError: () => { toastError('Failed to save attendance. Please try again.'); },
   });
 
   // ── QR code state ─────────────────────────────────────────────────────────
@@ -109,6 +114,7 @@ export function AttendanceMarkPage() {
   const qrMutation = useMutation({
     mutationFn: () => generateSessionQr(sessionId!),
     onSuccess: (res) => {
+      success('QR code generated successfully');
       setQrData(res);
       const remaining = Math.floor((new Date(res.expiresAt).getTime() - Date.now()) / 1000);
       setLeft(Math.max(0, remaining));
@@ -146,9 +152,7 @@ export function AttendanceMarkPage() {
 
   // ── Loading / error states ─────────────────────────────────────────────────
 
-  if (sessionLoading || studentsLoading) {
-    return <div className="p-6 text-sm text-gray-500" role="status">Loading…</div>;
-  }
+  if (sessionLoading || studentsLoading) return <PageSpinner />;
   if (sessionError || !session) {
     return (
       <div className="p-6 text-sm text-red-600" role="alert">
@@ -373,15 +377,7 @@ export function AttendanceMarkPage() {
             {isPending ? 'Saving…' : 'Save'}
           </button>
           <button
-            onClick={() => {
-              if (
-                window.confirm(
-                  'Lock this session? No further changes will be allowed after locking.',
-                )
-              ) {
-                mutate({ lockSession: true });
-              }
-            }}
+            onClick={() => setLockConfirmOpen(true)}
             disabled={isPending}
             className="rounded-lg border border-gray-300 bg-gray-50 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50"
           >
@@ -389,6 +385,16 @@ export function AttendanceMarkPage() {
           </button>
         </div>
       )}
+      <ConfirmDialog
+        open={lockConfirmOpen}
+        onClose={() => setLockConfirmOpen(false)}
+        onConfirm={() => { setLockConfirmOpen(false); mutate({ lockSession: true }); }}
+        title="Lock this session?"
+        description="No further changes will be allowed after locking."
+        confirmLabel="Save & Lock"
+        variant="primary"
+        loading={isPending}
+      />
     </div>
   );
 }

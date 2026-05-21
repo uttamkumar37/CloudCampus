@@ -22,12 +22,14 @@ type MetricCard = {
   value: string;
   label: string;
   detail: string;
+  href: string;
 };
 
 type DashboardMetric = {
   label: string;
   value: string;
   accent: string;
+  href?: string;
 };
 
 type RoleShowcase = {
@@ -45,12 +47,14 @@ type FeatureCard = {
   title: string;
   description: string;
   icon: string;
+  href?: string;
 };
 
 type PortalPreview = {
   title: string;
   description: string;
   metrics: DashboardMetric[];
+  href: string;
 };
 
 type PricingPlan = {
@@ -102,47 +106,48 @@ const siteConfig: PublicWebsiteConfig = {
     { label: 'Platform', href: '#platform-preview' },
     { label: 'Solutions', href: '#roles' },
     { label: 'AI', href: '#features' },
+    { label: 'Demos', href: '#demo' },
     { label: 'Pricing', href: '#pricing' },
     { label: 'Contact', href: '#contact' },
   ],
   hero: {
-    eyebrow: 'CloudCampus Global SaaS',
-    title: 'AI-Native School ERP & Digital Campus Platform',
+    eyebrow: 'CloudCampus AI-Powered School Operating System',
+    title: 'The complete AI school operating system for modern campuses',
     subtitle:
-      'CloudCampus unifies school administration, teaching workflows, student services, parent communication, public websites, and AI-assisted operations on one secure multi-tenant platform.',
+      'CloudCampus combines ERP, learning workflows, parent engagement, public websites, admissions growth, SaaS monetization, and AI intelligence on one secure multi-tenant platform.',
     ctas: [
       { label: 'Book Live Demo', href: '#demo', variant: 'primary' },
       { label: 'Explore Platform', href: '#platform-preview', variant: 'secondary' },
     ],
     dashboardCards: [
-      { label: 'Attendance', value: '96.4%', accent: 'from-emerald-400 to-teal-300' },
-      { label: 'Fees', value: '₹42L', accent: 'from-amber-300 to-orange-300' },
-      { label: 'Exams', value: '18', accent: 'from-violet-300 to-fuchsia-300' },
-      { label: 'AI Insights', value: '247', accent: 'from-cyan-300 to-blue-300' },
-      { label: 'Parent App', value: '4.8', accent: 'from-rose-300 to-pink-300' },
-      { label: 'Teacher Portal', value: '82%', accent: 'from-lime-300 to-emerald-300' },
+      { label: 'Attendance', value: '96.4%', accent: 'from-emerald-400 to-teal-300', href: '#features' },
+      { label: 'Fees', value: '₹42L', accent: 'from-amber-300 to-orange-300', href: '#features' },
+      { label: 'Exams', value: '18', accent: 'from-violet-300 to-fuchsia-300', href: '#features' },
+      { label: 'AI Insights', value: '247', accent: 'from-cyan-300 to-blue-300', href: '#features' },
+      { label: 'Parent App', value: '4.8', accent: 'from-rose-300 to-pink-300', href: '#roles' },
+      { label: 'Teacher Portal', value: '82%', accent: 'from-lime-300 to-emerald-300', href: '#roles' },
     ],
   },
   stats: [
-    { value: '1000+', label: 'Schools Ready', detail: 'Built for single campuses, school chains, and education groups.' },
-    { value: '1M+', label: 'Students Scalable', detail: 'Data model and workflows designed for large multi-tenant scale.' },
-    { value: '99.9%', label: 'Uptime Goal', detail: 'Observability, backups, health checks, and resilient operations.' },
-    { value: 'AI', label: 'Powered Operations', detail: 'AI copilots, insights, prompt governance, and usage controls.' },
-    { value: 'SaaS', label: 'Multi-Tenant Architecture', detail: 'Secure tenant isolation for every school and role.' },
+    { value: '1000+', label: 'Schools Ready', detail: 'Built for single campuses, school chains, and education groups.', href: '#contact' },
+    { value: '1M+', label: 'Students Scalable', detail: 'Data model and workflows designed for large multi-tenant scale.', href: '#investor' },
+    { value: '99.9%', label: 'Uptime Goal', detail: 'Observability, backups, health checks, and resilient operations.', href: '#features' },
+    { value: 'AI OS', label: 'Powered Operations', detail: 'AI copilots, insight cards, prompt governance, and usage controls.', href: '#features' },
+    { value: 'SaaS', label: 'Multi-Tenant Architecture', detail: 'Secure tenant isolation for every school and role.', href: '#investor' },
   ],
   roles: [
     {
       id: 'admin',
       role: 'School Admin',
-      title: 'Command center for every campus operation',
+      title: 'Command center for the complete school operating system',
       description: 'Run admissions, academics, staff, fees, communications, and compliance from a polished operations console.',
       benefits: ['Unified operational visibility', 'Configurable academic setup', 'Fee, exam, and attendance controls'],
       features: ['Campus dashboard', 'Automation rules', 'Compliance reports'],
       cta: { label: 'Explore Admin Demo', href: '/demo', variant: 'primary' },
       preview: [
-        { label: 'Open tasks', value: '32', accent: 'from-cyan-300 to-blue-300' },
-        { label: 'Collections', value: '91%', accent: 'from-amber-300 to-orange-300' },
-        { label: 'Active staff', value: '148', accent: 'from-emerald-300 to-teal-300' },
+        { label: 'Open tasks', value: '32', accent: 'from-cyan-300 to-blue-300', href: '/demo' },
+        { label: 'Collections', value: '91%', accent: 'from-amber-300 to-orange-300', href: '/demo' },
+        { label: 'Active staff', value: '148', accent: 'from-emerald-300 to-teal-300', href: '/demo' },
       ],
     },
     {
@@ -154,9 +159,9 @@ const siteConfig: PublicWebsiteConfig = {
       features: ['Lesson plans', 'Assignments', 'Class analytics'],
       cta: { label: 'Explore Teacher Demo', href: '/demo', variant: 'primary' },
       preview: [
-        { label: 'Today classes', value: '6', accent: 'from-violet-300 to-fuchsia-300' },
-        { label: 'Homework due', value: '14', accent: 'from-rose-300 to-pink-300' },
-        { label: 'Attendance', value: '94%', accent: 'from-emerald-300 to-teal-300' },
+        { label: 'Today classes', value: '6', accent: 'from-violet-300 to-fuchsia-300', href: '/demo' },
+        { label: 'Homework due', value: '14', accent: 'from-rose-300 to-pink-300', href: '/demo' },
+        { label: 'Attendance', value: '94%', accent: 'from-emerald-300 to-teal-300', href: '/demo' },
       ],
     },
     {
@@ -168,9 +173,9 @@ const siteConfig: PublicWebsiteConfig = {
       features: ['Student profile', 'QR scan', 'Results center'],
       cta: { label: 'Explore Student Demo', href: '/demo', variant: 'primary' },
       preview: [
-        { label: 'Assignments', value: '8', accent: 'from-cyan-300 to-blue-300' },
-        { label: 'Result trend', value: 'A+', accent: 'from-lime-300 to-emerald-300' },
-        { label: 'Notices', value: '12', accent: 'from-amber-300 to-orange-300' },
+        { label: 'Assignments', value: '8', accent: 'from-cyan-300 to-blue-300', href: '/demo' },
+        { label: 'Result trend', value: 'A+', accent: 'from-lime-300 to-emerald-300', href: '/demo' },
+        { label: 'Notices', value: '12', accent: 'from-amber-300 to-orange-300', href: '/demo' },
       ],
     },
     {
@@ -182,9 +187,9 @@ const siteConfig: PublicWebsiteConfig = {
       features: ['Parent app', 'Fee alerts', 'Progress feed'],
       cta: { label: 'Explore Parent Demo', href: '/demo', variant: 'primary' },
       preview: [
-        { label: 'Children', value: '2', accent: 'from-violet-300 to-fuchsia-300' },
-        { label: 'Fee status', value: 'Paid', accent: 'from-emerald-300 to-teal-300' },
-        { label: 'Updates', value: '24', accent: 'from-cyan-300 to-blue-300' },
+        { label: 'Children', value: '2', accent: 'from-violet-300 to-fuchsia-300', href: '/demo' },
+        { label: 'Fee status', value: 'Paid', accent: 'from-emerald-300 to-teal-300', href: '/demo' },
+        { label: 'Updates', value: '24', accent: 'from-cyan-300 to-blue-300', href: '/demo' },
       ],
     },
     {
@@ -196,73 +201,79 @@ const siteConfig: PublicWebsiteConfig = {
       features: ['Investor room', 'Growth metrics', 'Market narrative'],
       cta: { label: 'Investor View', href: '/investors', variant: 'primary' },
       preview: [
-        { label: 'ARR motion', value: 'SaaS', accent: 'from-amber-300 to-orange-300' },
-        { label: 'Tenancy', value: 'Multi', accent: 'from-cyan-300 to-blue-300' },
-        { label: 'Roadmap', value: 'AI', accent: 'from-violet-300 to-fuchsia-300' },
+        { label: 'ARR motion', value: 'SaaS', accent: 'from-amber-300 to-orange-300', href: '/investors' },
+        { label: 'Tenancy', value: 'Multi', accent: 'from-cyan-300 to-blue-300', href: '/investors' },
+        { label: 'Roadmap', value: 'AI', accent: 'from-violet-300 to-fuchsia-300', href: '/investors' },
       ],
     },
   ],
   features: [
-    { title: 'Attendance Management', description: 'QR, session, student, staff, and role-based attendance flows.', icon: 'AT' },
-    { title: 'Fee Management', description: 'Fee structures, collection workflows, receipts, and payment readiness.', icon: 'FM' },
-    { title: 'Exam & Result System', description: 'Exam setup, marks entry, report cards, and performance records.', icon: 'EX' },
-    { title: 'Homework & Lesson Planning', description: 'Teacher assignments, submissions, lesson plans, and class work.', icon: 'HL' },
-    { title: 'Parent Communication', description: 'Notices, linked children, progress visibility, and family updates.', icon: 'PC' },
-    { title: 'Student Profile', description: 'Academic, attendance, finance, document, and lifecycle records.', icon: 'SP' },
-    { title: 'AI Assistant', description: 'AI copilots, prompt governance, analytics, and safe usage controls.', icon: 'AI' },
-    { title: 'Reports & Analytics', description: 'Operational dashboards, comparisons, and school performance insights.', icon: 'RA' },
-    { title: 'Website Builder', description: 'Public pages, SEO, themes, sections, publishing, and analytics.', icon: 'WB' },
-    { title: 'Mobile App Ready', description: 'Expo mobile experience with offline sync patterns and push readiness.', icon: 'MA' },
-    { title: 'Multi-Tenant SaaS', description: 'Tenant isolation, feature flags, subscription controls, and scale.', icon: 'MT' },
-    { title: 'Security & Compliance', description: 'RBAC, audit logs, rate limits, encryption, and production guards.', icon: 'SC' },
+    { title: 'Attendance Management', description: 'QR, session, student, staff, and role-based attendance flows.', icon: 'AT', href: '/demo' },
+    { title: 'Fee Management', description: 'Fee structures, collection workflows, receipts, and payment readiness.', icon: 'FM', href: '/demo' },
+    { title: 'Exam & Result System', description: 'Exam setup, marks entry, report cards, and performance records.', icon: 'EX', href: '/demo' },
+    { title: 'Homework & Lesson Planning', description: 'Teacher assignments, submissions, lesson plans, and class work.', icon: 'HL', href: '/demo' },
+    { title: 'Parent Communication', description: 'Notices, linked children, progress visibility, and family updates.', icon: 'PC', href: '/demo' },
+    { title: 'Student Profile', description: 'Academic, attendance, finance, document, and lifecycle records.', icon: 'SP', href: '/demo' },
+    { title: 'AI Operating Layer', description: 'AI copilots, prompt governance, analytics, risk signals, and safe usage controls.', icon: 'AI', href: '#contact' },
+    { title: 'Reports & Analytics', description: 'Operational dashboards, comparisons, and school performance insights.', icon: 'RA', href: '#platform-preview' },
+    { title: 'Website Builder', description: 'Public pages, SEO, themes, sections, publishing, and analytics.', icon: 'WB', href: '#pricing' },
+    { title: 'Mobile App Ready', description: 'Expo mobile experience with offline sync patterns and push readiness.', icon: 'MA', href: '#contact' },
+    { title: 'Multi-Tenant SaaS', description: 'Tenant isolation, feature flags, subscription controls, and scale.', icon: 'MT', href: '#investor' },
+    { title: 'Security & Compliance', description: 'RBAC, audit logs, rate limits, encryption, and production guards.', icon: 'SC', href: '#investor' },
   ],
   portals: [
     {
       title: 'Super Admin Portal',
       description: 'Tenant, AI, investor, website, analytics, and platform controls.',
+      href: '/login',
       metrics: [
-        { label: 'Tenants', value: '128', accent: 'from-cyan-300 to-blue-300' },
-        { label: 'AI usage', value: '42K', accent: 'from-violet-300 to-fuchsia-300' },
+        { label: 'Tenants', value: '128', accent: 'from-cyan-300 to-blue-300', href: '/login' },
+        { label: 'AI usage', value: '42K', accent: 'from-violet-300 to-fuchsia-300', href: '/login' },
       ],
     },
     {
       title: 'School Admin Portal',
       description: 'Daily command center for academic and operational leadership.',
+      href: '/demo',
       metrics: [
-        { label: 'Collections', value: '91%', accent: 'from-amber-300 to-orange-300' },
-        { label: 'Attendance', value: '96%', accent: 'from-emerald-300 to-teal-300' },
+        { label: 'Collections', value: '91%', accent: 'from-amber-300 to-orange-300', href: '/demo' },
+        { label: 'Attendance', value: '96%', accent: 'from-emerald-300 to-teal-300', href: '/demo' },
       ],
     },
     {
       title: 'Teacher Portal',
       description: 'Lesson plans, homework, attendance, timetable, and notices.',
+      href: '/demo',
       metrics: [
-        { label: 'Classes', value: '6', accent: 'from-lime-300 to-emerald-300' },
-        { label: 'Tasks', value: '18', accent: 'from-rose-300 to-pink-300' },
+        { label: 'Classes', value: '6', accent: 'from-lime-300 to-emerald-300', href: '/demo' },
+        { label: 'Tasks', value: '18', accent: 'from-rose-300 to-pink-300', href: '/demo' },
       ],
     },
     {
       title: 'Student Portal',
       description: 'Results, fees, timetable, assignments, notices, and QR access.',
+      href: '/demo',
       metrics: [
-        { label: 'Score', value: 'A+', accent: 'from-violet-300 to-fuchsia-300' },
-        { label: 'Due', value: '3', accent: 'from-cyan-300 to-blue-300' },
+        { label: 'Score', value: 'A+', accent: 'from-violet-300 to-fuchsia-300', href: '/demo' },
+        { label: 'Due', value: '3', accent: 'from-cyan-300 to-blue-300', href: '/demo' },
       ],
     },
     {
       title: 'Parent Portal',
       description: 'Linked child timelines, fees, homework, attendance, and updates.',
+      href: '/demo',
       metrics: [
-        { label: 'Children', value: '2', accent: 'from-amber-300 to-orange-300' },
-        { label: 'Alerts', value: '12', accent: 'from-rose-300 to-pink-300' },
+        { label: 'Children', value: '2', accent: 'from-amber-300 to-orange-300', href: '/demo' },
+        { label: 'Alerts', value: '12', accent: 'from-rose-300 to-pink-300', href: '/demo' },
       ],
     },
     {
       title: 'Public Website Builder',
       description: 'Dynamic pages, sections, themes, SEO, media, and publishing.',
+      href: '#pricing',
       metrics: [
-        { label: 'Pages', value: '24', accent: 'from-emerald-300 to-teal-300' },
-        { label: 'SEO', value: 'Live', accent: 'from-cyan-300 to-blue-300' },
+        { label: 'Pages', value: '24', accent: 'from-emerald-300 to-teal-300', href: '#pricing' },
+        { label: 'SEO', value: 'Live', accent: 'from-cyan-300 to-blue-300', href: '#pricing' },
       ],
     },
   ],
@@ -383,6 +394,7 @@ export default function CloudCampusPublicWebsitePage() {
         <InvestorSection />
         <DemoExperienceSection />
         <PricingSection />
+        <ContactConversionSection />
       </main>
       <SiteFooter />
     </div>
@@ -549,11 +561,12 @@ function StatsSection() {
     <section className="-mt-10 px-5 sm:px-8">
       <div className="relative z-10 mx-auto grid max-w-7xl gap-4 rounded-[2rem] border border-white/70 bg-white/85 p-4 shadow-2xl shadow-slate-200/80 backdrop-blur-2xl sm:grid-cols-2 lg:grid-cols-5">
         {siteConfig.stats.map((stat) => (
-          <article key={stat.label} className="rounded-3xl border border-slate-100 bg-white p-5 transition hover:-translate-y-1 hover:shadow-xl">
+          <SmartLink key={stat.label} href={stat.href} className="rounded-3xl border border-slate-100 bg-white p-5 transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl">
             <p className="text-3xl font-black text-slate-950">{stat.value}</p>
             <h2 className="mt-2 text-sm font-black text-slate-800">{stat.label}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">{stat.detail}</p>
-          </article>
+            <span className="mt-4 inline-flex text-xs font-black uppercase tracking-widest text-cyan-700">Explore</span>
+          </SmartLink>
         ))}
       </div>
     </section>
@@ -614,17 +627,17 @@ function RoleShowcaseSection({
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {activeRole.preview.map((metric) => (
-              <MetricTile key={metric.label} metric={metric} />
+              <MetricTile key={metric.label} metric={metric} dark />
             ))}
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            {activeRole.features.map((feature) => (
-              <div key={feature} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+            {activeRole.features.map((feature, index) => (
+              <SmartLink key={feature} href={activeRole.cta.href} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition hover:border-cyan-200/40 hover:bg-white/[0.1]">
                 <p className="text-sm font-bold text-white">{feature}</p>
                 <div className="mt-4 h-2 rounded-full bg-white/10">
-                  <div className="h-full w-3/4 rounded-full bg-gradient-to-r from-cyan-400 to-violet-300" />
+                  <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-violet-300" style={{ width: `${72 + index * 7}%` }} />
                 </div>
-              </div>
+              </SmartLink>
             ))}
           </div>
         </article>
@@ -638,13 +651,14 @@ function FeatureGridSection() {
     <SectionShell id="features" eyebrow="Enterprise feature fabric" title="One connected platform across ERP, AI, mobile, and public growth" subtitle="The feature model is modular, role-aware, and ready for Website Builder-driven section ordering.">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {siteConfig.features.map((feature) => (
-          <article key={feature.title} className="group rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-2xl hover:shadow-cyan-100/80">
+          <SmartLink key={feature.title} href={feature.href ?? '#contact'} className="group rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-2xl hover:shadow-cyan-100/80">
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-sm font-black text-white transition group-hover:bg-cyan-700">
               {feature.icon}
             </span>
             <h3 className="mt-5 text-lg font-black text-slate-950">{feature.title}</h3>
             <p className="mt-3 text-sm leading-6 text-slate-600">{feature.description}</p>
-          </article>
+            <span className="mt-5 inline-flex text-sm font-black text-cyan-700">Open path</span>
+          </SmartLink>
         ))}
       </div>
     </SectionShell>
@@ -656,7 +670,7 @@ function PlatformPreviewSection() {
     <SectionShell id="platform-preview" eyebrow="Platform preview" title="A premium operating system for every portal" subtitle="Modern portal surfaces help teams scan, compare, decide, and act quickly across the full school ecosystem.">
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {siteConfig.portals.map((portal) => (
-          <article key={portal.title} className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
+          <SmartLink key={portal.title} href={portal.href} className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/60 transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-2xl hover:shadow-cyan-100/70">
             <div className="bg-slate-950 p-4 text-white">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-rose-300" />
@@ -672,8 +686,9 @@ function PlatformPreviewSection() {
             <div className="p-6">
               <h3 className="text-xl font-black text-slate-950">{portal.title}</h3>
               <p className="mt-3 text-sm leading-6 text-slate-600">{portal.description}</p>
+              <span className="mt-5 inline-flex text-sm font-black text-cyan-700">Open preview</span>
             </div>
-          </article>
+          </SmartLink>
         ))}
       </div>
     </SectionShell>
@@ -696,11 +711,11 @@ function InvestorSection() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {siteConfig.investor.points.map((point) => (
-              <article key={point.title} className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5 backdrop-blur-xl">
+              <SmartLink key={point.title} href="/investors" className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5 backdrop-blur-xl transition hover:-translate-y-1 hover:border-cyan-200/40 hover:bg-white/[0.14]">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-sm font-black text-slate-950">{point.icon}</span>
                 <h3 className="mt-4 text-base font-black">{point.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-300">{point.description}</p>
-              </article>
+              </SmartLink>
             ))}
           </div>
         </div>
@@ -753,6 +768,45 @@ function PricingSection() {
         ))}
       </div>
     </SectionShell>
+  );
+}
+
+function ContactConversionSection() {
+  const contactActions = [
+    { title: 'Book product demo', detail: 'Walk through ERP, portals, website builder, AI, and subscriptions.', href: '/demo', label: 'Open demo' },
+    { title: 'Talk to sales', detail: 'Discuss pricing, rollout, migration, and school-chain requirements.', href: 'mailto:hello@cloudcampus.io?subject=CloudCampus%20Demo%20Request', label: 'Email sales' },
+    { title: 'Admin login', detail: 'Go directly to the authenticated platform for existing users.', href: '/login', label: 'Login' },
+  ];
+
+  return (
+    <section id="contact" className="px-5 py-24 sm:px-8">
+      <div className="mx-auto max-w-7xl rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/70 lg:p-8">
+        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+          <div>
+            <p className="text-sm font-black text-cyan-700">Conversion center</p>
+            <h2 className="mt-4 text-4xl font-black leading-tight text-slate-950 sm:text-5xl">Ready to turn CloudCampus into your school operating system?</h2>
+            <p className="mt-5 text-lg leading-8 text-slate-600">
+              Choose the next action that fits you. Every path is connected to a real route or contact method, so this public website never feels like a static brochure.
+            </p>
+          </div>
+          <div className="grid gap-4">
+            {contactActions.map((action) => (
+              <SmartLink key={action.title} href={action.href} className="group rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-1 hover:border-cyan-200 hover:bg-cyan-50">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-black text-slate-950">{action.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{action.detail}</p>
+                  </div>
+                  <span className="rounded-full bg-white px-4 py-2 text-sm font-black text-cyan-700 shadow-sm transition group-hover:bg-slate-950 group-hover:text-white">
+                    {action.label}
+                  </span>
+                </div>
+              </SmartLink>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -827,12 +881,31 @@ function SectionShell({
   );
 }
 
-function MetricTile({ metric }: { metric: DashboardMetric }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4">
+function MetricTile({ metric, dark = true }: { metric: DashboardMetric; dark?: boolean }) {
+  const content = (
+    <>
       <div className={`mb-4 h-2 rounded-full bg-gradient-to-r ${metric.accent}`} />
-      <p className="text-2xl font-black text-white">{metric.value}</p>
-      <p className="mt-1 text-xs font-semibold text-slate-300">{metric.label}</p>
+      <p className={`text-2xl font-black ${dark ? 'text-white' : 'text-slate-950'}`}>{metric.value}</p>
+      <p className={`mt-1 text-xs font-semibold ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{metric.label}</p>
+    </>
+  );
+  const className = `rounded-2xl border p-4 transition hover:-translate-y-0.5 ${
+    dark
+      ? 'border-white/10 bg-white/[0.08] hover:border-cyan-200/40 hover:bg-white/[0.12]'
+      : 'border-slate-200 bg-white hover:border-cyan-200 hover:shadow-lg'
+  }`;
+
+  if (metric.href) {
+    return (
+      <SmartLink href={metric.href} className={className}>
+        {content}
+      </SmartLink>
+    );
+  }
+
+  return (
+    <div className={className}>
+      {content}
     </div>
   );
 }
@@ -856,6 +929,22 @@ function CtaLink({ cta }: { cta: Cta }) {
   return (
     <a href={cta.href} className={className}>
       {cta.label}
+    </a>
+  );
+}
+
+function SmartLink({ href, className, children }: { href: string; className: string; children: React.ReactNode }) {
+  if (href.startsWith('/')) {
+    return (
+      <Link to={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <a href={href} className={className}>
+      {children}
     </a>
   );
 }

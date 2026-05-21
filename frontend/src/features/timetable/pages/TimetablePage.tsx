@@ -9,6 +9,7 @@ import { listStaff } from '@/features/staff/api/staffApi';
 import { listTimetableSlots, addTimetableSlot, deleteTimetableSlot } from '../api/timetableApi';
 import { DAYS_OF_WEEK } from '../types/timetable';
 import type { DayOfWeek, TimetableSlot, TimetableSlotCreateRequest } from '../types/timetable';
+import { useToast, PageHeader } from '@/shared/ui';
 
 const MAX_PERIODS = 8;
 const PERIODS = Array.from({ length: MAX_PERIODS }, (_, i) => i + 1);
@@ -45,6 +46,7 @@ const EMPTY_FORM: SlotForm = {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function TimetablePage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const queryClient = useQueryClient();
 
@@ -101,19 +103,25 @@ export default function TimetablePage() {
   const addMutation = useMutation({
     mutationFn: (body: TimetableSlotCreateRequest) => addTimetableSlot(schoolId, body),
     onSuccess: () => {
+      success('Timetable slot added successfully');
       queryClient.invalidateQueries({ queryKey: ['timetable', schoolId] });
       setForm(EMPTY_FORM);
       setShowForm(false);
       setFormError('');
     },
     onError: (err: { response?: { data?: { error?: { message?: string } } } }) => {
+      toastError('Failed to add timetable slot. Please try again.');
       setFormError(err?.response?.data?.error?.message ?? 'Failed to add slot');
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (slotId: string) => deleteTimetableSlot(schoolId, slotId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['timetable', schoolId] }),
+    onSuccess: () => {
+      success('Timetable slot removed');
+      queryClient.invalidateQueries({ queryKey: ['timetable', schoolId] });
+    },
+    onError: () => { toastError('Failed to remove timetable slot.'); },
   });
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -123,7 +131,7 @@ export default function TimetablePage() {
   }
 
   function subjectName(id: string) {
-    return subjects.find((s) => s.id === id)?.name ?? id.slice(0, 8);
+    return subjects.find((s) => s.id === id)?.name ?? 'Unknown Subject';
   }
 
   function staffName(id: string | null) {
@@ -175,7 +183,7 @@ export default function TimetablePage() {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Timetable</h1>
+          <PageHeader title="Timetable" />
           <p className="mt-0.5 text-sm text-gray-500">Weekly class schedule</p>
         </div>
         {canShowGrid && (

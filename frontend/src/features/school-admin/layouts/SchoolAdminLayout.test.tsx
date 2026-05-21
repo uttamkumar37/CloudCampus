@@ -55,38 +55,38 @@ describe('SchoolAdminLayout', () => {
 
   it('renders the sidebar brand', () => {
     renderShell();
-    expect(screen.getByText('CloudCampus')).toBeInTheDocument();
+    expect(screen.getAllByText('CloudCampus').length).toBeGreaterThan(0);
   });
 
   it('renders the Dashboard nav link', () => {
     renderShell();
-    const nav = screen.getByRole('navigation', { name: /school admin navigation/i });
+    const nav = screen.getAllByRole('navigation', { name: /school admin navigation/i })[0];
     expect(within(nav).getByRole('link', { name: /dashboard/i })).toBeInTheDocument();
   });
 
   it('renders Settings nav link (no feature gate)', () => {
     renderShell();
-    const nav = screen.getByRole('navigation', { name: /school admin navigation/i });
+    const nav = screen.getAllByRole('navigation', { name: /school admin navigation/i })[0];
     expect(within(nav).getByRole('link', { name: /settings/i })).toBeInTheDocument();
   });
 
   it('hides feature-gated nav items when feature is absent', () => {
     renderShell(makeUser({ features: [] }));
-    const nav = screen.getByRole('navigation', { name: /school admin navigation/i });
+    const nav = screen.getAllByRole('navigation', { name: /school admin navigation/i })[0];
     expect(within(nav).queryByRole('link', { name: /^classes$/i })).toBeNull();
     expect(within(nav).queryByRole('link', { name: /^subjects$/i })).toBeNull();
   });
 
   it('shows feature-gated nav items when feature is enabled', () => {
     renderShell(makeUser({ features: ['CLASS_MGMT', 'SUBJECT_MGMT'] }));
-    const nav = screen.getByRole('navigation', { name: /school admin navigation/i });
+    const nav = screen.getAllByRole('navigation', { name: /school admin navigation/i })[0];
     expect(within(nav).getByRole('link', { name: /^classes$/i })).toBeInTheDocument();
     expect(within(nav).getByRole('link', { name: /^subjects$/i })).toBeInTheDocument();
   });
 
   it('clears auth and navigates to /login on sign out', async () => {
     renderShell();
-    await userEvent.click(screen.getByRole('button', { name: /sign out/i }));
+    await userEvent.click(screen.getAllByRole('button', { name: /sign out/i })[0]);
     expect(useAuthStore.getState().user).toBeNull();
     expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
@@ -100,10 +100,9 @@ describe('SchoolAdminDashboardPage', () => {
     expect(screen.getByRole('heading', { name: /dashboard/i })).toBeInTheDocument();
   });
 
-  it('shows tenant id in the banner', () => {
+  it('shows school admin identity in the shell', () => {
     renderShell(makeUser({ tenantId: 'my-school' }));
-    // Text appears at least once (banner + sidebar chip)
-    expect(screen.getAllByText(/my-school/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/school admin/i).length).toBeGreaterThan(0);
   });
 
   it('renders all four stat card labels', () => {

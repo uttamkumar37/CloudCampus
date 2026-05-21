@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { listSubjects } from '@/features/school-admin/api/subjectApi';
+import { listClassesBySchool } from '@/features/school-admin/api/classApi';
+import { listAcademicYears } from '@/features/school-admin/api/academicYearApi';
 import { getExam, updateExamStatus, addExamSubject, removeExamSubject } from '../api/examApi';
 import type { ExamStatus, ExamType } from '../types/exam';
+import { useToast, PageHeader, PageSpinner } from '@/shared/ui';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -58,6 +62,7 @@ type AddSubjectForm = z.infer<typeof addSubjectSchema>;
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ExamDetailPage() {
+  const { success, error: toastError } = useToast();
   const { examId } = useParams<{ examId: string }>();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const queryClient = useQueryClient();
@@ -69,14 +74,58 @@ export default function ExamDetailPage() {
     enabled: !!schoolId && !!examId,
   });
 
+  const { data: subjects = [] } = useQuery({
+    queryKey: ['subjects', schoolId],
+    queryFn: () => listSubjects(schoolId),
+    enabled: !!schoolId,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes-by-school', schoolId],
+    queryFn: () => listClassesBySchool(schoolId),
+    enabled: !!schoolId,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const subjectMap = useMemo(
+    () => Object.fromEntries(subjects.map((s) => [s.id, s])),
+    [subjects],
+  );
+
+  const classMap = useMemo(
+    () => Object.fromEntries(classes.map((c) => [c.id, c.name])),
+    [classes],
+  );
+
+  const { data: academicYears = [] } = useQuery({
+    queryKey: ['academic-years', schoolId],
+    queryFn: () => listAcademicYears(schoolId),
+    enabled: !!schoolId,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const academicYearMap = useMemo(
+    () => Object.fromEntries(academicYears.map((y) => [y.id, y.name])),
+    [academicYears],
+  );
+
   const statusMutation = useMutation({
     mutationFn: (status: ExamStatus) => updateExamStatus(schoolId, examId!, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['exam', schoolId, examId] }),
+    onSuccess: (_data, status) => {
+      success(status === 'CANCELLED' ? 'Exam cancelled' : `Exam advanced to ${status}`);
+      queryClient.invalidateQueries({ queryKey: ['exam', schoolId, examId] });
+    },
+    onError: () => { toastError('Failed to update exam status.'); },
   });
 
   const removeMutation = useMutation({
     mutationFn: (entryId: string) => removeExamSubject(schoolId, examId!, entryId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['exam', schoolId, examId] }),
+    onSuccess: () => {
+      success('Subject paper removed');
+      queryClient.invalidateQueries({ queryKey: ['exam', schoolId, examId] });
+    },
+    onError: () => { toastError('Failed to remove subject paper.'); },
   });
 
   const addSubjectForm = useForm<AddSubjectForm>({
@@ -96,16 +145,18 @@ export default function ExamDetailPage() {
         roomNumber: values.roomNumber || undefined,
       }),
     onSuccess: () => {
+      success('Subject paper added');
       queryClient.invalidateQueries({ queryKey: ['exam', schoolId, examId] });
       addSubjectForm.reset();
       setShowAddSubject(false);
     },
+    onError: () => { toastError('Failed to add subject paper.'); },
   });
 
   const inputCls =
     'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
 
-  if (isLoading) return <div className="p-6 text-sm text-gray-500">Loading…</div>;
+  if (isLoading) return <PageSpinner />;
   if (isError || !exam) return <div className="p-6 text-sm text-red-600">Failed to load exam.</div>;
 
   const nextStatus = NEXT_STATUS[exam.status];
@@ -118,7 +169,7 @@ export default function ExamDetailPage() {
           <Link to="/school-admin/exams" className="text-xs text-indigo-500 hover:underline">
             ← All Exams
           </Link>
-          <h2 className="mt-1 text-xl font-semibold text-gray-800">{exam.name}</h2>
+          <PageHeader title={exam.name} />
           <p className="text-sm text-gray-500">
             {TYPE_LABELS[exam.examType]} · {formatDate(exam.startDate)} – {formatDate(exam.endDate)}
           </p>
@@ -198,7 +249,9 @@ export default function ExamDetailPage() {
           </div>
           <div>
             <dt className="text-xs text-gray-400">Academic Year</dt>
-            <dd className="mt-0.5 font-mono text-xs text-gray-500">{exam.academicYearId}</dd>
+            <dd className="mt-0.5 font-semibold text-gray-800">
+              {academicYearMap[exam.academicYearId] ?? 'Not assigned'}
+            </dd>
           </div>
           <div>
             <dt className="text-xs text-gray-400">Subject Papers</dt>
@@ -288,7 +341,7 @@ export default function ExamDetailPage() {
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                {['Subject ID', 'Class ID', 'Date', 'Start', 'Duration', 'Marks (Pass)', 'Room', ''].map((h) => (
+                {['Subject', 'Class', 'Date', 'Start', 'Duration', 'Marks (Pass)', 'Room', ''].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
@@ -301,8 +354,12 @@ export default function ExamDetailPage() {
             <tbody className="divide-y divide-gray-100">
               {exam.subjects.map((s) => (
                 <tr key={s.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">{s.subjectId.slice(0, 8)}…</td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">{s.classId.slice(0, 8)}…</td>
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {subjectMap[s.subjectId]?.name ?? subjectMap[s.subjectId]?.code ?? 'Unknown Subject'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {classMap[s.classId] ?? 'Unknown Class'}
+                  </td>
                   <td className="px-4 py-3 text-gray-700">{formatDate(s.examDate)}</td>
                   <td className="px-4 py-3 text-gray-500">{s.startTime ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-500">

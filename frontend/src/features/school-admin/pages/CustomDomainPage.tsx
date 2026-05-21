@@ -4,6 +4,7 @@ import {
   listDomainsApi, registerDomainApi, verifyDomainApi, deleteDomainApi,
   type DomainResponse,
 } from '../api/domainApi';
+import { useToast, PageSpinner } from '@/shared/ui';
 
 const STATUS_COLOR: Record<string, string> = {
   PENDING:  'bg-yellow-100 text-yellow-800',
@@ -17,6 +18,7 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 export function CustomDomainPage() {
+  const { success, error: toastError } = useToast();
   const qc = useQueryClient();
   const [domain, setDomain] = useState('');
   const [error, setError]   = useState('');
@@ -28,18 +30,35 @@ export function CustomDomainPage() {
 
   const register = useMutation({
     mutationFn: () => registerDomainApi(domain),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['custom-domains'] }); setDomain(''); setError(''); },
-    onError: (e: unknown) => setError(errorMessage(e, 'Registration failed')),
+    onSuccess: () => {
+      success('Domain registered — add the DNS TXT record to verify');
+      qc.invalidateQueries({ queryKey: ['custom-domains'] });
+      setDomain('');
+      setError('');
+    },
+    onError: (e: unknown) => {
+      const msg = errorMessage(e, 'Registration failed');
+      toastError(msg);
+      setError(msg);
+    },
   });
 
   const verify = useMutation({
     mutationFn: (id: string) => verifyDomainApi(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['custom-domains'] }),
+    onSuccess: () => {
+      success('Domain verification check triggered');
+      qc.invalidateQueries({ queryKey: ['custom-domains'] });
+    },
+    onError: () => { toastError('Verification failed. Check your DNS record and try again.'); },
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => deleteDomainApi(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['custom-domains'] }),
+    onSuccess: () => {
+      success('Domain removed');
+      qc.invalidateQueries({ queryKey: ['custom-domains'] });
+    },
+    onError: () => { toastError('Failed to remove domain.'); },
   });
 
   return (
@@ -74,7 +93,7 @@ export function CustomDomainPage() {
 
       {/* Domain list */}
       {isLoading ? (
-        <p className="text-sm text-gray-500">Loading…</p>
+        <PageSpinner />
       ) : domains.length === 0 ? (
         <p className="text-sm text-gray-500">No domains registered yet.</p>
       ) : (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import {
@@ -10,6 +10,8 @@ import {
 } from '../api/leaveApi';
 import type { LeaveType, LeaveStatus, LeaveRequestResponse } from '../api/leaveApi';
 import { listStaff } from '../api/staffApi';
+import type { StaffSummaryResponse } from '../types/staff';
+import { useToast, PageHeader, Spinner } from '@/shared/ui';
 
 const LEAVE_TYPES: LeaveType[] = ['SICK', 'CASUAL', 'EARNED', 'MATERNITY', 'PATERNITY', 'STUDY', 'UNPAID'];
 
@@ -30,6 +32,7 @@ function NewRequestForm({
   schoolId,
   onClose,
 }: { schoolId: string; onClose: () => void }) {
+  const { success, error: toastError } = useToast();
   const qc = useQueryClient();
   const [staffId, setStaffId]     = useState('');
   const [leaveType, setLeaveType] = useState<LeaveType>('SICK');
@@ -48,9 +51,11 @@ function NewRequestForm({
       staffId, leaveType, startDate, endDate, reason,
     }),
     onSuccess: () => {
+      success('Leave request submitted');
       qc.invalidateQueries({ queryKey: ['leave-requests', schoolId] });
       onClose();
     },
+    onError: () => { toastError('Failed to submit leave request. Please try again.'); },
   });
 
   const canSubmit = staffId && startDate && endDate && reason.trim() && endDate >= startDate;
@@ -147,7 +152,16 @@ function NewRequestForm({
 
 // ── Leave Request Row ─────────────────────────────────────────────────────────
 
-function LeaveRow({ schoolId, req }: { schoolId: string; req: LeaveRequestResponse }) {
+function LeaveRow({
+  schoolId,
+  req,
+  staffMap,
+}: {
+  schoolId: string;
+  req: LeaveRequestResponse;
+  staffMap: Record<string, StaffSummaryResponse>;
+}) {
+  const { success, error: toastError } = useToast();
   const qc = useQueryClient();
   const [reviewNotes, setReviewNotes] = useState('');
   const [reviewing, setReviewing]     = useState(false);
@@ -156,17 +170,20 @@ function LeaveRow({ schoolId, req }: { schoolId: string; req: LeaveRequestRespon
 
   const approveMutation = useMutation({
     mutationFn: () => approveLeave(schoolId, req.id, reviewNotes),
-    onSuccess: () => { invalidate(); setReviewing(false); },
+    onSuccess: () => { success('Leave approved'); invalidate(); setReviewing(false); },
+    onError: () => { toastError('Failed to approve leave.'); },
   });
 
   const rejectMutation = useMutation({
     mutationFn: () => rejectLeave(schoolId, req.id, reviewNotes),
-    onSuccess: () => { invalidate(); setReviewing(false); },
+    onSuccess: () => { success('Leave rejected'); invalidate(); setReviewing(false); },
+    onError: () => { toastError('Failed to reject leave.'); },
   });
 
   const cancelMutation = useMutation({
     mutationFn: () => cancelLeave(schoolId, req.id),
-    onSuccess: invalidate,
+    onSuccess: () => { success('Leave request cancelled'); invalidate(); },
+    onError: () => { toastError('Failed to cancel leave request.'); },
   });
 
   return (
@@ -187,8 +204,11 @@ function LeaveRow({ schoolId, req }: { schoolId: string; req: LeaveRequestRespon
           {req.reviewNotes && (
             <div className="mt-1 text-xs italic text-gray-400">Review: {req.reviewNotes}</div>
           )}
-          <div className="mt-1 text-xs text-gray-300">
-            Staff: {req.staffId.slice(0, 8)}… · Requested {formatDate(req.createdAt)}
+          <div className="mt-1 text-xs text-gray-400">
+            {staffMap[req.staffId]
+              ? `${staffMap[req.staffId].firstName} ${staffMap[req.staffId].lastName}${staffMap[req.staffId].employeeNumber ? ` · ${staffMap[req.staffId].employeeNumber}` : ''}`
+              : 'Staff not found'}
+            {' · Requested '}{formatDate(req.createdAt)}
           </div>
         </div>
 
@@ -271,6 +291,18 @@ export default function LeaveManagementPage() {
     enabled: !!schoolId,
   });
 
+  const { data: staffList = [] } = useQuery({
+    queryKey: ['staff-list', schoolId],
+    queryFn: () => listStaff(schoolId),
+    enabled: !!schoolId,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const staffMap = useMemo(
+    () => Object.fromEntries(staffList.map((s) => [s.id, s])),
+    [staffList],
+  );
+
   const pendingCount = tab === 'all'
     ? requests.filter((r) => r.status === 'PENDING').length
     : requests.length;
@@ -280,7 +312,7 @@ export default function LeaveManagementPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Leave Management</h1>
+          <PageHeader title="Leave Management" />
           <p className="mt-0.5 text-sm text-gray-500">
             {pendingCount} pending request{pendingCount !== 1 ? 's' : ''}
           </p>
@@ -327,7 +359,7 @@ export default function LeaveManagementPage() {
         )}
       </div>
 
-      {isLoading && <div className="py-8 text-center text-sm text-gray-400">Loading…</div>}
+      {isLoading && <div className="py-8 flex justify-center"><Spinner size="md" /></div>}
       {isError && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           Failed to load leave requests.
@@ -342,7 +374,7 @@ export default function LeaveManagementPage() {
 
       <div className="space-y-3">
         {requests.map((req) => (
-          <LeaveRow key={req.id} schoolId={schoolId} req={req} />
+          <LeaveRow key={req.id} schoolId={schoolId} req={req} staffMap={staffMap} />
         ))}
       </div>
     </div>

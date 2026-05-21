@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { admitStudent } from '../api/studentApi';
+import { useToast, PageHeader, Button } from '@/shared/ui';
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ const inputCls =
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function StudentAdmitPage() {
+  const { success, error: toastError } = useToast();
   const user = useAuthStore((s) => s.user);
   const schoolId = user?.schoolId ?? null;
   const navigate = useNavigate();
@@ -62,7 +64,7 @@ export function StudentAdmitPage() {
     register,
     handleSubmit,
     setError,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const { mutate, isPending } = useMutation({
@@ -81,9 +83,11 @@ export function StudentAdmitPage() {
       return admitStudent(schoolId!, body);
     },
     onSuccess: (student) => {
+      success('Student admitted successfully');
       navigate(`/school-admin/students/${student.id}`);
     },
     onError: () => {
+      toastError('Failed to admit student. Please try again.');
       setError('root', { message: 'Failed to admit student. Please try again.' });
     },
   });
@@ -98,15 +102,13 @@ export function StudentAdmitPage() {
     );
   }
 
-  const busy = isSubmitting || isPending;
-
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Admit Student</h2>
-        <p className="mt-0.5 text-sm text-gray-500">
-          Fill in the required fields. Student number is auto-generated if left blank.
-        </p>
+        <PageHeader
+          title="Admit Student"
+          subtitle="Fill in the required fields. Student number is auto-generated if left blank."
+        />
       </div>
 
       <form
@@ -209,13 +211,9 @@ export function StudentAdmitPage() {
 
         {/* ── Actions ────────────────────────────────────────────────────── */}
         <div className="mt-6 flex gap-3">
-          <button
-            type="submit"
-            disabled={busy}
-            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {busy ? 'Saving…' : 'Admit Student'}
-          </button>
+          <Button type="submit" loading={isPending}>
+            Admit Student
+          </Button>
           <button
             type="button"
             onClick={() => navigate('/school-admin/students')}

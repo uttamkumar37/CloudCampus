@@ -106,6 +106,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserSchoolAccessService userSchoolAccessService;
     private final TenantFeatureRepository tenantFeatureRepository;
     private final JwtDenylistService jwtDenylistService;
+    private final DeviceSessionService deviceSessionService;
     private final BusinessMetrics metrics;
 
     public AuthServiceImpl(
@@ -120,6 +121,7 @@ public class AuthServiceImpl implements AuthService {
             UserSchoolAccessService userSchoolAccessService,
             TenantFeatureRepository tenantFeatureRepository,
             JwtDenylistService jwtDenylistService,
+            DeviceSessionService deviceSessionService,
             BusinessMetrics metrics
     ) {
         this.userRepository          = userRepository;
@@ -133,6 +135,7 @@ public class AuthServiceImpl implements AuthService {
         this.userSchoolAccessService = userSchoolAccessService;
         this.tenantFeatureRepository = tenantFeatureRepository;
         this.jwtDenylistService      = jwtDenylistService;
+        this.deviceSessionService    = deviceSessionService;
         this.metrics                 = metrics;
     }
 
@@ -262,8 +265,13 @@ public class AuthServiceImpl implements AuthService {
         redisTemplate.opsForSet().remove(RT_USER_KEY_PREFIX + userId, request.refreshToken());
         String newRefreshToken = issueRefreshToken(userId);
 
+        UUID schoolId = resolveSchoolId(user);
         String newAccessToken = jwtUtil.generateAccessToken(
-                user.getId(), user.getTenantId(), resolveSchoolId(user), user.getRole().name());
+                user.getId(), user.getTenantId(), schoolId, user.getRole().name());
+
+        List<String> features = user.getTenantId() != null
+                ? tenantFeatureRepository.findEnabledKeysByTenantId(user.getTenantId())
+                : List.of();
 
         auditLog.logTokenRefreshed(user.getId(), user.getTenantId());
         log.info("Token refreshed [userId={}]", userId);
@@ -271,7 +279,13 @@ public class AuthServiceImpl implements AuthService {
         return new RefreshResponse(
                 newAccessToken,
                 newRefreshToken,
-                jwtProperties.accessTokenExpirySeconds()
+                jwtProperties.accessTokenExpirySeconds(),
+                user.getRole().name(),
+                user.getId(),
+                user.getTenantId(),
+                schoolId,
+                user.isForcePasswordChange(),
+                features
         );
     }
 
@@ -325,6 +339,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Always delete the index, even if no tokens were found (may be stale).
         redisTemplate.delete(userKey);
+        deviceSessionService.revokeAll(userId);
 
         auditLog.logAllSessionsRevoked(userId, tenantId, revoked, clientIp);
         log.info("All sessions revoked [userId={}, count={}]", userId, revoked);

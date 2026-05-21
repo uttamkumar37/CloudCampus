@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createStoryScene, listStoryScenes, publishStoryScene } from './experienceStudioApi';
+import { useToast } from '@/shared/ui';
 
 export default function StorytellingManager() {
   const qc = useQueryClient();
+  const { success, error: toastError } = useToast();
   const { data: scenes = [], isLoading } = useQuery({
     queryKey: ['sa:exp:story-scenes'],
     queryFn: listStoryScenes,
@@ -18,12 +20,14 @@ export default function StorytellingManager() {
 
   const createMutation = useMutation({
     mutationFn: createStoryScene,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:story-scenes'] }),
+    onSuccess: () => { success('Story scene created'); qc.invalidateQueries({ queryKey: ['sa:exp:story-scenes'] }); },
+    onError: () => { toastError('Failed to create story scene. Please try again.'); },
   });
 
   const publishMutation = useMutation({
     mutationFn: publishStoryScene,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:story-scenes'] }),
+    onSuccess: () => { success('Story scene published'); qc.invalidateQueries({ queryKey: ['sa:exp:story-scenes'] }); },
+    onError: () => { toastError('Failed to publish story scene. Please try again.'); },
   });
 
   return (

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listAssignmentSubmissions, gradeSubmission } from '../api/teacherAssignmentApi';
 import type { AssignmentSubmission, SubmissionStatus } from '../api/teacherAssignmentApi';
+import { useToast, PageSpinner } from '@/shared/ui';
 
 const STATUS_BADGE: Record<SubmissionStatus, string> = {
   PENDING:   'bg-gray-100 text-gray-600',
@@ -19,7 +20,6 @@ function formatDateTime(iso: string | null) {
   });
 }
 
-function shortId(id: string) { return id.slice(0, 8) + '…'; }
 
 // ── Inline grade form ─────────────────────────────────────────────────────────
 
@@ -32,6 +32,7 @@ function GradeForm({
   assignmentId: string;
   onClose: () => void;
 }) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
   const [marks,    setMarks]    = useState(sub.marksObtained?.toString() ?? '');
   const [feedback, setFeedback] = useState(sub.feedback ?? '');
@@ -43,11 +44,15 @@ function GradeForm({
       feedback: feedback.trim() || undefined,
     }),
     onSuccess: () => {
+      success('Submission graded successfully');
       queryClient.invalidateQueries({ queryKey: ['teacher-assignment-submissions', assignmentId] });
       queryClient.invalidateQueries({ queryKey: ['teacher-assignments'] });
       onClose();
     },
-    onError: (err: Error) => setError(err.message),
+    onError: (err: Error) => {
+      toastError('Failed to save grade. Please try again.');
+      setError(err.message);
+    },
   });
 
   function handleSubmit(e: React.FormEvent) {
@@ -141,7 +146,7 @@ export default function TeacherAssignmentSubmissionsPage() {
         </div>
       </div>
 
-      {isLoading && <div className="text-sm text-gray-500">Loading…</div>}
+      {isLoading && <PageSpinner />}
 
       {isError && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -157,7 +162,7 @@ export default function TeacherAssignmentSubmissionsPage() {
 
       {submissions.length > 0 && (
         <div className="space-y-2">
-          {submissions.map((sub) => (
+          {submissions.map((sub, idx) => (
             <div
               key={sub.id}
               className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
@@ -165,8 +170,8 @@ export default function TeacherAssignmentSubmissionsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs text-gray-500">
-                      Student: {shortId(sub.studentId)}
+                    <span className="text-xs font-medium text-gray-600">
+                      Submission #{idx + 1}
                     </span>
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[sub.status]}`}>
                       {sub.status}

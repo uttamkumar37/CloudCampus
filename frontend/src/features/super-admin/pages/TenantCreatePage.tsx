@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { createTenant } from '../api/tenantApi';
 import { listSubscriptionPlans, assignTenantPlan } from '../api/subscriptionApi';
 import type { SubscriptionPlan } from '../api/subscriptionApi';
+import { useToast, PageHeader } from '@/shared/ui';
 
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -133,6 +134,7 @@ function Stepper({ current }: { current: number }) {
 export function TenantCreatePage() {
   const navigate    = useNavigate();
   const queryClient = useQueryClient();
+  const { success, error: toastError } = useToast();
 
   const [step, setStep]               = useState(0);
   const [identity, setIdentity]       = useState<Step1Values | null>(null);
@@ -172,6 +174,7 @@ export function TenantCreatePage() {
       return tenant;
     },
     onSuccess: (tenant) => {
+      success('Tenant created successfully');
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       queryClient.invalidateQueries({ queryKey: ['super-admin-stats'] });
       navigate(`/super-admin/tenants/${tenant.id}`);
@@ -181,6 +184,7 @@ export function TenantCreatePage() {
         (err as { response?: { data?: { error?: { message?: string } } } })
           ?.response?.data?.error?.message ??
         (err instanceof Error ? err.message : 'Failed to create tenant. Please try again.');
+      toastError('Failed to create tenant. Please try again.');
       setGlobalError(msg);
     },
   });
@@ -194,7 +198,7 @@ export function TenantCreatePage() {
         >
           ← {step === 0 ? 'Back to tenants' : 'Back'}
         </button>
-        <h1 className="text-xl font-semibold text-gray-900">New Tenant</h1>
+        <PageHeader title="New Tenant" />
         <p className="mt-0.5 text-sm text-gray-500">
           Provision a new school tenant. A default MAIN school is created automatically.
         </p>

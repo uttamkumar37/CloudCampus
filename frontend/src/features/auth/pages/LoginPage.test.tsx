@@ -1,21 +1,13 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import * as authApi from '@/features/auth/api/authApi';
+import { renderWithProviders } from '@/test/renderWithProviders';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function renderLoginPage() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <LoginPage />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<LoginPage />);
 }
 
 // ── tests ─────────────────────────────────────────────────────────────────────
@@ -50,7 +42,7 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(
-      await screen.findByText(/invalid credentials/i),
+      await screen.findByText(/unable to sign in/i),
     ).toBeInTheDocument();
   });
 

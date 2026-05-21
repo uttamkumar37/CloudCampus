@@ -13,6 +13,7 @@ import {
   type DepartmentResponse,
   type DepartmentRequest,
 } from '../api/departmentApi';
+import { useToast, PageHeader, Badge, PageSpinner, EmptyState } from '@/shared/ui';
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ function DepartmentForm({
   editing:  DepartmentResponse | null;
   onClose:  () => void;
 }) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, setError } = useForm<FormValues>({
@@ -58,10 +60,12 @@ function DepartmentForm({
         : createDepartment(schoolId, body);
     },
     onSuccess: () => {
+      success(editing ? 'Department updated successfully' : 'Department created successfully');
       queryClient.invalidateQueries({ queryKey: ['departments', schoolId] });
       onClose();
     },
     onError: () => {
+      toastError('Failed to save department. Please try again.');
       setError('root', { message: 'Failed to save department. Please try again.' });
     },
   });
@@ -138,6 +142,7 @@ function DepartmentForm({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function DepartmentListPage() {
+  const { success, error: toastError } = useToast();
   const user     = useAuthStore((s) => s.user);
   const schoolId = user?.schoolId ?? null;
   const queryClient = useQueryClient();
@@ -155,8 +160,16 @@ export function DepartmentListPage() {
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['departments', schoolId] });
 
-  const deactivateMutation = useMutation({ mutationFn: deactivateDepartment, onSuccess: invalidate });
-  const activateMutation   = useMutation({ mutationFn: activateDepartment,   onSuccess: invalidate });
+  const deactivateMutation = useMutation({
+    mutationFn: deactivateDepartment,
+    onSuccess: () => { success('Department deactivated'); invalidate(); },
+    onError: () => { toastError('Failed to deactivate department.'); },
+  });
+  const activateMutation   = useMutation({
+    mutationFn: activateDepartment,
+    onSuccess: () => { success('Department activated'); invalidate(); },
+    onError: () => { toastError('Failed to activate department.'); },
+  });
 
   function openCreate() {
     setEditing(null);
@@ -189,36 +202,31 @@ export function DepartmentListPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Departments</h2>
-          {departments.length > 0 && (
-            <p className="mt-0.5 text-sm text-gray-500">
-              {activeDepts} active{inactiveDepts > 0 ? `, ${inactiveDepts} inactive` : ''}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              checked={showAll}
-              onChange={(e) => setShowAll(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            Show inactive
-          </label>
-          {!showForm && (
-            <button
-              onClick={openCreate}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              New Department
-            </button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Departments"
+        subtitle={departments.length > 0 ? `${activeDepts} active${inactiveDepts > 0 ? `, ${inactiveDepts} inactive` : ''}` : undefined}
+        actions={
+          <div className="flex items-center gap-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                checked={showAll}
+                onChange={(e) => setShowAll(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              Show inactive
+            </label>
+            {!showForm && (
+              <button
+                onClick={openCreate}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                New Department
+              </button>
+            )}
+          </div>
+        }
+      />
 
       {/* Form */}
       {showForm && (
@@ -230,16 +238,17 @@ export function DepartmentListPage() {
       )}
 
       {/* States */}
-      {isLoading && <p className="text-sm text-gray-500" role="status">Loading…</p>}
+      {isLoading && <PageSpinner />}
       {isError   && <p className="text-sm text-red-600"  role="alert">Failed to load departments.</p>}
 
       {!isLoading && departments.length === 0 && (
-        <p className="text-sm text-gray-500">No departments yet. Create one to get started.</p>
+        <EmptyState title="No departments" description="No departments yet. Create one to get started." />
       )}
 
       {/* Table */}
       {departments.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
               <tr>
@@ -270,14 +279,9 @@ export function DepartmentListPage() {
                     {dept.description ?? <span className="text-gray-400">—</span>}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={[
-                      'rounded-full px-2 py-0.5 text-xs font-semibold',
-                      dept.isActive
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-500',
-                    ].join(' ')}>
+                    <Badge variant={dept.isActive ? 'success' : 'default'}>
                       {dept.isActive ? 'Active' : 'Inactive'}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
@@ -310,6 +314,7 @@ export function DepartmentListPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

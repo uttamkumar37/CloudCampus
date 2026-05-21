@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { listExams, updateExamStatus } from '../api/examApi';
 import type { ExamStatus, ExamType } from '../types/exam';
+import { useToast, PageHeader, Spinner } from '@/shared/ui';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,7 @@ function formatDate(iso: string) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ExamListPage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const [page, setPage] = useState(0);
   const pageSize = 20;
@@ -51,7 +53,11 @@ export default function ExamListPage() {
   const statusMutation = useMutation({
     mutationFn: ({ examId, status }: { examId: string; status: ExamStatus }) =>
       updateExamStatus(schoolId, examId, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['exams', schoolId] }),
+    onSuccess: (_data, { status }) => {
+      success(`Exam status updated to ${status}`);
+      queryClient.invalidateQueries({ queryKey: ['exams', schoolId] });
+    },
+    onError: () => { toastError('Failed to update exam status.'); },
   });
 
   const exams = examPage?.items ?? [];
@@ -62,7 +68,7 @@ export default function ExamListPage() {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">Examinations</h2>
+          <PageHeader title="Examinations" />
           <p className="mt-0.5 text-sm text-gray-500">Create and manage exams, schedule subject papers</p>
         </div>
         <Link
@@ -73,7 +79,7 @@ export default function ExamListPage() {
         </Link>
       </div>
 
-      {isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+      {isLoading && <div className="py-8 flex justify-center"><Spinner size="md" /></div>}
       {isError && <p className="text-sm text-red-600">Failed to load exams.</p>}
 
       {!isLoading && !isError && exams.length === 0 && (

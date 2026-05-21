@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/shared/api/axiosInstance';
+import { useToast } from '@/shared/ui';
 
 interface InvestorRoom {
   id: string;
@@ -30,6 +31,7 @@ async function createRoom(payload: {
 
 export default function InvestorRoomBuilder() {
   const qc = useQueryClient();
+  const { success, error: toastError } = useToast();
   const { data: rooms = [], isLoading } = useQuery({
     queryKey: ['sa:exp:rooms'],
     queryFn: fetchRooms,
@@ -38,9 +40,11 @@ export default function InvestorRoomBuilder() {
   const { mutate: doCreate, isPending } = useMutation({
     mutationFn: createRoom,
     onSuccess: () => {
+      success('Investor room created successfully');
       qc.invalidateQueries({ queryKey: ['sa:exp:rooms'] });
       setShowCreate(false);
     },
+    onError: () => { toastError('Failed to create investor room. Please try again.'); },
   });
 
   const [showCreate, setShowCreate] = useState(false);

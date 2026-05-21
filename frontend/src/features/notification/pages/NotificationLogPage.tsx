@@ -14,6 +14,7 @@ import type {
   NotificationStatus,
   NotificationTemplateCode,
 } from '../types/notification';
+import { useToast, Spinner } from '@/shared/ui';
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
@@ -64,6 +65,7 @@ function formatDate(iso: string | null) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function NotificationLogPage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
 
   const [tab, setTab] = useState<'log' | 'email' | 'push'>('log');
@@ -79,11 +81,13 @@ export default function NotificationLogPage() {
     mutationFn: (values: EmailFormValues) =>
       sendEmail(schoolId, { ...values, variables: {} }),
     onSuccess: () => {
+      success('Email queued successfully');
       setEmailSuccess('Email queued — check the log tab for delivery status.');
       setEmailError('');
       emailForm.reset();
     },
     onError: (err: Error) => {
+      toastError('Failed to queue email. Please try again.');
       setEmailError(err.message || 'Failed to queue email');
       setEmailSuccess('');
     },
@@ -98,11 +102,13 @@ export default function NotificationLogPage() {
     mutationFn: (values: PushFormValues) =>
       sendPush(schoolId, { ...values }),
     onSuccess: () => {
+      success('Push notification queued successfully');
       setPushSuccess('Push notification queued — check the log tab for delivery status.');
       setPushError('');
       pushForm.reset();
     },
     onError: (err: Error) => {
+      toastError('Failed to queue push notification. Please try again.');
       setPushError(err.message || 'Failed to queue push notification');
       setPushSuccess('');
     },
@@ -147,7 +153,7 @@ export default function NotificationLogPage() {
       {/* ── Log tab ─────────────────────────────────────────────────────── */}
       {tab === 'log' && (
         <>
-          {isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+          {isLoading && <div className="py-4 flex justify-center"><Spinner size="sm" /></div>}
           {isError && <p className="text-sm text-red-600">Failed to load notification logs.</p>}
           {!isLoading && !isError && logs.length === 0 && (
             <p className="text-sm text-gray-500">No notifications dispatched yet.</p>

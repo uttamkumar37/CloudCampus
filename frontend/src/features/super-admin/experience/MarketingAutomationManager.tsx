@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createCampaign, listCampaigns, pauseCampaign, publishCampaign } from './experienceStudioApi';
+import { useToast } from '@/shared/ui';
 
 export default function MarketingAutomationManager() {
   const qc = useQueryClient();
+  const { success, error: toastError } = useToast();
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ['sa:exp:campaigns'],
     queryFn: listCampaigns,
@@ -18,17 +20,20 @@ export default function MarketingAutomationManager() {
 
   const createMutation = useMutation({
     mutationFn: createCampaign,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:campaigns'] }),
+    onSuccess: () => { success('Campaign created successfully'); qc.invalidateQueries({ queryKey: ['sa:exp:campaigns'] }); },
+    onError: () => { toastError('Failed to create campaign. Please try again.'); },
   });
 
   const publishMutation = useMutation({
     mutationFn: publishCampaign,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:campaigns'] }),
+    onSuccess: () => { success('Campaign activated'); qc.invalidateQueries({ queryKey: ['sa:exp:campaigns'] }); },
+    onError: () => { toastError('Failed to activate campaign. Please try again.'); },
   });
 
   const pauseMutation = useMutation({
     mutationFn: pauseCampaign,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:campaigns'] }),
+    onSuccess: () => { success('Campaign paused'); qc.invalidateQueries({ queryKey: ['sa:exp:campaigns'] }); },
+    onError: () => { toastError('Failed to pause campaign. Please try again.'); },
   });
 
   return (

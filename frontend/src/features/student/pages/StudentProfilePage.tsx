@@ -44,6 +44,7 @@ import {
 } from '../api/studentDocumentApi';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import type { StudentResponse } from '../types/student';
+import { useToast, Spinner, PageSpinner } from '@/shared/ui';
 
 // ── Edit form ─────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ function EditForm({
     },
   });
 
+  const { success, error: toastError } = useToast();
   const { mutate, isPending } = useMutation({
     mutationFn: (values: EditValues) =>
       updateStudent(student.id, {
@@ -102,10 +104,12 @@ function EditForm({
         photoUrl: values.photoUrl || undefined,
       }),
     onSuccess: () => {
+      success('Student profile updated successfully');
       queryClient.invalidateQueries({ queryKey: ['student', student.id] });
       onCancel();
     },
     onError: () => {
+      toastError('Failed to save changes. Please try again.');
       setError('root', { message: 'Failed to save changes. Please try again.' });
     },
   });
@@ -226,9 +230,11 @@ function ParentLinksSection({ studentId }: { studentId: string }) {
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['parent-links', studentId] });
 
+  const { success: linkSuccess, error: linkError } = useToast();
   const addMutation = useMutation({
     mutationFn: () => addParentLink(studentId, { parentUserId, relationship, makePrimary }),
     onSuccess: () => {
+      linkSuccess('Parent linked successfully');
       invalidate();
       setShowForm(false);
       setParentUserId('');
@@ -237,13 +243,16 @@ function ParentLinksSection({ studentId }: { studentId: string }) {
       setFormError('');
     },
     onError: (e: { response?: { data?: { error?: string } } }) => {
-      setFormError(e?.response?.data?.error ?? 'Failed to add parent link.');
+      const msg = e?.response?.data?.error ?? 'Failed to add parent link.';
+      linkError(msg);
+      setFormError(msg);
     },
   });
 
   const removeMutation = useMutation({
     mutationFn: (linkId: string) => removeParentLink(linkId),
-    onSuccess: invalidate,
+    onSuccess: () => { linkSuccess('Parent link removed'); invalidate(); },
+    onError: () => { linkError('Failed to remove parent link.'); },
   });
 
   function handleAdd(e: React.FormEvent) {
@@ -329,7 +338,7 @@ function ParentLinksSection({ studentId }: { studentId: string }) {
         </form>
       )}
 
-      {isLoading && <p className="text-sm text-gray-400">Loading…</p>}
+      {isLoading && <div className="py-4 flex justify-center"><Spinner size="sm" /></div>}
 
       {!isLoading && links.length === 0 && (
         <p className="text-sm text-gray-400">No parents linked. Use the button above to add one.</p>
@@ -340,7 +349,7 @@ function ParentLinksSection({ studentId }: { studentId: string }) {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-400">
               <tr>
-                <th className="px-4 py-2.5 text-left">Parent User ID</th>
+                <th className="px-4 py-2.5 text-left">Linked Parent</th>
                 <th className="px-4 py-2.5 text-left">Relationship</th>
                 <th className="px-4 py-2.5 text-left">Primary</th>
                 <th className="px-4 py-2.5 text-left">Actions</th>
@@ -349,8 +358,8 @@ function ParentLinksSection({ studentId }: { studentId: string }) {
             <tbody className="divide-y divide-gray-50">
               {links.map((link: ParentLinkResponse) => (
                 <tr key={link.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                    {link.parentUserId.slice(0, 8)}…
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    Parent account
                   </td>
                   <td className="px-4 py-3 text-gray-700">
                     {link.relationship.charAt(0) + link.relationship.slice(1).toLowerCase()}
@@ -885,6 +894,7 @@ function SectionEditor({
   studentId: string;
   section: ProfileSectionResponse;
 }) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState<Record<string, string>>(() =>
@@ -899,12 +909,16 @@ function SectionEditor({
   const mutation = useMutation({
     mutationFn: () => updateStudentProfile360Section(studentId, section.key, formData),
     onSuccess: () => {
+      success('Section saved successfully');
       queryClient.invalidateQueries({ queryKey: ['student-profile-360', studentId] });
       queryClient.invalidateQueries({ queryKey: ['student', studentId] });
       setEditing(false);
       setError('');
     },
-    onError: () => setError('Could not save this section. Check required fields.'),
+    onError: () => {
+      toastError('Could not save this section.');
+      setError('Could not save this section. Check required fields.');
+    },
   });
 
   function setValue(key: string, value: string) {
@@ -971,6 +985,7 @@ function SectionEditor({
 }
 
 function AddRecordForm({ studentId, sectionKey }: { studentId: string; sectionKey: string }) {
+  const { success, error: toastError } = useToast();
   const fields = ADD_RECORD_FIELDS[sectionKey];
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -980,12 +995,16 @@ function AddRecordForm({ studentId, sectionKey }: { studentId: string; sectionKe
   const mutation = useMutation({
     mutationFn: () => updateStudentProfile360Section(studentId, sectionKey, values),
     onSuccess: () => {
+      success('Record added successfully');
       queryClient.invalidateQueries({ queryKey: ['student-profile-360', studentId] });
       setValues({});
       setOpen(false);
       setError('');
     },
-    onError: () => setError('Could not add record. Required fields may be missing.'),
+    onError: () => {
+      toastError('Could not add record. Required fields may be missing.');
+      setError('Could not add record. Required fields may be missing.');
+    },
   });
 
   if (!fields) return null;
@@ -1084,6 +1103,7 @@ function ProfileSectionPanel({
 // ── Documents section ─────────────────────────────────────────────────────────
 
 function DocumentsSection({ schoolId, studentId }: { schoolId: string; studentId: string }) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [docType, setDocType] = useState('BIRTH_CERTIFICATE');
@@ -1097,21 +1117,30 @@ function DocumentsSection({ schoolId, studentId }: { schoolId: string; studentId
   const uploadMutation = useMutation({
     mutationFn: (file: File) => uploadStudentDocument(schoolId, studentId, docType, file),
     onSuccess: () => {
+      success('Document uploaded successfully');
       queryClient.invalidateQueries({ queryKey: ['student-docs', studentId] });
       if (fileRef.current) fileRef.current.value = '';
       setUploadError('');
     },
-    onError: () => setUploadError('Upload failed. Check file type and size (max 10 MB).'),
+    onError: () => {
+      toastError('Upload failed. Check file type and size (max 10 MB).');
+      setUploadError('Upload failed. Check file type and size (max 10 MB).');
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (docId: string) => deleteStudentDocument(schoolId, studentId, docId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['student-docs', studentId] }),
+    onSuccess: () => {
+      success('Document deleted');
+      queryClient.invalidateQueries({ queryKey: ['student-docs', studentId] });
+    },
+    onError: () => { toastError('Failed to delete document.'); },
   });
 
   const downloadMutation = useMutation({
     mutationFn: (docId: string) => getPresignedUrl(schoolId, studentId, docId),
     onSuccess: (url) => window.open(url, '_blank', 'noopener,noreferrer'),
+    onError: () => { toastError('Failed to get download link.'); },
   });
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1154,7 +1183,7 @@ function DocumentsSection({ schoolId, studentId }: { schoolId: string; studentId
         {uploadError && <p className="text-xs text-red-600">{uploadError}</p>}
       </div>
 
-      {isLoading && <p className="text-sm text-gray-400">Loading…</p>}
+      {isLoading && <div className="py-4 flex justify-center"><Spinner size="sm" /></div>}
 
       {!isLoading && docs.length === 0 && (
         <p className="text-sm text-gray-400">No documents uploaded yet.</p>
@@ -1240,16 +1269,33 @@ export function StudentProfilePage() {
     queryClient.invalidateQueries({ queryKey: ['student', id] });
   }
 
-  const graduate = useMutation({ mutationFn: () => graduateStudent(id!), onSuccess: invalidate });
-  const transfer = useMutation({ mutationFn: () => transferStudent(id!), onSuccess: invalidate });
-  const suspend = useMutation({ mutationFn: () => suspendStudent(id!), onSuccess: invalidate });
-  const reinstate = useMutation({ mutationFn: () => reinstateStudent(id!), onSuccess: invalidate });
+  const { success: pageSuccess, error: pageError } = useToast();
+  const graduate = useMutation({
+    mutationFn: () => graduateStudent(id!),
+    onSuccess: () => { pageSuccess('Student graduated'); invalidate(); },
+    onError: () => { pageError('Failed to graduate student.'); },
+  });
+  const transfer = useMutation({
+    mutationFn: () => transferStudent(id!),
+    onSuccess: () => { pageSuccess('Student transferred'); invalidate(); },
+    onError: () => { pageError('Failed to transfer student.'); },
+  });
+  const suspend = useMutation({
+    mutationFn: () => suspendStudent(id!),
+    onSuccess: () => { pageSuccess('Student suspended'); invalidate(); },
+    onError: () => { pageError('Failed to suspend student.'); },
+  });
+  const reinstate = useMutation({
+    mutationFn: () => reinstateStudent(id!),
+    onSuccess: () => { pageSuccess('Student reinstated'); invalidate(); },
+    onError: () => { pageError('Failed to reinstate student.'); },
+  });
 
   const anyPending =
     graduate.isPending || transfer.isPending || suspend.isPending || reinstate.isPending;
 
   if (isLoading) {
-    return <div className="p-6 text-sm text-gray-500">Loading…</div>;
+    return <PageSpinner />;
   }
 
   if (isError || !student) {

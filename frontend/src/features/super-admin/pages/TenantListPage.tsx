@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { listTenants } from '../api/tenantApi';
 import type { TenantStatus } from '../types/tenant';
+import { PageHeader } from '@/shared/ui';
 
 const PAGE_SIZE = 20;
 
@@ -37,7 +38,7 @@ export function TenantListPage() {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Tenants</h1>
+          <PageHeader title="Tenants" />
           {data && (
             <p className="mt-0.5 text-sm text-gray-500">{data.total} total</p>
           )}

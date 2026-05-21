@@ -4,6 +4,7 @@ import {
   initiateUploadApi, confirmUploadApi, listMyVideosApi, deleteVideoApi,
   type VideoResponse, type VideoVisibility,
 } from '../api/videoApi';
+import { useToast, PageSpinner, EmptyState, ConfirmDialog, PageHeader } from '@/shared/ui';
 
 const VISIBILITY_LABEL: Record<VideoVisibility, string> = {
   CLASS: 'Class only',
@@ -24,6 +25,7 @@ function formatBytes(bytes: number | null) {
 }
 
 export function VideoUploadPage() {
+  const { success, error: toastError } = useToast();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -33,6 +35,7 @@ export function VideoUploadPage() {
   const [file, setFile]             = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError]       = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const { data: videos = [], isLoading } = useQuery({
     queryKey: ['my-videos'],
@@ -41,7 +44,11 @@ export function VideoUploadPage() {
 
   const remove = useMutation({
     mutationFn: (id: string) => deleteVideoApi(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['my-videos'] }),
+    onSuccess: () => {
+      success('Video deleted');
+      qc.invalidateQueries({ queryKey: ['my-videos'] });
+    },
+    onError: () => { toastError('Failed to delete video.'); },
   });
 
   async function handleUpload() {
@@ -70,19 +77,22 @@ export function VideoUploadPage() {
       });
 
       await confirmUploadApi(videoId, file.size);
+      success('Video uploaded successfully');
       qc.invalidateQueries({ queryKey: ['my-videos'] });
 
       setTitle(''); setDescription(''); setFile(null); setUploadProgress(null);
       if (fileRef.current) fileRef.current.value = '';
     } catch (err: unknown) {
-      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+      const errMsg = err instanceof Error ? err.message : 'Upload failed';
+      toastError('Video upload failed. Please try again.');
+      setUploadError(errMsg);
       setUploadProgress(null);
     }
   }
 
   return (
     <div className="p-6 max-w-4xl">
-      <h1 className="text-xl font-bold text-gray-900 mb-6">Video Resources</h1>
+      <PageHeader title="Video Resources" />
 
       {/* Upload form */}
       <div className="rounded-lg border border-gray-200 bg-white p-4 mb-6">
@@ -137,9 +147,9 @@ export function VideoUploadPage() {
 
       {/* Video list */}
       {isLoading ? (
-        <p className="text-sm text-gray-500">Loading…</p>
+        <PageSpinner />
       ) : videos.length === 0 ? (
-        <p className="text-sm text-gray-500">No videos uploaded yet.</p>
+        <EmptyState title="No videos" description="No videos uploaded yet." />
       ) : (
         <div className="space-y-3">
           {videos.map((v: VideoResponse) => (
@@ -168,7 +178,7 @@ export function VideoUploadPage() {
                   </a>
                 )}
                 <button
-                  onClick={() => { if (confirm('Delete this video?')) remove.mutate(v.id); }}
+                  onClick={() => setConfirmDeleteId(v.id)}
                   disabled={remove.isPending}
                   className="text-xs font-medium text-red-500 hover:underline disabled:opacity-50"
                 >
@@ -179,6 +189,16 @@ export function VideoUploadPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => { if (confirmDeleteId) remove.mutate(confirmDeleteId); setConfirmDeleteId(null); }}
+        title="Delete video"
+        description="Are you sure you want to delete this video? This cannot be undone."
+        confirmLabel="Delete"
+        loading={remove.isPending}
+      />
     </div>
   );
 }

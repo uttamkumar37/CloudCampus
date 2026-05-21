@@ -19,6 +19,7 @@ import {
 } from '../api/subscriptionApi';
 import type { AssignPlanRequest } from '../api/subscriptionApi';
 import type { FeatureType, TenantStatus } from '../types/tenant';
+import { useToast, PageHeader, PageSpinner } from '@/shared/ui';
 
 const STATUS_BADGE: Record<TenantStatus, string> = {
   ACTIVE:    'bg-green-100 text-green-700',
@@ -37,6 +38,7 @@ export function TenantDetailPage() {
   const { id }     = useParams<{ id: string }>();
   const navigate   = useNavigate();
   const queryClient = useQueryClient();
+  const { success, error: toastError } = useToast();
 
   const { data: tenant, isLoading } = useQuery({
     queryKey: ['tenant', id],
@@ -82,8 +84,9 @@ export function TenantDetailPage() {
 
   const assignPlanMutation = useMutation({
     mutationFn: (req: AssignPlanRequest) => assignTenantPlan(id!, req),
-    onSuccess: () => { refetchSub(); setSubEditing(false); setSubError(null); },
+    onSuccess: () => { success('Subscription plan updated'); refetchSub(); setSubEditing(false); setSubError(null); },
     onError: (err: unknown) => {
+      toastError('Failed to update subscription plan. Please try again.');
       setSubError(
         (err as { response?: { data?: { error?: { message?: string } } } })
           ?.response?.data?.error?.message ?? 'Failed to assign plan',
@@ -97,7 +100,8 @@ export function TenantDetailPage() {
   const configMutation = useMutation({
     mutationFn: ({ key, value }: { key: string; value: string }) =>
       setTenantConfig(id!, key, value),
-    onSuccess: () => { refetchConfig(); setEditingKey(null); },
+    onSuccess: () => { success('Configuration saved'); refetchConfig(); setEditingKey(null); },
+    onError: () => { toastError('Failed to save configuration. Please try again.'); },
   });
 
   const invalidateTenant = () => {
@@ -106,8 +110,8 @@ export function TenantDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['super-admin-stats'] });
   };
 
-  const suspendMutation  = useMutation({ mutationFn: () => suspendTenant(id!),  onSuccess: invalidateTenant });
-  const activateMutation = useMutation({ mutationFn: () => activateTenant(id!), onSuccess: invalidateTenant });
+  const suspendMutation  = useMutation({ mutationFn: () => suspendTenant(id!),  onSuccess: () => { success('Tenant suspended'); invalidateTenant(); }, onError: () => { toastError('Failed to suspend tenant. Please try again.'); } });
+  const activateMutation = useMutation({ mutationFn: () => activateTenant(id!), onSuccess: () => { success('Tenant activated'); invalidateTenant(); }, onError: () => { toastError('Failed to activate tenant. Please try again.'); } });
 
   const [featureError, setFeatureError] = useState<string | null>(null);
 
@@ -117,24 +121,26 @@ export function TenantDetailPage() {
   };
   const enableMutation  = useMutation({
     mutationFn: (key: string) => enableFeature(id!, key),
-    onSuccess: invalidateFeatures,
+    onSuccess: () => { success('Feature enabled'); invalidateFeatures(); },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })
         ?.response?.data?.error?.message ?? 'Failed to enable feature';
+      toastError('Failed to enable feature. Please try again.');
       setFeatureError(msg);
     },
   });
   const disableMutation = useMutation({
     mutationFn: (key: string) => disableFeature(id!, key),
-    onSuccess: invalidateFeatures,
+    onSuccess: () => { success('Feature disabled'); invalidateFeatures(); },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })
         ?.response?.data?.error?.message ?? 'Failed to disable feature';
+      toastError('Failed to disable feature. Please try again.');
       setFeatureError(msg);
     },
   });
 
-  if (isLoading) return <div className="p-6 text-sm text-gray-500">Loading…</div>;
+  if (isLoading) return <PageSpinner />;
   if (!tenant)   return <div className="p-6 text-sm text-red-600">Tenant not found.</div>;
 
   const isBusy         = suspendMutation.isPending || activateMutation.isPending;
@@ -151,7 +157,7 @@ export function TenantDetailPage() {
           ← Back
         </button>
         <div className="flex-1">
-          <h1 className="text-xl font-semibold text-gray-900">{tenant.name}</h1>
+          <PageHeader title={tenant.name} />
           <p className="mt-0.5 font-mono text-sm text-gray-500">{tenant.code}</p>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_BADGE[tenant.status]}`}>
@@ -181,12 +187,12 @@ export function TenantDetailPage() {
       <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">
         <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <dt className="text-xs font-medium text-gray-400">Tenant ID</dt>
-            <dd className="mt-0.5 break-all font-mono text-xs text-gray-600">{tenant.id}</dd>
+            <dt className="text-xs font-medium text-gray-400">Tenant Code</dt>
+            <dd className="mt-0.5 font-mono text-sm font-semibold text-gray-700">{tenant.code}</dd>
           </div>
           <div>
-            <dt className="text-xs font-medium text-gray-400">Code</dt>
-            <dd className="mt-0.5 font-mono text-sm text-gray-700">{tenant.code}</dd>
+            <dt className="text-xs font-medium text-gray-400">Status</dt>
+            <dd className="mt-0.5 text-sm text-gray-700 capitalize">{tenant.status?.toLowerCase() ?? '—'}</dd>
           </div>
           <div>
             <dt className="text-xs font-medium text-gray-400">Created</dt>

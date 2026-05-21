@@ -46,6 +46,11 @@ export async function getStudentProfile360(studentId: string): Promise<StudentPr
   return data.data!;
 }
 
+export async function getMyStudentProfile360(): Promise<StudentProfile360Response> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentProfile360Response>>('/v1/student/profile-360');
+  return data.data!;
+}
+
 export async function updateStudentProfile360Section(
   studentId: string,
   sectionKey: string,

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getNotices } from '../api/parentApi';
+import { PageHeader } from '@/shared/ui';
 
 const PRIORITY_BADGE: Record<number, string> = {
   1: 'bg-red-100 text-red-700',
@@ -35,7 +36,7 @@ export default function ParentNoticesPage() {
   return (
     <div className="p-6 space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">School Notices</h1>
+        <PageHeader title="School Notices" />
         <p className="mt-0.5 text-sm text-gray-500">{total} notice{total !== 1 ? 's' : ''}</p>
       </div>
 

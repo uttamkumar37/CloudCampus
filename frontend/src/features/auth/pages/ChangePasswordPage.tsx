@@ -4,6 +4,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { changePasswordApi, revokeAllSessionsApi } from '../api/authApi';
 import { listDevicesApi, revokeDeviceApi } from '../api/deviceApi';
+import { useToast, Button, Spinner } from '@/shared/ui';
+
+function EyeIcon() {
+  return <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>;
+}
+
+function EyeSlashIcon() {
+  return <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>;
+}
 
 function isStrongPassword(pw: string): boolean {
   return pw.length >= 8
@@ -13,7 +22,15 @@ function isStrongPassword(pw: string): boolean {
     && /[^a-zA-Z\d]/.test(pw);
 }
 
+function displayIp(ipAddress: string): string {
+  if (ipAddress === '0:0:0:0:0:0:0:1' || ipAddress === '::1' || ipAddress === '127.0.0.1') {
+    return 'Localhost';
+  }
+  return ipAddress;
+}
+
 export function ChangePasswordPage() {
+  const { success, error: toastError } = useToast();
   const navigate   = useNavigate();
   const user       = useAuthStore((s) => s.user);
   const isForced   = user?.requiresPasswordChange ?? false;
@@ -23,15 +40,22 @@ export function ChangePasswordPage() {
   const [confirm, setConfirm]     = useState('');
   const [fieldError, setFieldError] = useState('');
   const [done, setDone]           = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNext, setShowNext]       = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: () => changePasswordApi(current, next),
     onSuccess: () => {
       setDone(true);
+      success('Password updated successfully');
       // Update the store so the forced-change banner disappears on next navigation.
       useAuthStore.setState((s) => ({
         user: s.user ? { ...s.user, requiresPasswordChange: false } : s.user,
       }));
+    },
+    onError: () => {
+      toastError('Failed to update password. Please check your current password and try again.');
     },
   });
 
@@ -40,12 +64,16 @@ export function ChangePasswordPage() {
   const { data: devices, isLoading: devicesLoading } = useQuery({
     queryKey: ['my-devices'],
     queryFn:  listDevicesApi,
-    enabled:  !isForced,
+    enabled:  !isForced && !!user?.userId,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const { mutate: revokeDevice } = useMutation({
     mutationFn: revokeDeviceApi,
     onSuccess:  () => qc.invalidateQueries({ queryKey: ['my-devices'] }),
+    onError: () => { toastError('Failed to revoke device.'); },
   });
 
   const logout = useAuthStore((s) => s.clearAuth);
@@ -55,6 +83,7 @@ export function ChangePasswordPage() {
       logout();
       navigate('/login', { replace: true });
     },
+    onError: () => { toastError('Failed to sign out from all devices.'); },
   });
 
   function handleSubmit(e: React.FormEvent) {
@@ -86,6 +115,7 @@ export function ChangePasswordPage() {
     error instanceof Error
       ? (error as { response?: { data?: { message?: string } } }).response?.data?.message ?? error.message
       : null;
+  const visibleDevices = devices ?? [];
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -123,31 +153,45 @@ export function ChangePasswordPage() {
                 <label htmlFor="current" className="block text-sm font-medium text-gray-700">
                   Current password
                 </label>
-                <input
-                  id="current"
-                  type="password"
-                  value={current}
-                  onChange={(e) => setCurrent(e.target.value)}
-                  autoComplete="current-password"
-                  required
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
+                <div className="relative mt-1">
+                  <input
+                    id="current"
+                    type={showCurrent ? 'text' : 'password'}
+                    value={current}
+                    onChange={(e) => setCurrent(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <button type="button" onClick={() => setShowCurrent(v => !v)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    aria-label={showCurrent ? 'Hide password' : 'Show password'}>
+                    {showCurrent ? <EyeSlashIcon /> : <EyeIcon />}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label htmlFor="new" className="block text-sm font-medium text-gray-700">
                   New password
                 </label>
-                <input
-                  id="new"
-                  type="password"
-                  value={next}
-                  onChange={(e) => setNext(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
+                <div className="relative mt-1">
+                  <input
+                    id="new"
+                    type={showNext ? 'text' : 'password'}
+                    value={next}
+                    onChange={(e) => setNext(e.target.value)}
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <button type="button" onClick={() => setShowNext(v => !v)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    aria-label={showNext ? 'Hide password' : 'Show password'}>
+                    {showNext ? <EyeSlashIcon /> : <EyeIcon />}
+                  </button>
+                </div>
                 <p className="mt-1 text-xs text-gray-400">
                   Min 8 chars · uppercase · lowercase · digit · special character
                 </p>
@@ -157,15 +201,22 @@ export function ChangePasswordPage() {
                 <label htmlFor="confirm" className="block text-sm font-medium text-gray-700">
                   Confirm new password
                 </label>
-                <input
-                  id="confirm"
-                  type="password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  autoComplete="new-password"
-                  required
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
+                <div className="relative mt-1">
+                  <input
+                    id="confirm"
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    autoComplete="new-password"
+                    required
+                    className="block w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <button type="button" onClick={() => setShowConfirm(v => !v)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    aria-label={showConfirm ? 'Hide password' : 'Show password'}>
+                    {showConfirm ? <EyeSlashIcon /> : <EyeIcon />}
+                  </button>
+                </div>
               </div>
 
               {(fieldError || serverError) && (
@@ -174,13 +225,9 @@ export function ChangePasswordPage() {
                 </p>
               )}
 
-              <button
-                type="submit"
-                disabled={isPending || !current || !next || !confirm}
-                className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isPending ? 'Saving…' : 'Update password'}
-              </button>
+              <Button type="submit" loading={isPending} disabled={!current || !next || !confirm} className="w-full">
+                Update password
+              </Button>
             </form>
 
             {!isForced && (
@@ -193,18 +240,37 @@ export function ChangePasswordPage() {
           </>
         )}
 
-        {!isForced && !done && devices && devices.length > 0 && (
+        {!isForced && !done && (
           <div className="mt-8 border-t border-gray-200 pt-6">
-            <h2 className="mb-3 text-sm font-semibold text-gray-900">Active devices</h2>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">Active devices</h2>
+                <p className="mt-0.5 text-xs text-gray-500">Recent unique browser sessions for this account.</p>
+              </div>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                {visibleDevices.length}
+              </span>
+            </div>
             {devicesLoading ? (
-              <p className="text-xs text-gray-400">Loading…</p>
+              <div className="py-2 flex justify-center"><Spinner size="xs" /></div>
+            ) : visibleDevices.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-gray-200 px-3 py-4 text-sm text-gray-500">
+                No active device session is currently recorded. Refresh after signing in again if this looks stale.
+              </div>
             ) : (
               <ul className="space-y-2">
-                {devices.map((d) => (
+                {visibleDevices.map((d, index) => (
                   <li key={d.id} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{d.deviceName}</p>
-                      <p className="text-xs text-gray-400">{d.ipAddress} · last seen {new Date(d.lastSeenAt).toLocaleDateString('en-IN')}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-gray-800">{d.deviceName}</p>
+                        {index === 0 && (
+                          <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700">
+                            Current session
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400">{displayIp(d.ipAddress)} · last seen {new Date(d.lastSeenAt).toLocaleDateString('en-IN')}</p>
                     </div>
                     <button
                       onClick={() => revokeDevice(d.id)}

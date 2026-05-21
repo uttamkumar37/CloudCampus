@@ -168,6 +168,35 @@ export default function ParentDashboardPage() {
         <PortalStatCard label="Fee Balance" value={currency(totalFeeBalance)} helper="family total" tone={totalFeeBalance ? 'rose' : 'slate'} />
       </div>
 
+      <PortalPanel title="Parent Engagement Rhythm" subtitle="Daily parent actions that keep child progress, communication, and finance visible">
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-emerald-900">
+            <p className="text-xs font-black uppercase tracking-wide opacity-70">Progress Check</p>
+            <p className="mt-2 text-sm leading-6">
+              {activeChild
+                ? `${activeChild.firstName}'s attendance is ${activeChild.attendancePct}%. Review homework and latest results before the next school day.`
+                : 'Link a child account to unlock progress, attendance, homework, and results.'}
+            </p>
+          </div>
+          <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 text-amber-900">
+            <p className="text-xs font-black uppercase tracking-wide opacity-70">Family Action</p>
+            <p className="mt-2 text-sm leading-6">
+              {totalHomework
+                ? `${totalHomework} published homework item(s) are visible across linked children. Check completion status today.`
+                : 'No visible homework pressure. Use the portal to review notices and academic feedback.'}
+            </p>
+          </div>
+          <div className="rounded-lg border border-rose-100 bg-rose-50 p-4 text-rose-900">
+            <p className="text-xs font-black uppercase tracking-wide opacity-70">Finance And Notices</p>
+            <p className="mt-2 text-sm leading-6">
+              {totalFeeBalance
+                ? `${currency(totalFeeBalance)} is pending across linked children. Review fee details and receipts.`
+                : `${noticeItems.length} recent school notice(s) are available for family follow-up.`}
+            </p>
+          </div>
+        </div>
+      </PortalPanel>
+
       {children.length === 0 ? (
         <PortalPanel title="Children" subtitle="Linked child access">
           <PortalEmptyState title="No children linked" message="Contact your school administrator to link your child." />

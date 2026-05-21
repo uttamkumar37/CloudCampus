@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Spinner, PageHeader } from '@/shared/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { listSessionsByDate } from '../api/attendanceApi';
+import { listClassesBySchool } from '@/features/school-admin/api/classApi';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -47,6 +49,18 @@ export function AttendanceSessionListPage() {
     enabled: !!schoolId,
   });
 
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes-by-school', schoolId],
+    queryFn: () => listClassesBySchool(schoolId!),
+    enabled: !!schoolId,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const classMap = useMemo(
+    () => Object.fromEntries(classes.map((c) => [c.id, c.name])),
+    [classes],
+  );
+
   if (!schoolId) {
     return (
       <div className="p-6">
@@ -62,7 +76,7 @@ export function AttendanceSessionListPage() {
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Attendance Sessions</h2>
+          <PageHeader title="Attendance Sessions" />
           {data && (
             <p className="mt-0.5 text-sm text-gray-500">
               {data.length} session{data.length !== 1 ? 's' : ''} on {fmt(date)}
@@ -90,7 +104,7 @@ export function AttendanceSessionListPage() {
 
       {/* States */}
       {isLoading && (
-        <p className="text-sm text-gray-500" role="status">Loading…</p>
+        <div className="py-8 flex justify-center"><Spinner size="md" /></div>
       )}
       {isError && (
         <p className="text-sm text-red-600" role="alert">Failed to load sessions.</p>
@@ -107,8 +121,8 @@ export function AttendanceSessionListPage() {
               <tr>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Period</th>
-                <th className="px-4 py-3">Class ID</th>
-                <th className="px-4 py-3">Section ID</th>
+                <th className="px-4 py-3">Class</th>
+                <th className="px-4 py-3">Section</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
@@ -123,11 +137,11 @@ export function AttendanceSessionListPage() {
                   <td className="px-4 py-3 text-gray-600">
                     {PERIOD_LABEL[s.periodNumber] ?? `Period ${s.periodNumber}`}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                    {s.classId.slice(0, 8)}…
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {classMap[s.classId] ?? 'Not assigned'}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                    {s.sectionId ? `${s.sectionId.slice(0, 8)}…` : '—'}
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {s.sectionId ? 'Linked' : '—'}
                   </td>
                   <td className="px-4 py-3">
                     {s.finalized ? (

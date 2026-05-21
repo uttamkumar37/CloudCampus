@@ -232,12 +232,6 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | **Super Admin Public Website Link** — dynamic live-site link generated from current `window.location.origin` for local/staging/prod | ✅ Done |
 | Experience event partition extension through 2028 (V81) | ✅ Done |
 | Payment gateway idempotency keys (V82) | ✅ Done |
-| **Upload audit log** (V83) — `upload_audit_log`: UPLOAD / DOWNLOAD_URL / DELETE events with tenant, actor, correlation ID; TASK-010 | ✅ Done |
-| **Tenant storage quota** — per-tenant byte cap via `TenantConfigKey.MAX_STORAGE_BYTES`; upload rejected before MinIO write when exceeded; TASK-011 | ✅ Done |
-| **Antivirus/quarantine design doc** — `docs/UPLOAD_ANTIVIRUS_QUARANTINE_DESIGN.md`; TASK-012 | ✅ Done |
-| **Website rollback audit log** (V84) — immutable ledger of publish and rollback events; TASK-016 | ✅ Done |
-| **Website audit timeline** (V85) — `website_audit_timeline`: PAGE/SECTION/NAVIGATION/THEME/WEBSITE events; `GET /v1/super-admin/public-website/audit-timeline`; TASK-018 | ✅ Done |
-| **Investor room access audit** (V86) — `investor_room_access_log`: METADATA_ACCESS / CONTENT_ACCESS / UNLOCK_SUCCESS / UNLOCK_FAILURE / EXPIRED; EXPIRED uses `REQUIRES_NEW` to commit despite outer tx rollback; TASK-019 | ✅ Done |
 
 ### Web Frontend (React / TypeScript)
 
@@ -267,7 +261,6 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | **ExperienceAnalyticsDashboard** — stat cards + CSS bar chart for event funnel, period selector (7/14/30/90 days) | ✅ Done |
 | **CloudCampus public homepage** — premium SaaS landing page at `/` and `/home`, config-driven sections for future Website Builder editing | ✅ Done |
 | **Public Website Builder live link** — `View Public Website` in Super Admin shell and `View Live Website` in Public Website Builder shell | ✅ Done |
-| **Website audit timeline panel** — last 12 change events displayed in `PublicWebsitePublishPage`; backed by `GET /v1/super-admin/public-website/audit-timeline`; TASK-018 | ✅ Done |
 | School-admin dashboard (live stats), academic management | ✅ Done |
 | Student management (admit / profile / list / bulk import / promotion) | ✅ Done |
 | Staff management (list / create / profile) | ✅ Done |
@@ -314,9 +307,6 @@ SPRING_PROFILES_ACTIVE=staging java -jar cloudcampus-backend.jar
 | Grafana dashboards (9 panels) | ✅ Done |
 | Staging / production profiles | ✅ Done |
 | pg_dump backup sidecar + disaster recovery drill script | ✅ Done |
-| **Scheduled DR drill** — monthly GitHub Actions workflow (`dr-drill.yml`): spins up Postgres + MinIO, runs Flyway, seeds data, executes backup + restore drill; TASK-007 | ✅ Done |
-| **Backup freshness monitoring** — Pushgateway (`prom/pushgateway:v1.9.0`, port 9091) in Docker Compose; `backup.sh` pushes `cc_backup_last_success_timestamp_seconds`; `BackupNotFresh` (>8h) and `BackupMetricAbsent` (>25h) Prometheus alerts; TASK-008 | ✅ Done |
-| **Incident runbook** — `docs/INCIDENT_RUNBOOK.md`: PB-1 PostgreSQL restore, PB-2 Redis outage, PB-3 RabbitMQ backlog, PB-4 MinIO failure, PB-5 tenant comms; TASK-009 | ✅ Done |
 | CI/CD pipeline (4-job GitHub Actions: backend / frontend / mobile / docker) | ✅ Done |
 
 ---

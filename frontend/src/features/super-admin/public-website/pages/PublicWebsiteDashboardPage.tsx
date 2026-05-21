@@ -1,22 +1,64 @@
+import { Link } from 'react-router-dom';
+import { useToast } from '@/shared/ui';
 import { PublicWebsiteShell } from '../components/PublicWebsiteShell';
 import { useWebsiteDashboardQuery } from '../hooks/usePublicWebsiteQueries';
 
-const journeyCards = [
-  { title: 'School Conversion', detail: 'Hero, role pages, demos, pricing, and admin-login continuity.' },
-  { title: 'Investor Conversion', detail: 'Market narrative, SaaS model, AI roadmap, and public investor room paths.' },
-  { title: 'Builder Operations', detail: 'Draft routes, template-backed sections, SEO, theme tokens, snapshots, and rollback.' },
+type DashboardAction =
+  | { kind: 'link'; label: string; value: string | number; to: string }
+  | { kind: 'toast'; label: string; value: string | number; toast: string };
+
+type JourneyAction =
+  | { kind: 'link'; title: string; detail: string; to: string }
+  | { kind: 'toast'; title: string; detail: string; toast: string };
+
+const journeyCards: JourneyAction[] = [
+  {
+    title: 'School Conversion',
+    detail: 'Hero, role pages, demos, pricing, and admin-login continuity.',
+    kind: 'link',
+    to: '/super-admin/public-website/pages',
+  },
+  {
+    title: 'Investor Conversion',
+    detail: 'Market narrative, SaaS model, AI roadmap, and public investor room paths.',
+    kind: 'toast',
+    toast: 'Open Pages and add the Investor Narrative template to the relevant public route.',
+  },
+  {
+    title: 'Builder Operations',
+    detail: 'Draft routes, template-backed sections, SEO, theme tokens, snapshots, and rollback.',
+    kind: 'link',
+    to: '/super-admin/public-website/publish',
+  },
 ];
 
 export function PublicWebsiteDashboardPage() {
   const { data, isLoading } = useWebsiteDashboardQuery();
+  const { info } = useToast();
 
-  const cards = [
-    { label: 'Total Visitors', value: data?.totalVisitors ?? 0 },
-    { label: 'Published Pages', value: data?.publishedPages ?? 0 },
-    { label: 'SEO Coverage', value: data?.seoCoverage ?? 0 },
-    { label: 'Demo Requests', value: data?.demoRequests ?? 0 },
-    { label: 'Investor Visits', value: data?.investorVisits ?? 0 },
-    { label: 'Conversion Rate', value: `${(data?.conversionRate ?? 0).toFixed(1)}%` },
+  const cards: DashboardAction[] = [
+    { kind: 'link', label: 'Total Visitors', value: data?.totalVisitors ?? 0, to: '/super-admin/public-website/analytics' },
+    { kind: 'link', label: 'Published Pages', value: data?.publishedPages ?? 0, to: '/super-admin/public-website/pages' },
+    { kind: 'link', label: 'SEO Coverage', value: data?.seoCoverage ?? 0, to: '/super-admin/public-website/seo' },
+    {
+      kind: 'toast',
+      label: 'Demo Requests',
+      value: data?.demoRequests ?? 0,
+      toast: 'Demo funnel analytics are visible in Analytics. Use the Demo Conversion template to tune public CTAs.',
+    },
+    {
+      kind: 'toast',
+      label: 'Investor Visits',
+      value: data?.investorVisits ?? 0,
+      toast: 'Investor traffic is tracked in Analytics. Build investor content from the Investor Narrative section template.',
+    },
+    { kind: 'link', label: 'Conversion Rate', value: `${(data?.conversionRate ?? 0).toFixed(1)}%`, to: '/super-admin/public-website/analytics' },
+  ];
+  const readinessActions = [
+    { label: 'Audience preview', to: '/super-admin/public-website/pages' },
+    { label: 'Device preview', to: '/super-admin/public-website/pages' },
+    { label: 'Template defaults', to: '/super-admin/public-website/pages' },
+    { label: 'Snapshot publish', to: '/super-admin/public-website/publish' },
   ];
 
   return (
@@ -30,10 +72,28 @@ export function PublicWebsiteDashboardPage() {
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {cards.map((card) => (
-              <div key={card.label} className="rounded-2xl border border-white/70 bg-white/85 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{card.label}</p>
-                <p className="mt-2 text-3xl font-black text-slate-900">{card.value}</p>
-              </div>
+              card.kind === 'link' ? (
+                <Link
+                  key={card.label}
+                  to={card.to}
+                  className="rounded-2xl border border-white/70 bg-white/85 p-5 text-left shadow-sm transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl hover:shadow-slate-200"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{card.label}</p>
+                  <p className="mt-2 text-3xl font-black text-slate-900">{card.value}</p>
+                  <p className="mt-3 text-xs font-bold text-cyan-700">Open workspace</p>
+                </Link>
+              ) : (
+                <button
+                  key={card.label}
+                  type="button"
+                  onClick={() => info(card.toast, card.label)}
+                  className="rounded-2xl border border-white/70 bg-white/85 p-5 text-left shadow-sm transition hover:-translate-y-1 hover:border-cyan-200 hover:shadow-xl hover:shadow-slate-200"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{card.label}</p>
+                  <p className="mt-2 text-3xl font-black text-slate-900">{card.value}</p>
+                  <p className="mt-3 text-xs font-bold text-cyan-700">View next step</p>
+                </button>
+              )
             ))}
           </div>
 
@@ -50,10 +110,28 @@ export function PublicWebsiteDashboardPage() {
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 {journeyCards.map((card) => (
-                  <div key={card.title} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-                    <p className="text-sm font-black text-white">{card.title}</p>
-                    <p className="mt-2 text-xs leading-5 text-slate-300">{card.detail}</p>
-                  </div>
+                  card.kind === 'link' ? (
+                    <Link
+                      key={card.title}
+                      to={card.to}
+                      className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-left transition hover:border-cyan-200/50 hover:bg-white/[0.1]"
+                    >
+                      <p className="text-sm font-black text-white">{card.title}</p>
+                      <p className="mt-2 text-xs leading-5 text-slate-300">{card.detail}</p>
+                      <p className="mt-3 text-xs font-bold text-cyan-200">Open</p>
+                    </Link>
+                  ) : (
+                    <button
+                      key={card.title}
+                      type="button"
+                      onClick={() => info(card.toast, card.title)}
+                      className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-left transition hover:border-cyan-200/50 hover:bg-white/[0.1]"
+                    >
+                      <p className="text-sm font-black text-white">{card.title}</p>
+                      <p className="mt-2 text-xs leading-5 text-slate-300">{card.detail}</p>
+                      <p className="mt-3 text-xs font-bold text-cyan-200">Guide me</p>
+                    </button>
+                  )
                 ))}
               </div>
               <div className="mt-5 h-24 rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(34,211,238,0.3),rgba(168,85,247,0.24),rgba(251,191,36,0.18))]" />
@@ -81,10 +159,14 @@ export function PublicWebsiteDashboardPage() {
           <div className="mt-6 rounded-2xl border border-cyan-100 bg-cyan-50/80 p-5">
             <h3 className="text-lg font-bold text-slate-900">Builder Readiness</h3>
             <div className="mt-3 grid gap-3 md:grid-cols-4">
-              {['Audience preview', 'Device preview', 'Template defaults', 'Snapshot publish'].map((item) => (
-                <div key={item} className="rounded-xl bg-white/80 px-4 py-3 text-sm font-bold text-cyan-900">
-                  {item}
-                </div>
+              {readinessActions.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className="rounded-xl bg-white/80 px-4 py-3 text-sm font-bold text-cyan-900 transition hover:bg-white hover:text-cyan-700"
+                >
+                  {item.label}
+                </Link>
               ))}
             </div>
           </div>

@@ -8,6 +8,7 @@ import { listSections } from '@/features/school-admin/api/sectionApi';
 import { listSubjects } from '@/features/school-admin/api/subjectApi';
 import { createAssignment } from '../api/assignmentApi';
 import type { AssignmentCreateRequest } from '../types/assignment';
+import { useToast, PageHeader } from '@/shared/ui';
 
 interface FormState {
   academicYearId: string;
@@ -33,6 +34,7 @@ function tomorrow() {
 }
 
 export default function AssignmentCreatePage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const navigate  = useNavigate();
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -61,8 +63,12 @@ export default function AssignmentCreatePage() {
 
   const createMutation = useMutation({
     mutationFn: (body: AssignmentCreateRequest) => createAssignment(schoolId, body),
-    onSuccess: () => navigate('/school-admin/assignments'),
+    onSuccess: () => {
+      success('Assignment created successfully');
+      navigate('/school-admin/assignments');
+    },
     onError: (err: { response?: { data?: { error?: { message?: string } } } }) => {
+      toastError('Failed to create assignment. Please try again.');
       setError(err?.response?.data?.error?.message ?? 'Failed to create assignment');
     },
   });
@@ -99,7 +105,7 @@ export default function AssignmentCreatePage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">New Assignment</h1>
+        <PageHeader title="New Assignment" />
         <p className="mt-0.5 text-sm text-gray-500">Create a graded assignment for a class</p>
       </div>
 

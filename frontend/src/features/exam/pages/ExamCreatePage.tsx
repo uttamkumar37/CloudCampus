@@ -7,6 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { createExam } from '../api/examApi';
 import type { ExamType } from '../types/exam';
+import { useToast, PageHeader } from '@/shared/ui';
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ const EXAM_TYPES: { value: ExamType; label: string }[] = [
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ExamCreatePage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const navigate = useNavigate();
   const [apiError, setApiError] = useState('');
@@ -90,9 +92,11 @@ export default function ExamCreatePage() {
       });
     },
     onSuccess: (exam) => {
+      success('Exam created successfully');
       navigate(`/school-admin/exams/${exam.id}`);
     },
     onError: (err: Error) => {
+      toastError('Failed to create exam. Please try again.');
       setApiError(err.message || 'Failed to create exam');
     },
   });
@@ -105,7 +109,7 @@ export default function ExamCreatePage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Create Exam</h2>
+        <PageHeader title="Create Exam" />
         <p className="mt-0.5 text-sm text-gray-500">Fill in exam details and optionally schedule subject papers inline.</p>
       </div>
 

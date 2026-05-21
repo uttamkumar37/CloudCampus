@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createBrandSystem, listBrandSystems, publishBrandSystem } from './experienceStudioApi';
+import { useToast } from '@/shared/ui';
 
 export default function BrandingSystemManager() {
   const qc = useQueryClient();
+  const { success, error: toastError } = useToast();
   const { data: brandSystems = [], isLoading } = useQuery({
     queryKey: ['sa:exp:branding'],
     queryFn: listBrandSystems,
@@ -20,14 +22,17 @@ export default function BrandingSystemManager() {
   const createMutation = useMutation({
     mutationFn: createBrandSystem,
     onSuccess: () => {
+      success('Brand pack created successfully');
       setForm({ name: '', code: '', primaryColor: '#0ea5e9', headingFont: 'Sora', motionPreset: 'confident-enterprise' });
       qc.invalidateQueries({ queryKey: ['sa:exp:branding'] });
     },
+    onError: () => { toastError('Failed to create brand pack. Please try again.'); },
   });
 
   const publishMutation = useMutation({
     mutationFn: publishBrandSystem,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:branding'] }),
+    onSuccess: () => { success('Brand pack published'); qc.invalidateQueries({ queryKey: ['sa:exp:branding'] }); },
+    onError: () => { toastError('Failed to publish brand pack. Please try again.'); },
   });
 
   return (

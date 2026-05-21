@@ -2,14 +2,22 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { forgotPasswordApi } from '../api/authApi';
+import { useToast, Button } from '@/shared/ui';
 
 export function ForgotPasswordPage() {
+  const { success, error: toastError } = useToast();
   const [email, setEmail]       = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   const { mutate, isPending, isError } = useMutation({
     mutationFn: () => forgotPasswordApi(email),
-    onSuccess: () => setSubmitted(true),
+    onSuccess: () => {
+      setSubmitted(true);
+      success('Reset code sent — check your email');
+    },
+    onError: () => {
+      toastError('Failed to send reset code. Please try again.');
+    },
   });
 
   function handleSubmit(e: React.FormEvent) {
@@ -78,13 +86,9 @@ export function ForgotPasswordPage() {
                 </p>
               )}
 
-              <button
-                type="submit"
-                disabled={isPending || !email.trim()}
-                className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isPending ? 'Sending…' : 'Send reset code'}
-              </button>
+              <Button type="submit" loading={isPending} disabled={!email.trim()} className="w-full">
+                Send reset code
+              </Button>
             </form>
 
             <p className="mt-4 text-center text-sm text-gray-500">

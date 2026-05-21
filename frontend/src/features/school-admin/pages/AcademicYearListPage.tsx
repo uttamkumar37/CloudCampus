@@ -10,15 +10,8 @@ import {
   setCurrentAcademicYear,
   closeAcademicYear,
 } from '../api/academicYearApi';
-import type { AcademicYearResponse, AcademicYearStatus } from '../types/academic';
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const STATUS_BADGE: Record<AcademicYearStatus, string> = {
-  DRAFT: 'bg-gray-100 text-gray-600',
-  ACTIVE: 'bg-green-100 text-green-700',
-  CLOSED: 'bg-red-100 text-red-600',
-};
+import type { AcademicYearResponse } from '../types/academic';
+import { useToast, PageHeader, Badge, PageSpinner, EmptyState } from '@/shared/ui';
 
 // ── Create form ───────────────────────────────────────────────────────────────
 
@@ -41,6 +34,7 @@ interface CreateFormProps {
 }
 
 function CreateForm({ schoolId, onClose }: CreateFormProps) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
 
   const {
@@ -53,10 +47,12 @@ function CreateForm({ schoolId, onClose }: CreateFormProps) {
   const { mutate, isPending } = useMutation({
     mutationFn: (values: FormValues) => createAcademicYear(schoolId, values),
     onSuccess: () => {
+      success('Academic year created successfully');
       queryClient.invalidateQueries({ queryKey: ['academic-years', schoolId] });
       onClose();
     },
     onError: () => {
+      toastError('Failed to create academic year. Please try again.');
       setError('root', { message: 'Failed to create academic year. Please try again.' });
     },
   });
@@ -144,18 +140,25 @@ function CreateForm({ schoolId, onClose }: CreateFormProps) {
 // ── Row ───────────────────────────────────────────────────────────────────────
 
 function YearRow({ year }: { year: AcademicYearResponse }) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
 
   const setCurrent = useMutation({
     mutationFn: () => setCurrentAcademicYear(year.id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['academic-years', year.schoolId] }),
+    onSuccess: () => {
+      success('Academic year set as current');
+      queryClient.invalidateQueries({ queryKey: ['academic-years', year.schoolId] });
+    },
+    onError: () => { toastError('Failed to set current academic year.'); },
   });
 
   const close = useMutation({
     mutationFn: () => closeAcademicYear(year.id),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['academic-years', year.schoolId] }),
+    onSuccess: () => {
+      success('Academic year closed');
+      queryClient.invalidateQueries({ queryKey: ['academic-years', year.schoolId] });
+    },
+    onError: () => { toastError('Failed to close academic year.'); },
   });
 
   return (
@@ -163,20 +166,16 @@ function YearRow({ year }: { year: AcademicYearResponse }) {
       <td className="px-4 py-3 font-medium text-gray-900">
         {year.name}
         {year.isCurrent && (
-          <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-            Current
-          </span>
+          <Badge variant="primary" className="ml-2">Current</Badge>
         )}
       </td>
       <td className="px-4 py-3 text-gray-600">
         {year.startDate} → {year.endDate}
       </td>
       <td className="px-4 py-3">
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[year.status]}`}
-        >
+        <Badge variant={year.status === 'ACTIVE' ? 'success' : year.status === 'CLOSED' ? 'danger' : 'default'}>
           {year.status}
-        </span>
+        </Badge>
       </td>
       <td className="px-4 py-3">
         <div className="flex gap-2">
@@ -229,32 +228,26 @@ export function AcademicYearListPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Academic Years</h2>
-          {data && (
-            <p className="mt-0.5 text-sm text-gray-500">{data.length} configured</p>
-          )}
-        </div>
-        {!showForm && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            New Academic Year
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Academic Years"
+        subtitle={data ? `${data.length} configured` : undefined}
+        actions={
+          !showForm ? (
+            <button
+              onClick={() => setShowForm(true)}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              New Academic Year
+            </button>
+          ) : undefined
+        }
+      />
 
       {showForm && (
         <CreateForm schoolId={schoolId} onClose={() => setShowForm(false)} />
       )}
 
-      {isLoading && (
-        <p className="text-sm text-gray-500" role="status">
-          Loading…
-        </p>
-      )}
+      {isLoading && <PageSpinner />}
       {isError && (
         <p className="text-sm text-red-600" role="alert">
           Failed to load academic years.
@@ -262,11 +255,12 @@ export function AcademicYearListPage() {
       )}
 
       {data && data.length === 0 && !isLoading && (
-        <p className="text-sm text-gray-500">No academic years yet. Create one to get started.</p>
+        <EmptyState title="No academic years" description="No academic years yet. Create one to get started." />
       )}
 
       {data && data.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
               <tr>
@@ -282,6 +276,7 @@ export function AcademicYearListPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

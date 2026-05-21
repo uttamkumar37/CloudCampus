@@ -1,10 +1,9 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ChangePasswordPage } from '@/features/auth/pages/ChangePasswordPage';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import type { AuthUser } from '@/features/auth/types/auth';
+import { renderWithProviders } from '@/test/renderWithProviders';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -19,16 +18,7 @@ const activeUser: AuthUser = {
 };
 
 function renderPage() {
-  const qc = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <ChangePasswordPage />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  return renderWithProviders(<ChangePasswordPage />);
 }
 
 function fillForm(current: string, next: string, confirm: string) {

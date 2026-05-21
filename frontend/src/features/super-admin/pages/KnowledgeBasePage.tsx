@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listTenants } from '../api/tenantApi';
+import { useToast, PageHeader, Spinner } from '@/shared/ui';
 import {
   ingestDocument,
   listDocuments,
@@ -36,9 +37,11 @@ function DocList({
   docs: KnowledgeDocument[];
   onDeleted: () => void;
 }) {
+  const { success, error: toastError } = useToast();
   const deleteMutation = useMutation({
     mutationFn: (docId: string) => deleteDocument(tenantId, docId),
-    onSuccess: onDeleted,
+    onSuccess: () => { success('Document deleted'); onDeleted(); },
+    onError: () => { toastError('Failed to delete document. Please try again.'); },
   });
 
   if (docs.length === 0) {
@@ -74,16 +77,19 @@ function DocList({
 // ── Ingest form ───────────────────────────────────────────────────────────────
 
 function IngestForm({ tenantId, onIngested }: { tenantId: string; onIngested: () => void }) {
+  const { success, error: toastError } = useToast();
   const [title,   setTitle]   = useState('');
   const [content, setContent] = useState('');
 
   const mutation = useMutation({
     mutationFn: () => ingestDocument(tenantId, title.trim(), content.trim()),
     onSuccess: () => {
+      success('Document ingested successfully');
       setTitle('');
       setContent('');
       onIngested();
     },
+    onError: () => { toastError('Failed to ingest document. Please try again.'); },
   });
 
   const canSubmit = title.trim().length > 0 && content.trim().length > 10;
@@ -201,7 +207,7 @@ export function KnowledgeBasePage() {
   return (
     <div className="p-6 space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Knowledge Base</h1>
+        <PageHeader title="Knowledge Base" />
         <p className="mt-0.5 text-sm text-gray-500">
           Ingest documents per tenant and run RAG queries against the vector store.
         </p>
@@ -232,7 +238,7 @@ export function KnowledgeBasePage() {
           {/* Document list */}
           <Section title={`Indexed Documents (${docs.length})`}>
             {docsLoading ? (
-              <p className="text-sm text-gray-400">Loading…</p>
+              <div className="py-4 flex justify-center"><Spinner size="sm" /></div>
             ) : (
               <DocList tenantId={selectedTenantId} docs={docs} onDeleted={invalidateDocs} />
             )}

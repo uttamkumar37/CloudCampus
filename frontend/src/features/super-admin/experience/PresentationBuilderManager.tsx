@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createPresentation, listPresentations, publishPresentation } from './experienceStudioApi';
+import { useToast } from '@/shared/ui';
 
 export default function PresentationBuilderManager() {
   const qc = useQueryClient();
+  const { success, error: toastError } = useToast();
   const { data: presentations = [], isLoading } = useQuery({
     queryKey: ['sa:exp:presentations'],
     queryFn: listPresentations,
@@ -17,12 +19,14 @@ export default function PresentationBuilderManager() {
 
   const createMutation = useMutation({
     mutationFn: createPresentation,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:presentations'] }),
+    onSuccess: () => { success('Presentation created successfully'); qc.invalidateQueries({ queryKey: ['sa:exp:presentations'] }); },
+    onError: () => { toastError('Failed to create presentation. Please try again.'); },
   });
 
   const publishMutation = useMutation({
     mutationFn: publishPresentation,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:presentations'] }),
+    onSuccess: () => { success('Presentation published'); qc.invalidateQueries({ queryKey: ['sa:exp:presentations'] }); },
+    onError: () => { toastError('Failed to publish presentation. Please try again.'); },
   });
 
   return (

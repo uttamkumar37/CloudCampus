@@ -5,6 +5,7 @@ import {
   addRecordingApi, deleteClassApi,
   type OnlineClassResponse, type OnlineClassRequest, type MeetingPlatform,
 } from '../api/onlineClassApi';
+import { useToast, PageSpinner, EmptyState, ConfirmDialog, PageHeader } from '@/shared/ui';
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function plusDays(n: number) {
@@ -22,12 +23,14 @@ const STATUS_COLOR: Record<string, string> = {
 const PLATFORMS: MeetingPlatform[] = ['ZOOM', 'GMEET', 'TEAMS', 'CUSTOM'];
 
 export function OnlineClassPage() {
+  const { success, error: toastError } = useToast();
   const qc = useQueryClient();
   const [from, setFrom] = useState(todayStr());
   const [to, setTo]     = useState(plusDays(30));
   const [showForm, setShowForm] = useState(false);
   const [recordingModal, setRecordingModal] = useState<string | null>(null);
   const [recordingUrl, setRecordingUrl] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const defaultForm: OnlineClassRequest = {
     title: '', description: '', meetingUrl: '', platform: 'CUSTOM',
@@ -42,32 +45,49 @@ export function OnlineClassPage() {
 
   const schedule = useMutation({
     mutationFn: () => scheduleClassApi({ ...form, scheduledAt: new Date(form.scheduledAt).toISOString() }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['online-classes'] }); setShowForm(false); setForm(defaultForm); },
+    onSuccess: () => {
+      success('Online class scheduled successfully');
+      qc.invalidateQueries({ queryKey: ['online-classes'] });
+      setShowForm(false);
+      setForm(defaultForm);
+    },
+    onError: () => { toastError('Failed to schedule class. Please try again.'); },
   });
 
   const updateStatus = useMutation({
     mutationFn: ({ id, action }: { id: string; action: 'start' | 'end' | 'cancel' }) =>
       updateClassStatusApi(id, action),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['online-classes'] }),
+    onSuccess: (_data, { action }) => {
+      success(action === 'start' ? 'Class started' : action === 'end' ? 'Class ended' : 'Class cancelled');
+      qc.invalidateQueries({ queryKey: ['online-classes'] });
+    },
+    onError: () => { toastError('Failed to update class status.'); },
   });
 
   const addRec = useMutation({
     mutationFn: () => addRecordingApi(recordingModal!, recordingUrl),
     onSuccess: () => {
+      success('Recording URL added');
       qc.invalidateQueries({ queryKey: ['online-classes'] });
-      setRecordingModal(null); setRecordingUrl('');
+      setRecordingModal(null);
+      setRecordingUrl('');
     },
+    onError: () => { toastError('Failed to add recording URL.'); },
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => deleteClassApi(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['online-classes'] }),
+    onSuccess: () => {
+      success('Class deleted');
+      qc.invalidateQueries({ queryKey: ['online-classes'] });
+    },
+    onError: () => { toastError('Failed to delete class.'); },
   });
 
   return (
     <div className="p-6 max-w-4xl">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-gray-900">Online Classes</h1>
+        <PageHeader title="Online Classes" />
         <button onClick={() => setShowForm(!showForm)}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
           {showForm ? 'Cancel' : '+ Schedule Class'}
@@ -133,9 +153,9 @@ export function OnlineClassPage() {
 
       {/* Class list */}
       {isLoading ? (
-        <p className="text-sm text-gray-500">Loading…</p>
+        <PageSpinner />
       ) : classes.length === 0 ? (
-        <p className="text-sm text-gray-500">No classes in this date range.</p>
+        <EmptyState title="No classes" description="No online classes in this date range." />
       ) : (
         <div className="space-y-3">
           {classes.map((cls: OnlineClassResponse) => (
@@ -182,13 +202,23 @@ export function OnlineClassPage() {
                   <button onClick={() => updateStatus.mutate({ id: cls.id, action: 'cancel' })}
                     className="text-xs font-medium text-red-600 hover:underline">Cancel</button>
                 )}
-                <button onClick={() => { if (confirm('Delete this class?')) remove.mutate(cls.id); }}
+                <button onClick={() => setConfirmDeleteId(cls.id)}
                   className="text-xs font-medium text-red-400 hover:underline">Delete</button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => { if (confirmDeleteId) remove.mutate(confirmDeleteId); setConfirmDeleteId(null); }}
+        title="Delete class"
+        description="Are you sure you want to delete this class? This cannot be undone."
+        confirmLabel="Delete"
+        loading={remove.isPending}
+      />
 
       {/* Recording URL modal */}
       {recordingModal && (

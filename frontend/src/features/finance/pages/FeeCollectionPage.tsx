@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { PageSpinner, PageHeader } from '@/shared/ui';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { listAcademicYears } from '@/features/school-admin/api/academicYearApi';
+import { listStudents } from '@/features/student/api/studentApi';
 import { listRecordsBySchool } from '../api/financeApi';
 import type { FeeStatus } from '../types/finance';
 
@@ -28,6 +30,18 @@ export default function FeeCollectionPage() {
     enabled: !!schoolId,
   });
 
+  const { data: students = [] } = useQuery({
+    queryKey: ['students', schoolId],
+    queryFn: () => listStudents(schoolId),
+    enabled: !!schoolId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const studentMap = useMemo(
+    () => Object.fromEntries(students.map((s) => [s.id, s])),
+    [students],
+  );
+
   const { data: records = [], isLoading } = useQuery({
     queryKey: ['fee-records', schoolId, selectedYearId, statusFilter],
     queryFn: () =>
@@ -43,7 +57,7 @@ export default function FeeCollectionPage() {
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Fee Collection</h1>
+        <PageHeader title="Fee Collection" />
         <p className="mt-1 text-sm text-gray-500">
           View and manage student fee records. Click a record to collect payment.
         </p>
@@ -116,7 +130,7 @@ export default function FeeCollectionPage() {
         )}
 
         {selectedYearId && isLoading && (
-          <div className="p-8 text-center text-sm text-gray-500">Loading…</div>
+          <div className="p-8 flex justify-center"><PageSpinner /></div>
         )}
 
         {selectedYearId && !isLoading && records.length === 0 && (
@@ -131,7 +145,7 @@ export default function FeeCollectionPage() {
               <thead>
                 <tr className="border-b text-left text-gray-500">
                   <th className="px-4 py-3 font-medium">Category</th>
-                  <th className="px-4 py-3 font-medium">Student</th>
+                  <th className="px-4 py-3 font-medium">Student (Adm. No.)</th>
                   <th className="px-4 py-3 font-medium text-right">Due (₹)</th>
                   <th className="px-4 py-3 font-medium text-right">Paid (₹)</th>
                   <th className="px-4 py-3 font-medium text-right">Balance (₹)</th>
@@ -144,7 +158,11 @@ export default function FeeCollectionPage() {
                 {records.map((r) => (
                   <tr key={r.id} className="border-b last:border-0 hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{r.categoryName}</td>
-                    <td className="px-4 py-3 text-gray-600 font-mono text-xs">{r.studentId.slice(0, 8)}…</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {studentMap[r.studentId]
+                        ? `${studentMap[r.studentId].firstName} ${studentMap[r.studentId].lastName}${studentMap[r.studentId].studentNumber ? ` · ${studentMap[r.studentId].studentNumber}` : ''}`
+                        : 'Not assigned'}
+                    </td>
                     <td className="px-4 py-3 text-right text-gray-900">
                       {Number(r.amountDue).toLocaleString('en-IN')}
                     </td>

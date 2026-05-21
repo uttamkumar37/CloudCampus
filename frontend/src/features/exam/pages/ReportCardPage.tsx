@@ -1,6 +1,8 @@
 import { Link, useParams } from 'react-router-dom';
+import { PageSpinner } from '@/shared/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { getStudent } from '@/features/student/api/studentApi';
 import { getStudentResult } from '../api/resultApi';
 import type { ExamResultResponse } from '../types/result';
 
@@ -23,8 +25,15 @@ export default function ReportCardPage() {
     enabled:  !!schoolId && !!examId && !!studentId,
   });
 
+  const { data: student } = useQuery({
+    queryKey: ['student', studentId],
+    queryFn:  () => getStudent(studentId!),
+    enabled:  !!studentId,
+    staleTime: 10 * 60 * 1000,
+  });
+
   if (isLoading) {
-    return <p className="p-8 text-gray-500 text-center">Loading…</p>;
+    return <PageSpinner />;
   }
 
   if (!result) {
@@ -74,9 +83,15 @@ export default function ReportCardPage() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Report Card</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Student ID:{' '}
-              <span className="font-mono text-gray-700">{result.studentId}</span>
+            <p className="text-sm text-gray-700 mt-1 font-medium">
+              {student
+                ? `${student.firstName} ${student.lastName}`
+                : 'Student'}
+              {student?.studentNumber && (
+                <span className="ml-2 text-xs text-gray-400 font-normal">
+                  Adm. {student.studentNumber}
+                </span>
+              )}
             </p>
             <p className="text-xs text-gray-400 mt-0.5">
               Generated: {new Date(result.generatedAt).toLocaleString()}
@@ -142,8 +157,8 @@ export default function ReportCardPage() {
             <tbody className="divide-y divide-gray-100">
               {result.subjects.map((s) => (
                 <tr key={s.examSubjectId} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-700 font-mono text-xs">
-                    {s.subjectName.slice(0, 8)}…
+                  <td className="px-4 py-3 text-gray-700 text-sm font-medium">
+                    {s.subjectName}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-700">
                     {s.totalMarks.toFixed(1)}

@@ -74,7 +74,7 @@ public class AuthController {
         String clientIp  = extractClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
         LoginResponse body = authService.login(request, clientIp);
-        // superadmin has no tenantId — skip device session (NOT NULL constraint)
+        // superadmin has no tenantId — skip device session (NOT NULL constraint on device_sessions.user_id ties to tenant)
         if (body.tenantId() != null) {
             deviceSessionService.register(body.userId(), body.tenantId(), userAgent, clientIp);
         }

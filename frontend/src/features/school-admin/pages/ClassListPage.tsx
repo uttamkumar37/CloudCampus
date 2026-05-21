@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { listAcademicYears } from '../api/academicYearApi';
 import { listClasses, createClass, deleteClass } from '../api/classApi';
+import { useToast, PageHeader, PageSpinner, EmptyState, ConfirmDialog } from '@/shared/ui';
 
 // ── Create form ───────────────────────────────────────────────────────────────
 
@@ -24,6 +25,7 @@ interface CreateFormProps {
 }
 
 function CreateForm({ schoolId, academicYearId, onClose }: CreateFormProps) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
 
   const {
@@ -42,10 +44,12 @@ function CreateForm({ schoolId, academicYearId, onClose }: CreateFormProps) {
         capacity: toOptionalNumber(values.capacity),
       }),
     onSuccess: () => {
+      success('Class created successfully');
       queryClient.invalidateQueries({ queryKey: ['classes', academicYearId] });
       onClose();
     },
     onError: () => {
+      toastError('Failed to create class. Please try again.');
       setError('root', { message: 'Failed to create class. Please try again.' });
     },
   });
@@ -138,6 +142,7 @@ export function ClassListPage() {
   const schoolId = user?.schoolId ?? null;
   const [selectedYearId, setSelectedYearId] = useState<string>('');
   const [showForm, setShowForm] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: years, isLoading: yearsLoading } = useQuery({
@@ -159,10 +164,14 @@ export function ClassListPage() {
     enabled: !!effectiveYearId,
   });
 
+  const { success: pageSuccess, error: pageError } = useToast();
   const del = useMutation({
     mutationFn: deleteClass,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['classes', effectiveYearId] }),
+    onSuccess: () => {
+      pageSuccess('Class deleted');
+      queryClient.invalidateQueries({ queryKey: ['classes', effectiveYearId] });
+    },
+    onError: () => { pageError('Failed to delete class.'); },
   });
 
   if (!schoolId) {
@@ -177,43 +186,38 @@ export function ClassListPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Classes</h2>
-          {classes && (
-            <p className="mt-0.5 text-sm text-gray-500">{classes.length} classes</p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Academic year selector */}
-          <select
-            value={selectedYearId || effectiveYearId}
-            onChange={(e) => {
-              setSelectedYearId(e.target.value);
-              setShowForm(false);
-            }}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={yearsLoading}
-          >
-            {years?.map((y) => (
-              <option key={y.id} value={y.id}>
-                {y.name}
-                {y.isCurrent ? ' (current)' : ''}
-              </option>
-            ))}
-          </select>
-
-          {!showForm && effectiveYearId && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+      <PageHeader
+        title="Classes"
+        subtitle={classes ? `${classes.length} classes` : undefined}
+        actions={
+          <div className="flex items-center gap-3">
+            <select
+              value={selectedYearId || effectiveYearId}
+              onChange={(e) => {
+                setSelectedYearId(e.target.value);
+                setShowForm(false);
+              }}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={yearsLoading}
             >
-              New Class
-            </button>
-          )}
-        </div>
-      </div>
+              {years?.map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.name}
+                  {y.isCurrent ? ' (current)' : ''}
+                </option>
+              ))}
+            </select>
+            {!showForm && effectiveYearId && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                New Class
+              </button>
+            )}
+          </div>
+        }
+      />
 
       {showForm && effectiveYearId && (
         <CreateForm
@@ -223,9 +227,7 @@ export function ClassListPage() {
         />
       )}
 
-      {(yearsLoading || classesLoading) && (
-        <p className="text-sm text-gray-500" role="status">Loading…</p>
-      )}
+      {(yearsLoading || classesLoading) && <PageSpinner />}
       {isError && (
         <p className="text-sm text-red-600" role="alert">Failed to load classes.</p>
       )}
@@ -237,13 +239,12 @@ export function ClassListPage() {
       )}
 
       {classes && classes.length === 0 && !classesLoading && (
-        <p className="text-sm text-gray-500">
-          No classes for this academic year. Create one to get started.
-        </p>
+        <EmptyState title="No classes" description="No classes for this academic year. Create one to get started." />
       )}
 
       {classes && classes.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
               <tr>
@@ -268,10 +269,7 @@ export function ClassListPage() {
                   </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => {
-                        if (confirm('Delete this class? This cannot be undone.'))
-                          del.mutate(cls.id);
-                      }}
+                      onClick={() => setConfirmDeleteId(cls.id)}
                       disabled={del.isPending}
                       className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
                     >
@@ -282,8 +280,19 @@ export function ClassListPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => { if (confirmDeleteId) del.mutate(confirmDeleteId); setConfirmDeleteId(null); }}
+        title="Delete class"
+        description="Delete this class? This cannot be undone."
+        confirmLabel="Delete"
+        loading={del.isPending}
+      />
     </div>
   );
 }

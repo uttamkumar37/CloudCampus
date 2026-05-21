@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createTemplate, listTemplates, publishTemplate } from './experienceStudioApi';
+import { useToast } from '@/shared/ui';
 
 export default function TemplateMarketplaceManager() {
   const qc = useQueryClient();
+  const { success, error: toastError } = useToast();
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['sa:exp:templates'],
     queryFn: listTemplates,
@@ -18,12 +20,14 @@ export default function TemplateMarketplaceManager() {
 
   const createMutation = useMutation({
     mutationFn: createTemplate,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:templates'] }),
+    onSuccess: () => { success('Template created successfully'); qc.invalidateQueries({ queryKey: ['sa:exp:templates'] }); },
+    onError: () => { toastError('Failed to create template. Please try again.'); },
   });
 
   const publishMutation = useMutation({
     mutationFn: publishTemplate,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:templates'] }),
+    onSuccess: () => { success('Template published'); qc.invalidateQueries({ queryKey: ['sa:exp:templates'] }); },
+    onError: () => { toastError('Failed to publish template. Please try again.'); },
   });
 
   return (

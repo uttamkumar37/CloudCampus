@@ -5,6 +5,7 @@ import {
   listNotices, createNotice, publishNotice, deleteNotice,
 } from '../api/noticeApi';
 import type { NoticeCategory, NoticeTarget, NoticeCreateRequest } from '../api/noticeApi';
+import { useToast, PageHeader, Spinner } from '@/shared/ui';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@ function formatDate(iso: string | null) {
 // ── Create panel ──────────────────────────────────────────────────────────────
 
 function CreatePanel({ schoolId, onClose }: { schoolId: string; onClose: () => void }) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<NoticeCreateRequest>(EMPTY_FORM);
   const [error, setError] = useState('');
@@ -41,10 +43,12 @@ function CreatePanel({ schoolId, onClose }: { schoolId: string; onClose: () => v
   const mutation = useMutation({
     mutationFn: (body: NoticeCreateRequest) => createNotice(schoolId, body),
     onSuccess: () => {
+      success('Notice created successfully');
       queryClient.invalidateQueries({ queryKey: ['notices', schoolId] });
       onClose();
     },
     onError: (err: { response?: { data?: { error?: { message?: string } } } }) => {
+      toastError('Failed to create notice. Please try again.');
       setError(err?.response?.data?.error?.message ?? 'Failed to create notice');
     },
   });
@@ -136,6 +140,7 @@ function CreatePanel({ schoolId, onClose }: { schoolId: string; onClose: () => v
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function NoticeBoardPage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const queryClient = useQueryClient();
 
@@ -155,12 +160,20 @@ export default function NoticeBoardPage() {
 
   const publishMutation = useMutation({
     mutationFn: (id: string) => publishNotice(schoolId, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notices', schoolId] }),
+    onSuccess: () => {
+      success('Notice published');
+      queryClient.invalidateQueries({ queryKey: ['notices', schoolId] });
+    },
+    onError: () => { toastError('Failed to publish notice.'); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteNotice(schoolId, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notices', schoolId] }),
+    onSuccess: () => {
+      success('Notice deleted');
+      queryClient.invalidateQueries({ queryKey: ['notices', schoolId] });
+    },
+    onError: () => { toastError('Failed to delete notice.'); },
   });
 
   const notices = data?.items ?? [];
@@ -170,7 +183,7 @@ export default function NoticeBoardPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Notice Board</h1>
+          <PageHeader title="Notice Board" />
           <p className="mt-0.5 text-sm text-gray-500">Publish announcements for students, parents, and staff</p>
         </div>
         {!showCreate && (
@@ -204,7 +217,7 @@ export default function NoticeBoardPage() {
 
       {/* List */}
       {isLoading ? (
-        <div className="py-12 text-center text-sm text-gray-400">Loading…</div>
+        <div className="py-12 flex justify-center"><Spinner size="md" /></div>
       ) : notices.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-200 py-14 text-center text-sm text-gray-400">
           No notices found.{' '}

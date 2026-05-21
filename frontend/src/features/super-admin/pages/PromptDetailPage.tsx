@@ -12,6 +12,7 @@ import {
   renderPrompt,
 } from '../api/promptApi';
 import type { RenderRequest } from '../api/promptApi';
+import { useToast, PageHeader, PageSpinner } from '@/shared/ui';
 
 // ── Create form schema ─────────────────────────────────────────────────────
 
@@ -30,6 +31,7 @@ type CreateValues = z.infer<typeof createSchema>;
 function CreatePromptForm() {
   const navigate    = useNavigate();
   const queryClient = useQueryClient();
+  const { success, error: toastError } = useToast();
   const [error, setError] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<CreateValues>({
@@ -39,10 +41,12 @@ function CreatePromptForm() {
   const { mutate, isPending } = useMutation({
     mutationFn: createPrompt,
     onSuccess: (prompt) => {
+      success('Prompt template created successfully');
       queryClient.invalidateQueries({ queryKey: ['ai-prompts'] });
       navigate(`/super-admin/ai/prompts/${prompt.id}`);
     },
     onError: (err: unknown) => {
+      toastError('Failed to create prompt template. Please try again.');
       setError(
         (err as { response?: { data?: { error?: { message?: string } } } })
           ?.response?.data?.error?.message ?? 'Failed to create prompt',
@@ -55,7 +59,7 @@ function CreatePromptForm() {
       <button onClick={() => navigate('/super-admin/ai/prompts')} className="mb-3 text-xs text-gray-400 hover:text-gray-600">
         ← Back to prompts
       </button>
-      <h1 className="mb-5 text-xl font-semibold text-gray-900">New Prompt Template</h1>
+      <PageHeader title="New Prompt Template" />
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -149,6 +153,7 @@ function CreatePromptForm() {
 function PromptDetail({ id }: { id: string }) {
   const navigate    = useNavigate();
   const queryClient = useQueryClient();
+  const { success, error: toastError } = useToast();
   const [actionError, setActionError] = useState<string | null>(null);
 
   const [renderVars, setRenderVars]   = useState('{}');
@@ -173,8 +178,8 @@ function PromptDetail({ id }: { id: string }) {
     );
   };
 
-  const activateMutation   = useMutation({ mutationFn: () => activatePrompt(id),   onSuccess: invalidate, onError });
-  const deactivateMutation = useMutation({ mutationFn: () => deactivatePrompt(id), onSuccess: invalidate, onError });
+  const activateMutation   = useMutation({ mutationFn: () => activatePrompt(id),   onSuccess: () => { success('Prompt activated'); invalidate(); }, onError: (err: unknown) => { toastError('Failed to activate prompt. Please try again.'); onError(err); } });
+  const deactivateMutation = useMutation({ mutationFn: () => deactivatePrompt(id), onSuccess: () => { success('Prompt deactivated'); invalidate(); }, onError: (err: unknown) => { toastError('Failed to deactivate prompt. Please try again.'); onError(err); } });
 
   const { mutate: doRender, isPending: isRendering } = useMutation({
     mutationFn: (req: RenderRequest) => renderPrompt(id, req),
@@ -199,7 +204,7 @@ function PromptDetail({ id }: { id: string }) {
     }
   };
 
-  if (isLoading) return <div className="p-6 text-sm text-gray-400">Loading…</div>;
+  if (isLoading) return <PageSpinner />;
   if (!prompt)   return <div className="p-6 text-sm text-red-600">Prompt not found.</div>;
 
   const isBusy = activateMutation.isPending || deactivateMutation.isPending;

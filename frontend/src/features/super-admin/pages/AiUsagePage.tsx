@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listTenants } from '../api/tenantApi';
+import { PageSpinner, Spinner, PageHeader } from '@/shared/ui';
 import {
   getGlobalAiUsage,
   getTenantAiUsage,
@@ -25,7 +26,7 @@ function pct(part: number, total: number) {
 
 function tenantLabel(tenantId: string | null, tenantMap: Record<string, string>) {
   if (!tenantId) return 'Unassigned';
-  return tenantMap[tenantId] ?? `${tenantId.substring(0, 8)}...`;
+  return tenantMap[tenantId] ?? 'Unknown Tenant';
 }
 
 function StatCard({
@@ -80,7 +81,7 @@ function TenantUsagePanel({ tenantId }: { tenantId: string }) {
     enabled:  !!tenantId,
   });
 
-  if (isLoading) return <p className="text-sm text-gray-400">Loading…</p>;
+  if (isLoading) return <PageSpinner />;
   if (isError)   return <p className="text-sm text-red-600">Failed to load usage data.</p>;
   if (!data)     return null;
 
@@ -337,7 +338,7 @@ export function AiUsagePage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">AI Usage & Budgets</h1>
+        <PageHeader title="AI Usage & Budgets" />
         <p className="mt-0.5 text-sm text-gray-500">
           Monitor token consumption and enforce per-tenant AI budgets.
         </p>
@@ -349,7 +350,7 @@ export function AiUsagePage() {
           Platform — {periodLabel}
         </h2>
         {globalLoading ? (
-          <p className="text-sm text-gray-400">Loading…</p>
+          <div className="py-4 flex justify-center"><Spinner size="sm" /></div>
         ) : global ? (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

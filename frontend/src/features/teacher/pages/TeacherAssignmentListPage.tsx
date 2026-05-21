@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { listMyAssignments } from '../api/teacherAssignmentApi';
 import type { AssignmentStatus } from '../api/teacherAssignmentApi';
+import { PageSpinner } from '@/shared/ui';
 
 const STATUS_BADGE: Record<AssignmentStatus, string> = {
   DRAFT:     'bg-gray-100 text-gray-700',
@@ -43,7 +44,7 @@ export default function TeacherAssignmentListPage() {
         </div>
       </div>
 
-      {isLoading && <div className="text-sm text-gray-500">Loading…</div>}
+      {isLoading && <PageSpinner />}
 
       {isError && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -59,6 +60,7 @@ export default function TeacherAssignmentListPage() {
 
       {items.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>
@@ -120,6 +122,7 @@ export default function TeacherAssignmentListPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

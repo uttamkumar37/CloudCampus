@@ -7,7 +7,9 @@ import com.cloudcampus.common.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -23,16 +25,24 @@ public class DeviceSessionServiceImpl implements DeviceSessionService {
     @Transactional
     public void register(UUID userId, UUID tenantId, String userAgent, String ipAddress) {
         String deviceName = parseDeviceName(userAgent);
-        DeviceSession session = DeviceSession.create(userId, tenantId, deviceName, ipAddress,
-                truncate(userAgent, 512));
+        String normalizedUserAgent = truncate(userAgent, 512);
+        DeviceSession session = repo
+                .findFirstByUserIdAndDeviceNameAndIpAddressAndUserAgentAndRevokedFalseOrderByLastSeenAtDesc(
+                        userId, deviceName, ipAddress, normalizedUserAgent)
+                .orElseGet(() -> DeviceSession.create(userId, tenantId, deviceName, ipAddress, normalizedUserAgent));
+        session.markSeen();
         repo.save(session);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<DeviceSessionResponse> listActive(UUID userId) {
-        return repo.findByUserIdAndRevokedFalseOrderByLastSeenAtDesc(userId)
-                .stream()
+        Map<String, DeviceSession> latestByDevice = new LinkedHashMap<>();
+        for (DeviceSession session : repo.findByUserIdAndRevokedFalseOrderByLastSeenAtDesc(userId)) {
+            latestByDevice.putIfAbsent(deviceKey(session), session);
+        }
+        return latestByDevice.values().stream()
+                .limit(10)
                 .map(DeviceSessionResponse::from)
                 .toList();
     }
@@ -44,6 +54,15 @@ public class DeviceSessionServiceImpl implements DeviceSessionService {
                 .orElseThrow(() -> new NotFoundException("Device session not found"));
         session.revoke();
         repo.save(session);
+    }
+
+    @Override
+    @Transactional
+    public int revokeAll(UUID userId) {
+        List<DeviceSession> sessions = repo.findByUserIdAndRevokedFalseOrderByLastSeenAtDesc(userId);
+        sessions.forEach(DeviceSession::revoke);
+        repo.saveAll(sessions);
+        return sessions.size();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -78,5 +97,9 @@ public class DeviceSessionServiceImpl implements DeviceSessionService {
 
     private static String truncate(String s, int max) {
         return (s == null || s.length() <= max) ? s : s.substring(0, max);
+    }
+
+    private static String deviceKey(DeviceSession session) {
+        return session.getDeviceName() + "|" + session.getIpAddress() + "|" + session.getUserAgent();
     }
 }

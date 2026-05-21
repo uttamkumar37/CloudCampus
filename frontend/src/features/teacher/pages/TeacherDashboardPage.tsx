@@ -26,7 +26,7 @@ function formatTime(value: string | null) {
 }
 
 function slotLabel(slot: TimetableSlot) {
-  return slot.subjectName ?? slot.subjectCode ?? `Subject ${slot.subjectId.slice(0, 8)}`;
+  return slot.subjectName ?? slot.subjectCode ?? 'Subject';
 }
 
 export default function TeacherDashboardPage() {
@@ -125,6 +125,35 @@ export default function TeacherDashboardPage() {
         <PortalStatCard label="Pending Review" value={reviewQueue} helper="homework + assignments" tone={reviewQueue ? 'amber' : 'emerald'} />
         <PortalStatCard label="Completion" value={`${completionAverage}%`} helper="grading efficiency" tone="violet" />
       </div>
+
+      <PortalPanel title="Productivity Command Center" subtitle="A daily operating rhythm for teaching load, feedback speed, and class engagement">
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-blue-900">
+            <p className="text-xs font-black uppercase tracking-wide opacity-70">Class Rhythm</p>
+            <p className="mt-2 text-sm leading-6">
+              {todaySlots.length
+                ? `${todaySlots.length} class(es) are scheduled. Keep attendance and lesson materials ready before each period.`
+                : 'No classes are scheduled today. Use the open window for lesson planning and feedback.'}
+            </p>
+          </div>
+          <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 text-amber-900">
+            <p className="text-xs font-black uppercase tracking-wide opacity-70">Feedback Speed</p>
+            <p className="mt-2 text-sm leading-6">
+              {reviewQueue
+                ? `${reviewQueue} review item(s) are waiting. Clear the oldest submissions first to protect student momentum.`
+                : 'No pending review queue. This is a good time to prepare enrichment material.'}
+            </p>
+          </div>
+          <div className="rounded-lg border border-violet-100 bg-violet-50 p-4 text-violet-900">
+            <p className="text-xs font-black uppercase tracking-wide opacity-70">Workload Signal</p>
+            <p className="mt-2 text-sm leading-6">
+              {workloadScore > 80
+                ? 'Workload is high. Prioritize must-do class and grading actions before optional uploads.'
+                : `Workload score is ${workloadScore}. Current teaching operations are manageable.`}
+            </p>
+          </div>
+        </div>
+      </PortalPanel>
 
       <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
         <PortalPanel title="Today's Classes" subtitle="Classroom plan for the day">

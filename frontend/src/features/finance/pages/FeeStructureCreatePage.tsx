@@ -8,6 +8,7 @@ import { listAcademicYears } from '@/features/school-admin/api/academicYearApi';
 import { listClasses } from '@/features/school-admin/api/classApi';
 import { listCategories, createStructure } from '../api/financeApi';
 import type { CreateFeeStructureRequest } from '../types/finance';
+import { useToast, PageHeader } from '@/shared/ui';
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ function Field({
 }
 
 export default function FeeStructureCreatePage() {
+  const { success, error: toastError } = useToast();
   const navigate = useNavigate();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
 
@@ -81,8 +83,12 @@ export default function FeeStructureCreatePage() {
 
   const mutation = useMutation({
     mutationFn: (body: CreateFeeStructureRequest) => createStructure(schoolId, body),
-    onSuccess: () => navigate('/school-admin/fees'),
+    onSuccess: () => {
+      success('Fee structure created successfully');
+      navigate('/school-admin/fees');
+    },
     onError: (err: Error) => {
+      toastError('Failed to create fee structure. Please try again.');
       setError('root', { message: err.message || 'Failed to create fee structure' });
     },
   });
@@ -107,7 +113,7 @@ export default function FeeStructureCreatePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Add Fee Structure</h1>
+        <PageHeader title="Add Fee Structure" />
         <p className="mt-1 text-sm text-gray-500">
           Define the amount charged for a fee category in an academic year.
         </p>

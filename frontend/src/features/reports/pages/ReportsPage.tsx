@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { Spinner, PageHeader } from '@/shared/ui';
 import { listAcademicYears } from '@/features/school-admin/api/academicYearApi';
 import { listExams } from '@/features/exam/api/examApi';
 import {
@@ -87,7 +88,7 @@ function AttendanceTab({ schoolId }: { schoolId: string }) {
         )}
       </div>
 
-      {isLoading && <div className="py-10 text-center text-sm text-gray-400">Loading…</div>}
+      {isLoading && <div className="py-10 flex justify-center"><Spinner size="md" /></div>}
       {isError && <div className="py-6 text-center text-sm text-red-500">Failed to load report.</div>}
 
       {data && (
@@ -205,7 +206,7 @@ function FeeTab({ schoolId }: { schoolId: string }) {
         )}
       </div>
 
-      {isLoading && <div className="py-10 text-center text-sm text-gray-400">Loading…</div>}
+      {isLoading && <div className="py-10 flex justify-center"><Spinner size="md" /></div>}
       {isError && <div className="py-6 text-center text-sm text-red-500">Failed to load report.</div>}
 
       {data && (
@@ -313,7 +314,7 @@ function PerformanceTab({ schoolId }: { schoolId: string }) {
         )}
       </div>
 
-      {isLoading && <div className="py-10 text-center text-sm text-gray-400">Loading…</div>}
+      {isLoading && <div className="py-10 flex justify-center"><Spinner size="md" /></div>}
       {isError && <div className="py-6 text-center text-sm text-red-500">Failed to load report. Ensure results have been generated for this exam.</div>}
 
       {data && (
@@ -385,7 +386,7 @@ export default function ReportsPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Reports & Analytics</h1>
+        <PageHeader title="Reports & Analytics" />
         <p className="mt-0.5 text-sm text-gray-500">Generate attendance, fee collection, and performance reports</p>
       </div>
 

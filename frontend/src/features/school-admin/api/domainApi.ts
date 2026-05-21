@@ -14,20 +14,20 @@ export interface DomainResponse {
 }
 
 export async function listDomainsApi(): Promise<DomainResponse[]> {
-  const res = await axiosInstance.get('/school-admin/domains');
+  const res = await axiosInstance.get('/v1/school-admin/domains');
   return res.data.data;
 }
 
 export async function registerDomainApi(domain: string): Promise<DomainResponse> {
-  const res = await axiosInstance.post('/school-admin/domains', { domain });
+  const res = await axiosInstance.post('/v1/school-admin/domains', { domain });
   return res.data.data;
 }
 
 export async function verifyDomainApi(domainId: string): Promise<DomainResponse> {
-  const res = await axiosInstance.post(`/school-admin/domains/${domainId}/verify`);
+  const res = await axiosInstance.post(`/v1/school-admin/domains/${domainId}/verify`);
   return res.data.data;
 }
 
 export async function deleteDomainApi(domainId: string): Promise<void> {
-  await axiosInstance.delete(`/school-admin/domains/${domainId}`);
+  await axiosInstance.delete(`/v1/school-admin/domains/${domainId}`);
 }

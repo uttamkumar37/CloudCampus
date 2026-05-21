@@ -8,6 +8,7 @@ import { listSections } from '@/features/school-admin/api/sectionApi';
 import { listSubjects } from '@/features/school-admin/api/subjectApi';
 import { listAssignments, updateAssignmentStatus, deleteAssignment } from '../api/assignmentApi';
 import type { AssignmentStatus } from '../types/assignment';
+import { useToast, PageHeader, Spinner } from '@/shared/ui';
 
 const STATUS_BADGE: Record<AssignmentStatus, string> = {
   DRAFT:     'bg-gray-100 text-gray-700',
@@ -30,6 +31,7 @@ function formatDate(iso: string) {
 }
 
 export default function AssignmentListPage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const queryClient = useQueryClient();
 
@@ -80,12 +82,20 @@ export default function AssignmentListPage() {
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: AssignmentStatus }) =>
       updateAssignmentStatus(schoolId, id, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assignments', schoolId] }),
+    onSuccess: (_data, { status }) => {
+      success(status === 'PUBLISHED' ? 'Assignment published' : 'Assignment closed');
+      queryClient.invalidateQueries({ queryKey: ['assignments', schoolId] });
+    },
+    onError: () => { toastError('Failed to update assignment status.'); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteAssignment(schoolId, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assignments', schoolId] }),
+    onSuccess: () => {
+      success('Assignment deleted');
+      queryClient.invalidateQueries({ queryKey: ['assignments', schoolId] });
+    },
+    onError: () => { toastError('Failed to delete assignment.'); },
   });
 
   const subjectName = (id: string) => subjects.find((s) => s.id === id)?.name ?? '—';
@@ -97,7 +107,7 @@ export default function AssignmentListPage() {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Assignments</h1>
+          <PageHeader title="Assignments" />
           <p className="mt-0.5 text-sm text-gray-500">{total} assignment{total !== 1 ? 's' : ''}</p>
         </div>
         {academicYearId && (
@@ -150,7 +160,7 @@ export default function AssignmentListPage() {
           Select an academic year to view assignments.
         </div>
       ) : isLoading ? (
-        <div className="py-16 text-center text-sm text-gray-400">Loading…</div>
+        <div className="py-16 flex justify-center"><Spinner size="md" /></div>
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-200 py-16 text-center text-sm text-gray-400">
           No assignments found.

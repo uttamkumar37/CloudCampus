@@ -10,7 +10,6 @@ import {
   getMyResults,
   getMyTimetable,
 } from '../api/studentPortalApi';
-import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import {
   PortalEmptyState,
   PortalErrorState,
@@ -53,8 +52,6 @@ function daysUntil(iso: string) {
 }
 
 export default function StudentDashboardPage() {
-  const user = useAuthStore((s) => s.user);
-
   const homeworkQuery = useQuery({ queryKey: ['student-homework'], queryFn: getMyHomework });
   const assignmentsQuery = useQuery({ queryKey: ['student-assignments'], queryFn: getMyAssignments });
   const noticesQuery = useQuery({ queryKey: ['student-notices', 0], queryFn: () => getMyNotices(0) });
@@ -177,7 +174,7 @@ export default function StudentDashboardPage() {
     <PortalShell
       title="Student 360 Dashboard"
       subtitle={`Welcome back. Today has ${todaySlots.length} class(es), ${homeworkDue.length} homework item(s), and ${pendingAssignments.length} assignment(s) needing attention.`}
-      eyebrow={`Student ${user?.userId?.slice(0, 8) ?? 'Portal'}`}
+      eyebrow="Student Portal"
       tone="violet"
     >
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -186,6 +183,37 @@ export default function StudentDashboardPage() {
         <PortalStatCard label="Attendance" value={`${attendancePct}%`} helper="current rate" tone={attendancePct >= 85 ? 'emerald' : 'amber'} />
         <PortalStatCard label="Fee Balance" value={currency(feeBalance)} helper={overdueFees.length ? 'due now' : 'tracked'} tone={overdueFees.length ? 'rose' : 'slate'} />
       </div>
+
+      <PortalPanel title="Daily Growth Loop" subtitle="Three simple signals to keep learning, attendance, and finance habits visible every day">
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-violet-100 bg-violet-50 p-4 text-violet-900">
+            <p className="text-xs font-black uppercase tracking-wide opacity-70">Study Focus</p>
+            <p className="mt-2 text-sm leading-6">
+              {homeworkDue.length || pendingAssignments.length
+                ? `Clear ${homeworkDue.length + pendingAssignments.length} pending learning item(s), starting with the nearest due date.`
+                : 'No urgent learning backlog. Use today for revision and practice questions.'}
+            </p>
+          </div>
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-emerald-900">
+            <p className="text-xs font-black uppercase tracking-wide opacity-70">Attendance Habit</p>
+            <p className="mt-2 text-sm leading-6">
+              {attendancePct >= 85
+                ? 'Attendance is in a healthy range. Keep the routine consistent this week.'
+                : 'Attendance needs attention. Review missed classwork and avoid non-urgent absences.'}
+            </p>
+          </div>
+          <div className="rounded-lg border border-amber-100 bg-amber-50 p-4 text-amber-900">
+            <p className="text-xs font-black uppercase tracking-wide opacity-70">Next Action</p>
+            <p className="mt-2 text-sm leading-6">
+              {overdueFees.length
+                ? 'Ask a parent or guardian to review overdue fee items and download receipts after payment.'
+                : latestResult
+                  ? `Latest exam signal is ${latestResult.percentage}%. Convert feedback into a short weekly practice plan.`
+                  : 'Check announcements and prepare materials before the next class.'}
+            </p>
+          </div>
+        </div>
+      </PortalPanel>
 
       <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
         <PortalPanel title="Today's Classes" subtitle="Current day timetable">

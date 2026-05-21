@@ -57,6 +57,7 @@ class AuthServiceImplTest {
     @Mock UserSchoolAccessService    userSchoolAccessService;
     @Mock TenantFeatureRepository    tenantFeatureRepository;
     @Mock JwtDenylistService         jwtDenylistService;
+    @Mock DeviceSessionService       deviceSessionService;
     @Mock com.cloudcampus.common.metrics.BusinessMetrics metrics;
     @Mock ValueOperations<String, String> valueOps;
     @Mock SetOperations<String, String>   setOps;
@@ -72,7 +73,7 @@ class AuthServiceImplTest {
                 userRepository, passwordEncoder, jwtUtil, jwtProperties,
                 redisTemplate, rateLimiter, auditLog, schoolRepository,
                 userSchoolAccessService, tenantFeatureRepository, jwtDenylistService,
-                metrics);
+                deviceSessionService, metrics);
     }
 
     // ── login ─────────────────────────────────────────────────────────────────

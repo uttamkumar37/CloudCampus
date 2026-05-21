@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createTrustModule, listTrustModules, publishTrustModule } from './experienceStudioApi';
+import { useToast } from '@/shared/ui';
 
 export default function TrustPlatformManager() {
   const qc = useQueryClient();
+  const { success, error: toastError } = useToast();
   const { data: modules = [], isLoading } = useQuery({
     queryKey: ['sa:exp:trust-modules'],
     queryFn: listTrustModules,
@@ -17,12 +19,14 @@ export default function TrustPlatformManager() {
 
   const createMutation = useMutation({
     mutationFn: createTrustModule,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:trust-modules'] }),
+    onSuccess: () => { success('Trust module created'); qc.invalidateQueries({ queryKey: ['sa:exp:trust-modules'] }); },
+    onError: () => { toastError('Failed to create trust module. Please try again.'); },
   });
 
   const publishMutation = useMutation({
     mutationFn: publishTrustModule,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:trust-modules'] }),
+    onSuccess: () => { success('Trust module published'); qc.invalidateQueries({ queryKey: ['sa:exp:trust-modules'] }); },
+    onError: () => { toastError('Failed to publish trust module. Please try again.'); },
   });
 
   return (

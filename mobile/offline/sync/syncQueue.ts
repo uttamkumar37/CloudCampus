@@ -1,16 +1,14 @@
 /**
- * syncQueue — MMKV-backed queue of pending attendance operations.
+ * syncQueue — in-memory queue of pending attendance operations.
  *
  * Each entry is a serialised AttendanceSyncItem. On sync, items are
- * read, POSTed to the backend in a single batch, then cleared.
- * MMKV is synchronous so queue operations never block async flows.
+ * read, POSTed to the backend in a single batch, then cleared. This in-memory
+ * version keeps Expo Go usable; persist it in a custom dev build when offline
+ * attendance is tested end to end.
  */
-import { createMMKV } from 'react-native-mmkv';
 import type { AttendanceStatus } from '../models/AttendanceRecord';
 
-const storage = createMMKV({ id: 'cc-sync-queue', encryptionKey: 'cc-sync-key' });
-
-const QUEUE_KEY = 'attendance_sync_queue';
+let queue: AttendanceSyncItem[] = [];
 
 export interface AttendanceSyncItem {
   /** WatermelonDB local record ID */
@@ -26,31 +24,22 @@ export interface AttendanceSyncItem {
 
 export const syncQueue = {
   enqueue(item: AttendanceSyncItem): void {
-    const current = this.getAll();
     // Upsert by localId: replace if already queued (teacher corrected a mark)
-    const filtered = current.filter((i) => i.localId !== item.localId);
-    filtered.push(item);
-    storage.set(QUEUE_KEY, JSON.stringify(filtered));
+    queue = queue.filter((i) => i.localId !== item.localId);
+    queue.push(item);
   },
 
   getAll(): AttendanceSyncItem[] {
-    const raw = storage.getString(QUEUE_KEY);
-    if (!raw) return [];
-    try {
-      return JSON.parse(raw) as AttendanceSyncItem[];
-    } catch {
-      return [];
-    }
+    return [...queue];
   },
 
   removeByLocalIds(ids: string[]): void {
     const idSet = new Set(ids);
-    const remaining = this.getAll().filter((i) => !idSet.has(i.localId));
-    storage.set(QUEUE_KEY, JSON.stringify(remaining));
+    queue = queue.filter((i) => !idSet.has(i.localId));
   },
 
   clear(): void {
-    storage.remove(QUEUE_KEY);
+    queue = [];
   },
 
   get length(): number {

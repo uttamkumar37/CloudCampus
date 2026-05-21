@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { Spinner, PageHeader } from '@/shared/ui';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { listStaff, listStaffByDepartment } from '../api/staffApi';
 import { listDepartments } from '@/features/school-admin/api/departmentApi';
@@ -107,7 +108,7 @@ export function StaffListPage() {
       {/* Header */}
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Staff</h2>
+          <PageHeader title="Staff" />
           {data && (
             <p className="mt-0.5 text-sm text-gray-500">{data.length} records</p>
           )}
@@ -168,7 +169,7 @@ export function StaffListPage() {
 
       {/* States */}
       {isLoading && (
-        <p className="text-sm text-gray-500" role="status">Loading…</p>
+        <div className="py-8 flex justify-center"><Spinner size="md" /></div>
       )}
       {isError && (
         <p className="text-sm text-red-600" role="alert">Failed to load staff.</p>

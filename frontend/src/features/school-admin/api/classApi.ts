@@ -19,6 +19,15 @@ export async function listClasses(
   return data.data ?? [];
 }
 
+export async function listClassesBySchool(
+  schoolId: string,
+): Promise<ClassRoomResponse[]> {
+  const { data } = await axiosInstance.get<ApiResponse<ClassRoomResponse[]>>(
+    bySchool(schoolId),
+  );
+  return data.data ?? [];
+}
+
 export async function createClass(
   schoolId: string,
   body: ClassRoomCreateRequest,

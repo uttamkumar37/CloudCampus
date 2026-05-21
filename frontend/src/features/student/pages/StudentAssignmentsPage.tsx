@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMyAssignments, submitAssignment } from '../api/studentPortalApi';
 import type { AssignmentView } from '../api/studentPortalApi';
+import { useToast, PageHeader, PageSpinner } from '@/shared/ui';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -25,15 +26,18 @@ function SubmitForm({
   assignment: AssignmentView;
   onClose: () => void;
 }) {
+  const { success, error: toastError } = useToast();
   const [text, setText] = useState('');
   const qc = useQueryClient();
 
   const { mutate, isPending, isError } = useMutation({
     mutationFn: () => submitAssignment(assignment.assignmentId, text),
     onSuccess: () => {
+      success('Assignment submitted successfully');
       qc.invalidateQueries({ queryKey: ['student-assignments'] });
       onClose();
     },
+    onError: () => { toastError('Submission failed. Please try again.'); },
   });
 
   return (
@@ -81,7 +85,7 @@ export default function StudentAssignmentsPage() {
   const pending  = assignments.filter((a) => !a.submitted);
   const done     = assignments.filter((a) => a.submitted);
 
-  if (isLoading) return <div className="p-6 text-sm text-gray-400">Loading…</div>;
+  if (isLoading) return <PageSpinner />;
   if (isError) {
     return (
       <div className="p-6">
@@ -95,7 +99,7 @@ export default function StudentAssignmentsPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Assignments</h1>
+        <PageHeader title="Assignments" />
         <p className="mt-0.5 text-sm text-gray-500">
           {pending.length} pending · {done.length} submitted
         </p>

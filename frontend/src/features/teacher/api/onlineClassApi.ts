@@ -33,30 +33,30 @@ export interface OnlineClassRequest {
 }
 
 export async function scheduleClassApi(req: OnlineClassRequest): Promise<OnlineClassResponse> {
-  const res = await axiosInstance.post('/teacher/online-classes', req);
+  const res = await axiosInstance.post('/v1/teacher/online-classes', req);
   return res.data.data;
 }
 
 export async function listMyClassesApi(from: string, to: string): Promise<OnlineClassResponse[]> {
-  const res = await axiosInstance.get('/teacher/online-classes', { params: { from, to } });
+  const res = await axiosInstance.get('/v1/teacher/online-classes', { params: { from, to } });
   return res.data.data;
 }
 
 export async function updateClassStatusApi(classId: string, action: 'start' | 'end' | 'cancel'): Promise<OnlineClassResponse> {
-  const res = await axiosInstance.patch(`/teacher/online-classes/${classId}/status`, { action });
+  const res = await axiosInstance.patch(`/v1/teacher/online-classes/${classId}/status`, { action });
   return res.data.data;
 }
 
 export async function addRecordingApi(classId: string, recordingUrl: string): Promise<OnlineClassResponse> {
-  const res = await axiosInstance.patch(`/teacher/online-classes/${classId}/recording`, { recordingUrl });
+  const res = await axiosInstance.patch(`/v1/teacher/online-classes/${classId}/recording`, { recordingUrl });
   return res.data.data;
 }
 
 export async function deleteClassApi(classId: string): Promise<void> {
-  await axiosInstance.delete(`/teacher/online-classes/${classId}`);
+  await axiosInstance.delete(`/v1/teacher/online-classes/${classId}`);
 }
 
 export async function listStudentClassesApi(sectionId: string, from: string, to: string): Promise<OnlineClassResponse[]> {
-  const res = await axiosInstance.get('/student/online-classes', { params: { sectionId, from, to } });
+  const res = await axiosInstance.get('/v1/student/online-classes', { params: { sectionId, from, to } });
   return res.data.data;
 }

@@ -105,6 +105,7 @@ const VideoUploadPage                  = lazy(() => import('@/features/teacher/p
 // ── Student portal ────────────────────────────────────────────────────────────
 const StudentLayout            = lazy(() => import('@/features/student/layouts/StudentLayout').then(m => ({ default: m.StudentLayout })));
 const StudentDashboardPage     = lazy(() => import('@/features/student/pages/StudentDashboardPage'));
+const StudentSelfProfilePage   = lazy(() => import('@/features/student/pages/StudentSelfProfilePage'));
 const StudentHomeworkPage      = lazy(() => import('@/features/student/pages/StudentHomeworkPage'));
 const StudentAssignmentsPage   = lazy(() => import('@/features/student/pages/StudentAssignmentsPage'));
 const StudentTimetablePage     = lazy(() => import('@/features/student/pages/StudentTimetablePage'));
@@ -296,6 +297,7 @@ export function AppRouter() {
             <Route path="attendance" element={<StudentAttendancePage />} />
             <Route path="attendance/scan" element={<StudentQrScanPage />} />
             <Route path="notices" element={<StudentNoticesPage />} />
+            <Route path="profile" element={<StudentSelfProfilePage />} />
           </Route>
 
           {/* Parent portal — PARENT role required */}
