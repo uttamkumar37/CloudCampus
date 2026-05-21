@@ -33,7 +33,8 @@ spring:
     out-of-order: true
     # Dev loads schema migrations PLUS demo-only seed migrations.
     # Staging / prod (see application-{staging,prod}.yml) only load db/migration,
-    # so seed data never lands in customer DBs. See db/seed/README.md.
+    # so seed data never lands in customer DBs. New demo-only seeds go in
+    # db/seed/ going forward; see FULL_PROJECT_PRODUCTION_AUDIT.md § 23.
     locations:
       - classpath:db/migration
       - classpath:db/seed

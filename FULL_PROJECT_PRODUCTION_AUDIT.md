@@ -49,7 +49,7 @@
 - **Where:** `backend/src/main/resources/db/migration/V89__jnv_lucknow_students_and_profiles.sql`, `V90__jnv_lucknow_academic_activity.sql`
 - **What:** Both reference a tenant UUID `804d7650-c915-4236-8431-2d4aef5cd102` that does not exist in the bootstrapped DB (`c0000000-0000-0000-0000-000000000001`). The guard clause silently `RETURN`s, so they applied as no-ops but consumed migration version slots. V91 was added to fix this for the real tenant.
 - **Risk:** A fresh QA/staging environment will run V89/V90 as no-ops; if a future tenant bootstrap ever uses the old UUID, the seed will partially write. Confusing for new devs reading migration history.
-- **Fix:** Either (a) replace bodies with `RAISE NOTICE 'deprecated — see V91'; RETURN;` and a checksum-repair note, or (b) leave as is and document the dead migrations in a `MIGRATION_GRAVEYARD.md`. **Cannot** delete files because Flyway has recorded checksums.
+- **Fix:** Either (a) replace bodies with `RAISE NOTICE 'deprecated — see V91'; RETURN;` and a checksum-repair note, or (b) leave as is and document the dead migrations (see § 22 below). **Cannot** delete files because Flyway has recorded checksums.
 
 ### C-2. JWT filter "permit-all Phase 1" relies entirely on per-controller `@PreAuthorize`
 - **Where:** `backend/src/main/java/com/cloudcampus/auth/security/JwtAuthenticationFilter.java` (lines: "No Authorization header — proceed as anonymous (permit-all Phase 1)")
@@ -293,7 +293,7 @@
 - Zustand stores per feature.
 - React Query v5 for server cache (per axios instance).
 - Axios interceptor for token refresh queue (per `axiosInstance.ts` and graph community 57 — `failedQueue`, `drainQueue`, etc.).
-- Tailwind + design system guide present (`frontend/DESIGN_SYSTEM_GUIDE.md`).
+- Tailwind + a previously-tracked design system guide (since removed; reference style lives in the existing components).
 - TypeScript everywhere; no `.js` files in `src/`.
 - Tests use Vitest + Testing Library (per 10 `.test.*` files).
 - `ProtectedRoute` component with role check (per graph community 69).
@@ -329,7 +329,7 @@
 - C-3 (self-serve endpoints).
 - Proration on mid-cycle upgrade.
 - Trial handling (start, end, days-remaining).
-- Invoice generation (PDF + GST per Indian compliance per existing `docs/INVOICE_REFUND_GST_ROADMAP.md`).
+- Invoice generation (PDF + GST per Indian compliance — design needed; ref invoice-emit path in `SubscriptionServiceImpl.assignPlan`).
 - Receipt email on successful payment.
 - Webhook for payment failure → grace period → downgrade.
 - Subscription cancellation that respects "at-period-end" semantics.
@@ -457,7 +457,7 @@ tenant
 | # | Priority | Title | Status |
 |---|----------|-------|--------|
 | T-01 | C-4 | Make CI development-friendly (move dependency-check + docker to nightly/main/manual; keep build/test/typecheck/secret-scan required) | TODO |
-| T-02 | C-1 | Clean up V89/V90 dead migrations (annotate + add `MIGRATION_GRAVEYARD.md`) | TODO |
+| T-02 | C-1 | ✓ V89/V90 documented as dead-on-arrival in § 22 below | DONE |
 | T-03 | C-2 | Default-deny security: switch SecurityConfig to `anyRequest().authenticated()` + add ArchUnit `@PreAuthorize` guard test | TODO |
 | T-04 | C-3 | Build tenant-facing subscription endpoints (read, preview, upgrade, cancel, invoices) | TODO |
 | T-05 | H-2 | Add frontend Dockerfile + CI job (gated on main/manual) | TODO |
@@ -529,3 +529,36 @@ The test as written boots the full `prod` Spring profile, which requires `sslmod
 
 - T-17 status updated: ✓ configuration verified by review; runtime smoke test moved to deploy workflow.
 - T-24 status updated: ArchUnit dependency added but no rules enforced yet. The 311 + 19 findings are documented above and tracked as F-1 / F-2.
+
+## 22. Appendix — Migration graveyard (do not delete or edit these files)
+
+The following Flyway migrations ran but did not produce the data they were intended to because their guard clause failed. They **remain in the chain with Flyway-recorded checksums and must not be edited or deleted** — that would break Flyway validation on every existing database. If you want their effect, use the replacement migration listed under each entry.
+
+- **V42 `jnv_lucknow_seed`** — intended to seed JNV Lucknow demo (560 students). Guarded on a fantasy tenant UUID `aaaaaaaa-...` that was never produced. **Replacement:** `TenantBootstrapService` + V58 + V91.
+- **V58 `full_jnv_lucknow_seed`** — same shape, guarded on the old bootstrap UUID `804d7650-...`. **Replacement:** V91.
+- **V89 `jnv_lucknow_students_and_profiles`** — added 53 extra students under tenant `804d7650-...`. Same UUID mismatch. **Replacement:** V91.
+- **V90 `jnv_lucknow_academic_activity`** — attendance/exams/staff data under `804d7650-...`. Same mismatch. **Replacement:** partial coverage in V91; existing data sufficient for the demo.
+
+**Rules for future graveyards:**
+
+1. Never edit a checkmarked migration. Flyway validates checksums on every run; editing breaks every DB that already ran it.
+2. Never delete a checkmarked migration. Flyway will report it as missing.
+3. Always add a replacement migration with a higher version number.
+4. Update this appendix when you knowingly create a no-op migration.
+
+## 23. Appendix — Seed migration convention
+
+CloudCampus places **all** Flyway migrations under `backend/src/main/resources/db/migration/` (schema + seed). Production and staging only load that directory:
+
+```yaml
+# application-prod.yml / application-staging.yml
+spring:
+  flyway:
+    locations: classpath:db/migration
+```
+
+Dev additionally loads `classpath:db/seed` (configured in `application-dev.yml`) so new demo-only migrations can be written without risking customer DBs.
+
+- **Schema migrations** (CREATE/ALTER TABLE, indexes, essential reference rows) → `db/migration/`.
+- **New demo seeds** (JNV demo, synthetic Aadhaars, etc.) → `db/seed/` going forward.
+- **Existing seed-style migrations in `db/migration/`** stay there because their checksums are recorded (see § 22).
