@@ -187,5 +187,4 @@ Drill results must be retained for 12 months for compliance audits.
 - `infra/pgbackup/backup.sh` — backup implementation
 - `infra/pgbackup/drill.sh` — restore drill script
 - `infra/pgbackup/crontab` — backup schedule
-- `docs/INCIDENT_RUNBOOK.md` — full restore runbook (TASK-009, not yet written)
-- `PRODUCTION_READY_ROADMAP.md` — TASK-007 (drill), TASK-008 (verification), TASK-009 (runbook)
+- `docs/INCIDENT_RUNBOOK.md` — full restore runbook

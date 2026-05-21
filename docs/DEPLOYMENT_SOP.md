@@ -6,18 +6,15 @@ Last updated: 2026-05-19
 
 This deployment SOP defines the standard CloudCampus production release procedure. It covers pre-deploy checks, deployment execution, migration handling, smoke tests, rollback, and communication.
 
-Use this for every backend, frontend, infrastructure, public website, payment, mobile API, or database release. Mobile store releases use this SOP for backend/API readiness and `docs/MOBILE_RELEASE_CHECKLIST.md` for store-specific gates.
+Use this for every backend, frontend, infrastructure, public website, payment, or database release. The native mobile client is on the roadmap; this SOP covers backend/API readiness for any future mobile store release as well.
 
 ## Required References
 
 | Area | Source |
 |---|---|
-| Staging promotion | `docs/STAGING_PROMOTION_CHECKLIST.md` |
-| Migration safety | `docs/MIGRATION_GATE_CHECKLIST.md` |
-| Rollback | `docs/ROLLBACK_DEPLOYMENT_PLAYBOOK.md` |
-| Health verification | `docs/HEALTH_VERIFICATION_CHECKLIST.md` |
-| Alert routing | `docs/ALERT_ROUTING_PLAN.md` |
+| Disaster recovery | `docs/DISASTER_RECOVERY.md` |
 | Incident recovery | `docs/INCIDENT_RUNBOOK.md` |
+| Architecture | `docs/ARCHITECTURE.md` |
 
 ## Roles
 
@@ -60,7 +57,7 @@ Deployment may proceed only when all applicable checks are green.
 | CI | Backend tests, frontend build, mobile type check when impacted, secret scan, dependency scan, and image build are green for the commit SHA. |
 | Staging | Candidate image/artifact is deployed to staging and matches the release ticket. |
 | Staging smoke | Health, auth, tenant isolation, public site, payments, queues, and touched workflows pass. |
-| Migration gate | `docs/MIGRATION_GATE_CHECKLIST.md` is complete for any Flyway change. |
+| Migration gate | Flyway changes have been reviewed, the migration is idempotent, the rollback strategy is documented in the PR, and a backup exists. |
 | Backup | Fresh encrypted backup exists before production migration or high-risk deploy. |
 | Restore proof | Latest restore drill or scratch restore proof is linked for high-risk changes. |
 | Observability | Prometheus scrape, logs, and alert routes are available. |
@@ -140,9 +137,7 @@ If migration fails before app startup, stop rollout and keep previous app image 
 
 ## Phase 5: Post-Deploy Smoke Test
 
-Run `docs/HEALTH_VERIFICATION_CHECKLIST.md` immediately after deployment.
-
-Minimum smoke checks:
+Run the minimum smoke checks below immediately after deployment.
 
 | Area | Required check |
 |---|---|
@@ -175,7 +170,7 @@ Watch production for at least 30 minutes after low-risk releases and at least 2 
 
 ## Phase 7: Rollback Decision
 
-Use `docs/ROLLBACK_DEPLOYMENT_PLAYBOOK.md` if any no-go signal appears.
+Roll back immediately if any no-go signal below appears.
 
 Rollback triggers:
 
@@ -264,5 +259,5 @@ Close:
 TASK-050 validation command:
 
 ```bash
-rg -n "deployment SOP|release SOP|deploy checklist" docs PRODUCTION_READY_ROADMAP.md
+rg -n "deployment SOP|release SOP|deploy checklist" docs
 ```

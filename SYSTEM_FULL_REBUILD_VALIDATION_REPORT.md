@@ -228,8 +228,8 @@ That last one is worth highlighting: the system correctly treats `X-Tenant-Id` a
 ### Audit items deferred (not regressed)
 
 - C-2 ArchUnit @PreAuthorize guard — see F-1 in the audit doc.
-- H-5 Bootstrap admin one-shot — design captured in `docs/BOOTSTRAP_ADMIN_HARDENING.md`.
-- H-8 PII key rotation — runbook captured in `docs/PII_KEY_ROTATION_RUNBOOK.md`.
+- H-5 Bootstrap admin one-shot — see `FULL_PROJECT_PRODUCTION_AUDIT.md` § H-5.
+- H-8 PII key rotation — see `FULL_PROJECT_PRODUCTION_AUDIT.md` § H-8.
 - M-5 Refresh token in sessionStorage — open for follow-up.
 
 ---
@@ -288,7 +288,7 @@ Recommended next step: add the 5 highest-traffic smoke flows as Playwright tests
 | 🟥 high | Test coverage low: 30 backend tests / 130 entities; 10 frontend tests / 96 pages | grow coverage; flip the audit's T-13 coverage gate (`-Dcoverage.enforce=true`) |
 | 🟧 med  | 311 endpoints rely on URL-pattern auth, no per-method `@PreAuthorize` (F-1) | optional ArchUnit baseline-freeze rule |
 | 🟧 med  | 19 controllers return JPA entities (F-2) | introduce DTOs incrementally |
-| 🟧 med  | `BOOTSTRAP_ADMIN_PASSWORD=admin123` baked into `.env` | implement Phase 1 of `docs/BOOTSTRAP_ADMIN_HARDENING.md` before first production deploy |
+| 🟧 med  | `BOOTSTRAP_ADMIN_PASSWORD=admin123` baked into `.env` | set `force_password_change=TRUE` on first super-admin row + gate bootstrap behind a one-shot flag before first production deploy |
 | 🟨 low  | Refresh token in sessionStorage | migrate to HttpOnly cookie (audit T-18) |
 | 🟨 low  | Grafana / Loki / Tempo host ports non-obvious | add a service-URL table to README |
 | 🟨 low  | OpenAPI spec only published from CI workflow (audit T-23) | ensure `openapi-spec` branch is published on next merge to main |
