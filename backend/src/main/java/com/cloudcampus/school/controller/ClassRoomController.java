@@ -27,6 +27,7 @@ import java.util.UUID;
  * School Admin API — Classes (ClassRoom).
  *
  * POST   /v1/school-admin/schools/{schoolId}/classes                     — create
+ * GET    /v1/school-admin/schools/{schoolId}/classes                     — list by school
  * GET    /v1/school-admin/academic-years/{academicYearId}/classes         — list by year
  * GET    /v1/school-admin/classes/{id}                                    — get one
  * PUT    /v1/school-admin/classes/{id}                                    — update
@@ -53,6 +54,14 @@ public class ClassRoomController {
         ClassRoomResponse body = service.create(schoolId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
+    }
+
+    @Operation(summary = "List classes for a school")
+    @GetMapping("/schools/{schoolId}/classes")
+    public ResponseEntity<ApiResponse<List<ClassRoomResponse>>> listBySchool(
+            @PathVariable UUID schoolId) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.listBySchool(schoolId)));
     }
 
     @Operation(summary = "List classes for an academic year")

@@ -10,6 +10,8 @@ public interface ClassRoomService {
 
     ClassRoomResponse create(UUID schoolId, ClassRoomRequest request);
 
+    List<ClassRoomResponse> listBySchool(UUID schoolId);
+
     List<ClassRoomResponse> listByAcademicYear(UUID academicYearId);
 
     ClassRoomResponse getById(UUID id);

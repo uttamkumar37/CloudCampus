@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "CloudCampus",
+    "slug": "cloudcampus-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cloudcampus.mobile"
+    },
+    "android": {
+      "package": "com.cloudcampus.mobile"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "apiBaseUrl": "http://localhost:8080",
+      "apiBaseUrlAndroid": "http://10.89.241.90:8080",
+      "defaultTenantId": "jnv-lucknow-demo"
+    },
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}
