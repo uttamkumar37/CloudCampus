@@ -47,6 +47,16 @@ class ClassRoomServiceImpl implements ClassRoomService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ClassRoomResponse> listBySchool(UUID schoolId) {
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        return repo.findAllBySchoolIdAndTenantIdOrderByGradeOrderAscNameAsc(schoolId, tenantId)
+                   .stream()
+                   .map(ClassRoomResponse::from)
+                   .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = "classes", key = "#academicYearId")
     public List<ClassRoomResponse> listByAcademicYear(UUID academicYearId) {
         return repo.findAllByAcademicYearIdOrderByGradeOrderAscNameAsc(academicYearId)

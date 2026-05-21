@@ -11,7 +11,7 @@ public interface ClassRoomRepository extends JpaRepository<ClassRoom, UUID> {
 
     List<ClassRoom> findAllByAcademicYearIdOrderByGradeOrderAscNameAsc(UUID academicYearId);
 
-    List<ClassRoom> findAllBySchoolIdOrderByGradeOrderAscNameAsc(UUID schoolId);
+    List<ClassRoom> findAllBySchoolIdAndTenantIdOrderByGradeOrderAscNameAsc(UUID schoolId, UUID tenantId);
 
     Optional<ClassRoom> findByIdAndTenantId(UUID id, UUID tenantId);
 
