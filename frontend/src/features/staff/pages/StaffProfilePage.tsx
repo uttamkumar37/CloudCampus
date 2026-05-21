@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast, ConfirmDialog } from '@/shared/ui';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -209,6 +210,7 @@ function EditForm({
   defaultValues: EditValues;
   onCancel: () => void;
 }) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
 
   const { data: departments = [] } = useQuery({
@@ -243,11 +245,13 @@ function EditForm({
       return updateStaff(id, body);
     },
     onSuccess: () => {
+      success('Staff profile updated successfully');
       queryClient.invalidateQueries({ queryKey: ['staff-member', id] });
       queryClient.invalidateQueries({ queryKey: ['staff-profile-360', id] });
       onCancel();
     },
     onError: () => {
+      toastError('Failed to save changes. Please try again.');
       setError('root', { message: 'Failed to save changes. Please try again.' });
     },
   });
@@ -639,11 +643,13 @@ function Skeleton() {
 }
 
 export function StaffProfilePage() {
+  const { success, error: toastError } = useToast();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
+  const [pendingAction, setPendingAction] = useState<{ fn: (id: string) => Promise<unknown>; message: string; successLabel: string } | null>(null);
   const user = useAuthStore((s) => s.user);
   const schoolId = user?.schoolId ?? '';
 
@@ -682,16 +688,17 @@ export function StaffProfilePage() {
   }, [staff]);
 
   const statusMutation = useMutation({
-    mutationFn: ({ fn }: { fn: (id: string) => Promise<unknown> }) => fn(id!),
-    onSuccess: () => {
+    mutationFn: ({ fn }: { fn: (id: string) => Promise<unknown>; label: string }) => fn(id!),
+    onSuccess: (_data, { label }) => {
+      success(label);
       queryClient.invalidateQueries({ queryKey: ['staff-member', id] });
       queryClient.invalidateQueries({ queryKey: ['staff-profile-360', id] });
     },
+    onError: () => { toastError('Action failed. Please try again.'); },
   });
 
-  function confirmStatus(fn: (id: string) => Promise<unknown>, message: string) {
-    if (!window.confirm(message)) return;
-    statusMutation.mutate({ fn });
+  function confirmStatus(fn: (id: string) => Promise<unknown>, message: string, successLabel: string) {
+    setPendingAction({ fn, message, successLabel });
   }
 
   if (isLoading || isProfileLoading) return <Skeleton />;
@@ -724,7 +731,7 @@ export function StaffProfilePage() {
             <>
               {canGoOnLeave && (
                 <button
-                  onClick={() => confirmStatus(markOnLeave, `Mark ${staff.firstName} ${staff.lastName} as On Leave?`)}
+                  onClick={() => confirmStatus(markOnLeave, `Mark ${staff.firstName} ${staff.lastName} as On Leave?`, 'Staff marked as on leave')}
                   className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100"
                 >
                   Mark Leave
@@ -732,7 +739,7 @@ export function StaffProfilePage() {
               )}
               {canReturn && (
                 <button
-                  onClick={() => confirmStatus(returnFromLeave, `Return ${staff.firstName} ${staff.lastName} from Leave?`)}
+                  onClick={() => confirmStatus(returnFromLeave, `Return ${staff.firstName} ${staff.lastName} from Leave?`, 'Staff returned from leave')}
                   className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
                 >
                   Return
@@ -740,7 +747,7 @@ export function StaffProfilePage() {
               )}
               {canResign && (
                 <button
-                  onClick={() => confirmStatus(resignStaff, `Mark ${staff.firstName} ${staff.lastName} as Resigned?`)}
+                  onClick={() => confirmStatus(resignStaff, `Mark ${staff.firstName} ${staff.lastName} as Resigned?`, 'Staff marked as resigned')}
                   className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   Resign
@@ -748,7 +755,7 @@ export function StaffProfilePage() {
               )}
               {canTerminate && (
                 <button
-                  onClick={() => confirmStatus(terminateStaff, `Terminate ${staff.firstName} ${staff.lastName}? This cannot be undone.`)}
+                  onClick={() => confirmStatus(terminateStaff, `Terminate ${staff.firstName} ${staff.lastName}? This cannot be undone.`, 'Staff terminated')}
                   className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100"
                 >
                   Terminate
@@ -805,6 +812,19 @@ export function StaffProfilePage() {
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={pendingAction !== null}
+        onClose={() => setPendingAction(null)}
+        onConfirm={() => {
+          if (pendingAction) {
+            statusMutation.mutate({ fn: pendingAction.fn, label: pendingAction.successLabel });
+            setPendingAction(null);
+          }
+        }}
+        title={pendingAction?.message ?? 'Confirm action'}
+        confirmLabel="Confirm"
+        loading={statusMutation.isPending}
+      />
     </div>
   );
 }

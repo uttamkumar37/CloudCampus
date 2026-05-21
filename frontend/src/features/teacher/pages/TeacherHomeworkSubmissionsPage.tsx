@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listSubmissions, reviewSubmission } from '../api/teacherHomeworkApi';
 import type { SubmissionStatus } from '../api/teacherHomeworkApi';
+import { useToast, PageSpinner } from '@/shared/ui';
 
 const STATUS_BADGE: Record<SubmissionStatus, string> = {
   SUBMITTED: 'bg-yellow-100 text-yellow-700',
@@ -16,11 +17,9 @@ function formatDateTime(iso: string | null) {
   });
 }
 
-function shortId(id: string) {
-  return id.slice(0, 8) + '…';
-}
 
 export default function TeacherHomeworkSubmissionsPage() {
+  const { success, error: toastError } = useToast();
   const { homeworkId } = useParams<{ homeworkId: string }>();
   const navigate       = useNavigate();
   const queryClient    = useQueryClient();
@@ -34,8 +33,11 @@ export default function TeacherHomeworkSubmissionsPage() {
   const reviewMutation = useMutation({
     mutationFn: ({ subId }: { subId: string }) =>
       reviewSubmission(homeworkId!, subId),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['teacher-homework-submissions', homeworkId] }),
+    onSuccess: () => {
+      success('Submission marked as reviewed');
+      queryClient.invalidateQueries({ queryKey: ['teacher-homework-submissions', homeworkId] });
+    },
+    onError: () => { toastError('Failed to mark submission as reviewed.'); },
   });
 
   const submitted = submissions.filter((s) => s.status === 'SUBMITTED').length;
@@ -58,7 +60,7 @@ export default function TeacherHomeworkSubmissionsPage() {
         </div>
       </div>
 
-      {isLoading && <div className="text-sm text-gray-500">Loading…</div>}
+      {isLoading && <PageSpinner />}
 
       {isError && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -74,10 +76,11 @@ export default function TeacherHomeworkSubmissionsPage() {
 
       {submissions.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Student ID</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Submission #</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Notes</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Submitted At</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
@@ -86,10 +89,10 @@ export default function TeacherHomeworkSubmissionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {submissions.map((sub) => (
+              {submissions.map((sub, idx) => (
                 <tr key={sub.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                    {shortId(sub.studentId)}
+                  <td className="px-4 py-3 text-sm font-medium text-gray-700">
+                    #{idx + 1}
                   </td>
                   <td className="px-4 py-3 text-gray-700 max-w-xs">
                     <span className="line-clamp-2">{sub.notes ?? '—'}</span>
@@ -120,6 +123,7 @@ export default function TeacherHomeworkSubmissionsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

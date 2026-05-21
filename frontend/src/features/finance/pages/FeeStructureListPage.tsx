@@ -10,6 +10,7 @@ import {
   listStructures,
 } from '../api/financeApi';
 import type { CreateFeeCategoryRequest } from '../types/finance';
+import { useToast, PageHeader, ConfirmDialog } from '@/shared/ui';
 
 const FREQ_LABEL: Record<string, string> = {
   ANNUAL: 'Annual',
@@ -19,6 +20,7 @@ const FREQ_LABEL: Record<string, string> = {
 };
 
 export default function FeeStructureListPage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const qc = useQueryClient();
 
@@ -27,6 +29,7 @@ export default function FeeStructureListPage() {
   const [catName, setCatName] = useState('');
   const [catDesc, setCatDesc] = useState('');
   const [catError, setCatError] = useState('');
+  const [deactivateTarget, setDeactivateTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { data: years = [] } = useQuery({
     queryKey: ['academic-years', schoolId],
@@ -49,6 +52,7 @@ export default function FeeStructureListPage() {
   const createCatMutation = useMutation({
     mutationFn: (body: CreateFeeCategoryRequest) => createCategory(schoolId, body),
     onSuccess: () => {
+      success('Fee category created successfully');
       qc.invalidateQueries({ queryKey: ['fee-categories', schoolId] });
       setCatName('');
       setCatDesc('');
@@ -56,6 +60,7 @@ export default function FeeStructureListPage() {
       setShowCatForm(false);
     },
     onError: (err: Error) => {
+      toastError('Failed to create fee category. Please try again.');
       setCatError(err.message || 'Failed to create category');
     },
   });
@@ -63,8 +68,10 @@ export default function FeeStructureListPage() {
   const deactivateMutation = useMutation({
     mutationFn: (catId: string) => deactivateCategory(catId),
     onSuccess: () => {
+      success('Fee category deactivated');
       qc.invalidateQueries({ queryKey: ['fee-categories', schoolId] });
     },
+    onError: () => { toastError('Failed to deactivate fee category.'); },
   });
 
   function handleCatSubmit(e: React.FormEvent) {
@@ -81,7 +88,7 @@ export default function FeeStructureListPage() {
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Fee Structures</h1>
+          <PageHeader title="Fee Structures" />
           <p className="mt-1 text-sm text-gray-500">
             Manage fee categories and define amounts per class / academic year.
           </p>
@@ -157,11 +164,7 @@ export default function FeeStructureListPage() {
                 {cat.name}
                 {cat.active && (
                   <button
-                    onClick={() => {
-                      if (window.confirm(`Deactivate "${cat.name}"?`)) {
-                        deactivateMutation.mutate(cat.id);
-                      }
-                    }}
+                    onClick={() => setDeactivateTarget({ id: cat.id, name: cat.name })}
                     className="ml-1 text-gray-400 hover:text-red-500"
                     title="Deactivate"
                   >
@@ -243,6 +246,15 @@ export default function FeeStructureListPage() {
           </div>
         )}
       </section>
+      <ConfirmDialog
+        open={deactivateTarget !== null}
+        onClose={() => setDeactivateTarget(null)}
+        onConfirm={() => { deactivateMutation.mutate(deactivateTarget!.id); setDeactivateTarget(null); }}
+        title={`Deactivate "${deactivateTarget?.name}"?`}
+        description="This fee category will be marked inactive."
+        confirmLabel="Deactivate"
+        loading={deactivateMutation.isPending}
+      />
     </div>
   );
 }

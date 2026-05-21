@@ -7,10 +7,12 @@ import { listClasses } from '@/features/school-admin/api/classApi';
 import { listSections } from '@/features/school-admin/api/sectionApi';
 import { listStudentsByClass, listStudentsBySection, promoteStudents } from '../api/studentApi';
 import type { PromotionResult } from '../api/studentApi';
+import { useToast, PageHeader, ConfirmDialog } from '@/shared/ui';
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function StudentPromotionPage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId ?? '');
   const navigate  = useNavigate();
 
@@ -25,6 +27,7 @@ export default function StudentPromotionPage() {
   const [tgtSectionId, setTgtSectionId] = useState('');
 
   const [result, setResult] = useState<PromotionResult | null>(null);
+  const [confirmPromote, setConfirmPromote] = useState(false);
 
   // ── Shared academic years ──────────────────────────────────────────────────
   const { data: years = [] } = useQuery({
@@ -81,7 +84,11 @@ export default function StudentPromotionPage() {
         targetClassId:   tgtClassId,
         targetSectionId: tgtSectionId || null,
       }),
-    onSuccess: (data) => setResult(data),
+    onSuccess: (data) => {
+      success(`${data.studentsPromoted} student${data.studentsPromoted !== 1 ? 's' : ''} promoted successfully`);
+      setResult(data);
+    },
+    onError: () => { toastError('Promotion failed. Please check your selection and try again.'); },
   });
 
   const canPromote =
@@ -136,7 +143,7 @@ export default function StudentPromotionPage() {
           ← Back
         </button>
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Promote Students</h1>
+          <PageHeader title="Promote Students" />
           <p className="mt-0.5 text-sm text-gray-500">
             Bulk-move ACTIVE students from one class to the next at year-end
           </p>
@@ -272,13 +279,7 @@ export default function StudentPromotionPage() {
         )}
 
         <button
-          onClick={() => {
-            if (window.confirm(
-              `Promote ${activePreview.length} ACTIVE student${activePreview.length !== 1 ? 's' : ''}? This cannot be undone.`
-            )) {
-              mutate();
-            }
-          }}
+          onClick={() => setConfirmPromote(true)}
           disabled={!canPromote || isPending}
           className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
@@ -289,6 +290,16 @@ export default function StudentPromotionPage() {
               : 'Promote Students'}
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmPromote}
+        onClose={() => setConfirmPromote(false)}
+        onConfirm={() => { mutate(); setConfirmPromote(false); }}
+        title="Promote students"
+        description={`Promote ${activePreview.length} ACTIVE student${activePreview.length !== 1 ? 's' : ''}? This cannot be undone.`}
+        confirmLabel="Promote"
+        loading={isPending}
+      />
     </div>
   );
 }

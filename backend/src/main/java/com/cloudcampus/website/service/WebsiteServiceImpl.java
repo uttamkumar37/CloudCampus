@@ -176,6 +176,7 @@ public class WebsiteServiceImpl implements WebsiteService {
     @Override
     @Transactional(readOnly = true)
     public PublicSiteResponse getPublicSite(UUID schoolId, String schoolName, String tenantCode) {
+        requirePublishedWebsite(schoolId);
         List<PageResponse>    pages = pageRepo
                 .findBySchoolIdAndPublishedTrueOrderByDisplayOrderAsc(schoolId)
                 .stream().map(PageResponse::from).toList();
@@ -186,6 +187,7 @@ public class WebsiteServiceImpl implements WebsiteService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse getPublicPage(UUID schoolId, String slug) {
+        requirePublishedWebsite(schoolId);
         return pageRepo.findBySchoolIdAndSlug(schoolId, slug)
                 .filter(WebsitePage::isPublished)
                 .map(PageResponse::from)
@@ -204,6 +206,14 @@ public class WebsiteServiceImpl implements WebsiteService {
     private WebsitePage requirePage(UUID pageId, UUID schoolId) {
         return pageRepo.findByIdAndSchoolId(pageId, schoolId)
                 .orElseThrow(() -> new NotFoundException("Page not found"));
+    }
+
+    private void requirePublishedWebsite(UUID schoolId) {
+        Website website = websiteRepo.findBySchoolId(schoolId)
+                .orElseThrow(() -> new NotFoundException("Website not found"));
+        if (!website.isPublished()) {
+            throw new NotFoundException("Website not published");
+        }
     }
 
     private void applyPageFields(WebsitePage p, PageRequest req) {

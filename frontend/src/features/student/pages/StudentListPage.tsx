@@ -7,16 +7,7 @@ import { listAcademicYears } from '@/features/school-admin/api/academicYearApi';
 import { listClasses } from '@/features/school-admin/api/classApi';
 import { listSections } from '@/features/school-admin/api/sectionApi';
 import type { StudentStatus } from '../types/student';
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const STATUS_BADGE: Record<StudentStatus, string> = {
-  ACTIVE: 'bg-green-100 text-green-700',
-  GRADUATED: 'bg-blue-100 text-blue-700',
-  TRANSFERRED: 'bg-yellow-100 text-yellow-700',
-  SUSPENDED: 'bg-orange-100 text-orange-700',
-  WITHDRAWN: 'bg-gray-100 text-gray-500',
-};
+import { PageHeader, Badge, PageSpinner, EmptyState } from '@/shared/ui';
 
 const STATUS_OPTIONS: { value: StudentStatus | ''; label: string }[] = [
   { value: '', label: 'All statuses' },
@@ -99,28 +90,26 @@ export function StudentListPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Students</h2>
-          {data && (
-            <p className="mt-0.5 text-sm text-gray-500">{data.length} records</p>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Link
-            to="/school-admin/students/bulk"
-            className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
-          >
-            Bulk Import
-          </Link>
-          <Link
-            to="/school-admin/students/admit"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            Admit Student
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Students"
+        subtitle={data ? `${data.length} records` : undefined}
+        actions={
+          <div className="flex gap-2">
+            <Link
+              to="/school-admin/students/bulk"
+              className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50"
+            >
+              Bulk Import
+            </Link>
+            <Link
+              to="/school-admin/students/admit"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Admit Student
+            </Link>
+          </div>
+        }
+      />
 
       {/* Filters */}
       <div className="mb-5 flex flex-wrap items-center gap-3">
@@ -181,19 +170,18 @@ export function StudentListPage() {
       </div>
 
       {/* States */}
-      {isLoading && (
-        <p className="text-sm text-gray-500" role="status">Loading…</p>
-      )}
+      {isLoading && <PageSpinner />}
       {isError && (
         <p className="text-sm text-red-600" role="alert">Failed to load students.</p>
       )}
       {data && data.length === 0 && !isLoading && (
-        <p className="text-sm text-gray-500">No students match the current filter.</p>
+        <EmptyState title="No students found" description="Try adjusting your filters." />
       )}
 
       {/* Table */}
       {data && data.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
               <tr>
@@ -234,11 +222,14 @@ export function StudentListPage() {
                     {s.sectionId ? ` / ${sectionMap.get(s.sectionId) ?? '—'}` : ''}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_BADGE[s.status]}`}
-                    >
+                    <Badge variant={
+                      s.status === 'ACTIVE' ? 'success' :
+                      s.status === 'GRADUATED' ? 'primary' :
+                      s.status === 'TRANSFERRED' ? 'warning' :
+                      s.status === 'SUSPENDED' ? 'warning' : 'default'
+                    }>
                       {s.status}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-4 py-3">
                     <Link
@@ -252,6 +243,7 @@ export function StudentListPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

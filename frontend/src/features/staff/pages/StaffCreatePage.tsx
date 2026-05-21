@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { createStaff } from '../api/staffApi';
+import { useToast, PageHeader } from '@/shared/ui';
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -60,6 +61,7 @@ const inputCls =
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function StaffCreatePage() {
+  const { success, error: toastError } = useToast();
   const user = useAuthStore((s) => s.user);
   const schoolId = user?.schoolId ?? null;
   const navigate = useNavigate();
@@ -88,9 +90,11 @@ export function StaffCreatePage() {
       return createStaff(schoolId!, body);
     },
     onSuccess: (staff) => {
+      success('Staff member added successfully');
       navigate(`/school-admin/staff/${staff.id}`);
     },
     onError: () => {
+      toastError('Failed to create staff record. Please try again.');
       setError('root', { message: 'Failed to create staff record. Please try again.' });
     },
   });
@@ -110,7 +114,7 @@ export function StaffCreatePage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Add Staff Member</h2>
+        <PageHeader title="Add Staff Member" />
         <p className="mt-0.5 text-sm text-gray-500">
           Employee number is auto-generated if left blank.
         </p>

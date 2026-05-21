@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createWebsiteRoute, listWebsiteRoutes, publishWebsiteRoute } from './experienceStudioApi';
+import { useToast } from '@/shared/ui';
 
 export default function WebsiteRouteManager() {
   const qc = useQueryClient();
+  const { success, error: toastError } = useToast();
   const { data: routes = [], isLoading } = useQuery({
     queryKey: ['sa:exp:website-routes'],
     queryFn: listWebsiteRoutes,
@@ -17,12 +19,14 @@ export default function WebsiteRouteManager() {
 
   const createMutation = useMutation({
     mutationFn: createWebsiteRoute,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:website-routes'] }),
+    onSuccess: () => { success('Route configuration created'); qc.invalidateQueries({ queryKey: ['sa:exp:website-routes'] }); },
+    onError: () => { toastError('Failed to create route configuration. Please try again.'); },
   });
 
   const publishMutation = useMutation({
     mutationFn: publishWebsiteRoute,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:website-routes'] }),
+    onSuccess: () => { success('Route published'); qc.invalidateQueries({ queryKey: ['sa:exp:website-routes'] }); },
+    onError: () => { toastError('Failed to publish route. Please try again.'); },
   });
 
   return (

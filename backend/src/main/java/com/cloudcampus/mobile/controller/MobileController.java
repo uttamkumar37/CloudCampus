@@ -88,7 +88,11 @@ public class MobileController {
     // ── Helpers ──────────────────────────────────────────────────────────────────
 
     private School resolveMainSchool() {
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        String tenantIdStr = RequestContext.getTenantId();
+        if (tenantIdStr == null) {
+            throw new NotFoundException("No tenant context — superadmin cannot access mobile endpoints directly");
+        }
+        UUID tenantId = UUID.fromString(tenantIdStr);
         return schoolRepo.findByTenantIdAndCode(tenantId, "MAIN")
                 .orElseThrow(() -> new NotFoundException("School not found for tenant"));
     }

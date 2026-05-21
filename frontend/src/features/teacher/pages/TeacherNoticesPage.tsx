@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from '@/shared/api/axiosInstance';
+import { PageSpinner, PageHeader } from '@/shared/ui';
 import type { ApiResponse, PageResponse } from '@/shared/types/api';
 
 type NoticeCategory = 'GENERAL' | 'ACADEMIC' | 'EXAM' | 'FEE' | 'HOLIDAY' | 'CIRCULAR' | 'URGENT';
@@ -59,7 +60,7 @@ export default function TeacherNoticesPage() {
   return (
     <div className="p-6 space-y-5">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">School Notices</h1>
+        <PageHeader title="School Notices" />
         <p className="mt-0.5 text-sm text-gray-500">Published announcements from school administration</p>
       </div>
 
@@ -76,7 +77,7 @@ export default function TeacherNoticesPage() {
         <span className="text-xs text-gray-400">{total} notice{total !== 1 ? 's' : ''}</span>
       </div>
 
-      {isLoading && <div className="py-12 text-center text-sm text-gray-400">Loading notices…</div>}
+      {isLoading && <PageSpinner />}
 
       {isError && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">

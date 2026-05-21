@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { generateAiContent, type AiContentGenerateResponse } from './experienceStudioApi';
+import { useToast } from '@/shared/ui';
 
 const AI_MODULES = [
   {
@@ -48,6 +49,7 @@ type GeneratorPanelProps = {
 };
 
 function GeneratorPanel({ blockId, onClose }: GeneratorPanelProps) {
+  const { success, error: toastError } = useToast();
   const [prompt, setPrompt] = useState('');
   const [contentType, setContentType] = useState('HERO');
   const [copied, setCopied] = useState(false);
@@ -57,9 +59,11 @@ function GeneratorPanel({ blockId, onClose }: GeneratorPanelProps) {
     mutationFn: () => generateAiContent(blockId, { prompt, contentType }),
     retry: false,
     onSuccess: (data) => {
+      success('AI content generated successfully');
       setResult(data);
       setCopied(false);
     },
+    onError: () => { toastError('AI content generation failed. Please try again.'); },
   });
 
   const handleCopy = async () => {

@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { qrMarkAttendance } from '../api/studentPortalApi';
+import { useToast } from '@/shared/ui';
 
 type State = 'marking' | 'success' | 'error' | 'no-token';
 
 export default function StudentQrScanPage() {
+  const { success, error: toastError } = useToast();
   const [searchParams] = useSearchParams();
   const navigate       = useNavigate();
   const token          = searchParams.get('token');
@@ -18,10 +20,14 @@ export default function StudentQrScanPage() {
 
   const { mutate } = useMutation({
     mutationFn: () => qrMarkAttendance(initialToken.current!),
-    onSuccess: () => setState('success'),
+    onSuccess: () => {
+      success('Attendance marked successfully');
+      setState('success');
+    },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })
         ?.response?.data?.error?.message ?? 'Something went wrong. Please try again.';
+      toastError(msg);
       setErrMsg(msg);
       setState('error');
     },

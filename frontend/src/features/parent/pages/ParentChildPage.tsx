@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Spinner } from '@/shared/ui';
 import { useQuery } from '@tanstack/react-query';
 import {
   getChildAttendance,
@@ -8,8 +9,8 @@ import {
   getChildTimetable,
   getChildFees,
 } from '../api/parentApi';
-import { DAYS_OF_WEEK } from '@/features/timetable/types/timetable';
-import type { DayOfWeek, TimetableSlot } from '@/features/timetable/types/timetable';
+import { PageHeader } from '@/shared/ui';
+import { WeeklyTimetableView } from '@/features/timetable/components/WeeklyTimetableView';
 
 type Tab = 'attendance' | 'homework' | 'results' | 'timetable' | 'fees';
 
@@ -38,7 +39,7 @@ function AttendanceTab({ studentId }: { studentId: string }) {
     queryFn: () => getChildAttendance(studentId),
   });
 
-  if (isLoading) return <div className="py-8 text-center text-sm text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="py-8 flex justify-center"><Spinner size="md" /></div>;
   if (isError || !data) {
     return <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">Failed to load attendance.</div>;
   }
@@ -79,7 +80,7 @@ function HomeworkTab({ studentId }: { studentId: string }) {
     queryFn: () => getChildHomework(studentId),
   });
 
-  if (isLoading) return <div className="py-8 text-center text-sm text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="py-8 flex justify-center"><Spinner size="md" /></div>;
   if (isError) return <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">Failed to load homework.</div>;
 
   if (hw.length === 0) {
@@ -122,7 +123,7 @@ function ResultsTab({ studentId }: { studentId: string }) {
     queryFn: () => getChildResults(studentId),
   });
 
-  if (isLoading) return <div className="py-8 text-center text-sm text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="py-8 flex justify-center"><Spinner size="md" /></div>;
   if (isError) return <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">Failed to load results.</div>;
 
   if (results.length === 0) {
@@ -177,77 +178,21 @@ function ResultsTab({ studentId }: { studentId: string }) {
 
 // ── Timetable Tab ─────────────────────────────────────────────────────────────
 
-const MAX_PERIODS = 8;
-const PERIODS = Array.from({ length: MAX_PERIODS }, (_, i) => i + 1);
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  MONDAY: 'Mon', TUESDAY: 'Tue', WEDNESDAY: 'Wed',
-  THURSDAY: 'Thu', FRIDAY: 'Fri', SATURDAY: 'Sat',
-};
-
 function TimetableTab({ studentId }: { studentId: string }) {
   const { data: slots = [], isLoading, isError } = useQuery({
     queryKey: ['parent-child-timetable', studentId],
     queryFn: () => getChildTimetable(studentId),
   });
 
-  if (isLoading) return <div className="py-8 text-center text-sm text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="py-8 flex justify-center"><Spinner size="md" /></div>;
   if (isError) return <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">Failed to load timetable.</div>;
 
-  function slotAt(day: DayOfWeek, period: number): TimetableSlot | undefined {
-    return slots.find((s) => s.dayOfWeek === day && s.periodNumber === period);
-  }
-
-  if (slots.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-gray-200 py-12 text-center text-sm text-gray-400">
-        No timetable assigned to this class yet.
-      </div>
-    );
-  }
-
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-      <table className="min-w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-100 bg-gray-50">
-            <th className="w-14 px-3 py-2 text-left text-xs font-semibold uppercase text-gray-400">P</th>
-            {DAYS_OF_WEEK.map((day) => (
-              <th key={day} className="px-3 py-2 text-center text-xs font-semibold uppercase text-gray-400">
-                {DAY_LABELS[day]}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {PERIODS.map((period) => (
-            <tr key={period} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-              <td className="px-3 py-2 text-xs font-semibold text-gray-300">P{period}</td>
-              {DAYS_OF_WEEK.map((day) => {
-                const slot = slotAt(day, period);
-                return (
-                  <td key={day} className="px-1 py-1 text-center">
-                    {slot ? (
-                      <div className="inline-flex min-w-[80px] flex-col rounded-lg bg-emerald-50 px-2 py-1.5 text-left">
-                        <span className="text-[11px] font-semibold text-emerald-800">
-                          {slot.subjectName ?? slot.subjectCode ?? slot.subjectId.slice(0, 8)}
-                        </span>
-                        {slot.startTime && (
-                          <span className="text-[10px] text-emerald-400">
-                            {slot.startTime.slice(0, 5)}{slot.endTime ? `–${slot.endTime.slice(0, 5)}` : ''}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-gray-200">—</span>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <WeeklyTimetableView
+      slots={slots}
+      emptyMessage="No timetable assigned to this class yet."
+      slotTone="emerald"
+    />
   );
 }
 
@@ -267,7 +212,7 @@ function FeesTab({ studentId }: { studentId: string }) {
     queryFn: () => getChildFees(studentId),
   });
 
-  if (isLoading) return <div className="py-8 text-center text-sm text-gray-400">Loading…</div>;
+  if (isLoading) return <div className="py-8 flex justify-center"><Spinner size="md" /></div>;
   if (isError) return <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">Failed to load fee records.</div>;
 
   if (fees.length === 0) {
@@ -353,7 +298,7 @@ export default function ParentChildPage() {
         >
           ← Back
         </button>
-        <h1 className="text-xl font-semibold text-gray-900">Child Details</h1>
+        <PageHeader title="Child Details" />
       </div>
 
       {/* Tab bar */}

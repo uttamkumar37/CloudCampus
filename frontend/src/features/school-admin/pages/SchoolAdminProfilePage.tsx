@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { changePasswordApi } from '@/features/auth/api/authApi';
 import axiosInstance from '@/shared/api/axiosInstance';
 import type { ApiResponse } from '@/shared/types/api';
+import { useToast } from '@/shared/ui';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,7 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function SchoolAdminProfilePage() {
+  const { success, error: toastError } = useToast();
   const user = useAuthStore((s) => s.user);
 
   const { data: me, isLoading, isError } = useQuery({
@@ -76,11 +78,13 @@ export function SchoolAdminProfilePage() {
     mutationFn: () => changePasswordApi(current, next),
     retry: false,
     onSuccess: () => {
+      success('Password updated successfully');
       setPwdSuccess('Password updated successfully.');
       setPwdError('');
       setCurrent(''); setNext(''); setConfirm('');
     },
     onError: (e: Error) => {
+      toastError('Failed to update password.');
       setPwdError(e.message || 'Failed to update password.');
       setPwdSuccess('');
     },

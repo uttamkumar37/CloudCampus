@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { PageHeader, PageSpinner, EmptyState } from '@/shared/ui';
 import { getMyResults, type StudentResultSummary } from '../api/studentPortalApi';
 
 function pct(n: number) {
@@ -75,16 +76,14 @@ export default function StudentResultsPage() {
   });
 
   if (isLoading) {
-    return (
-      <div className="p-6 text-sm text-gray-400">Loading results…</div>
-    );
+    return <PageSpinner />;
   }
 
   if (results.length === 0) {
     return (
       <div className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-1">My Results</h2>
-        <p className="text-sm text-gray-500">No exam results published yet.</p>
+        <PageHeader title="My Results" />
+        <EmptyState title="No results yet" description="No exam results published yet." />
       </div>
     );
   }
@@ -95,7 +94,7 @@ export default function StudentResultsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900">My Results</h2>
+      <PageHeader title="My Results" />
 
       {/* Summary strip */}
       <div className="flex flex-wrap gap-4">

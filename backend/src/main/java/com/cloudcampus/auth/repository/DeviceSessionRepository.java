@@ -14,4 +14,10 @@ public interface DeviceSessionRepository extends JpaRepository<DeviceSession, UU
     List<DeviceSession> findByUserIdAndRevokedFalseOrderByLastSeenAtDesc(UUID userId);
 
     Optional<DeviceSession> findByIdAndUserId(UUID id, UUID userId);
+
+    Optional<DeviceSession> findFirstByUserIdAndDeviceNameAndIpAddressAndUserAgentAndRevokedFalseOrderByLastSeenAtDesc(
+            UUID userId,
+            String deviceName,
+            String ipAddress,
+            String userAgent);
 }

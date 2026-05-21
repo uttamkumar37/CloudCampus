@@ -13,7 +13,11 @@ const mockUser: AuthUser = {
 };
 
 describe('useAuthStore', () => {
-  beforeEach(() => useAuthStore.getState().clearAuth());
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    useAuthStore.getState().clearAuth();
+  });
 
   // ── initial state ───────────────────────────────────────────────────────────
 
@@ -65,20 +69,29 @@ describe('useAuthStore', () => {
     expect(state.user).toBeNull();
   });
 
-  // ── security: no localStorage persistence ───────────────────────────────────
+  // ── refresh persistence ────────────────────────────────────────────────────
 
-  it('access token is never written to localStorage', () => {
+  it('persists the current browser-tab session for page refreshes', () => {
+    useAuthStore.getState().setTokens('access-tok', 'refresh-tok', mockUser);
+    const stored = JSON.stringify(sessionStorage);
+    expect(stored).toContain('access-tok');
+    expect(stored).toContain('refresh-tok');
+    expect(stored).toContain(mockUser.userId);
+  });
+
+  it('does not write auth tokens to localStorage', () => {
     useAuthStore.getState().setTokens('secret-access', 'secret-refresh', mockUser);
     const stored = JSON.stringify(localStorage);
     expect(stored).not.toContain('secret-access');
     expect(stored).not.toContain('secret-refresh');
   });
 
-  it('clearAuth does not leave residue in localStorage', () => {
+  it('clearAuth does not leave token residue in browser storage', () => {
     useAuthStore.getState().setTokens('tok', 'ref', mockUser);
     useAuthStore.getState().clearAuth();
-    const stored = JSON.stringify(localStorage);
-    expect(stored).not.toContain('tok');
-    expect(stored).not.toContain('ref');
+    expect(JSON.stringify(localStorage)).not.toContain('tok');
+    expect(JSON.stringify(localStorage)).not.toContain('ref');
+    expect(JSON.stringify(sessionStorage)).not.toContain('tok');
+    expect(JSON.stringify(sessionStorage)).not.toContain('ref');
   });
 });

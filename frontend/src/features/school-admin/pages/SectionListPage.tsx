@@ -7,6 +7,7 @@ import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { listAcademicYears } from '../api/academicYearApi';
 import { listClasses } from '../api/classApi';
 import { listSections, createSection, deleteSection } from '../api/sectionApi';
+import { useToast, PageHeader, PageSpinner, EmptyState, ConfirmDialog } from '@/shared/ui';
 
 // ── Create form ───────────────────────────────────────────────────────────────
 
@@ -23,6 +24,7 @@ interface CreateFormProps {
 }
 
 function CreateForm({ classId, onClose }: CreateFormProps) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
 
   const {
@@ -39,10 +41,12 @@ function CreateForm({ classId, onClose }: CreateFormProps) {
         capacity: toOptionalNumber(values.capacity),
       }),
     onSuccess: () => {
+      success('Section created successfully');
       queryClient.invalidateQueries({ queryKey: ['sections', classId] });
       onClose();
     },
     onError: () => {
+      toastError('Failed to create section. Please try again.');
       setError('root', { message: 'Failed to create section. Please try again.' });
     },
   });
@@ -123,6 +127,7 @@ export function SectionListPage() {
   const [selectedYearId, setSelectedYearId] = useState<string>('');
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [showForm, setShowForm] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: years, isLoading: yearsLoading } = useQuery({
@@ -152,10 +157,14 @@ export function SectionListPage() {
     enabled: !!effectiveClassId,
   });
 
+  const { success: pageSuccess, error: pageError } = useToast();
   const del = useMutation({
     mutationFn: deleteSection,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['sections', effectiveClassId] }),
+    onSuccess: () => {
+      pageSuccess('Section deleted');
+      queryClient.invalidateQueries({ queryKey: ['sections', effectiveClassId] });
+    },
+    onError: () => { pageError('Failed to delete section.'); },
   });
 
   if (!schoolId) {
@@ -170,72 +179,63 @@ export function SectionListPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Sections</h2>
-          {sections && (
-            <p className="mt-0.5 text-sm text-gray-500">{sections.length} sections</p>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Year selector */}
-          <select
-            value={selectedYearId || effectiveYearId}
-            onChange={(e) => {
-              setSelectedYearId(e.target.value);
-              setSelectedClassId('');
-              setShowForm(false);
-            }}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={yearsLoading}
-          >
-            {years?.map((y) => (
-              <option key={y.id} value={y.id}>
-                {y.name}
-                {y.isCurrent ? ' (current)' : ''}
-              </option>
-            ))}
-          </select>
-
-          {/* Class selector */}
-          <select
-            value={selectedClassId || effectiveClassId}
-            onChange={(e) => {
-              setSelectedClassId(e.target.value);
-              setShowForm(false);
-            }}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={classesLoading || !effectiveYearId}
-          >
-            {!classes?.length && (
-              <option value="">No classes</option>
-            )}
-            {classes?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-
-          {!showForm && effectiveClassId && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+      <PageHeader
+        title="Sections"
+        subtitle={sections ? `${sections.length} sections` : undefined}
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={selectedYearId || effectiveYearId}
+              onChange={(e) => {
+                setSelectedYearId(e.target.value);
+                setSelectedClassId('');
+                setShowForm(false);
+              }}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={yearsLoading}
             >
-              New Section
-            </button>
-          )}
-        </div>
-      </div>
+              {years?.map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.name}
+                  {y.isCurrent ? ' (current)' : ''}
+                </option>
+              ))}
+            </select>
+            <select
+              value={selectedClassId || effectiveClassId}
+              onChange={(e) => {
+                setSelectedClassId(e.target.value);
+                setShowForm(false);
+              }}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={classesLoading || !effectiveYearId}
+            >
+              {!classes?.length && (
+                <option value="">No classes</option>
+              )}
+              {classes?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            {!showForm && effectiveClassId && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                New Section
+              </button>
+            )}
+          </div>
+        }
+      />
 
       {showForm && effectiveClassId && (
         <CreateForm classId={effectiveClassId} onClose={() => setShowForm(false)} />
       )}
 
-      {(yearsLoading || classesLoading || sectionsLoading) && (
-        <p className="text-sm text-gray-500" role="status">Loading…</p>
-      )}
+      {(yearsLoading || classesLoading || sectionsLoading) && <PageSpinner />}
       {isError && (
         <p className="text-sm text-red-600" role="alert">Failed to load sections.</p>
       )}
@@ -245,13 +245,12 @@ export function SectionListPage() {
       )}
 
       {sections && sections.length === 0 && !sectionsLoading && effectiveClassId && (
-        <p className="text-sm text-gray-500">
-          No sections for this class. Create one to get started.
-        </p>
+        <EmptyState title="No sections" description="No sections for this class. Create one to get started." />
       )}
 
       {sections && sections.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
               <tr>
@@ -270,10 +269,7 @@ export function SectionListPage() {
                   <td className="px-4 py-3 text-gray-600">{sec.capacity ?? '—'}</td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => {
-                        if (confirm('Delete this section? This cannot be undone.'))
-                          del.mutate(sec.id);
-                      }}
+                      onClick={() => setConfirmDeleteId(sec.id)}
                       disabled={del.isPending}
                       className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
                     >
@@ -284,8 +280,19 @@ export function SectionListPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => { if (confirmDeleteId) del.mutate(confirmDeleteId); setConfirmDeleteId(null); }}
+        title="Delete section"
+        description="Delete this section? This cannot be undone."
+        confirmLabel="Delete"
+        loading={del.isPending}
+      />
     </div>
   );
 }

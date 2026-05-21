@@ -21,7 +21,6 @@ Goal: create international-level 360 degree portals for STUDENT, TEACHER, and PA
 
 - `[ ]` Not started
 - `[~]` In progress
-- `[x]` Complete
 - `[!]` Blocked
 
 ## Current Baseline Snapshot
@@ -40,32 +39,7 @@ Goal: create international-level 360 degree portals for STUDENT, TEACHER, and PA
 
 ## Phase 0 - Planning and Guardrails
 
-- [x] TASK-RP-000: Create `ROLE_PORTALS_MASTER_PLAN.md`
-  - Define phases, tasks, dependencies, completion status, validation policy, and approval checkpoint.
-  - Perform a light portal baseline scan before writing the plan.
-  - Validation: plan file created only; no portal code modified.
-
-- [x] TASK-RP-001: Deep Baseline Audit
-  - Review current student, teacher, parent frontend pages, layouts, APIs, backend controllers, service boundaries, repositories, role guards, tenant scoping, and linked-child/assigned-class access rules.
-  - Identify exact reusable components and shared portal API opportunities.
-  - Identify which requested features already exist, which need additive aggregates, and which must remain masked/unavailable until a real module exists.
-  - Output: update this plan with audit notes and implementation decisions.
-  - Validation: no application behavior changes.
-  - Dependencies: TASK-RP-000.
-
 ## Phase 1 - Shared Portal Foundation
-
-- [x] TASK-RP-010: Shared Portal UI Kit
-  - Add reusable dashboard components for premium stat cards, insight cards, timeline feed, quick actions, notification panels, progress rings, chart shells, skeleton loaders, empty states, and error states.
-  - Keep components role-neutral and mobile responsive.
-  - Validation: frontend build.
-  - Dependencies: TASK-RP-001.
-
-- [x] TASK-RP-011: Shared Portal Types
-  - Add shared TypeScript types for timeline items, AI insights, quick actions, risk cards, notifications, chart series, and dashboard sections.
-  - Avoid breaking existing API types.
-  - Validation: frontend build.
-  - Dependencies: TASK-RP-001.
 
 - [ ] TASK-RP-012: Portal Accessibility and Theme Pass
   - Add keyboard-friendly controls, proper aria labels, responsive text behavior, contrast-safe tones, and dark-mode-compatible class choices.
@@ -73,18 +47,6 @@ Goal: create international-level 360 degree portals for STUDENT, TEACHER, and PA
   - Dependencies: TASK-RP-010.
 
 ## Phase 2 - Student Portal 360 Experience
-
-- [x] TASK-RP-020: Student Dashboard Data Audit
-  - Map existing student APIs for timetable, homework, assignments, attendance, exams/results, fees, notices, and profile 360.
-  - Decide whether a new additive student dashboard aggregate is needed.
-  - Validation: no behavior changes.
-  - Dependencies: TASK-RP-001.
-
-- [x] TASK-RP-021: Student Dashboard 360 UI
-  - Upgrade student dashboard with today's timetable, homework due, attendance percent, upcoming exams, fee reminders, leave status placeholder/readiness, announcements, AI study recommendations, quick actions, skeletons, empty states, and error states.
-  - Preserve existing student dashboard route and APIs.
-  - Validation: frontend build and student route smoke.
-  - Dependencies: TASK-RP-020, TASK-RP-010.
 
 - [ ] TASK-RP-022: Student Profile Portal Integration
   - Surface 360 student profile sections in the student portal where role-safe: personal details, academics, attendance, achievements, skills/interests, documents, health summary, and career goals.
@@ -106,18 +68,6 @@ Goal: create international-level 360 degree portals for STUDENT, TEACHER, and PA
 
 ## Phase 3 - Teacher Portal 360 Faculty Experience
 
-- [x] TASK-RP-030: Teacher Dashboard Data Contract
-  - Extend teacher dashboard data additively if needed for today classes, attendance tasks, pending review, exam evaluation, parent meeting readiness, announcements, and AI teaching insights.
-  - Teacher can only see own assigned classes/students.
-  - Validation: backend compile and teacher dashboard smoke.
-  - Dependencies: TASK-RP-001.
-
-- [x] TASK-RP-031: Teacher Dashboard 360 UI
-  - Upgrade teacher dashboard with premium cards, today's classes, review queues, exam evaluation, parent meeting readiness, announcements, AI insights, quick actions, skeletons, empty states, and errors.
-  - Preserve existing dashboard route and API fields.
-  - Validation: frontend build and teacher route smoke.
-  - Dependencies: TASK-RP-030, TASK-RP-010.
-
 - [ ] TASK-RP-032: Teacher Class Management Hub
   - Improve student list, attendance marking, homework assignment, lesson plans, study material upload, marks entry, and behavior-note readiness.
   - Do not loosen assigned-class access.
@@ -137,18 +87,6 @@ Goal: create international-level 360 degree portals for STUDENT, TEACHER, and PA
   - Dependencies: TASK-RP-030.
 
 ## Phase 4 - Parent Portal 360 Experience
-
-- [x] TASK-RP-040: Parent Dashboard Data Audit
-  - Map linked-child APIs and identify data needed for attendance, homework, exams, marks, fees, leave readiness, messages, announcements, and AI progress summary.
-  - Parent can only see linked children.
-  - Validation: no behavior changes.
-  - Dependencies: TASK-RP-001.
-
-- [x] TASK-RP-041: Parent Dashboard 360 UI
-  - Upgrade parent dashboard with multiple-child switcher, attendance summary, homework status, exam schedule, marks/results, fee balance, leave readiness, teacher messages readiness, announcements, and AI summary.
-  - Preserve existing parent dashboard route.
-  - Validation: frontend build and parent route smoke.
-  - Dependencies: TASK-RP-040, TASK-RP-010.
 
 - [ ] TASK-RP-042: Parent Child Profile 360 UI
   - Upgrade child profile with academic progress, attendance analytics, homework completion, achievements, behavior readiness, health summary, documents, and teacher feedback readiness.
@@ -224,18 +162,4 @@ Goal: create international-level 360 degree portals for STUDENT, TEACHER, and PA
   - Update this plan with final status, validation log, limitations, and follow-up opportunities.
   - Dependencies: TASK-RP-070, TASK-RP-071.
 
-## Validation Log
-
-- 2026-05-19: Created master plan after light scan of existing student, teacher, and parent portal routes/pages/APIs. No portal application code changed.
-- 2026-05-19: Completed deep baseline audit. Existing role routes are protected in `frontend/src/app/router.tsx`; student APIs already cover homework, assignments, timetable, notices, results, fees, and attendance; teacher dashboard/homework/assignment APIs cover class and review operations; parent APIs enforce linked-child views for attendance, results, homework, timetable, and fees. Implementation decision: complete a frontend-first dashboard upgrade using existing role-safe APIs before adding new backend aggregates.
-- 2026-05-19: Completed shared portal UI kit and shared portal TypeScript types under `frontend/src/features/role-portals/`.
-- 2026-05-19: Completed Student Dashboard 360 UI with today's timetable, homework due, attendance, fees, notices, academic progress chart, timeline, quick actions, and deterministic AI study insights.
-- 2026-05-19: Completed Teacher Dashboard 360 UI with today's classes, attendance task readiness, review queues, workload analytics, timeline, quick actions, and deterministic AI teaching insights.
-- 2026-05-19: Completed Parent Dashboard 360 UI with multiple-child switcher, attendance summary, homework status, fee balance, notices, child focus panel, quick actions, and deterministic AI parent recommendations.
-- 2026-05-19: Validation passed: `mvn -q -DskipTests compile`.
-- 2026-05-19: Validation passed: `npm run build`.
-- 2026-05-19: Role API smoke passed with demo users: `jnv.student001` -> `/v1/student/homework`, `jnv.teacher001` -> `/v1/teacher/dashboard`, `jnv.parent001` -> `/v1/parent/children`.
-
 ## Next Task
-
-TASK-RP-001: Deep Baseline Audit. This should be completed before implementation so the portal upgrade remains additive, role-safe, and tenant-safe.

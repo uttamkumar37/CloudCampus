@@ -8,6 +8,7 @@ import { listSections } from '@/features/school-admin/api/sectionApi';
 import { listSubjects } from '@/features/school-admin/api/subjectApi';
 import { createHomework } from '../api/homeworkApi';
 import type { HomeworkCreateRequest } from '../types/homework';
+import { useToast, PageHeader } from '@/shared/ui';
 
 interface FormState {
   academicYearId: string;
@@ -39,6 +40,7 @@ function tomorrow() {
 }
 
 export default function HomeworkCreatePage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const navigate  = useNavigate();
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -72,8 +74,12 @@ export default function HomeworkCreatePage() {
   // ── Mutation ───────────────────────────────────────────────────────────────
   const createMutation = useMutation({
     mutationFn: (body: HomeworkCreateRequest) => createHomework(schoolId, body),
-    onSuccess: () => navigate('/school-admin/homework'),
+    onSuccess: () => {
+      success('Homework created successfully');
+      navigate('/school-admin/homework');
+    },
     onError: (err: { response?: { data?: { error?: { message?: string } } } }) => {
+      toastError('Failed to create homework. Please try again.');
       setError(err?.response?.data?.error?.message ?? 'Failed to create assignment');
     },
   });
@@ -109,7 +115,7 @@ export default function HomeworkCreatePage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">New Homework Assignment</h1>
+        <PageHeader title="New Homework Assignment" />
         <p className="mt-0.5 text-sm text-gray-500">Create and optionally publish immediately</p>
       </div>
 

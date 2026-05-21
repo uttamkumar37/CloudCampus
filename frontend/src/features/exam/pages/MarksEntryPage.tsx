@@ -7,6 +7,7 @@ import { listMarks, bulkSaveMarks } from '../api/marksApi';
 import { listStudentsByClass } from '@/features/student/api/studentApi';
 import type { StudentSummaryResponse } from '@/features/student/types/student';
 import type { ExamSubjectResponse } from '../types/exam';
+import { useToast, PageHeader, PageSpinner } from '@/shared/ui';
 
 // ── Row state type ────────────────────────────────────────────────────────────
 
@@ -20,6 +21,7 @@ interface RowState {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function MarksEntryPage() {
+  const { success, error: toastError } = useToast();
   const { examId, subjectEntryId } = useParams<{ examId: string; subjectEntryId: string }>();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const queryClient = useQueryClient();
@@ -87,12 +89,14 @@ export default function MarksEntryPage() {
       return bulkSaveMarks(schoolId, examId!, subjectEntryId!, { entries });
     },
     onSuccess: () => {
+      success('Marks saved successfully');
       queryClient.invalidateQueries({ queryKey: ['marks', schoolId, examId, subjectEntryId] });
       setSaveOk(true);
       setSaveError('');
       setTimeout(() => setSaveOk(false), 3000);
     },
     onError: (err: Error) => {
+      toastError('Failed to save marks. Please try again.');
       setSaveError(err.message || 'Failed to save marks');
       setSaveOk(false);
     },
@@ -137,7 +141,7 @@ export default function MarksEntryPage() {
 
   const isLoading = examLoading || studentsLoading;
 
-  if (isLoading) return <div className="p-6 text-sm text-gray-500">Loading…</div>;
+  if (isLoading) return <PageSpinner />;
   if (!exam || !paper) return <div className="p-6 text-sm text-red-600">Paper not found.</div>;
 
   const studentMap = new Map(students.map((s: StudentSummaryResponse) => [s.id, s]));
@@ -161,7 +165,7 @@ export default function MarksEntryPage() {
       {/* Header */}
       <div className="mb-5 flex items-start justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">Marks Entry</h2>
+          <PageHeader title="Marks Entry" />
           <p className="mt-0.5 text-sm text-gray-500">
             {exam.name} · Paper date: {paper.examDate} · Total: {paper.totalMarks} · Pass: {paper.passingMarks}
           </p>
@@ -230,7 +234,7 @@ export default function MarksEntryPage() {
                 <tr key={row.studentId} className={row.isAbsent ? 'bg-orange-50' : 'hover:bg-gray-50'}>
                   <td className="px-4 py-2.5 text-gray-400">{idx + 1}</td>
                   <td className="px-4 py-2.5 font-medium text-gray-800">
-                    {student ? `${student.firstName} ${student.lastName}` : row.studentId.slice(0, 8) + '…'}
+                    {student ? `${student.firstName} ${student.lastName}` : 'Unknown Student'}
                   </td>
                   <td className="px-4 py-2.5 text-gray-500">
                     {student?.studentNumber ?? '—'}

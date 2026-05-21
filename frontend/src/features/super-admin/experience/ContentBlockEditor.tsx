@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/shared/api/axiosInstance';
+import { useToast } from '@/shared/ui';
 
 interface ContentBlock {
   id: string;
@@ -37,6 +38,7 @@ async function saveBlock(block: Partial<ContentBlock>): Promise<ContentBlock> {
 
 export default function ContentBlockEditor() {
   const qc = useQueryClient();
+  const { success, error: toastError } = useToast();
   const { data: blocks = [], isLoading } = useQuery({
     queryKey: ['sa:exp:blocks'],
     queryFn: fetchBlocks,
@@ -44,7 +46,8 @@ export default function ContentBlockEditor() {
 
   const { mutate: doPublish } = useMutation({
     mutationFn: publishBlock,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:blocks'] }),
+    onSuccess: () => { success('Content block published'); qc.invalidateQueries({ queryKey: ['sa:exp:blocks'] }); },
+    onError: () => { toastError('Failed to publish content block. Please try again.'); },
   });
 
   const [search, setSearch] = useState('');
@@ -154,6 +157,7 @@ function BlockEditModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { success, error: toastError } = useToast();
   const [blockKey, setBlockKey] = useState(block.blockKey);
   const [blockType, setBlockType] = useState(block.blockType);
   const [locale, setLocale] = useState(block.locale);
@@ -173,7 +177,10 @@ function BlockEditModal({
     setSaving(true);
     try {
       await saveBlock({ id: block.id, blockKey, blockType, locale, content: parsed as Record<string, unknown> });
+      success('Content block saved successfully');
       onSaved();
+    } catch {
+      toastError('Failed to save content block. Please try again.');
     } finally {
       setSaving(false);
     }

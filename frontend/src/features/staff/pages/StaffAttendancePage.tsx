@@ -6,6 +6,7 @@ import {
   markStaffAttendance,
 } from '../api/staffAttendanceApi';
 import type { StaffAttendanceStatus, StaffAttendanceRow } from '../api/staffAttendanceApi';
+import { useToast, Spinner } from '@/shared/ui';
 
 const STATUSES: StaffAttendanceStatus[] = ['PRESENT', 'ABSENT', 'HALF_DAY', 'ON_LEAVE', 'HOLIDAY'];
 
@@ -22,6 +23,7 @@ function toDateInput(d: Date) {
 }
 
 export default function StaffAttendancePage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId ?? '');
   const [date, setDate] = useState(toDateInput(new Date()));
   const [overrides, setOverrides] = useState<Record<string, StaffAttendanceStatus>>({});
@@ -44,10 +46,12 @@ export default function StaffAttendancePage() {
       return markStaffAttendance(schoolId, { date, entries });
     },
     onSuccess: () => {
+      success('Attendance saved successfully');
       qc.invalidateQueries({ queryKey: ['staff-attendance', schoolId, date] });
       setOverrides({});
       setSaved(true);
     },
+    onError: () => { toastError('Failed to save attendance. Please try again.'); },
   });
 
   function changeDate(nextDate: string) {
@@ -120,7 +124,7 @@ export default function StaffAttendancePage() {
         </div>
       )}
 
-      {isLoading && <div className="py-8 text-center text-sm text-gray-400">Loading…</div>}
+      {isLoading && <div className="py-8 flex justify-center"><Spinner size="md" /></div>}
 
       {isError && (
         <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">

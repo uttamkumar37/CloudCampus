@@ -11,6 +11,7 @@ import {
   type GradingScheme,
   type SchoolSettingsRequest,
 } from '../api/settingsApi';
+import { useToast, PageHeader, Button, PageSpinner } from '@/shared/ui';
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function SchoolSettingsPage() {
+  const { success, error: toastError } = useToast();
   const schoolId   = useAuthStore((s) => s.user?.schoolId) ?? '';
   const queryClient = useQueryClient();
   const [saved, setSaved] = useState(false);
@@ -129,7 +131,9 @@ export function SchoolSettingsPage() {
       queryClient.setQueryData(['school-settings', schoolId], updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+      success('Settings saved successfully');
     },
+    onError: () => { toastError('Failed to save settings. Please try again.'); },
   });
 
   const allowLate = useWatch({ control, name: 'allowLateAttendance' });
@@ -145,21 +149,21 @@ export function SchoolSettingsPage() {
   }
 
   if (!schoolId) return <div className="p-6 text-sm text-amber-600">School ID not available.</div>;
-  if (isLoading)  return <div className="p-6 text-sm text-gray-500">Loading settings…</div>;
+  if (isLoading)  return <PageSpinner />;
   if (isError)    return <div className="p-6 text-sm text-red-600">Failed to load settings.</div>;
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">School Settings</h1>
-          <p className="mt-0.5 text-sm text-gray-500">Manage operational configuration for your school</p>
-        </div>
-        {data && (
-          <p className="text-xs text-gray-400">
-            Last updated: {new Date(data.updatedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-          </p>
-        )}
+      <div className="mb-6">
+        <PageHeader
+          title="School Settings"
+          subtitle="Manage operational configuration for your school"
+          actions={data ? (
+            <p className="text-xs text-gray-400">
+              Last updated: {new Date(data.updatedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+            </p>
+          ) : undefined}
+        />
       </div>
 
       {saved && (
@@ -278,13 +282,9 @@ export function SchoolSettingsPage() {
 
         {/* Save */}
         <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-          >
-            {mutation.isPending ? 'Saving…' : 'Save Settings'}
-          </button>
+          <Button type="submit" loading={mutation.isPending} size="lg">
+            Save Settings
+          </Button>
         </div>
       </form>
     </div>

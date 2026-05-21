@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { listSubjects } from '@/features/school-admin/api/subjectApi';
+import { listStudents } from '@/features/student/api/studentApi';
 import { getAssignment, listSubmissions, updateAssignmentStatus, gradeSubmission } from '../api/assignmentApi';
 import type { AssignmentStatus, AssignmentSubmission, GradeSubmissionRequest } from '../types/assignment';
+import { useToast, PageHeader, PageSpinner } from '@/shared/ui';
 
 const STATUS_BADGE: Record<AssignmentStatus, string> = {
   DRAFT:     'bg-gray-100 text-gray-700',
@@ -25,6 +27,7 @@ function formatTs(iso: string | null) {
 }
 
 export default function AssignmentDetailPage() {
+  const { success, error: toastError } = useToast();
   const { assignmentId } = useParams<{ assignmentId: string }>();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const navigate  = useNavigate();
@@ -47,6 +50,24 @@ export default function AssignmentDetailPage() {
     enabled: !!schoolId,
   });
 
+  const { data: students = [] } = useQuery({
+    queryKey: ['students', schoolId],
+    queryFn: () => listStudents(schoolId),
+    enabled: !!schoolId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const studentMap = useMemo(
+    () => Object.fromEntries(students.map((s) => [s.id, s])),
+    [students],
+  );
+
+  function studentLabel(studentId: string) {
+    const s = studentMap[studentId];
+    if (!s) return 'Not assigned';
+    return `${s.firstName} ${s.lastName}${s.studentNumber ? ` (${s.studentNumber})` : ''}`;
+  }
+
   const { data: submissions = [], isLoading: sLoading } = useQuery({
     queryKey: ['submissions', assignmentId],
     queryFn: () => listSubmissions(schoolId, assignmentId!),
@@ -56,19 +77,25 @@ export default function AssignmentDetailPage() {
   const statusMutation = useMutation({
     mutationFn: (status: AssignmentStatus) =>
       updateAssignmentStatus(schoolId, assignmentId!, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assignment', schoolId, assignmentId] }),
+    onSuccess: (_data, status) => {
+      success(status === 'PUBLISHED' ? 'Assignment published' : 'Assignment closed');
+      queryClient.invalidateQueries({ queryKey: ['assignment', schoolId, assignmentId] });
+    },
+    onError: () => { toastError('Failed to update assignment status.'); },
   });
 
   const gradeMutation = useMutation({
     mutationFn: (body: GradeSubmissionRequest) =>
       gradeSubmission(schoolId, assignmentId!, gradingSub!.id, body),
     onSuccess: () => {
+      success('Submission graded successfully');
       queryClient.invalidateQueries({ queryKey: ['submissions', assignmentId] });
       setGradingSub(null);
       setGradeForm({ marks: '', feedback: '' });
       setGradeError('');
     },
     onError: (err: { response?: { data?: { error?: { message?: string } } } }) => {
+      toastError('Failed to grade submission. Please try again.');
       setGradeError(err?.response?.data?.error?.message ?? 'Failed to grade');
     },
   });
@@ -86,9 +113,7 @@ export default function AssignmentDetailPage() {
     gradeMutation.mutate({ marksObtained: marks, feedback: gradeForm.feedback || undefined });
   }
 
-  if (aLoading) {
-    return <div className="p-6 text-sm text-gray-400">Loading…</div>;
-  }
+  if (aLoading) return <PageSpinner />;
 
   if (!assignment) {
     return (
@@ -115,7 +140,7 @@ export default function AssignmentDetailPage() {
           <button onClick={() => navigate(-1)} className="mb-2 text-xs text-gray-400 hover:text-gray-600">
             ← Back
           </button>
-          <h1 className="text-xl font-semibold text-gray-900">{assignment.title}</h1>
+          <PageHeader title={assignment.title} />
           <p className="mt-0.5 text-sm text-gray-500">{subjectLabel} · Due {assignment.dueDate}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -180,7 +205,7 @@ export default function AssignmentDetailPage() {
           <table className="min-w-full divide-y divide-gray-100 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                {['Student ID', 'Status', 'Submitted', 'Marks', 'Feedback', 'Action'].map((h) => (
+                {['Student', 'Status', 'Submitted', 'Marks', 'Feedback', 'Action'].map((h) => (
                   <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{h}</th>
                 ))}
               </tr>
@@ -188,7 +213,7 @@ export default function AssignmentDetailPage() {
             <tbody className="divide-y divide-gray-50">
               {submissions.map((sub) => (
                 <tr key={sub.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">{sub.studentId.slice(0, 8)}…</td>
+                  <td className="px-4 py-3 text-sm text-gray-700">{studentLabel(sub.studentId)}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${SUB_BADGE[sub.status]}`}>
                       {sub.status}
@@ -226,7 +251,7 @@ export default function AssignmentDetailPage() {
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="mb-4 text-base font-semibold text-gray-900">
               Grade Submission
-              <span className="ml-2 font-mono text-xs text-gray-400">{gradingSub.studentId.slice(0, 8)}…</span>
+              <span className="ml-2 text-xs text-gray-400">{studentLabel(gradingSub.studentId)}</span>
             </h2>
             {gradeError && (
               <p className="mb-3 rounded bg-red-50 px-3 py-2 text-xs text-red-600">{gradeError}</p>

@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { getMyAttendance } from '../api/studentPortalApi';
 import type { AttendanceStatus } from '../api/studentPortalApi';
 import { qrSelfMark } from '@/features/attendance/api/attendanceApi';
+import { useToast, PageSpinner, PageHeader } from '@/shared/ui';
 
 const STATUS_STYLE: Record<AttendanceStatus, string> = {
   PRESENT: 'bg-green-100 text-green-700',
@@ -21,6 +22,7 @@ function SummaryCard({ label, value, color }: { label: string; value: string | n
 }
 
 export default function StudentAttendancePage() {
+  const { success, error: toastError } = useToast();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['student-attendance'],
     queryFn:  getMyAttendance,
@@ -32,14 +34,18 @@ export default function StudentAttendancePage() {
   const qrMark = useMutation({
     mutationFn: () => qrSelfMark(qrToken.trim()),
     onSuccess: () => {
+      success('Attendance marked successfully');
       setQrSuccess(true);
       setQrToken('');
     },
-    onError: () => setQrSuccess(false),
+    onError: () => {
+      toastError('Failed to mark attendance. The token may be expired or invalid.');
+      setQrSuccess(false);
+    },
   });
 
   if (isLoading) {
-    return <div className="p-6 text-sm text-gray-400">Loading attendance…</div>;
+    return <PageSpinner />;
   }
   if (isError || !data) {
     return (
@@ -56,7 +62,7 @@ export default function StudentAttendancePage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">My Attendance</h1>
+        <PageHeader title="My Attendance" />
         <p className="mt-0.5 text-sm text-gray-500">{totalSessions} total session{totalSessions !== 1 ? 's' : ''} recorded</p>
       </div>
 
@@ -137,6 +143,7 @@ export default function StudentAttendancePage() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 <tr>
@@ -163,6 +170,7 @@ export default function StudentAttendancePage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

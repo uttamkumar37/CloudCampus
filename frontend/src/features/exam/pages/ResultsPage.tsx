@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { listStudents } from '@/features/student/api/studentApi';
 import { generateResults, listResults } from '../api/resultApi';
 import type { ExamResultResponse } from '../types/result';
+import { useToast, PageHeader, Spinner } from '@/shared/ui';
 
 const GRADE_COLOURS: Record<string, string> = {
   'A+': 'bg-emerald-100 text-emerald-800',
@@ -15,6 +17,7 @@ const GRADE_COLOURS: Record<string, string> = {
 };
 
 export default function ResultsPage() {
+  const { success, error: toastError } = useToast();
   const { examId } = useParams<{ examId: string }>();
   const navigate    = useNavigate();
   const queryClient = useQueryClient();
@@ -27,13 +30,28 @@ export default function ResultsPage() {
     enabled:  !!schoolId && !!examId,
   });
 
+  const { data: students = [] } = useQuery({
+    queryKey: ['students', schoolId],
+    queryFn: () => listStudents(schoolId),
+    enabled: !!schoolId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const studentMap = useMemo(
+    () => Object.fromEntries(students.map((s) => [s.id, s])),
+    [students],
+  );
+
   const [generating, setGenerating] = useState(false);
   const generateMutation = useMutation({
     mutationFn: () => generateResults(schoolId, examId!),
     onMutate:   () => setGenerating(true),
     onSettled:  () => setGenerating(false),
-    onSuccess:  () =>
-      queryClient.invalidateQueries({ queryKey: ['exam-results', schoolId, examId] }),
+    onSuccess:  () => {
+      success('Results generated successfully');
+      queryClient.invalidateQueries({ queryKey: ['exam-results', schoolId, examId] });
+    },
+    onError: () => { toastError('Failed to generate results. Please try again.'); },
   });
 
   const passCount = results.filter((r) => r.passed).length;
@@ -58,7 +76,7 @@ export default function ResultsPage() {
       </nav>
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Exam Results</h1>
+        <PageHeader title="Exam Results" />
         <button
           onClick={() => generateMutation.mutate()}
           disabled={generating}
@@ -92,7 +110,7 @@ export default function ResultsPage() {
 
       {/* Results table */}
       {isLoading ? (
-        <p className="text-gray-500 text-center py-12">Loading…</p>
+        <div className="py-12 flex justify-center"><Spinner size="md" /></div>
       ) : results.length === 0 ? (
         <div className="text-center py-16 bg-white border rounded-xl">
           <p className="text-gray-500 mb-4">No results yet. Click "Generate Results" to compute.</p>
@@ -103,7 +121,7 @@ export default function ResultsPage() {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="text-left px-4 py-3 text-gray-600 font-medium">Rank</th>
-                <th className="text-left px-4 py-3 text-gray-600 font-medium">Student ID</th>
+                <th className="text-left px-4 py-3 text-gray-600 font-medium">Student</th>
                 <th className="text-right px-4 py-3 text-gray-600 font-medium">Marks Obtained</th>
                 <th className="text-right px-4 py-3 text-gray-600 font-medium">Total Marks</th>
                 <th className="text-right px-4 py-3 text-gray-600 font-medium">Percentage</th>
@@ -118,8 +136,10 @@ export default function ResultsPage() {
                   <td className="px-4 py-3 font-semibold text-gray-700">
                     #{r.rank ?? '—'}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                    {r.studentId.slice(0, 8)}…
+                  <td className="px-4 py-3 text-sm text-gray-700">
+                    {studentMap[r.studentId]
+                      ? `${studentMap[r.studentId].firstName} ${studentMap[r.studentId].lastName}${studentMap[r.studentId].studentNumber ? ` · ${studentMap[r.studentId].studentNumber}` : ''}`
+                      : 'Not assigned'}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-800">
                     {r.totalMarksObtained.toFixed(1)}

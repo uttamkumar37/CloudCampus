@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listTenants, getComparisonReport } from '../api/tenantApi';
+import { Spinner, PageHeader } from '@/shared/ui';
 import type { SchoolComparisonRow } from '../types/tenant';
 
 type SortKey = 'schoolName' | 'activeStudents' | 'attendanceRate' | 'feeCollectionRate';
@@ -113,7 +114,7 @@ export function SchoolComparisonPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">School Comparison</h1>
+        <PageHeader title="School Comparison" />
         <p className="mt-0.5 text-sm text-gray-500">
           Compare attendance, fee collection, and enrolment across all schools in a tenant
         </p>
@@ -142,7 +143,7 @@ export function SchoolComparisonPage() {
         </button>
       </div>
 
-      {isLoading && <div className="py-10 text-center text-sm text-gray-400">Loading…</div>}
+      {isLoading && <div className="py-10 flex justify-center"><Spinner size="md" /></div>}
       {isError  && <div className="py-6 text-center text-sm text-red-500">Failed to load comparison.</div>}
 
       {data && (

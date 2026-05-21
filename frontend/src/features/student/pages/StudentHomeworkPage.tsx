@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMyHomework, submitHomework } from '../api/studentPortalApi';
 import type { HomeworkResponse } from '../api/studentPortalApi';
+import { useToast, PageSpinner, PageHeader } from '@/shared/ui';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -23,6 +24,7 @@ function SubmitForm({
   homework: HomeworkResponse;
   onClose: () => void;
 }) {
+  const { success, error: toastError } = useToast();
   const [notes, setNotes] = useState('');
   const [alreadyDone, setAlreadyDone] = useState(false);
   const qc = useQueryClient();
@@ -30,11 +32,16 @@ function SubmitForm({
   const { mutate, isPending, isError } = useMutation({
     mutationFn: () => submitHomework(homework.id, notes),
     onSuccess: () => {
+      success('Homework submitted successfully');
       qc.invalidateQueries({ queryKey: ['student-homework'] });
       onClose();
     },
     onError: (err: unknown) => {
-      if (isConflictError(err)) setAlreadyDone(true);
+      if (isConflictError(err)) {
+        setAlreadyDone(true);
+      } else {
+        toastError('Failed to submit homework. Please try again.');
+      }
     },
   });
 
@@ -86,7 +93,7 @@ export default function StudentHomeworkPage() {
     queryFn: getMyHomework,
   });
 
-  if (isLoading) return <div className="p-6 text-sm text-gray-400">Loading…</div>;
+  if (isLoading) return <PageSpinner />;
   if (isError) {
     return (
       <div className="p-6">
@@ -100,7 +107,7 @@ export default function StudentHomeworkPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Homework</h1>
+        <PageHeader title="Homework" />
         <p className="mt-0.5 text-sm text-gray-500">{homework.length} assigned</p>
       </div>
 

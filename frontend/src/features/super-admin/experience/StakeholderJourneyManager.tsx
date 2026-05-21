@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createStakeholderJourney, listStakeholderJourneys, publishStakeholderJourney } from './experienceStudioApi';
+import { useToast } from '@/shared/ui';
 
 export default function StakeholderJourneyManager() {
   const qc = useQueryClient();
+  const { success, error: toastError } = useToast();
   const { data: journeys = [], isLoading } = useQuery({
     queryKey: ['sa:exp:stakeholder-journeys'],
     queryFn: listStakeholderJourneys,
@@ -18,12 +20,14 @@ export default function StakeholderJourneyManager() {
 
   const createMutation = useMutation({
     mutationFn: createStakeholderJourney,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:stakeholder-journeys'] }),
+    onSuccess: () => { success('Stakeholder journey created'); qc.invalidateQueries({ queryKey: ['sa:exp:stakeholder-journeys'] }); },
+    onError: () => { toastError('Failed to create stakeholder journey. Please try again.'); },
   });
 
   const publishMutation = useMutation({
     mutationFn: publishStakeholderJourney,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sa:exp:stakeholder-journeys'] }),
+    onSuccess: () => { success('Stakeholder journey published'); qc.invalidateQueries({ queryKey: ['sa:exp:stakeholder-journeys'] }); },
+    onError: () => { toastError('Failed to publish stakeholder journey. Please try again.'); },
   });
 
   return (

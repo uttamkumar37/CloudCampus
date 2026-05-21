@@ -68,6 +68,10 @@ public class DeviceSession {
         this.revokedAt = Instant.now();
     }
 
+    public void markSeen() {
+        this.lastSeenAt = Instant.now();
+    }
+
     // ── Getters ──────────────────────────────────────────────────────────────
 
     public UUID    getId()         { return id; }

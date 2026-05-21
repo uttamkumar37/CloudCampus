@@ -4,6 +4,7 @@ import {
   listMyPlansApi, createPlanApi, deletePlanApi, publishPlanApi,
   type LessonPlanResponse, type LessonPlanRequest,
 } from '../../school-admin/api/lessonPlanApi';
+import { useToast, PageSpinner, EmptyState, ConfirmDialog, PageHeader } from '@/shared/ui';
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function plusDays(n: number) {
@@ -29,10 +30,12 @@ const TEXT_FIELDS: Array<{
 ];
 
 export function LessonPlanPage() {
+  const { success, error: toastError } = useToast();
   const qc = useQueryClient();
   const [from, setFrom] = useState(todayStr());
   const [to, setTo]     = useState(plusDays(14));
   const [showForm, setShowForm] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<LessonPlanRequest>({
     planDate: todayStr(), topic: '', objectives: '', activities: '',
     materials: '', homeworkNote: '', publish: false,
@@ -46,27 +49,37 @@ export function LessonPlanPage() {
   const create = useMutation({
     mutationFn: () => createPlanApi(form),
     onSuccess: () => {
+      success('Lesson plan created successfully');
       qc.invalidateQueries({ queryKey: ['lesson-plans'] });
       setShowForm(false);
       setForm({ planDate: todayStr(), topic: '', objectives: '', activities: '',
                 materials: '', homeworkNote: '', publish: false });
     },
+    onError: () => { toastError('Failed to create lesson plan. Please try again.'); },
   });
 
   const publish = useMutation({
     mutationFn: (id: string) => publishPlanApi(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['lesson-plans'] }),
+    onSuccess: () => {
+      success('Lesson plan published');
+      qc.invalidateQueries({ queryKey: ['lesson-plans'] });
+    },
+    onError: () => { toastError('Failed to publish lesson plan.'); },
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => deletePlanApi(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['lesson-plans'] }),
+    onSuccess: () => {
+      success('Lesson plan deleted');
+      qc.invalidateQueries({ queryKey: ['lesson-plans'] });
+    },
+    onError: () => { toastError('Failed to delete lesson plan.'); },
   });
 
   return (
     <div className="p-6 max-w-4xl">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-gray-900">Lesson Plans</h1>
+        <PageHeader title="Lesson Plans" />
         <button
           onClick={() => setShowForm(!showForm)}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -135,9 +148,9 @@ export function LessonPlanPage() {
 
       {/* Plan list */}
       {isLoading ? (
-        <p className="text-sm text-gray-500">Loading…</p>
+        <PageSpinner />
       ) : plans.length === 0 ? (
-        <p className="text-sm text-gray-500">No lesson plans in this date range.</p>
+        <EmptyState title="No lesson plans" description="No lesson plans in this date range." />
       ) : (
         <div className="space-y-3">
           {plans.map((plan: LessonPlanResponse) => (
@@ -164,7 +177,7 @@ export function LessonPlanPage() {
                     Publish
                   </button>
                 )}
-                <button onClick={() => { if (confirm('Delete this plan?')) remove.mutate(plan.id); }}
+                <button onClick={() => setConfirmDeleteId(plan.id)}
                   disabled={remove.isPending}
                   className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50">
                   Delete
@@ -174,6 +187,16 @@ export function LessonPlanPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => { if (confirmDeleteId) remove.mutate(confirmDeleteId); setConfirmDeleteId(null); }}
+        title="Delete lesson plan"
+        description="Are you sure you want to delete this lesson plan? This cannot be undone."
+        confirmLabel="Delete"
+        loading={remove.isPending}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { getStudent } from '@/features/student/api/studentApi';
 import {
   getFeeRecord,
   getFeeReceipt,
@@ -12,6 +13,7 @@ import {
   downloadFeeInvoicePdf,
 } from '../api/financeApi';
 import type { FeeStatus, PaymentMode, RecordPaymentRequest } from '../types/finance';
+import { useToast, PageHeader, PageSpinner, ConfirmDialog, Spinner } from '@/shared/ui';
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -68,16 +70,25 @@ function Field({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function StudentFeeDetailPage() {
+  const { success, error: toastError } = useToast();
   const { recordId } = useParams<{ recordId: string }>();
   const qc = useQueryClient();
 
   const [showReceipt, setShowReceipt] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
+  const [waiveConfirmOpen, setWaiveConfirmOpen] = useState(false);
 
   const { data: record, isLoading: loadingRecord } = useQuery({
     queryKey: ['fee-record', recordId],
     queryFn: () => getFeeRecord(recordId!),
     enabled: !!recordId,
+  });
+
+  const { data: student } = useQuery({
+    queryKey: ['student', record?.studentId],
+    queryFn: () => getStudent(record!.studentId),
+    enabled: !!record?.studentId,
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: receipt, isLoading: loadingReceipt } = useQuery({
@@ -100,12 +111,14 @@ export default function StudentFeeDetailPage() {
   const payMutation = useMutation({
     mutationFn: (body: RecordPaymentRequest) => recordPayment(recordId!, body),
     onSuccess: (data) => {
+      success('Payment recorded successfully');
       qc.invalidateQueries({ queryKey: ['fee-record', recordId] });
       qc.invalidateQueries({ queryKey: ['fee-receipt', recordId] });
       setPaymentSuccess(data.receiptNumber);
       reset();
     },
     onError: (err: Error) => {
+      toastError('Failed to record payment. Please try again.');
       setError('root', { message: err.message || 'Failed to record payment' });
     },
   });
@@ -113,13 +126,17 @@ export default function StudentFeeDetailPage() {
   const waiveMutation = useMutation({
     mutationFn: () => waiveFeeRecord(recordId!),
     onSuccess: () => {
+      success('Fee waived successfully');
       qc.invalidateQueries({ queryKey: ['fee-record', recordId] });
       qc.invalidateQueries({ queryKey: ['fee-receipt', recordId] });
     },
+    onError: () => { toastError('Failed to waive fee record.'); },
   });
 
   const invoiceMutation = useMutation({
     mutationFn: () => downloadFeeInvoicePdf(recordId!),
+    onSuccess: () => { success('Invoice PDF downloaded'); },
+    onError: () => { toastError('Failed to generate invoice PDF.'); },
   });
 
   function onSubmit(values: PaymentForm) {
@@ -138,9 +155,7 @@ export default function StudentFeeDetailPage() {
     payMutation.mutate(body);
   }
 
-  if (loadingRecord) {
-    return <div className="p-8 text-sm text-gray-500">Loading…</div>;
-  }
+  if (loadingRecord) return <PageSpinner />;
 
   if (!record) {
     return (
@@ -169,9 +184,11 @@ export default function StudentFeeDetailPage() {
       <div className="rounded-xl border border-gray-200 bg-white p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{record.categoryName}</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Student: <span className="font-mono">{record.studentId}</span>
+            <PageHeader title={record.categoryName} />
+            <p className="mt-1 text-sm text-gray-700 font-medium">
+              {student
+                ? `${student.firstName} ${student.lastName}${student.studentNumber ? ` · ${student.studentNumber}` : ''}`
+                : 'Student'}
             </p>
             {record.dueDate && (
               <p className="text-sm text-gray-500">Due: {record.dueDate}</p>
@@ -213,17 +230,22 @@ export default function StudentFeeDetailPage() {
         <div className="mt-4 flex flex-wrap gap-3">
           {!isClosed && (
             <button
-              onClick={() => {
-                if (window.confirm('Waive this fee record? This cannot be undone.')) {
-                  waiveMutation.mutate();
-                }
-              }}
+              onClick={() => setWaiveConfirmOpen(true)}
               disabled={waiveMutation.isPending}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               Waive Fee
             </button>
           )}
+          <ConfirmDialog
+            open={waiveConfirmOpen}
+            onClose={() => setWaiveConfirmOpen(false)}
+            onConfirm={() => { setWaiveConfirmOpen(false); waiveMutation.mutate(); }}
+            title="Waive this fee record?"
+            description="This action cannot be undone."
+            confirmLabel="Waive Fee"
+            loading={waiveMutation.isPending}
+          />
           <button
             onClick={() => invoiceMutation.mutate()}
             disabled={invoiceMutation.isPending}
@@ -320,7 +342,7 @@ export default function StudentFeeDetailPage() {
         </div>
 
         {showReceipt && loadingReceipt && (
-          <p className="text-sm text-gray-500">Loading…</p>
+          <div className="py-4 flex justify-center"><Spinner size="sm" /></div>
         )}
 
         {showReceipt && receipt && (

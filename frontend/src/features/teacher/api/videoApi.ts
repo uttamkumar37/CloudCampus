@@ -35,25 +35,25 @@ export async function initiateUploadApi(payload: {
   contentType?: string;
   visibility?: VideoVisibility;
 }): Promise<VideoInitiateResponse> {
-  const res = await axiosInstance.post('/teacher/videos/initiate', payload);
+  const res = await axiosInstance.post('/v1/teacher/videos/initiate', payload);
   return res.data.data;
 }
 
 export async function confirmUploadApi(videoId: string, fileSizeBytes?: number, durationSeconds?: number): Promise<VideoResponse> {
-  const res = await axiosInstance.post(`/teacher/videos/${videoId}/confirm`, { fileSizeBytes, durationSeconds });
+  const res = await axiosInstance.post(`/v1/teacher/videos/${videoId}/confirm`, { fileSizeBytes, durationSeconds });
   return res.data.data;
 }
 
 export async function listMyVideosApi(): Promise<VideoResponse[]> {
-  const res = await axiosInstance.get('/teacher/videos');
+  const res = await axiosInstance.get('/v1/teacher/videos');
   return res.data.data;
 }
 
 export async function deleteVideoApi(videoId: string): Promise<void> {
-  await axiosInstance.delete(`/teacher/videos/${videoId}`);
+  await axiosInstance.delete(`/v1/teacher/videos/${videoId}`);
 }
 
 export async function listStudentVideosApi(subjectId: string): Promise<VideoResponse[]> {
-  const res = await axiosInstance.get('/student/videos', { params: { subjectId } });
+  const res = await axiosInstance.get('/v1/student/videos', { params: { subjectId } });
   return res.data.data;
 }

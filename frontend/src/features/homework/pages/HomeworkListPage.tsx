@@ -8,6 +8,7 @@ import { listSections } from '@/features/school-admin/api/sectionApi';
 import { listSubjects } from '@/features/school-admin/api/subjectApi';
 import { listHomework, updateHomeworkStatus, deleteHomework } from '../api/homeworkApi';
 import type { HomeworkStatus } from '../types/homework';
+import { useToast, PageHeader, Spinner } from '@/shared/ui';
 
 const STATUS_BADGE: Record<HomeworkStatus, string> = {
   DRAFT:     'bg-gray-100 text-gray-700',
@@ -34,6 +35,7 @@ function isPastDue(dueDate: string) {
 }
 
 export default function HomeworkListPage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const queryClient = useQueryClient();
 
@@ -89,12 +91,20 @@ export default function HomeworkListPage() {
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: HomeworkStatus }) =>
       updateHomeworkStatus(schoolId, id, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['homework', schoolId] }),
+    onSuccess: (_data, { status }) => {
+      success(status === 'PUBLISHED' ? 'Homework published' : 'Homework closed');
+      queryClient.invalidateQueries({ queryKey: ['homework', schoolId] });
+    },
+    onError: () => { toastError('Failed to update homework status.'); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteHomework(schoolId, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['homework', schoolId] }),
+    onSuccess: () => {
+      success('Homework deleted');
+      queryClient.invalidateQueries({ queryKey: ['homework', schoolId] });
+    },
+    onError: () => { toastError('Failed to delete homework.'); },
   });
 
   // ── Filter helpers ─────────────────────────────────────────────────────────
@@ -117,7 +127,7 @@ export default function HomeworkListPage() {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Homework</h1>
+          <PageHeader title="Homework" />
           <p className="mt-0.5 text-sm text-gray-500">{total} assignment{total !== 1 ? 's' : ''}</p>
         </div>
         {academicYearId && (
@@ -185,7 +195,7 @@ export default function HomeworkListPage() {
           Select an academic year to view homework assignments.
         </div>
       ) : isLoading ? (
-        <div className="py-16 text-center text-sm text-gray-400">Loading…</div>
+        <div className="py-16 flex justify-center"><Spinner size="md" /></div>
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-200 py-16 text-center text-sm text-gray-400">
           No assignments found. Click <strong>+ New Assignment</strong> to create one.

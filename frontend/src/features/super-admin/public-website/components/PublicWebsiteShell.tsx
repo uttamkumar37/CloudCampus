@@ -1,18 +1,39 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useToast } from '@/shared/ui';
 import { websiteBuilderReadiness } from '../config/websiteBuilderTemplates';
 
 const ITEMS = [
   { label: 'Website Dashboard', to: '/super-admin/public-website' },
   { label: 'Pages', to: '/super-admin/public-website/pages' },
-  { label: 'Sections', to: '/super-admin/public-website/pages' },
-  { label: 'Content Blocks', to: '/super-admin/public-website/pages' },
-  { label: 'Navigation', to: '/super-admin/public-website/pages' },
+  {
+    label: 'Sections',
+    to: '/super-admin/public-website/pages',
+    intent: 'Open Pages and select a route. The section library is available inside the page composer.',
+  },
+  {
+    label: 'Content Blocks',
+    to: '/super-admin/public-website/pages',
+    intent: 'Content blocks are edited as structured sections inside the Pages workspace.',
+  },
+  {
+    label: 'Navigation',
+    to: '/super-admin/public-website/pages',
+    intent: 'Navigation preview is available in the Pages workspace. Publishing remains in Publish Center.',
+  },
   { label: 'Branding', to: '/super-admin/public-website/branding' },
   { label: 'SEO', to: '/super-admin/public-website/seo' },
   { label: 'Media Library', to: '/super-admin/public-website/media' },
   { label: 'Analytics', to: '/super-admin/public-website/analytics' },
-  { label: 'Demo Showcase', to: '/super-admin/public-website/pages' },
-  { label: 'Investor Showcase', to: '/super-admin/public-website/pages' },
+  {
+    label: 'Demo Showcase',
+    to: '/super-admin/public-website/pages',
+    intent: 'Use the Demo Conversion template from Pages to build or update demo showcase sections.',
+  },
+  {
+    label: 'Investor Showcase',
+    to: '/super-admin/public-website/pages',
+    intent: 'Use the Investor Narrative template from Pages to build or update investor showcase sections.',
+  },
   { label: 'Publish Center', to: '/super-admin/public-website/publish' },
 ] as const;
 
@@ -27,6 +48,7 @@ export function PublicWebsiteShell({
 }) {
   const location = useLocation();
   const publicWebsiteUrl = getPublicWebsiteUrl();
+  const { info } = useToast();
 
   return (
     <div className="min-h-full bg-[radial-gradient(circle_at_top_left,#dbeafe_0%,#ecfeff_30%,#f8fafc_65%)] px-4 py-5 sm:px-6">
@@ -49,6 +71,12 @@ export function PublicWebsiteShell({
             >
               View Live Website
             </a>
+            <Link
+              to="/super-admin/public-website/publish"
+              className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 transition hover:border-emerald-300 hover:bg-emerald-100"
+            >
+              Publish Center
+            </Link>
           </div>
         </div>
 
@@ -63,11 +91,16 @@ export function PublicWebsiteShell({
 
         <div className="mb-6 grid gap-2 md:grid-cols-4 xl:grid-cols-6">
           {ITEMS.map((item) => {
-            const active = location.pathname === item.to;
+            const active = location.pathname === item.to && !('intent' in item);
             return (
               <Link
                 key={item.label}
                 to={item.to}
+                onClick={() => {
+                  if ('intent' in item) {
+                    info(item.intent, item.label);
+                  }
+                }}
                 className={[
                   'rounded-xl border px-3 py-2 text-xs font-semibold transition',
                   active

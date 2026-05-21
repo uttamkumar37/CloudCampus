@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { bulkImportStudents } from '../api/studentApi';
 import type { BulkStudentRow, BulkImportResult } from '../api/studentApi';
+import { useToast, PageHeader } from '@/shared/ui';
 
 // ── CSV helpers ───────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ function parseCSV(text: string): BulkStudentRow[] {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function StudentBulkImportPage() {
+  const { success, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const navigate  = useNavigate();
   const inputRef  = useRef<HTMLInputElement>(null);
@@ -69,7 +71,16 @@ export default function StudentBulkImportPage() {
 
   const importMutation = useMutation({
     mutationFn: () => bulkImportStudents(schoolId, rows),
-    onSuccess: (data) => setResult(data),
+    onSuccess: (data) => {
+      setResult(data);
+      if (data.successCount > 0) {
+        success(`${data.successCount} student${data.successCount !== 1 ? 's' : ''} imported successfully`);
+      }
+      if (data.failedCount > 0) {
+        toastError(`${data.failedCount} row${data.failedCount !== 1 ? 's' : ''} failed to import`);
+      }
+    },
+    onError: () => { toastError('Import failed. Please try again.'); },
   });
 
   function handleFile(file: File) {
@@ -108,7 +119,7 @@ export default function StudentBulkImportPage() {
         <button onClick={() => navigate('/school-admin/students')}
           className="text-xs text-gray-400 hover:text-gray-600">← Back</button>
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Bulk Import Students</h1>
+          <PageHeader title="Bulk Import Students" />
           <p className="mt-0.5 text-sm text-gray-500">Upload a CSV file to admit multiple students at once</p>
         </div>
       </div>

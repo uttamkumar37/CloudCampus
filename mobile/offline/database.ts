@@ -13,12 +13,14 @@
  */
 import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
+import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import { schema } from './schema/schema';
 import { AttendanceRecord } from './models/AttendanceRecord';
 import { Student } from './models/Student';
 
 const DB_ENCRYPTION_KEY_STORE = 'wdb_enc_key_v1';
+const isExpoGo = Constants.appOwnership === 'expo';
 
 async function getOrCreateEncryptionKey(): Promise<string> {
   let key = await SecureStore.getItemAsync(DB_ENCRYPTION_KEY_STORE);
@@ -34,17 +36,41 @@ async function getOrCreateEncryptionKey(): Promise<string> {
 }
 
 function buildDatabase(encryptionKey?: string): Database {
-  const adapter = new SQLiteAdapter({
-    schema,
-    jsi: true,
-    // encryptionKey is passed through to the native SQLCipher layer when the
-    // SQLCipher-backed build is active.  No-op on the default SQLite build.
-    ...(encryptionKey ? { encryptionKey } : {}),
-    onSetUpError: (error) => {
-      console.error('[WatermelonDB] Setup error:', error);
+  if (isExpoGo) {
+    console.warn('[WatermelonDB] Offline attendance is disabled in Expo Go. Use a development build for native database testing.');
+    return unavailableDatabase();
+  }
+
+  try {
+    const adapter = new SQLiteAdapter({
+      schema,
+      jsi: false,
+      // encryptionKey is passed through to the native SQLCipher layer when the
+      // SQLCipher-backed build is active. No-op on the default SQLite build.
+      ...(encryptionKey ? { encryptionKey } : {}),
+      onSetUpError: (error) => {
+        console.error('[WatermelonDB] Setup error:', error);
+      },
+    });
+    return new Database({ adapter, modelClasses: [AttendanceRecord, Student] });
+  } catch (error) {
+    console.warn('[WatermelonDB] Native database unavailable. Offline attendance is disabled in Expo Go.', error);
+    return unavailableDatabase();
+  }
+}
+
+function unavailableDatabase(): Database {
+  return new Proxy({} as Database, {
+    get(_target, prop) {
+      if (prop === 'write') return async (work: () => Promise<void> | void) => work();
+      if (prop === 'get') {
+        return () => {
+          throw new Error('Offline database is unavailable in Expo Go. Use a development build for offline attendance.');
+        };
+      }
+      return undefined;
     },
   });
-  return new Database({ adapter, modelClasses: [AttendanceRecord, Student] });
 }
 
 // Eager singleton — initialised without the encryption key on first import so
@@ -54,6 +80,11 @@ function buildDatabase(encryptionKey?: string): Database {
 let _database: Database = buildDatabase();
 
 export async function initDatabase(): Promise<void> {
+  if (isExpoGo) {
+    _database = unavailableDatabase();
+    return;
+  }
+
   const key = await getOrCreateEncryptionKey();
   _database = buildDatabase(key);
 }

@@ -9,6 +9,7 @@ import { listAcademicYears } from '@/features/school-admin/api/academicYearApi';
 import { listClasses } from '@/features/school-admin/api/classApi';
 import { listSections } from '@/features/school-admin/api/sectionApi';
 import { openSession } from '../api/attendanceApi';
+import { useToast, PageHeader } from '@/shared/ui';
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ function Field({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function AttendanceCreateSessionPage() {
+  const { success, error: toastError } = useToast();
   const user = useAuthStore((s) => s.user);
   const schoolId = user?.schoolId ?? null;
   const navigate = useNavigate();
@@ -114,9 +116,11 @@ export function AttendanceCreateSessionPage() {
         periodNumber: parseInt(values.periodNumber, 10) || 0,
       }),
     onSuccess: (session) => {
+      success('Attendance session opened successfully');
       navigate(`/school-admin/attendance/sessions/${session.id}/mark`);
     },
     onError: () => {
+      toastError('Failed to open session. A session for this class/period/date may already exist.');
       setError('root', {
         message: 'Failed to open session. A session for this class/period/date may already exist.',
       });
@@ -136,7 +140,7 @@ export function AttendanceCreateSessionPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Open Attendance Session</h2>
+        <PageHeader title="Open Attendance Session" />
         <p className="mt-0.5 text-sm text-gray-500">
           Duplicate sessions (same class / period / date) will be rejected.
         </p>

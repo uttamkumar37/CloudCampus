@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -7,256 +7,239 @@ import {
   type PublicSectionResponse,
 } from '../api/publicSiteApi';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+function str(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
 
-function str(v: unknown): string { return typeof v === 'string' ? v : ''; }
-function arr<T>(v: unknown): T[]  { return Array.isArray(v) ? (v as T[]) : []; }
+function arr<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
 
-// ── HERO ──────────────────────────────────────────────────────────────────────
+function safeHref(value: unknown, fallback = '#') {
+  const href = str(value).trim();
+  if (!href) return fallback;
+  if (href.startsWith('#') || href.startsWith('/') || href.startsWith('mailto:') || href.startsWith('tel:')) return href;
+  if (href.startsWith('https://') || href.startsWith('http://')) return href;
+  return fallback;
+}
 
-function HeroSection({ content }: { content: Record<string, unknown> }) {
-  const heading    = str(content.heading);
-  const subheading = str(content.subheading) || str(content.subtext);
-  const ctaText    = str(content.ctaText) || str(content.ctaLabel);
-  const ctaUrl     = str(content.ctaUrl) || str(content.primaryUrl);
-  const badge      = str(content.badge);
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('') || 'CC';
+}
+
+function HeroSection({ content, schoolName }: { content: Record<string, unknown>; schoolName: string }) {
+  const heading = str(content.heading) || schoolName;
+  const subheading = str(content.subheading) || str(content.subtext) || str(content.body);
+  const ctaText = str(content.ctaText) || str(content.ctaLabel);
+  const ctaUrl = safeHref(content.ctaUrl || content.primaryUrl);
+  const badge = str(content.badge);
+  const highlights = arr<string>(content.highlights);
 
   return (
-    <section className="relative flex min-h-[380px] items-center justify-center overflow-hidden bg-gradient-to-br from-[#003366] via-[#004080] to-[#1a5276] px-6 py-16 text-center text-white">
-      {/* Decorative circles */}
-      <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-white/5" />
-      <div className="absolute -bottom-16 -right-16 h-64 w-64 rounded-full bg-white/5" />
-      <div className="absolute left-1/4 top-1/3 h-32 w-32 rounded-full bg-white/5" />
-
-      <div className="relative z-10 max-w-3xl">
+    <section className="relative overflow-hidden bg-slate-950 px-5 py-16 text-white sm:px-8 lg:py-24">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.35),transparent_36%),linear-gradient(135deg,rgba(15,23,42,0.95),rgba(30,64,175,0.9),rgba(8,145,178,0.75))]" />
+      <div className="relative mx-auto max-w-6xl">
         {badge && (
-          <span className="mb-4 inline-block rounded-full border border-yellow-300/60 bg-yellow-400/20 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-yellow-200">
+          <span className="inline-flex rounded-full border border-cyan-200/50 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-cyan-100">
             {badge}
           </span>
         )}
-        {heading && (
-          <h1 className="text-3xl font-extrabold leading-snug md:text-4xl lg:text-5xl">
-            {heading}
-          </h1>
-        )}
-        {subheading && (
-          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-blue-100 md:text-lg">
-            {subheading}
-          </p>
-        )}
-        {ctaText && (
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a
-              href={ctaUrl || '#'}
-              className="rounded-full bg-yellow-400 px-7 py-3 text-sm font-bold text-[#003366] shadow-lg transition hover:bg-yellow-300"
-            >
+        <div className="mt-5 max-w-3xl">
+          <h1 className="text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">{heading}</h1>
+          {subheading && <p className="mt-5 max-w-2xl text-base leading-8 text-slate-200 sm:text-lg">{subheading}</p>}
+        </div>
+        <div className="mt-8 flex flex-wrap gap-3">
+          {ctaText && (
+            <a href={ctaUrl} className="rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950 shadow-lg hover:bg-cyan-50">
               {ctaText}
             </a>
-            <a
-              href="#contact"
-              className="rounded-full border border-white/50 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              Contact Us
-            </a>
+          )}
+          <a href="#contact" className="rounded-full border border-white/40 px-6 py-3 text-sm font-bold text-white hover:bg-white/10">
+            Contact School
+          </a>
+        </div>
+        {highlights.length > 0 && (
+          <div className="mt-10 grid gap-3 sm:grid-cols-3">
+            {highlights.slice(0, 3).map((item) => (
+              <div key={item} className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
+                <p className="text-sm font-bold text-white">{item}</p>
+              </div>
+            ))}
           </div>
         )}
       </div>
     </section>
   );
 }
-
-// ── STATS ─────────────────────────────────────────────────────────────────────
 
 function StatsSection({ content }: { content: Record<string, unknown> }) {
   const stats = arr<{ value: string; label: string; icon?: string }>(content.stats);
   if (stats.length === 0) return null;
 
   return (
-    <section className="bg-[#003366] px-6 py-0">
-      <div className="mx-auto max-w-6xl">
-        <div className={`grid divide-x divide-white/20 text-white sm:grid-cols-${Math.min(stats.length, 4)} grid-cols-2`}>
-          {stats.map((s, i) => (
-            <div key={i} className="flex flex-col items-center py-6 px-4 text-center">
-              {s.icon && <span className="mb-1 text-2xl">{s.icon}</span>}
-              <p className="text-3xl font-extrabold text-yellow-400">{s.value}</p>
-              <p className="mt-1 text-xs font-medium uppercase tracking-wider text-blue-200">{s.label}</p>
-            </div>
-          ))}
-        </div>
+    <section className="bg-white px-5 py-12 sm:px-8">
+      <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.slice(0, 8).map((stat, index) => (
+          <div key={`${stat.label}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
+            {stat.icon && <p className="mb-2 text-2xl">{stat.icon}</p>}
+            <p className="text-3xl font-black text-slate-950">{stat.value}</p>
+            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-500">{stat.label}</p>
+          </div>
+        ))}
       </div>
     </section>
   );
 }
-
-// ── CONTACT ───────────────────────────────────────────────────────────────────
-
-function ContactSection({ content }: { content: Record<string, unknown> }) {
-  const address = str(content.address);
-  const phone   = str(content.phone);
-  const email   = str(content.email);
-
-  return (
-    <section id="contact" className="bg-[#f0f4f8] px-6 py-14">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold text-[#003366]">Contact Us</h2>
-          <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-yellow-400" />
-        </div>
-        <div className="grid gap-6 sm:grid-cols-3">
-          {address && (
-            <div className="rounded-xl border border-blue-100 bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#003366] text-xl text-white">📍</div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[#003366]">Address</p>
-              <p className="text-sm leading-relaxed text-gray-600">{address}</p>
-            </div>
-          )}
-          {phone && (
-            <div className="rounded-xl border border-blue-100 bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#003366] text-xl text-white">📞</div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[#003366]">Phone</p>
-              <a href={`tel:${phone}`} className="text-sm font-medium text-blue-700 hover:underline">{phone}</a>
-            </div>
-          )}
-          {email && (
-            <div className="rounded-xl border border-blue-100 bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#003366] text-xl text-white">✉️</div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[#003366]">Email</p>
-              <a href={`mailto:${email}`} className="text-sm font-medium text-blue-700 hover:underline">{email}</a>
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── TEXT (rich — NVS-styled) ──────────────────────────────────────────────────
 
 function TextSection({ content }: { content: Record<string, unknown> }) {
-  const heading  = str(content.heading) || str(content.title);
-  const body     = str(content.body) || str(content.text);
+  const heading = str(content.heading) || str(content.title);
+  const body = str(content.body) || str(content.text);
   const highlights = arr<string>(content.highlights);
-  const features   = arr<{ icon: string; title: string; desc: string }>(content.features);
-  const sections   = arr<{ icon: string; title: string; body: string }>(content.sections);
-  const steps      = arr<{ step: number; title: string; desc: string }>(content.steps);
-  const team       = arr<{ name: string; title: string; bio: string }>(content.team);
+  const features = arr<{ icon?: string; title: string; desc?: string; body?: string }>(content.features);
 
   return (
-    <section className="mx-auto max-w-5xl px-6 py-14">
-      {heading && (
-        <div className="mb-8 text-center">
-          <h2 className="text-2xl font-bold text-[#003366]">{heading}</h2>
-          <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-yellow-400" />
+    <section className="bg-white px-5 py-14 sm:px-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="max-w-3xl">
+          {heading && <h2 className="text-3xl font-black text-slate-950">{heading}</h2>}
+          {body && <p className="mt-4 whitespace-pre-line text-base leading-8 text-slate-600">{body}</p>}
         </div>
-      )}
-
-      {body && (
-        <p className="mx-auto max-w-3xl whitespace-pre-line text-center leading-relaxed text-gray-600">
-          {body}
-        </p>
-      )}
-
-      {highlights.length > 0 && (
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          {highlights.map((h, i) => (
-            <div key={i} className="flex items-start gap-3 rounded-lg border border-blue-100 bg-blue-50 p-4">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#003366] text-xs font-bold text-white">✓</span>
-              <span className="text-sm text-gray-700">{h}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {features.length > 0 && (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f, i) => (
-            <div key={i} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition hover:shadow-md">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#003366]/10 text-2xl">
-                {f.icon}
+        {highlights.length > 0 && (
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {highlights.map((item) => (
+              <div key={item} className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-blue-900">
+                {item}
               </div>
-              <p className="mb-2 font-bold text-[#003366]">{f.title}</p>
-              <p className="text-sm leading-relaxed text-gray-500">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {sections.length > 0 && (
-        <div className="mt-8 grid gap-6 sm:grid-cols-3">
-          {sections.map((s, i) => (
-            <div key={i} className="rounded-xl border-t-4 border-[#003366] bg-white p-6 shadow-sm text-center">
-              <p className="mb-3 text-3xl">{s.icon}</p>
-              <p className="mb-2 font-bold text-[#003366]">{s.title}</p>
-              <p className="text-sm leading-relaxed text-gray-500">{s.body}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {steps.length > 0 && (
-        <div className="mt-8 space-y-4">
-          {steps.map((s, i) => (
-            <div key={i} className="flex gap-5 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#003366] text-sm font-bold text-white">
-                {s.step}
-              </div>
-              <div>
-                <p className="font-bold text-[#003366]">{s.title}</p>
-                <p className="mt-0.5 text-sm leading-relaxed text-gray-500">{s.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {team.length > 0 && (
-        <div className="mt-8 grid gap-5 sm:grid-cols-2">
-          {team.map((m, i) => (
-            <div key={i} className="flex gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#003366] text-xl font-bold text-white">
-                {m.name.charAt(0)}
-              </div>
-              <div>
-                <p className="font-bold text-[#003366]">{m.name}</p>
-                <p className="text-xs font-medium text-yellow-600">{m.title}</p>
-                <p className="mt-1 text-sm leading-relaxed text-gray-500">{m.bio}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+        {features.length > 0 && (
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {features.map((feature, index) => (
+              <article key={`${feature.title}-${index}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p className="text-2xl">{feature.icon || '>'}</p>
+                <h3 className="mt-3 text-base font-bold text-slate-950">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{feature.desc || feature.body}</p>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
 
-// ── GALLERY ───────────────────────────────────────────────────────────────────
+function AdmissionsSection({ content }: { content: Record<string, unknown> }) {
+  const heading = str(content.heading) || 'Admissions';
+  const body = str(content.body);
+  const steps = arr<{ step: number; title: string; desc: string }>(content.steps);
+  const ctaText = str(content.ctaText) || 'Start Admission Inquiry';
+
+  return (
+    <section id="admissions" className="bg-slate-50 px-5 py-14 sm:px-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-blue-700">Admissions</p>
+            <h2 className="mt-2 text-3xl font-black text-slate-950">{heading}</h2>
+            {body && <p className="mt-4 text-base leading-8 text-slate-600">{body}</p>}
+            <a href="#contact" className="mt-6 inline-flex rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white hover:bg-blue-700">
+              {ctaText}
+            </a>
+          </div>
+          <div className="space-y-3">
+            {steps.map((step, index) => (
+              <div key={`${step.title}-${index}`} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white">
+                  {step.step || index + 1}
+                </div>
+                <div>
+                  <p className="font-bold text-slate-950">{step.title}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function NoticeSection({ content }: { content: Record<string, unknown> }) {
+  const heading = str(content.heading) || 'Latest announcements';
+  const notices = arr<string>(content.notices);
+  if (notices.length === 0) return null;
+
+  return (
+    <section className="border-y border-amber-200 bg-amber-50 px-5 py-4 sm:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 lg:flex-row lg:items-center">
+        <p className="shrink-0 text-xs font-black uppercase tracking-widest text-amber-800">{heading}</p>
+        <div className="flex flex-wrap gap-2">
+          {notices.slice(0, 4).map((notice) => (
+            <span key={notice} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+              {notice}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FacultySection({ content }: { content: Record<string, unknown> }) {
+  const heading = str(content.heading) || 'Faculty';
+  const team = arr<{ name: string; title: string; bio: string }>(content.team);
+
+  return (
+    <section className="bg-white px-5 py-14 sm:px-8">
+      <div className="mx-auto max-w-6xl">
+        <h2 className="text-3xl font-black text-slate-950">{heading}</h2>
+        <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {team.map((member) => (
+            <article key={member.name} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-950 text-sm font-black text-white">
+                {initials(member.name)}
+              </div>
+              <p className="mt-4 font-bold text-slate-950">{member.name}</p>
+              <p className="text-sm font-semibold text-blue-700">{member.title}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{member.bio}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function GallerySection({ content }: { content: Record<string, unknown> }) {
-  const title  = str(content.title);
+  const title = str(content.title) || str(content.heading) || 'Gallery';
   const images = arr<{ url: string; caption: string }>(content.images);
 
   return (
-    <section className="bg-[#f0f4f8] px-6 py-14">
-      <div className="mx-auto max-w-5xl">
-        {title && (
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-[#003366]">{title}</h2>
-            <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-yellow-400" />
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {images.map((img, i) => (
-            <div key={i} className="group overflow-hidden rounded-xl shadow-sm">
-              <div className="relative h-44 overflow-hidden bg-[#003366]/10">
-                {img.url ? (
-                  <img src={img.url} alt={img.caption} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-4xl">🏫</div>
-                )}
-              </div>
-              {img.caption && (
-                <div className="bg-white px-3 py-2 text-center text-xs font-medium text-gray-600">{img.caption}</div>
+    <section className="bg-slate-50 px-5 py-14 sm:px-8">
+      <div className="mx-auto max-w-6xl">
+        <h2 className="text-3xl font-black text-slate-950">{title}</h2>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {(images.length > 0 ? images : [
+            { url: '', caption: 'Campus' },
+            { url: '', caption: 'Activities' },
+            { url: '', caption: 'Achievements' },
+          ]).map((image, index) => (
+            <div key={`${image.caption}-${index}`} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              {image.url ? (
+                <img src={image.url} alt={image.caption || title} loading="lazy" className="h-56 w-full object-cover" />
+              ) : (
+                <div className="flex h-56 items-center justify-center bg-gradient-to-br from-blue-100 to-cyan-100 text-4xl font-black text-blue-800">
+                  {initials(image.caption || title)}
+                </div>
               )}
+              {image.caption && <p className="px-4 py-3 text-sm font-semibold text-slate-700">{image.caption}</p>}
             </div>
           ))}
         </div>
@@ -265,66 +248,78 @@ function GallerySection({ content }: { content: Record<string, unknown> }) {
   );
 }
 
-// ── Section dispatcher ────────────────────────────────────────────────────────
+function CtaSection({ content }: { content: Record<string, unknown> }) {
+  const heading = str(content.heading) || 'Ready to connect?';
+  const body = str(content.body);
+  const ctaText = str(content.ctaText) || 'Request Callback';
+  const ctaUrl = safeHref(content.ctaUrl, '#contact');
 
-function RenderSection({ section }: { section: PublicSectionResponse }) {
-  switch (section.sectionType) {
-    case 'HERO':    return <HeroSection    content={section.content} />;
-    case 'STATS':   return <StatsSection   content={section.content} />;
-    case 'GALLERY': return <GallerySection content={section.content} />;
-    case 'TEXT':    return <TextSection    content={section.content} />;
-    case 'CONTACT': return <ContactSection content={section.content} />;
-    default:        return <TextSection    content={section.content} />;
-  }
-}
-
-// ── Announcement ticker ───────────────────────────────────────────────────────
-
-const ANNOUNCEMENTS = [
-  'JNVST Class VI Admission 2025-26 — Results declared. Check official portal.',
-  'Annual Sports Meet scheduled for 15 December 2025.',
-  'Science Exhibition winners announced — Congratulations to all participants!',
-  'National Integration Camp 2025 — Registration open for Class IX students.',
-  'Board Exam Preparation classes begin 1 November 2025.',
-];
-
-function AnnouncementTicker() {
   return (
-    <div className="flex items-stretch overflow-hidden bg-yellow-400 text-[#003366]">
-      <div className="flex shrink-0 items-center bg-[#003366] px-4 py-2">
-        <span className="text-xs font-extrabold uppercase tracking-widest text-yellow-400">
-          Latest
-        </span>
-      </div>
-      <div className="flex-1 overflow-hidden py-2">
-        <div className="animate-marquee whitespace-nowrap text-xs font-semibold">
-          {[...ANNOUNCEMENTS, ...ANNOUNCEMENTS].map((a, i) => (
-            <span key={i} className="mx-8">◆ {a}</span>
-          ))}
+    <section className="bg-slate-950 px-5 py-14 text-white sm:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h2 className="text-3xl font-black">{heading}</h2>
+          {body && <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">{body}</p>}
         </div>
+        <a href={ctaUrl} className="inline-flex rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950 hover:bg-cyan-50">
+          {ctaText}
+        </a>
       </div>
-    </div>
+    </section>
   );
 }
 
-// ── Quick links sidebar ───────────────────────────────────────────────────────
+function ContactSection({ content }: { content: Record<string, unknown> }) {
+  const address = str(content.address);
+  const phone = str(content.phone);
+  const email = str(content.email);
 
-const QUICK_LINKS = [
-  { label: 'Admission Info',    icon: '📋' },
-  { label: 'Academic Calendar', icon: '📅' },
-  { label: 'Exam Results',      icon: '🏆' },
-  { label: 'Fee Structure',     icon: '💰' },
-  { label: 'Downloads',         icon: '⬇️' },
-  { label: 'RTI',               icon: '📂' },
-  { label: 'Grievance',         icon: '📝' },
-  { label: 'Toll-Free Helpline',icon: '☎️' },
-];
+  return (
+    <section id="contact" className="bg-white px-5 py-14 sm:px-8">
+      <div className="mx-auto max-w-6xl">
+        <h2 className="text-3xl font-black text-slate-950">Contact</h2>
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
+          {[
+            ['Address', address || 'Add campus address in builder'],
+            ['Phone', phone || 'Add phone number in builder'],
+            ['Email', email || 'Add email in builder'],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <p className="text-xs font-black uppercase tracking-widest text-slate-500">{label}</p>
+              <p className="mt-3 text-sm font-semibold leading-6 text-slate-800">{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+function RenderSection({ section, schoolName }: { section: PublicSectionResponse; schoolName: string }) {
+  const normalizedType = section.sectionType.toUpperCase();
+  switch (normalizedType) {
+    case 'HERO': return <HeroSection content={section.content} schoolName={schoolName} />;
+    case 'STATS': return <StatsSection content={section.content} />;
+    case 'TEXT': return <TextSection content={section.content} />;
+    case 'GALLERY':
+    case 'IMAGE': return <GallerySection content={section.content} />;
+    case 'CONTACT': return <ContactSection content={section.content} />;
+    case 'CTA': return <CtaSection content={section.content} />;
+    case 'NOTICE': return <NoticeSection content={section.content} />;
+    case 'FACULTY': return <FacultySection content={section.content} />;
+    case 'ADMISSIONS': return <AdmissionsSection content={section.content} />;
+    default: return <TextSection content={section.content} />;
+  }
+}
 
 export function PublicSitePage() {
   const { tenantCode = '', slug } = useParams<{ tenantCode: string; slug?: string }>();
   const [activeSlug, setActiveSlug] = useState<string>(slug ?? '');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    if (slug) setActiveSlug(slug);
+  }, [slug]);
 
   const { data: site, isLoading: siteLoading, isError: siteError } = useQuery({
     queryKey: ['public-site', tenantCode],
@@ -340,209 +335,153 @@ export function PublicSitePage() {
     enabled: !!tenantCode && !!resolvedSlug,
   });
 
+  const navItems = useMemo(() => {
+    if (!site) return [];
+    const fromNav = [...(site.nav ?? [])]
+      .sort((a, b) => a.position - b.position)
+      .map((item) => ({
+        id: item.id,
+        label: item.label,
+        slug: site.pages.find((page) => page.id === item.pageId)?.slug,
+        url: item.url,
+      }))
+      .filter((item) => item.slug || item.url);
+    if (fromNav.length > 0) return fromNav;
+    return site.pages.map((page) => ({ id: page.id, label: page.title, slug: page.slug, url: null }));
+  }, [site]);
+
   if (siteLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#003366] border-t-transparent" />
-          <p className="text-sm text-gray-500">Loading…</p>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-700 border-t-transparent" />
+          <p className="text-sm text-slate-500">Loading school website...</p>
         </div>
       </div>
     );
   }
 
-  if (siteError || !site) {
+  if (siteError || !site || site.pages.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white text-gray-500">
-        <p className="text-lg font-semibold">School website not found.</p>
-        <Link to="/login" className="text-sm text-blue-600 hover:underline">Go to login</Link>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white text-slate-500">
+        <p className="text-lg font-semibold text-slate-900">School website not found.</p>
+        <Link to="/login" className="text-sm font-semibold text-blue-600 hover:underline">Go to login</Link>
       </div>
     );
   }
 
-  const navItems = [...(site.nav ?? [])].sort((a, b) => a.position - b.position);
+  const visibleSections = pageData?.sections
+    .filter((section) => section.visible)
+    .sort((a, b) => a.position - b.position) ?? [];
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white font-sans text-slate-900">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+          <button type="button" onClick={() => setActiveSlug(site.pages[0]?.slug ?? '')} className="flex min-w-0 items-center gap-3 text-left">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white">
+              {initials(site.schoolName)}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-base font-black text-slate-950">{site.schoolName}</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-blue-700">CloudCampus Website</p>
+            </div>
+          </button>
 
-      {/* ── Top utility bar ──────────────────────────────────────────────── */}
-      <div className="bg-[#1a2744] px-4 py-1.5 text-right text-xs text-gray-300">
-        <span className="mr-4">Government of India</span>
-        <span className="mr-4">|</span>
-        <span className="mr-4">Ministry of Education</span>
-        <span>|</span>
-        <span className="ml-4">Navodaya Vidyalaya Samiti</span>
-      </div>
+          <nav className="hidden items-center gap-1 lg:flex">
+            {navItems.map((item) => (
+              item.slug ? (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSlug(item.slug ?? '')}
+                  className={`rounded-full px-4 py-2 text-sm font-bold transition ${resolvedSlug === item.slug ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <a key={item.id} href={safeHref(item.url)} className="rounded-full px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-950">
+                  {item.label}
+                </a>
+              )
+            ))}
+            <a href="#contact" className="ml-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700">
+              Enquire
+            </a>
+          </nav>
 
-      {/* ── Header ───────────────────────────────────────────────────────── */}
-      <header className="border-b-4 border-yellow-400 bg-white px-4 py-4">
-        <div className="mx-auto flex max-w-6xl items-center gap-5">
-          {/* Emblem placeholder */}
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#003366] text-3xl text-white shadow">
-            🏫
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-widest text-yellow-600">
-              Navodaya Vidyalaya Samiti · Govt. of India
-            </p>
-            <h1 className="mt-0.5 text-xl font-extrabold leading-tight text-[#003366] sm:text-2xl">
-              {site.schoolName}
-            </h1>
-            <p className="text-xs text-gray-500">Sector 15, Indira Nagar, Lucknow, Uttar Pradesh</p>
-          </div>
-          {/* India emblem on right */}
-          <div className="hidden shrink-0 text-right sm:block">
-            <p className="text-xs font-bold text-[#003366]">नवोदय विद्यालय समिति</p>
-            <p className="text-xs text-gray-400">Empowering Rural Talent</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen((value) => !value)}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 lg:hidden"
+            aria-expanded={mobileNavOpen}
+          >
+            Menu
+          </button>
         </div>
+        {mobileNavOpen && (
+          <div className="border-t border-slate-200 px-5 py-3 lg:hidden">
+            <div className="grid gap-2">
+              {navItems.map((item) => (
+                item.slug ? (
+                  <button
+                    key={item.id}
+                    onClick={() => { setActiveSlug(item.slug ?? ''); setMobileNavOpen(false); }}
+                    className="rounded-lg bg-slate-50 px-3 py-2 text-left text-sm font-bold text-slate-700"
+                  >
+                    {item.label}
+                  </button>
+                ) : (
+                  <a key={item.id} href={safeHref(item.url)} className="rounded-lg bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700">
+                    {item.label}
+                  </a>
+                )
+              ))}
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* ── Navigation bar ───────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-30 bg-[#003366] shadow-md">
-        <div className="mx-auto flex max-w-6xl items-center overflow-x-auto">
-          {navItems.length > 0
-            ? navItems.map((item) => {
-                const pageSlug = site.pages.find((p) => p.id === item.pageId)?.slug;
-                const isActive = resolvedSlug === pageSlug;
-                if (pageSlug) {
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveSlug(pageSlug)}
-                      className={[
-                        'whitespace-nowrap px-5 py-3.5 text-sm font-semibold transition-colors border-b-3',
-                        isActive
-                          ? 'border-b-[3px] border-yellow-400 bg-[#004080] text-yellow-400'
-                          : 'border-b-[3px] border-transparent text-gray-200 hover:bg-[#004080] hover:text-white',
-                      ].join(' ')}
-                    >
-                      {item.label}
-                    </button>
-                  );
-                }
-                return null;
-              })
-            : site.pages.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setActiveSlug(p.slug)}
-                  className={[
-                    'whitespace-nowrap px-5 py-3.5 text-sm font-semibold transition-colors',
-                    resolvedSlug === p.slug
-                      ? 'border-b-[3px] border-yellow-400 bg-[#004080] text-yellow-400'
-                      : 'border-b-[3px] border-transparent text-gray-200 hover:bg-[#004080] hover:text-white',
-                  ].join(' ')}
-                >
-                  {p.title}
+      {pageLoading ? (
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-700 border-t-transparent" />
+        </div>
+      ) : visibleSections.length > 0 ? (
+        <main>
+          {visibleSections.map((section) => (
+            <RenderSection key={section.id} section={section} schoolName={site.schoolName} />
+          ))}
+        </main>
+      ) : (
+        <main className="flex h-72 items-center justify-center px-5 text-center">
+          <div>
+            <p className="text-lg font-bold text-slate-950">This page is being prepared.</p>
+            <p className="mt-2 text-sm text-slate-500">Please check back soon.</p>
+          </div>
+        </main>
+      )}
+
+      <footer className="bg-slate-950 px-5 py-10 text-slate-300 sm:px-8">
+        <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
+          <div>
+            <p className="text-lg font-black text-white">{site.schoolName}</p>
+            <p className="mt-3 max-w-md text-sm leading-7 text-slate-400">
+              A modern school website powered by CloudCampus, built for admissions, communication, trust, and parent engagement.
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">Explore</p>
+            <div className="mt-3 grid gap-2">
+              {site.pages.slice(0, 5).map((page) => (
+                <button key={page.id} onClick={() => setActiveSlug(page.slug)} className="text-left text-sm text-slate-400 hover:text-white">
+                  {page.title}
                 </button>
               ))}
-        </div>
-      </nav>
-
-      {/* ── Announcement ticker ──────────────────────────────────────────── */}
-      <AnnouncementTicker />
-
-      {/* ── Page content ─────────────────────────────────────────────────── */}
-      {pageLoading ? (
-        <div className="flex h-64 items-center justify-center text-sm text-gray-400">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#003366] border-t-transparent" />
-        </div>
-      ) : pageData ? (
-        <>
-          {/* Two-column layout for home page: main + quick-links sidebar */}
-          {resolvedSlug === 'home' ? (
-            <div className="mx-auto max-w-6xl px-4 py-0">
-              <div className="flex flex-col gap-0 lg:flex-row">
-                {/* Main content */}
-                <div className="min-w-0 flex-1">
-                  {pageData.sections
-                    .filter((s) => s.visible)
-                    .sort((a, b) => a.position - b.position)
-                    .map((s) => <RenderSection key={s.id} section={s} />)}
-                </div>
-                {/* Quick links sidebar */}
-                <aside className="w-full shrink-0 border-l border-gray-100 bg-[#f7f9fc] px-4 py-6 lg:w-56">
-                  <p className="mb-3 border-b-2 border-yellow-400 pb-2 text-xs font-extrabold uppercase tracking-widest text-[#003366]">
-                    Quick Links
-                  </p>
-                  <ul className="space-y-1">
-                    {QUICK_LINKS.map((l, i) => (
-                      <li key={i}>
-                        <a
-                          href="#"
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-700 transition hover:bg-[#003366] hover:text-white"
-                        >
-                          <span>{l.icon}</span>
-                          <span>{l.label}</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* Notice board mini */}
-                  <p className="mb-3 mt-6 border-b-2 border-yellow-400 pb-2 text-xs font-extrabold uppercase tracking-widest text-[#003366]">
-                    Notices
-                  </p>
-                  <ul className="space-y-2 text-xs text-gray-600">
-                    <li className="flex items-start gap-1.5"><span className="mt-1 text-yellow-500">◆</span>JNVST Result 2025 declared</li>
-                    <li className="flex items-start gap-1.5"><span className="mt-1 text-yellow-500">◆</span>Admission form last date extended</li>
-                    <li className="flex items-start gap-1.5"><span className="mt-1 text-yellow-500">◆</span>Annual Day — 26 Jan 2026</li>
-                    <li className="flex items-start gap-1.5"><span className="mt-1 text-yellow-500">◆</span>Winter vacation: 25 Dec – 5 Jan</li>
-                  </ul>
-                </aside>
-              </div>
-            </div>
-          ) : (
-            <main className="bg-white">
-              {pageData.sections
-                .filter((s) => s.visible)
-                .sort((a, b) => a.position - b.position)
-                .map((s) => <RenderSection key={s.id} section={s} />)}
-              {pageData.sections.filter((s) => s.visible).length === 0 && (
-                <div className="flex h-48 items-center justify-center text-sm text-gray-400">
-                  No content on this page yet.
-                </div>
-              )}
-            </main>
-          )}
-        </>
-      ) : null}
-
-      {/* ── Footer ───────────────────────────────────────────────────────── */}
-      <footer className="mt-8 bg-[#1a2744] text-gray-300">
-        <div className="mx-auto max-w-6xl px-6 py-10">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-            <div>
-              <p className="mb-3 text-sm font-bold text-yellow-400">About JNV Lucknow</p>
-              <p className="text-xs leading-relaxed text-gray-400">
-                Jawahar Navodaya Vidyalaya Lucknow is a co-educational residential school run by
-                Navodaya Vidyalaya Samiti, providing quality education to rural meritorious students.
-              </p>
-            </div>
-            <div>
-              <p className="mb-3 text-sm font-bold text-yellow-400">Useful Links</p>
-              <ul className="space-y-1 text-xs">
-                {['navodaya.gov.in', 'moe.gov.in', 'cbse.gov.in', 'ncert.nic.in'].map((l, i) => (
-                  <li key={i}><a href={`https://${l}`} target="_blank" rel="noopener noreferrer" className="hover:text-yellow-300 hover:underline">{l}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="mb-3 text-sm font-bold text-yellow-400">Contact</p>
-              <p className="text-xs leading-relaxed text-gray-400">
-                Sector 15, Indira Nagar<br />
-                Lucknow, Uttar Pradesh – 226016<br />
-                📞 +91 7905025730<br />
-                ✉️ uttamkumar3797@gmail.com
-              </p>
             </div>
           </div>
-        </div>
-        <div className="border-t border-white/10 px-6 py-4 text-center text-xs text-gray-500">
-          © 2025 {site.schoolName} · Navodaya Vidyalaya Samiti · Government of India
-          <span className="mx-2">|</span>
-          Powered by <span className="text-yellow-400">CloudCampus</span>
+          <div>
+            <p className="text-sm font-bold text-white">Powered by</p>
+            <p className="mt-3 text-sm font-semibold text-cyan-300">CloudCampus Website Builder</p>
+          </div>
         </div>
       </footer>
     </div>

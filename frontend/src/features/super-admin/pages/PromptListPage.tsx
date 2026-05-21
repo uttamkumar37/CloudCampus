@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listPrompts, activatePrompt, deactivatePrompt } from '../api/promptApi';
 import type { PromptTemplate } from '../api/promptApi';
+import { useToast, PageHeader, Spinner } from '@/shared/ui';
 
 function groupByKey(prompts: PromptTemplate[]): Map<string, PromptTemplate[]> {
   const map = new Map<string, PromptTemplate[]>();
@@ -17,6 +18,7 @@ function groupByKey(prompts: PromptTemplate[]): Map<string, PromptTemplate[]> {
 export function PromptListPage() {
   const navigate     = useNavigate();
   const queryClient  = useQueryClient();
+  const { success, error: toastError } = useToast();
   const [error, setError] = useState<string | null>(null);
 
   const { data: prompts = [], isLoading } = useQuery({
@@ -36,8 +38,8 @@ export function PromptListPage() {
     );
   };
 
-  const activateMutation   = useMutation({ mutationFn: (id: string) => activatePrompt(id),   onSuccess: invalidate, onError: onMutationError });
-  const deactivateMutation = useMutation({ mutationFn: (id: string) => deactivatePrompt(id), onSuccess: invalidate, onError: onMutationError });
+  const activateMutation   = useMutation({ mutationFn: (id: string) => activatePrompt(id),   onSuccess: () => { success('Prompt version activated'); invalidate(); }, onError: (err: unknown) => { toastError('Failed to activate prompt. Please try again.'); onMutationError(err); } });
+  const deactivateMutation = useMutation({ mutationFn: (id: string) => deactivatePrompt(id), onSuccess: () => { success('Prompt version deactivated'); invalidate(); }, onError: (err: unknown) => { toastError('Failed to deactivate prompt. Please try again.'); onMutationError(err); } });
 
   const grouped = groupByKey(prompts);
   const isBusy  = activateMutation.isPending || deactivateMutation.isPending;
@@ -46,7 +48,7 @@ export function PromptListPage() {
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">AI Prompt Registry</h1>
+          <PageHeader title="AI Prompt Registry" />
           <p className="mt-0.5 text-sm text-gray-500">
             Versioned prompt templates. Activate a version to make it live.
           </p>
@@ -67,7 +69,7 @@ export function PromptListPage() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-gray-400">Loading…</p>
+        <div className="py-8 flex justify-center"><Spinner size="md" /></div>
       ) : grouped.size === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-200 p-12 text-center">
           <p className="text-sm text-gray-400">No prompt templates yet.</p>

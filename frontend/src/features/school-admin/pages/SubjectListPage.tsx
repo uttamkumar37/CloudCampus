@@ -10,6 +10,7 @@ import {
   activateSubject,
   deactivateSubject,
 } from '../api/subjectApi';
+import { useToast, PageHeader, Badge, PageSpinner, EmptyState } from '@/shared/ui';
 
 // ── Create form ───────────────────────────────────────────────────────────────
 
@@ -27,6 +28,7 @@ interface CreateFormProps {
 }
 
 function CreateForm({ schoolId, onClose }: CreateFormProps) {
+  const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
 
   const {
@@ -39,10 +41,12 @@ function CreateForm({ schoolId, onClose }: CreateFormProps) {
   const { mutate, isPending } = useMutation({
     mutationFn: (values: FormValues) => createSubject(schoolId, values),
     onSuccess: () => {
+      success('Subject created successfully');
       queryClient.invalidateQueries({ queryKey: ['subjects', schoolId] });
       onClose();
     },
     onError: () => {
+      toastError('Failed to create subject. Please try again.');
       setError('root', { message: 'Failed to create subject. Please try again.' });
     },
   });
@@ -130,6 +134,7 @@ function CreateForm({ schoolId, onClose }: CreateFormProps) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function SubjectListPage() {
+  const { success, error: toastError } = useToast();
   const user = useAuthStore((s) => s.user);
   const schoolId = user?.schoolId ?? null;
   const [showForm, setShowForm] = useState(false);
@@ -146,14 +151,20 @@ export function SubjectListPage() {
 
   const activate = useMutation({
     mutationFn: activateSubject,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['subjects', schoolId] }),
+    onSuccess: () => {
+      success('Subject activated');
+      queryClient.invalidateQueries({ queryKey: ['subjects', schoolId] });
+    },
+    onError: () => { toastError('Failed to activate subject.'); },
   });
 
   const deactivate = useMutation({
     mutationFn: deactivateSubject,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['subjects', schoolId] }),
+    onSuccess: () => {
+      success('Subject deactivated');
+      queryClient.invalidateQueries({ queryKey: ['subjects', schoolId] });
+    },
+    onError: () => { toastError('Failed to deactivate subject.'); },
   });
 
   if (!schoolId) {
@@ -168,55 +179,48 @@ export function SubjectListPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Subjects</h2>
-          {data && (
-            <p className="mt-0.5 text-sm text-gray-500">{data.length} subjects</p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <label className="flex cursor-pointer items-center gap-1.5 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              checked={showInactive}
-              onChange={(e) => setShowInactive(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600"
-            />
-            Show inactive
-          </label>
-
-          {!showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              New Subject
-            </button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Subjects"
+        subtitle={data ? `${data.length} subjects` : undefined}
+        actions={
+          <div className="flex items-center gap-3">
+            <label className="flex cursor-pointer items-center gap-1.5 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600"
+              />
+              Show inactive
+            </label>
+            {!showForm && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                New Subject
+              </button>
+            )}
+          </div>
+        }
+      />
 
       {showForm && (
         <CreateForm schoolId={schoolId} onClose={() => setShowForm(false)} />
       )}
 
-      {isLoading && (
-        <p className="text-sm text-gray-500" role="status">Loading…</p>
-      )}
+      {isLoading && <PageSpinner />}
       {isError && (
         <p className="text-sm text-red-600" role="alert">Failed to load subjects.</p>
       )}
 
       {data && data.length === 0 && !isLoading && (
-        <p className="text-sm text-gray-500">
-          No subjects yet. Create one to get started.
-        </p>
+        <EmptyState title="No subjects" description="No subjects yet. Create one to get started." />
       )}
 
       {data && data.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
               <tr>
@@ -244,15 +248,9 @@ export function SubjectListPage() {
                     {sub.code ?? '—'}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        sub.isActive
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
+                    <Badge variant={sub.isActive ? 'success' : 'default'}>
                       {sub.isActive ? 'Active' : 'Inactive'}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-4 py-3">
                     {sub.isActive ? (
@@ -277,6 +275,7 @@ export function SubjectListPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

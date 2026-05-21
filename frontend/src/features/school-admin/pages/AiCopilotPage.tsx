@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { queryAiCopilot } from '../api/aiCopilotApi';
 import type { CopilotQueryResponse } from '../api/aiCopilotApi';
+import { useEntitlement } from '@/shared/hooks/useEntitlement';
+import { LockedFeature } from '@/shared/ui';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -74,6 +76,7 @@ export function AiCopilotPage() {
   const [error, setError]       = useState<string | null>(null);
   const msgCounter              = useRef(0);
   const bottomRef               = useRef<HTMLDivElement>(null);
+  const aiEntitlement = useEntitlement({ feature: 'AI_COPILOT', requiredPlan: 'AI_PREMIUM' });
 
   const { mutate: ask, isPending } = useMutation<
     CopilotQueryResponse,
@@ -165,6 +168,14 @@ export function AiCopilotPage() {
           </button>
         )}
       </div>
+
+      {!aiEntitlement.allowed && (
+        <LockedFeature
+          title="AI Copilot is a premium add-on"
+          description="Schools can preview the assistant surface, but live AI operations should be packaged under AI Premium with usage tracking and budget controls."
+          requiredPlan="AI_PREMIUM"
+        />
+      )}
 
       {/* Error banner */}
       {error && (

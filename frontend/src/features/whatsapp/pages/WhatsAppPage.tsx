@@ -9,6 +9,7 @@ import {
   sendWhatsApp,
   type WhatsAppStatus,
 } from '../api/whatsappApi';
+import { useToast, Spinner } from '@/shared/ui';
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ function formatDate(iso: string | null) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function WhatsAppPage() {
+  const { success: toastSuccess, error: toastError } = useToast();
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
   const [tab, setTab] = useState<'log' | 'send'>('log');
   const [page, setPage] = useState(0);
@@ -66,11 +68,13 @@ export default function WhatsAppPage() {
       });
     },
     onSuccess: () => {
+      toastSuccess('WhatsApp message queued successfully');
       setSuccess('Message queued — check the Log tab for delivery status.');
       setError('');
       form.reset();
     },
     onError: (err: Error) => {
+      toastError('Failed to queue WhatsApp message. Please try again.');
       setError(err.message || 'Failed to queue message');
       setSuccess('');
     },
@@ -118,7 +122,7 @@ export default function WhatsAppPage() {
       {/* ── Log tab ─────────────────────────────────────────────────────── */}
       {tab === 'log' && (
         <>
-          {isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+          {isLoading && <div className="py-4 flex justify-center"><Spinner size="sm" /></div>}
           {isError && <p className="text-sm text-red-600">Failed to load message logs.</p>}
           {!isLoading && !isError && logs.length === 0 && (
             <p className="text-sm text-gray-500">No messages dispatched yet.</p>

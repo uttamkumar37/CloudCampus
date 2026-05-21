@@ -10,6 +10,7 @@ import {
   type SessionWithQrResponse,
 } from '../api/teacherAttendanceApi';
 import type { TimetableSlot } from '@/features/timetable/types/timetable';
+import { useToast, PageSpinner, PageHeader } from '@/shared/ui';
 
 const DOW_MAP = ['', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
 
@@ -114,6 +115,7 @@ function QrPanel({ slot, date }: QrPanelProps) {
 }
 
 export default function TeacherAttendancePage() {
+  const { success, error: toastError } = useToast();
   const [date, setDate]         = useState(toDateStr(new Date()));
   const [selectedSlot, setSlot] = useState<TimetableSlot | null>(null);
   const [marks, setMarks]       = useState<Record<string, AttendanceStatus>>({});
@@ -167,7 +169,11 @@ export default function TeacherAttendancePage() {
         marks:          markList,
       });
     },
-    onSuccess: () => setSaved(true),
+    onSuccess: () => {
+      success('Attendance saved successfully');
+      setSaved(true);
+    },
+    onError: () => { toastError('Failed to save attendance. This period may already have attendance recorded.'); },
   });
 
   function setStatus(studentId: string, status: AttendanceStatus) {
@@ -191,7 +197,7 @@ export default function TeacherAttendancePage() {
     <div className="p-6 space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Take Attendance</h1>
+        <PageHeader title="Take Attendance" />
         <p className="mt-0.5 text-sm text-gray-500">Mark student attendance for your class periods</p>
       </div>
 
@@ -244,7 +250,7 @@ export default function TeacherAttendancePage() {
       {selectedSlot && (
         <>
           {loadingStudents ? (
-            <div className="py-8 text-center text-sm text-gray-400">Loading students…</div>
+            <PageSpinner />
           ) : students.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-200 py-10 text-center text-sm text-gray-400">
               No active students found for this class.
@@ -278,6 +284,7 @@ export default function TeacherAttendancePage() {
 
               {/* Student list */}
               <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50 text-xs font-semibold text-gray-500">
                     <tr>
@@ -320,6 +327,7 @@ export default function TeacherAttendancePage() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
 
               {/* Save */}
