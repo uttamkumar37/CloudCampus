@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import {
   createStudentPaymentOrder,
+  type CreatePaymentOrderResponse,
   verifyPayment,
 } from '../api/paymentApi';
 
@@ -23,7 +24,12 @@ function loadRazorpayScript(): Promise<void> {
 }
 
 interface UseRazorpayResult {
-  initiatePayment: (recordId: string, onSuccess: () => void, onError: (msg: string) => void) => Promise<void>;
+  initiatePayment: (
+    recordId: string,
+    onSuccess: () => void,
+    onError: (msg: string) => void,
+    createOrder?: (recordId: string) => Promise<CreatePaymentOrderResponse>,
+  ) => Promise<void>;
 }
 
 /**
@@ -39,9 +45,10 @@ export function useRazorpay(): UseRazorpayResult {
     recordId: string,
     onSuccess: () => void,
     onError: (msg: string) => void,
+    createOrder: (recordId: string) => Promise<CreatePaymentOrderResponse> = createStudentPaymentOrder,
   ) => {
     try {
-      const order = await createStudentPaymentOrder(recordId);
+      const order = await createOrder(recordId);
       await loadRazorpayScript();
 
       const rzp = new window.Razorpay({

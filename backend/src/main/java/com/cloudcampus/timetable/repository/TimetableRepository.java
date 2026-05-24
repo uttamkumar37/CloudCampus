@@ -42,4 +42,11 @@ public interface TimetableRepository extends JpaRepository<TimetableSlot, UUID> 
     /** All slots assigned to a specific teacher in an academic year — for teacher self-view. */
     List<TimetableSlot> findBySchoolIdAndAcademicYearIdAndStaffId(
             UUID schoolId, UUID academicYearId, UUID staffId);
+
+    /** True when a teacher has any timetable slot for the requested class. */
+    boolean existsBySchoolIdAndClassIdAndStaffId(UUID schoolId, UUID classId, UUID staffId);
+
+    /** True when a teacher has any timetable slot for the requested class section. */
+    boolean existsBySchoolIdAndClassIdAndSectionIdAndStaffId(
+            UUID schoolId, UUID classId, UUID sectionId, UUID staffId);
 }

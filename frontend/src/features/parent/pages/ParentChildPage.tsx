@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Spinner } from '@/shared/ui';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getChildAttendance,
   getChildResults,
   getChildHomework,
   getChildTimetable,
   getChildFees,
+  createParentPaymentOrder,
 } from '../api/parentApi';
 import { PageHeader } from '@/shared/ui';
 import { WeeklyTimetableView } from '@/features/timetable/components/WeeklyTimetableView';
+import { useRazorpay } from '@/features/student/hooks/useRazorpay';
 
 type Tab = 'attendance' | 'homework' | 'results' | 'timetable' | 'fees';
 
@@ -207,6 +209,11 @@ const FEE_STATUS_BADGE: Record<string, string> = {
 };
 
 function FeesTab({ studentId }: { studentId: string }) {
+  const queryClient = useQueryClient();
+  const { initiatePayment } = useRazorpay();
+  const [payingId, setPayingId] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [paySuccess, setPaySuccess] = useState(false);
   const { data: fees = [], isLoading, isError } = useQuery({
     queryKey: ['parent-child-fees', studentId],
     queryFn: () => getChildFees(studentId),
@@ -227,8 +234,39 @@ function FeesTab({ studentId }: { studentId: string }) {
   const totalPaid    = fees.reduce((s, f) => s + f.amountPaid, 0);
   const totalBalance = fees.reduce((s, f) => s + f.balance, 0);
 
+  function handlePayClick(recordId: string) {
+    setPayingId(recordId);
+    setPayError(null);
+    setPaySuccess(false);
+    initiatePayment(
+      recordId,
+      () => {
+        setPayingId(null);
+        setPaySuccess(true);
+        queryClient.invalidateQueries({ queryKey: ['parent-child-fees', studentId] });
+        setTimeout(() => setPaySuccess(false), 5000);
+      },
+      (msg) => {
+        setPayingId(null);
+        if (msg !== 'Payment cancelled.') setPayError(msg);
+      },
+      (id) => createParentPaymentOrder(studentId, id),
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {paySuccess && (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          Payment successful. Fee records have been updated.
+        </div>
+      )}
+      {payError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {payError}
+        </div>
+      )}
+
       {/* Summary strip */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl bg-gray-50 p-3 text-center">
@@ -258,23 +296,39 @@ function FeesTab({ studentId }: { studentId: string }) {
               <th className="px-4 py-3 text-right">Balance</th>
               <th className="px-4 py-3 text-center">Due Date</th>
               <th className="px-4 py-3 text-center">Status</th>
+              <th className="px-4 py-3 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {fees.map((f) => (
-              <tr key={f.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">{f.categoryName}</td>
-                <td className="px-4 py-3 text-right text-gray-700">{currency(f.amountDue)}</td>
-                <td className="px-4 py-3 text-right text-gray-700">{currency(f.amountPaid)}</td>
-                <td className="px-4 py-3 text-right font-semibold text-gray-900">{currency(f.balance)}</td>
-                <td className="px-4 py-3 text-center text-xs text-gray-500">{formatDate(f.dueDate)}</td>
-                <td className="px-4 py-3 text-center">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${FEE_STATUS_BADGE[f.status] ?? 'bg-gray-100 text-gray-600'}`}>
-                    {f.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            {fees.map((f) => {
+              const canPay = f.balance > 0 && f.status !== 'WAIVED' && f.status !== 'PAID';
+              return (
+                <tr key={f.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-900">{f.categoryName}</td>
+                  <td className="px-4 py-3 text-right text-gray-700">{currency(f.amountDue)}</td>
+                  <td className="px-4 py-3 text-right text-gray-700">{currency(f.amountPaid)}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-gray-900">{currency(f.balance)}</td>
+                  <td className="px-4 py-3 text-center text-xs text-gray-500">{formatDate(f.dueDate)}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${FEE_STATUS_BADGE[f.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                      {f.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {canPay && (
+                      <button
+                        type="button"
+                        disabled={payingId === f.id}
+                        onClick={() => handlePayClick(f.id)}
+                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-wait disabled:bg-emerald-300"
+                      >
+                        {payingId === f.id ? 'Opening' : 'Pay Online'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

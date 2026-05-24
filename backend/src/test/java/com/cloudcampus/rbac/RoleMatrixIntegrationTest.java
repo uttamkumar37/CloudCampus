@@ -230,6 +230,66 @@ class RoleMatrixIntegrationTest {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    // 4a. /v1/payment/verify — payment-capable roles only (P0-06)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @ParameterizedTest(name = "[payment-verify] {0} → passes method-level @PreAuthorize")
+    @EnumSource(value = UserRole.class, names = {"STUDENT", "PARENT", "SCHOOL_ADMIN", "TENANT_ADMIN"})
+    @DisplayName("[payment-verify] payment-capable roles pass method-level RBAC")
+    void paymentVerify_allowedRolesPassMethodSecurity(UserRole role) throws Exception {
+        int httpStatus = mockMvc.perform(post("/v1/payment/verify")
+                        .header("Authorization", bearerToken(role))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "paymentOrderId": "%s",
+                                  "razorpayOrderId": "order_rbac_probe",
+                                  "razorpayPaymentId": "pay_rbac_probe",
+                                  "razorpaySignature": "sig_rbac_probe"
+                                }
+                                """.formatted(UUID.randomUUID())))
+                .andReturn().getResponse().getStatus();
+        assertThat(httpStatus)
+                .as("Role %s must pass @PreAuthorize on /v1/payment/verify (not 401/403)", role)
+                .isNotEqualTo(401)
+                .isNotEqualTo(403);
+    }
+
+    @ParameterizedTest(name = "[payment-verify] {0} → 403")
+    @EnumSource(value = UserRole.class, names = {"SUPER_ADMIN", "TEACHER", "STAFF"})
+    @DisplayName("[payment-verify] non-payment roles are forbidden by @PreAuthorize")
+    void paymentVerify_forbiddenForNonPaymentRoles(UserRole role) throws Exception {
+        mockMvc.perform(post("/v1/payment/verify")
+                        .header("Authorization", bearerToken(role))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "paymentOrderId": "%s",
+                                  "razorpayOrderId": "order_rbac_probe",
+                                  "razorpayPaymentId": "pay_rbac_probe",
+                                  "razorpaySignature": "sig_rbac_probe"
+                                }
+                                """.formatted(UUID.randomUUID())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("[payment-verify] No token → 401")
+    void paymentVerify_unauthorizedWithNoToken() throws Exception {
+        mockMvc.perform(post("/v1/payment/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "paymentOrderId": "%s",
+                                  "razorpayOrderId": "order_rbac_probe",
+                                  "razorpayPaymentId": "pay_rbac_probe",
+                                  "razorpaySignature": "sig_rbac_probe"
+                                }
+                                """.formatted(UUID.randomUUID())))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     // 4b. /v1/student/attendance/qr-mark — @PreAuthorize("hasRole('STUDENT')") (P0-02)
     // ══════════════════════════════════════════════════════════════════════════
 

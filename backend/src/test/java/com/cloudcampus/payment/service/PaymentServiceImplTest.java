@@ -1,17 +1,21 @@
 package com.cloudcampus.payment.service;
 
 import com.cloudcampus.common.exception.BadRequestException;
+import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.finance.dto.FeePaymentResponse;
+import com.cloudcampus.finance.entity.StudentFeeRecord;
 import com.cloudcampus.finance.entity.PaymentMode;
 import com.cloudcampus.finance.repository.FeePaymentRepository;
 import com.cloudcampus.finance.service.FeeService;
 import com.cloudcampus.payment.config.RazorpayProperties;
+import com.cloudcampus.payment.dto.CreatePaymentOrderResponse;
 import com.cloudcampus.payment.dto.VerifyPaymentRequest;
 import com.cloudcampus.payment.entity.PaymentOrder;
 import com.cloudcampus.payment.entity.PaymentOrderStatus;
 import com.cloudcampus.payment.repository.PaymentOrderRepository;
 import com.cloudcampus.finance.repository.StudentFeeRecordRepository;
+import com.cloudcampus.student.repository.StudentParentLinkRepository;
 import com.cloudcampus.student.repository.StudentRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +24,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.crypto.Mac;
@@ -31,6 +38,7 @@ import java.time.LocalDate;
 import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -47,6 +55,7 @@ class PaymentServiceImplTest {
     @Mock PaymentOrderRepository     orderRepo;
     @Mock StudentFeeRecordRepository recordRepo;
     @Mock StudentRepository          studentRepo;
+    @Mock StudentParentLinkRepository linkRepo;
     @Mock FeePaymentRepository       paymentRepo;
     @Mock FeeService                 feeService;
     @Mock JdbcTemplate               jdbcTemplate;
@@ -63,13 +72,14 @@ class PaymentServiceImplTest {
     void setUp() {
         // RazorpayProperties is a record — construct with enabled=true for these tests.
         RazorpayProperties props = new RazorpayProperties(TEST_KEY_ID, TEST_KEY_SECRET, true);
-        service = new PaymentServiceImpl(orderRepo, recordRepo, studentRepo, paymentRepo, feeService,
-                props, jdbcTemplate, TEST_KEY_SECRET, 30);
+        service = new PaymentServiceImpl(orderRepo, recordRepo, studentRepo, linkRepo, paymentRepo,
+                feeService, props, jdbcTemplate, TEST_KEY_SECRET, 30);
     }
 
     @AfterEach
     void tearDown() {
         RequestContext.clearAll();
+        SecurityContextHolder.clearContext();
     }
 
     // ── H-28: HMAC-SHA256 signature verification ──────────────────────────────
@@ -82,7 +92,7 @@ class PaymentServiceImplTest {
 
         String validSignature = computeHmac(TEST_KEY_SECRET, RZP_ORDER_ID + "|" + RZP_PAYMENT_ID);
 
-        authenticateForTenant(order.getTenantId());
+        authenticateForTenant(order.getTenantId(), order.getInitiatedBy(), "PARENT");
         when(orderRepo.findByIdAndTenantIdForUpdate(orderId, order.getTenantId())).thenReturn(Optional.of(order));
         when(feeService.recordPayment(eq(feeRecId), any())).thenReturn(stubbedPaymentResponse(feeRecId));
         when(orderRepo.save(any())).thenReturn(order);
@@ -100,7 +110,7 @@ class PaymentServiceImplTest {
         UUID feeRecId = UUID.randomUUID();
         PaymentOrder order = buildPendingOrder(orderId, feeRecId);
 
-        authenticateForTenant(order.getTenantId());
+        authenticateForTenant(order.getTenantId(), order.getInitiatedBy(), "PARENT");
         when(orderRepo.findByIdAndTenantIdForUpdate(orderId, order.getTenantId())).thenReturn(Optional.of(order));
 
         String tamperedSignature = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -117,7 +127,7 @@ class PaymentServiceImplTest {
         UUID feeRecId = UUID.randomUUID();
         PaymentOrder order = buildPendingOrder(orderId, feeRecId);
 
-        authenticateForTenant(order.getTenantId());
+        authenticateForTenant(order.getTenantId(), order.getInitiatedBy(), "PARENT");
         when(orderRepo.findByIdAndTenantIdForUpdate(orderId, order.getTenantId())).thenReturn(Optional.of(order));
 
         // Signature valid for a different secret — simulates an attacker with a stolen key ID
@@ -136,13 +146,79 @@ class PaymentServiceImplTest {
         PaymentOrder order = buildPendingOrder(orderId, feeRecId);
         order.markSuccess("pay_old", "sig_old", UUID.randomUUID());  // already SUCCESS
 
-        authenticateForTenant(order.getTenantId());
+        authenticateForTenant(order.getTenantId(), order.getInitiatedBy(), "PARENT");
         when(orderRepo.findByIdAndTenantIdForUpdate(orderId, order.getTenantId())).thenReturn(Optional.of(order));
 
         assertThatThrownBy(() -> service.verifyAndCapture(new VerifyPaymentRequest(
                 orderId.toString(), RZP_ORDER_ID, RZP_PAYMENT_ID, "any")))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("already");
+    }
+
+    @Test
+    void createParentOrder_whenParentLinkedToChild_createsOrder() {
+        PaymentServiceImpl disabledGatewayService = serviceWithRazorpayDisabled();
+        UUID feeRecId = UUID.randomUUID();
+        UUID studentId = UUID.randomUUID();
+        UUID parentUserId = UUID.randomUUID();
+        StudentFeeRecord record = pendingRecord(feeRecId, studentId);
+
+        authenticateForTenant(record.getTenantId(), parentUserId, "PARENT");
+        when(recordRepo.findByIdAndTenantId(feeRecId, record.getTenantId())).thenReturn(Optional.of(record));
+        when(linkRepo.existsByStudentIdAndParentUserId(studentId, parentUserId)).thenReturn(true);
+        when(orderRepo.save(any(PaymentOrder.class))).thenAnswer(invocation -> {
+            PaymentOrder order = invocation.getArgument(0);
+            ReflectionTestUtils.setField(order, "id", UUID.randomUUID());
+            return order;
+        });
+
+        CreatePaymentOrderResponse response =
+                disabledGatewayService.createParentOrder(studentId, feeRecId, parentUserId);
+
+        assertThat(response.paymentOrderId()).isNotNull();
+        assertThat(response.gatewayOrderId()).startsWith("mock_order_");
+        assertThat(response.amountPaise()).isEqualTo(50_000L);
+        verify(orderRepo).save(any(PaymentOrder.class));
+    }
+
+    @Test
+    void createParentOrder_whenStudentNotLinkedToParent_throwsNotFound() {
+        PaymentServiceImpl disabledGatewayService = serviceWithRazorpayDisabled();
+        UUID feeRecId = UUID.randomUUID();
+        UUID studentId = UUID.randomUUID();
+        UUID parentUserId = UUID.randomUUID();
+        StudentFeeRecord record = pendingRecord(feeRecId, studentId);
+
+        authenticateForTenant(record.getTenantId(), parentUserId, "PARENT");
+        when(recordRepo.findByIdAndTenantId(feeRecId, record.getTenantId())).thenReturn(Optional.of(record));
+        when(linkRepo.existsByStudentIdAndParentUserId(studentId, parentUserId)).thenReturn(false);
+
+        assertThatThrownBy(() -> disabledGatewayService.createParentOrder(studentId, feeRecId, parentUserId))
+                .isInstanceOf(com.cloudcampus.common.exception.NotFoundException.class)
+                .hasMessageContaining("not linked");
+
+        verify(orderRepo, never()).save(any());
+    }
+
+    @Test
+    void verifyAndCapture_whenCallerDidNotInitiateOrder_throwsForbidden() throws Exception {
+        UUID orderId  = UUID.randomUUID();
+        UUID feeRecId = UUID.randomUUID();
+        PaymentOrder order = buildPendingOrder(orderId, feeRecId);
+        UUID differentUser = UUID.randomUUID();
+
+        authenticateForTenant(order.getTenantId(), differentUser, "PARENT");
+        when(orderRepo.findByIdAndTenantIdForUpdate(orderId, order.getTenantId())).thenReturn(Optional.of(order));
+
+        String validSignature = computeHmac(TEST_KEY_SECRET, RZP_ORDER_ID + "|" + RZP_PAYMENT_ID);
+
+        assertThatThrownBy(() -> service.verifyAndCapture(new VerifyPaymentRequest(
+                orderId.toString(), RZP_ORDER_ID, RZP_PAYMENT_ID, validSignature)))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("own payment orders");
+
+        verify(feeService, never()).recordPayment(any(), any());
+        verify(orderRepo, never()).save(any());
     }
 
     @Test
@@ -204,9 +280,30 @@ class PaymentServiceImplTest {
         return order;
     }
 
-    private static void authenticateForTenant(UUID tenantId) {
+    private StudentFeeRecord pendingRecord(UUID recordId, UUID studentId) {
+        StudentFeeRecord record = StudentFeeRecord.create(
+                UUID.randomUUID(), UUID.randomUUID(), studentId,
+                UUID.randomUUID(), UUID.randomUUID(),
+                new BigDecimal("500.00"), BigDecimal.ZERO,
+                LocalDate.now().plusMonths(1), null);
+        ReflectionTestUtils.setField(record, "id", recordId);
+        return record;
+    }
+
+    private PaymentServiceImpl serviceWithRazorpayDisabled() {
+        RazorpayProperties props = new RazorpayProperties(TEST_KEY_ID, TEST_KEY_SECRET, false);
+        return new PaymentServiceImpl(orderRepo, recordRepo, studentRepo, linkRepo, paymentRepo, feeService,
+                props, jdbcTemplate, TEST_KEY_SECRET, 30);
+    }
+
+    private static void authenticateForTenant(UUID tenantId, UUID userId, String... roles) {
         RequestContext.setTenantId(tenantId.toString());
-        RequestContext.setUserId(UUID.randomUUID());
+        RequestContext.setUserId(userId);
+        var authorities = Stream.of(roles)
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .toList();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userId, "n/a", authorities));
     }
 
     private static String computeHmac(String secret, String payload) throws Exception {

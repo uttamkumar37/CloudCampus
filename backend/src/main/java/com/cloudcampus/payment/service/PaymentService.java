@@ -15,6 +15,12 @@ public interface PaymentService {
     CreatePaymentOrderResponse createOrder(UUID feeRecordId, UUID initiatedByUserId);
 
     /**
+     * Creates a Razorpay payment order for a parent paying a linked child's fee
+     * record. The fee record must belong to the supplied student.
+     */
+    CreatePaymentOrderResponse createParentOrder(UUID studentId, UUID feeRecordId, UUID parentUserId);
+
+    /**
      * Verifies the Razorpay HMAC signature and records the payment against the fee record.
      * In dev/test mode the signature check is skipped.
      */

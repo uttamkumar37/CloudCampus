@@ -8,6 +8,7 @@ import com.cloudcampus.attendance.entity.AttendanceStatus;
 import com.cloudcampus.attendance.service.AttendanceService;
 import com.cloudcampus.attendance.service.QrAttendanceService;
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
@@ -18,6 +19,7 @@ import com.cloudcampus.staff.repository.StaffRepository;
 import com.cloudcampus.student.entity.Student;
 import com.cloudcampus.student.entity.StudentStatus;
 import com.cloudcampus.student.repository.StudentRepository;
+import com.cloudcampus.timetable.repository.TimetableRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -98,6 +100,7 @@ public class TeacherAttendanceController {
     private final SchoolRepository    schoolRepo;
     private final StaffRepository     staffRepo;
     private final StudentRepository   studentRepo;
+    private final TimetableRepository timetableRepo;
     private final AttendanceService   attendanceService;
     private final QrAttendanceService qrService;
 
@@ -105,11 +108,13 @@ public class TeacherAttendanceController {
             SchoolRepository    schoolRepo,
             StaffRepository     staffRepo,
             StudentRepository   studentRepo,
+            TimetableRepository timetableRepo,
             AttendanceService   attendanceService,
             QrAttendanceService qrService) {
         this.schoolRepo        = schoolRepo;
         this.staffRepo         = staffRepo;
         this.studentRepo       = studentRepo;
+        this.timetableRepo     = timetableRepo;
         this.attendanceService = attendanceService;
         this.qrService         = qrService;
     }
@@ -122,11 +127,15 @@ public class TeacherAttendanceController {
             @RequestParam UUID classId,
             @RequestParam(required = false) UUID sectionId) {
 
+        School school = resolveSchool();
+        Staff staff = resolveStaff(school.getId());
+        assertTeacherAssignedToClass(school.getId(), staff.getId(), classId, sectionId);
+
         List<Student> list = sectionId != null
-                ? studentRepo.findAllBySectionIdAndStatusOrderByLastNameAscFirstNameAsc(
-                        sectionId, StudentStatus.ACTIVE)
-                : studentRepo.findAllByClassIdAndStatusOrderByLastNameAscFirstNameAsc(
-                        classId, StudentStatus.ACTIVE);
+                ? studentRepo.findAllBySchoolIdAndClassIdAndSectionIdAndStatusOrderByLastNameAscFirstNameAsc(
+                        school.getId(), classId, sectionId, StudentStatus.ACTIVE)
+                : studentRepo.findAllBySchoolIdAndClassIdAndStatusOrderByLastNameAscFirstNameAsc(
+                        school.getId(), classId, StudentStatus.ACTIVE);
 
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
                 list.stream().map(StudentSummary::from).toList());
@@ -195,8 +204,11 @@ public class TeacherAttendanceController {
     }
 
     private School resolveSchool() {
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
-        return schoolRepo.findByTenantIdAndCode(tenantId, "MAIN")
+        String schoolId = RequestContext.getSchoolId();
+        if (schoolId == null) {
+            throw new NotFoundException("School context is required");
+        }
+        return schoolRepo.findByIdFiltered(UUID.fromString(schoolId))
                 .orElseThrow(() -> new NotFoundException("School not found"));
     }
 
@@ -204,5 +216,14 @@ public class TeacherAttendanceController {
         UUID userId = RequestContext.getUserId();
         return staffRepo.findBySchoolIdAndUserId(schoolId, userId)
                 .orElseThrow(() -> new NotFoundException("Staff profile not found"));
+    }
+
+    private void assertTeacherAssignedToClass(UUID schoolId, UUID staffId, UUID classId, UUID sectionId) {
+        boolean assigned = sectionId != null
+                ? timetableRepo.existsBySchoolIdAndClassIdAndSectionIdAndStaffId(schoolId, classId, sectionId, staffId)
+                : timetableRepo.existsBySchoolIdAndClassIdAndStaffId(schoolId, classId, staffId);
+        if (!assigned) {
+            throw new ForbiddenException("Teacher is not assigned to this class");
+        }
     }
 }
