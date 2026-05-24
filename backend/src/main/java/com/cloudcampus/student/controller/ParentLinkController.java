@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -34,6 +35,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1/school-admin")
 @Tag(name = "School Admin — Parent Mapping", description = "Link and manage parent/guardian relationships for students")
+@PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TENANT_ADMIN')")
 public class ParentLinkController {
 
     private final ParentLinkService service;

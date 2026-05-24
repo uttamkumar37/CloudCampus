@@ -34,8 +34,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/v1/payment/webhooks/**");
         registry.addInterceptor(rateLimitInterceptor);
         registry.addInterceptor(schoolPathAccessInterceptor)
-                .addPathPatterns("/v1/school-admin/schools/{schoolId}",
-                        "/v1/school-admin/schools/{schoolId}/**");
+                .addPathPatterns("/v1/school-admin/schools/*",
+                        "/v1/school-admin/schools/*/**");
         registry.addInterceptor(demoModeInterceptor);
     }
 }

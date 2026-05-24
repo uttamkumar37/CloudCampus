@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
@@ -58,6 +59,7 @@ import java.util.UUID;
 @RequestMapping("/v1/school-admin")
 @Tag(name = "School Admin — Attendance",
      description = "Manual attendance session management and reporting")
+@PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TENANT_ADMIN')")
 public class AttendanceController {
 
     private final AttendanceService service;

@@ -7,5 +7,6 @@ import java.util.UUID;
 
 public interface StudentProfile360Service {
     StudentProfile360Response getProfile(UUID studentId);
+    StudentProfile360Response getSelfProfile(UUID studentId);
     StudentProfile360Response updateSection(UUID studentId, String sectionKey, UpdateProfileSectionRequest request);
 }

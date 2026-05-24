@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -38,6 +39,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1/school-admin")
 @Tag(name = "School Admin — Classes", description = "Manage class grades within an academic year")
+@PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TENANT_ADMIN')")
 public class ClassRoomController {
 
     private final ClassRoomService service;

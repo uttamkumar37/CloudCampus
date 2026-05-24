@@ -5,6 +5,7 @@ import com.cloudcampus.attendance.repository.AttendanceRecordRepository;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.exam.dto.ExamResultResponse;
+import com.cloudcampus.exam.entity.ExamStatus;
 import com.cloudcampus.exam.repository.ExamResultRepository;
 import com.cloudcampus.finance.dto.StudentFeeRecordResponse;
 import com.cloudcampus.finance.service.FeeService;
@@ -102,9 +103,11 @@ class ParentPortalServiceImpl implements ParentPortalService {
     @Override
     public List<ExamResultResponse> getChildResults(UUID studentId) {
         checkAccess(studentId);
-        School school = resolveSchool();
+        Student s = requireStudent(studentId);
+        School school = resolveSchool(s);
         return resultRepo
-                .findByStudentIdAndSchoolIdOrderByCreatedAtDesc(studentId, school.getId())
+                .findByStudentIdAndSchoolIdAndExamStatusOrderByCreatedAtDesc(
+                        studentId, school.getId(), ExamStatus.COMPLETED)
                 .stream()
                 .map(ExamResultResponse::from)
                 .toList();
@@ -127,7 +130,7 @@ class ParentPortalServiceImpl implements ParentPortalService {
         checkAccess(studentId);
         Student s = requireStudent(studentId);
         if (s.getClassId() == null) return List.of();
-        School school = resolveSchool();
+        School school = resolveSchool(s);
         UUID resolvedYearId = resolveAcademicYear(school.getId(), academicYearId);
         return timetableService.listSlots(school.getId(), resolvedYearId, s.getClassId(), s.getSectionId());
     }
@@ -153,9 +156,8 @@ class ParentPortalServiceImpl implements ParentPortalService {
                 .orElseThrow(() -> new NotFoundException("Student not found"));
     }
 
-    private School resolveSchool() {
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
-        return schoolRepo.findByTenantIdAndCode(tenantId, "MAIN")
+    private School resolveSchool(Student student) {
+        return schoolRepo.findByIdFiltered(student.getSchoolId())
                 .orElseThrow(() -> new NotFoundException("School not found"));
     }
 

@@ -40,9 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Proves that Tenant A cannot read or mutate Tenant B's data at the HTTP layer.
  * Tests exercise two distinct isolation mechanisms:
  *
- *   1. Hibernate @Filter (TenantFilterAspect) — applied automatically on every
- *      JpaRepository call when RequestContext.getTenantId() is non-null.
- *      Restricts list queries to the calling tenant's rows.
+ *   1. TenantSecurity — School Admin paths first prove the requested school
+ *      belongs to the caller's tenant. A cross-tenant schoolId returns 404.
  *
  *   2. Explicit tenant-scoped lookup (StudentServiceImpl.findOrThrow) —
  *      uses findByIdAndTenantId(id, tenantId) so a cross-tenant ID reference
@@ -51,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Isolation matrix:
  *
  *   Endpoint                                      | TenantA result | TenantB result
- *   GET  /v1/school-admin/schools/{B}/students    | 200 empty      | 200 with data
+ *   GET  /v1/school-admin/schools/{B}/students    | 404            | 200 with data
  *   GET  /v1/school-admin/students/{studentB}     | 404            | 200
  *   PATCH /v1/school-admin/students/{studentB}/.. | 404            | 200
  *
@@ -123,34 +122,37 @@ class CrossTenantIsolationIntegrationTest {
     // ── Token factory ─────────────────────────────────────────────────────────
 
     private String tenantAdminToken(UUID tenantId) {
-        // TENANT_ADMIN has no schoolId in the JWT — SchoolPathAccessInterceptor
-        // bypasses the school-match check for this role.
         return "Bearer " + jwtUtil.generateAccessToken(
                 UUID.randomUUID(), tenantId, null, UserRole.TENANT_ADMIN.name());
     }
 
+    private String schoolAdminToken(UUID tenantId, UUID schoolId) {
+        return "Bearer " + jwtUtil.generateAccessToken(
+                UUID.randomUUID(), tenantId, schoolId, UserRole.SCHOOL_ADMIN.name());
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
-    // 1. Hibernate @Filter — list isolation
+    // 1. TenantSecurity — school path ownership isolation
     //    TENANT_ADMIN_A accesses School B's student list endpoint.
-    //    SchoolPathAccessInterceptor passes (TENANT_ADMIN bypasses school check).
-    //    TenantFilterAspect applies WHERE tenant_id = tenantA → no rows returned.
+    //    TenantSecurity rejects School B before controller/service code runs.
     // ══════════════════════════════════════════════════════════════════════════
 
     @Test
-    @DisplayName("[list-isolation] Tenant A gets empty list for Tenant B's school — Hibernate filter applied")
-    void tenantA_listStudentsInTenantBSchool_returnsEmpty() throws Exception {
-        String body = mockMvc.perform(
+    @DisplayName("[school-path-isolation] Tenant A gets 404 for Tenant B's schoolId")
+    void tenantA_listStudentsInTenantBSchool_returns404() throws Exception {
+        mockMvc.perform(
                         get("/v1/school-admin/schools/{id}/students", schoolBId)
                                 .header("Authorization", tenantAdminToken(tenantA)))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .andExpect(status().isNotFound());
+    }
 
-        assertThat(body)
-                .as("Tenant A must not see Tenant B's students — Hibernate filter must return empty data")
-                .contains("\"data\":[]");
-        assertThat(body)
-                .as("Student B's UUID must not appear in Tenant A's list response")
-                .doesNotContain(studentBId.toString());
+    @Test
+    @DisplayName("[school-path-isolation] School Admin from Tenant A gets 404 for Tenant B's schoolId")
+    void schoolAdminTenantA_listStudentsInTenantBSchool_returns404() throws Exception {
+        mockMvc.perform(
+                        get("/v1/school-admin/schools/{id}/students", schoolBId)
+                                .header("Authorization", schoolAdminToken(tenantA, UUID.randomUUID())))
+                .andExpect(status().isNotFound());
     }
 
     @Test
