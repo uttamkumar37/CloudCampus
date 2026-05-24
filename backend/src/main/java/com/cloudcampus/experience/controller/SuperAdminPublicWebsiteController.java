@@ -31,6 +31,7 @@ import com.cloudcampus.experience.service.PublishService;
 import com.cloudcampus.experience.service.SeoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -92,7 +93,7 @@ public class SuperAdminPublicWebsiteController {
 
     @PostMapping("/pages")
     public ResponseEntity<ApiResponse<WebsitePageResponse>> createPage(
-            @RequestBody WebsitePageCreateRequest req,
+            @Valid @RequestBody WebsitePageCreateRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         UUID actorId = UUID.fromString(userDetails.getUsername());
@@ -102,7 +103,7 @@ public class SuperAdminPublicWebsiteController {
     @PutMapping("/pages/{id}")
     public ResponseEntity<ApiResponse<WebsitePageResponse>> updatePage(
             @PathVariable UUID id,
-            @RequestBody WebsitePageUpdateRequest req,
+            @Valid @RequestBody WebsitePageUpdateRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         UUID actorId = UUID.fromString(userDetails.getUsername());
@@ -126,7 +127,7 @@ public class SuperAdminPublicWebsiteController {
     @PostMapping("/pages/{id}/sections")
     public ResponseEntity<ApiResponse<WebsiteSectionResponse>> createSection(
             @PathVariable UUID id,
-            @RequestBody WebsiteSectionCreateRequest req,
+            @Valid @RequestBody WebsiteSectionCreateRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         UUID actorId = UUID.fromString(userDetails.getUsername());
@@ -136,7 +137,7 @@ public class SuperAdminPublicWebsiteController {
     @PutMapping("/sections/{sectionId}")
     public ResponseEntity<ApiResponse<WebsiteSectionResponse>> updateSection(
             @PathVariable UUID sectionId,
-            @RequestBody WebsiteSectionUpdateRequest req,
+            @Valid @RequestBody WebsiteSectionUpdateRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         UUID actorId = UUID.fromString(userDetails.getUsername());
@@ -159,7 +160,7 @@ public class SuperAdminPublicWebsiteController {
 
     @PostMapping("/navigation")
     public ResponseEntity<ApiResponse<WebsiteNavigationResponse>> createNavigation(
-            @RequestBody WebsiteNavigationCreateRequest req,
+            @Valid @RequestBody WebsiteNavigationCreateRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         UUID actorId = UUID.fromString(userDetails.getUsername());
@@ -169,7 +170,7 @@ public class SuperAdminPublicWebsiteController {
     @PutMapping("/navigation/{id}")
     public ResponseEntity<ApiResponse<WebsiteNavigationResponse>> updateNavigation(
             @PathVariable UUID id,
-            @RequestBody WebsiteNavigationUpdateRequest req,
+            @Valid @RequestBody WebsiteNavigationUpdateRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         UUID actorId = UUID.fromString(userDetails.getUsername());
@@ -192,7 +193,7 @@ public class SuperAdminPublicWebsiteController {
 
     @PostMapping("/branding/themes")
     public ResponseEntity<ApiResponse<WebsiteThemeResponse>> createTheme(
-            @RequestBody WebsiteThemeCreateRequest req,
+            @Valid @RequestBody WebsiteThemeCreateRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         UUID actorId = UUID.fromString(userDetails.getUsername());
@@ -202,7 +203,7 @@ public class SuperAdminPublicWebsiteController {
     @PutMapping("/branding/themes/{id}")
     public ResponseEntity<ApiResponse<WebsiteThemeResponse>> updateTheme(
             @PathVariable UUID id,
-            @RequestBody WebsiteThemeUpdateRequest req,
+            @Valid @RequestBody WebsiteThemeUpdateRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         UUID actorId = UUID.fromString(userDetails.getUsername());
@@ -228,7 +229,7 @@ public class SuperAdminPublicWebsiteController {
 
     @PutMapping("/seo")
     public ResponseEntity<ApiResponse<WebsiteSeoSettingsResponse>> upsertSeo(
-            @RequestBody WebsiteSeoUpsertRequest req,
+            @Valid @RequestBody WebsiteSeoUpsertRequest req,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         UUID actorId = UUID.fromString(userDetails.getUsername());

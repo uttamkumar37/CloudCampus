@@ -1,11 +1,14 @@
 package com.cloudcampus.experience.dto.request;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
+
 import java.util.Map;
 
 public record WebsiteSectionUpdateRequest(
-        String title,
-        String sectionType,
-        int position,
+        @Size(max = 180) String title,
+        @Size(max = 80) String sectionType,
+        @Min(0) int position,
         Map<String, Object> configJson
 ) {
 }

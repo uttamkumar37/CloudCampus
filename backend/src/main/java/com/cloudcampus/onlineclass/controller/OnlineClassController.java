@@ -3,8 +3,10 @@ package com.cloudcampus.onlineclass.controller;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
+import com.cloudcampus.onlineclass.dto.OnlineClassRecordingRequest;
 import com.cloudcampus.onlineclass.dto.OnlineClassRequest;
 import com.cloudcampus.onlineclass.dto.OnlineClassResponse;
+import com.cloudcampus.onlineclass.dto.OnlineClassStatusUpdateRequest;
 import com.cloudcampus.onlineclass.service.OnlineClassService;
 import com.cloudcampus.staff.repository.StaffRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,7 +21,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -63,11 +64,11 @@ public class OnlineClassController {
     @PatchMapping("/v1/teacher/online-classes/{classId}/status")
     public ApiResponse<OnlineClassResponse> updateStatus(
             @PathVariable UUID classId,
-            @RequestBody Map<String, String> body
+            @Valid @RequestBody OnlineClassStatusUpdateRequest request
     ) {
         UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
-                service.updateStatus(tenantId, classId, body.getOrDefault("action", "")));
+                service.updateStatus(tenantId, classId, request.action()));
     }
 
     @Operation(summary = "Add recording URL after class ends")
@@ -75,11 +76,11 @@ public class OnlineClassController {
     @PatchMapping("/v1/teacher/online-classes/{classId}/recording")
     public ApiResponse<OnlineClassResponse> addRecording(
             @PathVariable UUID classId,
-            @RequestBody Map<String, String> body
+            @Valid @RequestBody OnlineClassRecordingRequest request
     ) {
         UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
-                service.addRecording(tenantId, classId, body.get("recordingUrl")));
+                service.addRecording(tenantId, classId, request.recordingUrl()));
     }
 
     @Operation(summary = "Delete online class")

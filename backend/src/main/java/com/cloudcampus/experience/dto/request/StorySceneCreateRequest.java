@@ -1,13 +1,16 @@
 package com.cloudcampus.experience.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.util.List;
 import java.util.Map;
 
 public record StorySceneCreateRequest(
-        String sceneKey,
-        String title,
-        String audienceType,
+        @NotBlank @Size(max = 120) String sceneKey,
+        @NotBlank @Size(max = 180) String title,
+        @NotBlank @Size(max = 80) String audienceType,
         Map<String, Object> timelineJson,
-        List<Object> proofPointsJson,
+        @Size(max = 100) List<Object> proofPointsJson,
         Map<String, Object> animationJson
 ) {}

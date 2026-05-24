@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -62,7 +63,7 @@ public class LeaveRequestController {
             @NotBlank String reason
     ) {}
 
-    public record ReviewRequest(String notes) {}
+    public record ReviewRequest(@Size(max = 1000) String notes) {}
 
     private final LeaveRequestRepository leaveRepo;
     private final SchoolRepository       schoolRepo;
@@ -124,7 +125,7 @@ public class LeaveRequestController {
     public ApiResponse<LeaveRequestResponse> approve(
             @PathVariable UUID schoolId,
             @PathVariable UUID id,
-            @RequestBody(required = false) ReviewRequest req) {
+            @Valid @RequestBody(required = false) ReviewRequest req) {
 
         LeaveRequest lr = resolveRequest(schoolId, id);
         if (lr.getStatus() != LeaveStatus.PENDING) {
@@ -142,7 +143,7 @@ public class LeaveRequestController {
     public ApiResponse<LeaveRequestResponse> reject(
             @PathVariable UUID schoolId,
             @PathVariable UUID id,
-            @RequestBody(required = false) ReviewRequest req) {
+            @Valid @RequestBody(required = false) ReviewRequest req) {
 
         LeaveRequest lr = resolveRequest(schoolId, id);
         if (lr.getStatus() != LeaveStatus.PENDING) {

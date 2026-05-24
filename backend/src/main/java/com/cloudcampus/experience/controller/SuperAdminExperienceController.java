@@ -140,7 +140,7 @@ public class SuperAdminExperienceController {
     @Operation(summary = "Create brand system")
     @PostMapping("/branding")
     public ResponseEntity<ApiResponse<BrandSystemResponse>> createBrandSystem(
-            @RequestBody BrandSystemCreateRequest req,
+            @Valid @RequestBody BrandSystemCreateRequest req,
             @AuthenticationPrincipal UserDetails user) {
         UUID actorId = UUID.fromString(user.getUsername());
         return ResponseEntity.ok(ApiResponse.ok(null, brandSystemService.create(req, actorId)));
@@ -150,7 +150,7 @@ public class SuperAdminExperienceController {
     @PutMapping("/branding/{id}")
     public ResponseEntity<ApiResponse<BrandSystemResponse>> updateBrandSystem(
             @PathVariable UUID id,
-            @RequestBody BrandSystemUpdateRequest req) {
+            @Valid @RequestBody BrandSystemUpdateRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(null, brandSystemService.update(id, req)));
     }
 
@@ -171,7 +171,7 @@ public class SuperAdminExperienceController {
     @Operation(summary = "Create a new content block (draft)")
     @PostMapping("/content-blocks")
     public ResponseEntity<ApiResponse<ContentBlockResponse>> createBlock(
-            @RequestBody ContentBlockCreateRequest req,
+            @Valid @RequestBody ContentBlockCreateRequest req,
             @AuthenticationPrincipal UserDetails user) {
         UUID actorId = UUID.fromString(user.getUsername());
         return ResponseEntity.ok(ApiResponse.ok(null, contentBlockService.create(req, actorId)));
@@ -181,7 +181,7 @@ public class SuperAdminExperienceController {
     @PutMapping("/content-blocks/{id}")
     public ResponseEntity<ApiResponse<ContentBlockResponse>> updateBlock(
             @PathVariable UUID id,
-            @RequestBody ContentBlockUpdateRequest req) {
+            @Valid @RequestBody ContentBlockUpdateRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(null, contentBlockService.update(id, req)));
     }
 
@@ -202,7 +202,7 @@ public class SuperAdminExperienceController {
     @Operation(summary = "Create website route")
     @PostMapping("/website-routes")
     public ResponseEntity<ApiResponse<WebsiteRouteResponse>> createWebsiteRoute(
-            @RequestBody WebsiteRouteCreateRequest req,
+            @Valid @RequestBody WebsiteRouteCreateRequest req,
             @AuthenticationPrincipal UserDetails user) {
         UUID actorId = UUID.fromString(user.getUsername());
         return ResponseEntity.ok(ApiResponse.ok(null, websiteRouteService.create(req, actorId)));
@@ -212,7 +212,7 @@ public class SuperAdminExperienceController {
     @PutMapping("/website-routes/{id}")
     public ResponseEntity<ApiResponse<WebsiteRouteResponse>> updateWebsiteRoute(
             @PathVariable UUID id,
-            @RequestBody WebsiteRouteUpdateRequest req) {
+            @Valid @RequestBody WebsiteRouteUpdateRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(null, websiteRouteService.update(id, req)));
     }
 
@@ -241,7 +241,7 @@ public class SuperAdminExperienceController {
     @Operation(summary = "Create a new investor room")
     @PostMapping("/investor-rooms")
     public ResponseEntity<ApiResponse<InvestorRoomResponse>> createRoom(
-            @RequestBody InvestorRoomCreateRequest req,
+            @Valid @RequestBody InvestorRoomCreateRequest req,
             @AuthenticationPrincipal UserDetails user) {
         UUID actorId = UUID.fromString(user.getUsername());
         return ResponseEntity.ok(ApiResponse.ok(null, investorRoomService.create(req, actorId)));
@@ -265,7 +265,7 @@ public class SuperAdminExperienceController {
     @Operation(summary = "Create presentation")
     @PostMapping("/presentations")
     public ResponseEntity<ApiResponse<PresentationResponse>> createPresentation(
-            @RequestBody PresentationCreateRequest req,
+            @Valid @RequestBody PresentationCreateRequest req,
             @AuthenticationPrincipal UserDetails user) {
         UUID actorId = UUID.fromString(user.getUsername());
         return ResponseEntity.ok(ApiResponse.ok(null, presentationService.create(req.title(), req.slug(), req.audienceType(), actorId)));
@@ -288,7 +288,7 @@ public class SuperAdminExperienceController {
     @Operation(summary = "Create stakeholder journey")
     @PostMapping("/stakeholder-journeys")
     public ResponseEntity<ApiResponse<StakeholderJourneyResponse>> createStakeholderJourney(
-            @RequestBody StakeholderJourneyCreateRequest req,
+            @Valid @RequestBody StakeholderJourneyCreateRequest req,
             @AuthenticationPrincipal UserDetails user) {
         UUID actorId = UUID.fromString(user.getUsername());
         return ResponseEntity.ok(ApiResponse.ok(null, stakeholderJourneyService.create(req, actorId)));
@@ -298,7 +298,7 @@ public class SuperAdminExperienceController {
     @PutMapping("/stakeholder-journeys/{id}")
     public ResponseEntity<ApiResponse<StakeholderJourneyResponse>> updateStakeholderJourney(
             @PathVariable UUID id,
-            @RequestBody StakeholderJourneyUpdateRequest req) {
+            @Valid @RequestBody StakeholderJourneyUpdateRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(null, stakeholderJourneyService.update(id, req)));
     }
 
@@ -319,7 +319,7 @@ public class SuperAdminExperienceController {
     @Operation(summary = "Create marketing campaign")
     @PostMapping("/campaigns")
     public ResponseEntity<ApiResponse<MarketingCampaignResponse>> createCampaign(
-            @RequestBody MarketingCampaignCreateRequest req,
+            @Valid @RequestBody MarketingCampaignCreateRequest req,
             @AuthenticationPrincipal UserDetails user) {
         UUID actorId = UUID.fromString(user.getUsername());
         return ResponseEntity.ok(ApiResponse.ok(null, marketingCampaignService.create(req, actorId)));
@@ -329,7 +329,7 @@ public class SuperAdminExperienceController {
     @PutMapping("/campaigns/{id}")
     public ResponseEntity<ApiResponse<MarketingCampaignResponse>> updateCampaign(
             @PathVariable UUID id,
-            @RequestBody MarketingCampaignUpdateRequest req) {
+            @Valid @RequestBody MarketingCampaignUpdateRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(null, marketingCampaignService.update(id, req)));
     }
 
@@ -356,7 +356,7 @@ public class SuperAdminExperienceController {
     @Operation(summary = "Create website template")
     @PostMapping("/templates")
     public ResponseEntity<ApiResponse<WebsiteTemplateResponse>> createTemplate(
-            @RequestBody WebsiteTemplateCreateRequest req,
+            @Valid @RequestBody WebsiteTemplateCreateRequest req,
             @AuthenticationPrincipal UserDetails user) {
         UUID actorId = UUID.fromString(user.getUsername());
         return ResponseEntity.ok(ApiResponse.ok(null, websiteTemplateService.create(req, actorId)));
@@ -366,7 +366,7 @@ public class SuperAdminExperienceController {
     @PutMapping("/templates/{id}")
     public ResponseEntity<ApiResponse<WebsiteTemplateResponse>> updateTemplate(
             @PathVariable UUID id,
-            @RequestBody WebsiteTemplateUpdateRequest req) {
+            @Valid @RequestBody WebsiteTemplateUpdateRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(null, websiteTemplateService.update(id, req)));
     }
 
@@ -387,7 +387,7 @@ public class SuperAdminExperienceController {
     @Operation(summary = "Create storytelling scene")
     @PostMapping("/story-scenes")
     public ResponseEntity<ApiResponse<StorySceneResponse>> createStoryScene(
-            @RequestBody StorySceneCreateRequest req,
+            @Valid @RequestBody StorySceneCreateRequest req,
             @AuthenticationPrincipal UserDetails user) {
         UUID actorId = UUID.fromString(user.getUsername());
         return ResponseEntity.ok(ApiResponse.ok(null, storySceneService.create(req, actorId)));
@@ -397,7 +397,7 @@ public class SuperAdminExperienceController {
     @PutMapping("/story-scenes/{id}")
     public ResponseEntity<ApiResponse<StorySceneResponse>> updateStoryScene(
             @PathVariable UUID id,
-            @RequestBody StorySceneUpdateRequest req) {
+            @Valid @RequestBody StorySceneUpdateRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(null, storySceneService.update(id, req)));
     }
 
@@ -418,7 +418,7 @@ public class SuperAdminExperienceController {
     @Operation(summary = "Create trust module")
     @PostMapping("/trust-modules")
     public ResponseEntity<ApiResponse<TrustModuleResponse>> createTrustModule(
-            @RequestBody TrustModuleCreateRequest req,
+            @Valid @RequestBody TrustModuleCreateRequest req,
             @AuthenticationPrincipal UserDetails user) {
         UUID actorId = UUID.fromString(user.getUsername());
         return ResponseEntity.ok(ApiResponse.ok(null, trustModuleService.create(req, actorId)));
@@ -428,7 +428,7 @@ public class SuperAdminExperienceController {
     @PutMapping("/trust-modules/{id}")
     public ResponseEntity<ApiResponse<TrustModuleResponse>> updateTrustModule(
             @PathVariable UUID id,
-            @RequestBody TrustModuleUpdateRequest req) {
+            @Valid @RequestBody TrustModuleUpdateRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(null, trustModuleService.update(id, req)));
     }
 

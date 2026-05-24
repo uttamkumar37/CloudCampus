@@ -18,6 +18,7 @@ import com.cloudcampus.student.entity.Student;
 import com.cloudcampus.student.repository.StudentRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.slf4j.MDC;
@@ -128,7 +129,7 @@ public class StudentAssignmentController {
     @PostMapping("/{assignmentId}/submit")
     public ResponseEntity<ApiResponse<AssignmentView>> submit(
             @PathVariable UUID assignmentId,
-            @RequestBody SubmitRequest req) {
+            @Valid @RequestBody SubmitRequest req) {
 
         Student student = resolveStudent();
 
