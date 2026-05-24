@@ -11,6 +11,7 @@ import com.cloudcampus.auth.repository.UserRepository;
 import com.cloudcampus.auth.security.JwtDenylistService;
 import com.cloudcampus.auth.security.JwtUtil;
 import com.cloudcampus.auth.security.LoginRateLimiterService;
+import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.UnauthorizedException;
 import com.cloudcampus.common.web.RequestContext;
@@ -99,6 +100,25 @@ class AuthServiceImplTest {
     }
 
     @Test
+    void login_withForcedPasswordChange_returnsRequiredFlag() {
+        User user = new User(USER_ID, TENANT_ID, "teacher@school.com", "hash",
+                UserRole.TEACHER, UserStatus.ACTIVE, true, Instant.now());
+        when(userRepository.findByUsername("teacher@school.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("secret", "hash")).thenReturn(true);
+        when(jwtUtil.generateAccessToken(any(), any(), any(), any())).thenReturn("access-token");
+        when(redisTemplate.opsForValue()).thenReturn(valueOps);
+        when(redisTemplate.opsForSet()).thenReturn(setOps);
+        when(jwtProperties.refreshTokenExpirySeconds()).thenReturn(604800L);
+        when(jwtProperties.accessTokenExpirySeconds()).thenReturn(900L);
+        when(tenantFeatureRepository.findEnabledKeysByTenantId(TENANT_ID)).thenReturn(List.of());
+
+        LoginResponse response = authService.login(
+                new LoginRequest("teacher@school.com", "secret"), "1.2.3.4");
+
+        assertThat(response.requiresPasswordChange()).isTrue();
+    }
+
+    @Test
     void login_withWrongPassword_throwsUnauthorized() {
         User user = activeUser();
         when(userRepository.findByUsername("teacher@school.com")).thenReturn(Optional.of(user));
@@ -180,6 +200,38 @@ class AuthServiceImplTest {
         }
 
         verify(jwtDenylistService).deny(jti, expiry);
+    }
+
+    // ── change password ──────────────────────────────────────────────────────
+
+    @Test
+    void changePassword_clearsForcePasswordChangeFlag() {
+        User user = new User(USER_ID, TENANT_ID, "teacher@school.com", "hash",
+                UserRole.TEACHER, UserStatus.ACTIVE, true, Instant.now());
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("old-password", "hash")).thenReturn(true);
+        when(passwordEncoder.matches("NewStrongPassword1!", "hash")).thenReturn(false);
+        when(passwordEncoder.encode("NewStrongPassword1!")).thenReturn("new-hash");
+        when(redisTemplate.opsForSet()).thenReturn(setOps);
+
+        authService.changePassword(USER_ID, "old-password", "NewStrongPassword1!");
+
+        assertThat(user.getPasswordHash()).isEqualTo("new-hash");
+        assertThat(user.isForcePasswordChange()).isFalse();
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void changePassword_rejectsSamePassword() {
+        User user = activeUser();
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("old-password", "hash")).thenReturn(true);
+        when(passwordEncoder.matches("NewStrongPassword1!", "hash")).thenReturn(true);
+
+        assertThatThrownBy(() ->
+                authService.changePassword(USER_ID, "old-password", "NewStrongPassword1!"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("must differ");
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────

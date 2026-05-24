@@ -100,7 +100,15 @@ public class SecretsGuardConfig {
 
         // ── Bootstrap admin password ───────────────────────────────────────────
         String bootstrapPassword = environment.getProperty("app.bootstrap.admin.password", "");
-        if (!bootstrapPassword.isBlank() && UNSAFE_BOOTSTRAP_PASSWORDS.contains(bootstrapPassword.toLowerCase())) {
+        if (activeProfiles.contains("prod")) {
+            if (bootstrapPassword == null || bootstrapPassword.isBlank()) {
+                violations.add("BOOTSTRAP_ADMIN_PASSWORD is required in the prod profile for first-boot admin creation");
+            } else if (UNSAFE_BOOTSTRAP_PASSWORDS.contains(bootstrapPassword.toLowerCase())
+                    || bootstrapPassword.length() < MIN_SECRET_LENGTH) {
+                violations.add("BOOTSTRAP_ADMIN_PASSWORD is weak — use a random value of at least " + MIN_SECRET_LENGTH + " characters");
+            }
+        } else if (!bootstrapPassword.isBlank()
+                && UNSAFE_BOOTSTRAP_PASSWORDS.contains(bootstrapPassword.toLowerCase())) {
             violations.add("app.bootstrap.admin.password (BOOTSTRAP_ADMIN_PASSWORD) is a well-known weak value — use a strong password or leave blank to skip bootstrap");
         }
 

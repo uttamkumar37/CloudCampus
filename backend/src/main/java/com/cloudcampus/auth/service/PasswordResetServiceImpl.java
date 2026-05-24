@@ -134,6 +134,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setForcePasswordChange(false);
         userRepository.save(user);
 
         // One-time use: delete OTP and attempt counter immediately after successful reset.

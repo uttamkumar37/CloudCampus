@@ -9,11 +9,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -46,16 +48,23 @@ public class SuperAdminBootstrap implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final Environment environment;
 
-    public SuperAdminBootstrap(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public SuperAdminBootstrap(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                               Environment environment) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.environment = environment;
     }
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         if (adminPassword == null || adminPassword.isBlank()) {
+            if (Arrays.asList(environment.getActiveProfiles()).contains("prod")) {
+                throw new IllegalStateException(
+                        "BOOTSTRAP_ADMIN_PASSWORD is required in the prod profile");
+            }
             log.warn("BOOTSTRAP: BOOTSTRAP_ADMIN_PASSWORD is not set. " +
                      "Super admin creation skipped. Set this env var on first deployment.");
             return;
