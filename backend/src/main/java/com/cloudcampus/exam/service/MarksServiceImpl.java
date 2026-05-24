@@ -1,7 +1,10 @@
 package com.cloudcampus.exam.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.exam.dto.BulkMarksEntryRequest;
 import com.cloudcampus.exam.dto.MarksEntryRequest;
 import com.cloudcampus.exam.dto.StudentMarkResponse;
@@ -16,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -25,13 +29,16 @@ public class MarksServiceImpl implements MarksService {
     private final ExamRepository        examRepository;
     private final ExamSubjectRepository examSubjectRepository;
     private final StudentMarkRepository studentMarkRepository;
+    private final AuditLogService       auditLog;
 
     public MarksServiceImpl(ExamRepository examRepository,
                              ExamSubjectRepository examSubjectRepository,
-                             StudentMarkRepository studentMarkRepository) {
+                             StudentMarkRepository studentMarkRepository,
+                             AuditLogService auditLog) {
         this.examRepository        = examRepository;
         this.examSubjectRepository = examSubjectRepository;
         this.studentMarkRepository = studentMarkRepository;
+        this.auditLog              = auditLog;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -74,6 +81,17 @@ public class MarksServiceImpl implements MarksService {
                             }
                     );
         }
+        auditLog.logCriticalMutation(
+                enteredBy,
+                tenantId,
+                AuditAction.DATA_MARKS_BULK_SAVED,
+                "ExamSubject",
+                subjectEntryId.toString(),
+                "Bulk marks saved",
+                Map.of(
+                        "examId", examId.toString(),
+                        "schoolId", schoolId.toString(),
+                        "entryCount", String.valueOf(request.entries().size())));
         return results;
     }
 
@@ -112,7 +130,19 @@ public class MarksServiceImpl implements MarksService {
 
         BigDecimal marks = resolveMarks(request, paper.getTotalMarks());
         sm.update(marks, request.isAbsent(), request.remarks(), enteredBy);
-        return StudentMarkResponse.from(studentMarkRepository.save(sm));
+        StudentMark saved = studentMarkRepository.save(sm);
+        auditLog.logCriticalMutation(
+                enteredBy,
+                currentTenantId(),
+                AuditAction.DATA_MARK_UPDATED,
+                "StudentMark",
+                markId.toString(),
+                "Student mark updated",
+                Map.of(
+                        "examId", examId.toString(),
+                        "subjectEntryId", subjectEntryId.toString(),
+                        "studentId", saved.getStudentId().toString()));
+        return StudentMarkResponse.from(saved);
     }
 
     @Override
@@ -127,6 +157,17 @@ public class MarksServiceImpl implements MarksService {
                 .orElseThrow(() -> new NotFoundException("Mark entry not found"));
 
         studentMarkRepository.delete(sm);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.DATA_MARK_DELETED,
+                "StudentMark",
+                markId.toString(),
+                "Student mark deleted",
+                Map.of(
+                        "examId", examId.toString(),
+                        "subjectEntryId", subjectEntryId.toString(),
+                        "studentId", sm.getStudentId().toString()));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -151,5 +192,9 @@ public class MarksServiceImpl implements MarksService {
                     entry.studentId());
         }
         return entry.marksObtained();
+    }
+
+    private UUID currentTenantId() {
+        return UUID.fromString(RequestContext.getTenantId());
     }
 }

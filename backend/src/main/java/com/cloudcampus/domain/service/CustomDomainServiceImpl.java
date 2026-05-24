@@ -1,7 +1,10 @@
 package com.cloudcampus.domain.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.domain.dto.DomainResponse;
 import com.cloudcampus.domain.entity.CustomDomain;
 import com.cloudcampus.domain.repository.CustomDomainRepository;
@@ -15,6 +18,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -23,9 +27,11 @@ public class CustomDomainServiceImpl implements CustomDomainService {
     private static final Logger log = LoggerFactory.getLogger(CustomDomainServiceImpl.class);
 
     private final CustomDomainRepository repository;
+    private final AuditLogService auditLog;
 
-    public CustomDomainServiceImpl(CustomDomainRepository repository) {
+    public CustomDomainServiceImpl(CustomDomainRepository repository, AuditLogService auditLog) {
         this.repository = repository;
+        this.auditLog = auditLog;
     }
 
     @Override
@@ -72,6 +78,14 @@ public class CustomDomainServiceImpl implements CustomDomainService {
         CustomDomain cd = repository.findByIdAndTenantId(domainId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Domain not found"));
         repository.delete(cd);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                tenantId,
+                AuditAction.CONFIG_CUSTOM_DOMAIN_DELETED,
+                "CustomDomain",
+                domainId.toString(),
+                "Custom domain deleted",
+                Map.of("domain", cd.getDomain()));
     }
 
     // ── DNS TXT verification ─────────────────────────────────────────────────

@@ -1,5 +1,7 @@
 package com.cloudcampus.notice.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.PageResponse;
@@ -15,15 +17,18 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 class NoticeServiceImpl implements NoticeService {
 
     private final SchoolNoticeRepository repo;
+    private final AuditLogService auditLog;
 
-    NoticeServiceImpl(SchoolNoticeRepository repo) {
+    NoticeServiceImpl(SchoolNoticeRepository repo, AuditLogService auditLog) {
         this.repo = repo;
+        this.auditLog = auditLog;
     }
 
     @Override
@@ -41,7 +46,18 @@ class NoticeServiceImpl implements NoticeService {
                 req.priority(), req.expiresAt(),
                 postedBy, req.publishImmediately());
 
-        return NoticeResponse.from(repo.save(notice));
+        SchoolNotice saved = repo.save(notice);
+        auditLog.logCriticalMutation(
+                postedBy,
+                tenantId,
+                AuditAction.DATA_NOTICE_CREATED,
+                "SchoolNotice",
+                saved.getId().toString(),
+                "Notice created",
+                Map.of(
+                        "schoolId", schoolId.toString(),
+                        "published", String.valueOf(saved.isPublished())));
+        return NoticeResponse.from(saved);
     }
 
     @Override
@@ -69,7 +85,16 @@ class NoticeServiceImpl implements NoticeService {
             throw new BadRequestException("Notice is already published");
         }
         notice.publish();
-        return NoticeResponse.from(repo.save(notice));
+        SchoolNotice saved = repo.save(notice);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.DATA_NOTICE_PUBLISHED,
+                "SchoolNotice",
+                noticeId.toString(),
+                "Notice published",
+                Map.of("schoolId", schoolId.toString()));
+        return NoticeResponse.from(saved);
     }
 
     @Override
@@ -80,10 +105,22 @@ class NoticeServiceImpl implements NoticeService {
             throw new BadRequestException("Published notices cannot be deleted");
         }
         repo.delete(notice);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.DATA_NOTICE_DELETED,
+                "SchoolNotice",
+                noticeId.toString(),
+                "Notice deleted",
+                Map.of("schoolId", schoolId.toString()));
     }
 
     private SchoolNotice findOrThrow(UUID schoolId, UUID noticeId) {
         return repo.findBySchoolIdAndId(schoolId, noticeId)
                 .orElseThrow(() -> new NotFoundException("Notice not found: " + noticeId));
+    }
+
+    private UUID currentTenantId() {
+        return UUID.fromString(RequestContext.getTenantId());
     }
 }

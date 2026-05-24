@@ -188,6 +188,29 @@ public class AuditLogService {
                 .build());
     }
 
+    // ── Critical mutation events ────────────────────────────────────────────
+
+    @Async("auditExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logCriticalMutation(
+            UUID actorId,
+            UUID tenantId,
+            AuditAction eventType,
+            String resourceType,
+            String resourceId,
+            String description,
+            Map<String, Object> metadata) {
+        persist(AuditLog.builder()
+                .actorId(actorId)
+                .tenantId(tenantId)
+                .eventType(eventType)
+                .resourceType(resourceType)
+                .resourceId(resourceId)
+                .description(description)
+                .metadata(metadata)
+                .build());
+    }
+
     // ── Internal ─────────────────────────────────────────────────────────────
 
     /**

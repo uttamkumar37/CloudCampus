@@ -1,5 +1,7 @@
 package com.cloudcampus.school.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.school.dto.SchoolSettingsRequest;
@@ -11,6 +13,7 @@ import com.cloudcampus.school.repository.SchoolSettingsRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -18,10 +21,12 @@ class SchoolSettingsServiceImpl implements SchoolSettingsService {
 
     private final SchoolSettingsRepository repo;
     private final SchoolRepository schoolRepo;
+    private final AuditLogService auditLog;
 
-    SchoolSettingsServiceImpl(SchoolSettingsRepository repo, SchoolRepository schoolRepo) {
+    SchoolSettingsServiceImpl(SchoolSettingsRepository repo, SchoolRepository schoolRepo, AuditLogService auditLog) {
         this.repo = repo;
         this.schoolRepo = schoolRepo;
+        this.auditLog = auditLog;
     }
 
     @Override
@@ -49,7 +54,16 @@ class SchoolSettingsServiceImpl implements SchoolSettingsService {
         settings.setSchoolLogoUrl(req.schoolLogoUrl());
         settings.setPrimaryColor(req.primaryColor());
 
-        return SchoolSettingsResponse.from(repo.save(settings));
+        SchoolSettings saved = repo.save(settings);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                tenantId,
+                AuditAction.CONFIG_SCHOOL_SETTINGS_UPDATED,
+                "SchoolSettings",
+                schoolId.toString(),
+                "School settings updated",
+                Map.of("schoolId", schoolId.toString()));
+        return SchoolSettingsResponse.from(saved);
     }
 
     @Override

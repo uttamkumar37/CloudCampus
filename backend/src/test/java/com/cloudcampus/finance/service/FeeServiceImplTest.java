@@ -1,5 +1,7 @@
 package com.cloudcampus.finance.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.RequestContext;
@@ -42,6 +44,7 @@ class FeeServiceImplTest {
     @Mock StudentFeeRecordRepository recordRepo;
     @Mock FeePaymentRepository       paymentRepo;
     @Mock com.cloudcampus.common.metrics.BusinessMetrics metrics;
+    @Mock AuditLogService            auditLog;
 
     FeeServiceImpl feeService;
 
@@ -51,7 +54,7 @@ class FeeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        feeService = new FeeServiceImpl(categoryRepo, structureRepo, recordRepo, paymentRepo, metrics);
+        feeService = new FeeServiceImpl(categoryRepo, structureRepo, recordRepo, paymentRepo, metrics, auditLog);
     }
 
     // ── waiveRecord ──────────────────────────────────────────────────────────
@@ -68,6 +71,7 @@ class FeeServiceImplTest {
 
         assertThat(record.getStatus()).isEqualTo(FeeStatus.WAIVED);
         verify(recordRepo).save(record);
+        verify(auditLog).logCriticalMutation(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -111,6 +115,14 @@ class FeeServiceImplTest {
 
         verify(paymentRepo).save(any());
         verify(recordRepo, atLeastOnce()).save(record);
+        verify(auditLog).logCriticalMutation(
+                any(),
+                any(),
+                org.mockito.ArgumentMatchers.eq(AuditAction.FINANCE_FEE_PAYMENT_RECORDED),
+                any(),
+                any(),
+                any(),
+                any());
     }
 
     @Test

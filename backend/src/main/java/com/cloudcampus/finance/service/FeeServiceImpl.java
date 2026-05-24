@@ -1,5 +1,7 @@
 package com.cloudcampus.finance.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.RequestContext;
@@ -42,17 +44,20 @@ class FeeServiceImpl implements FeeService {
     private final StudentFeeRecordRepository recordRepo;
     private final FeePaymentRepository       paymentRepo;
     private final BusinessMetrics            metrics;
+    private final AuditLogService            auditLog;
 
     FeeServiceImpl(FeeCategoryRepository      categoryRepo,
                    FeeStructureRepository     structureRepo,
                    StudentFeeRecordRepository recordRepo,
                    FeePaymentRepository       paymentRepo,
-                   BusinessMetrics            metrics) {
+                   BusinessMetrics            metrics,
+                   AuditLogService            auditLog) {
         this.categoryRepo  = categoryRepo;
         this.structureRepo = structureRepo;
         this.recordRepo    = recordRepo;
         this.paymentRepo   = paymentRepo;
         this.metrics       = metrics;
+        this.auditLog      = auditLog;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -212,7 +217,18 @@ class FeeServiceImpl implements FeeService {
         }
         record.waive();
         String catName = resolveCategoryName(record);
-        return StudentFeeRecordResponse.from(recordRepo.save(record), catName);
+        StudentFeeRecord saved = recordRepo.save(record);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.FINANCE_FEE_WAIVED,
+                "StudentFeeRecord",
+                recordId.toString(),
+                "Fee record waived",
+                Map.of(
+                        "studentId", saved.getStudentId().toString(),
+                        "schoolId", saved.getSchoolId().toString()));
+        return StudentFeeRecordResponse.from(saved, catName);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -248,6 +264,18 @@ class FeeServiceImpl implements FeeService {
         recordRepo.save(record);
 
         metrics.recordPayment(req.paymentMode().name(), req.amount());
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.FINANCE_FEE_PAYMENT_RECORDED,
+                "FeePayment",
+                saved.getId().toString(),
+                "Fee payment recorded",
+                Map.of(
+                        "feeRecordId", recordId.toString(),
+                        "studentId", record.getStudentId().toString(),
+                        "amount", req.amount().toPlainString(),
+                        "paymentMode", req.paymentMode().name()));
         return FeePaymentResponse.from(saved);
     }
 

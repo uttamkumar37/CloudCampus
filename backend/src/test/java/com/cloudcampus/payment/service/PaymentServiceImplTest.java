@@ -1,5 +1,6 @@
 package com.cloudcampus.payment.service;
 
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.web.RequestContext;
@@ -59,6 +60,7 @@ class PaymentServiceImplTest {
     @Mock FeePaymentRepository       paymentRepo;
     @Mock FeeService                 feeService;
     @Mock JdbcTemplate               jdbcTemplate;
+    @Mock AuditLogService            auditLog;
 
     private static final String TEST_KEY_ID     = "rzp_test_key";
     private static final String TEST_KEY_SECRET = "test_hmac_secret_32_chars_minimum!";
@@ -73,7 +75,7 @@ class PaymentServiceImplTest {
         // RazorpayProperties is a record — construct with enabled=true for these tests.
         RazorpayProperties props = new RazorpayProperties(TEST_KEY_ID, TEST_KEY_SECRET, true);
         service = new PaymentServiceImpl(orderRepo, recordRepo, studentRepo, linkRepo, paymentRepo,
-                feeService, props, jdbcTemplate, TEST_KEY_SECRET, 30);
+                feeService, props, jdbcTemplate, auditLog, TEST_KEY_SECRET, 30);
     }
 
     @AfterEach
@@ -293,7 +295,7 @@ class PaymentServiceImplTest {
     private PaymentServiceImpl serviceWithRazorpayDisabled() {
         RazorpayProperties props = new RazorpayProperties(TEST_KEY_ID, TEST_KEY_SECRET, false);
         return new PaymentServiceImpl(orderRepo, recordRepo, studentRepo, linkRepo, paymentRepo, feeService,
-                props, jdbcTemplate, TEST_KEY_SECRET, 30);
+                props, jdbcTemplate, auditLog, TEST_KEY_SECRET, 30);
     }
 
     private static void authenticateForTenant(UUID tenantId, UUID userId, String... roles) {

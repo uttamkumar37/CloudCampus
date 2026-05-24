@@ -1,5 +1,8 @@
 package com.cloudcampus.exam.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.exam.dto.ExamResultResponse;
 import com.cloudcampus.exam.dto.SubjectResultLine;
@@ -45,15 +48,18 @@ public class ResultServiceImpl implements ResultService {
     private final ExamSubjectRepository examSubjectRepository;
     private final StudentMarkRepository studentMarkRepository;
     private final ExamResultRepository  examResultRepository;
+    private final AuditLogService       auditLog;
 
     public ResultServiceImpl(ExamRepository examRepository,
                               ExamSubjectRepository examSubjectRepository,
                               StudentMarkRepository studentMarkRepository,
-                              ExamResultRepository examResultRepository) {
+                              ExamResultRepository examResultRepository,
+                              AuditLogService auditLog) {
         this.examRepository        = examRepository;
         this.examSubjectRepository = examSubjectRepository;
         this.studentMarkRepository = studentMarkRepository;
         this.examResultRepository  = examResultRepository;
+        this.auditLog              = auditLog;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -132,6 +138,16 @@ public class ResultServiceImpl implements ResultService {
         assignRanks(results);
 
         examResultRepository.saveAll(results);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                tenantId,
+                AuditAction.DATA_RESULTS_GENERATED,
+                "Exam",
+                examId.toString(),
+                "Exam results generated",
+                Map.of(
+                        "schoolId", schoolId.toString(),
+                        "resultCount", String.valueOf(results.size())));
 
         return results.stream()
                 .map(ExamResultResponse::from)

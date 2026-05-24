@@ -1,5 +1,7 @@
 package com.cloudcampus.school.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.RequestContext;
@@ -14,15 +16,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 class AcademicYearServiceImpl implements AcademicYearService {
 
     private final AcademicYearRepository repo;
+    private final AuditLogService auditLog;
 
-    AcademicYearServiceImpl(AcademicYearRepository repo) {
+    AcademicYearServiceImpl(AcademicYearRepository repo, AuditLogService auditLog) {
         this.repo = repo;
+        this.auditLog = auditLog;
     }
 
     @Override
@@ -87,7 +92,16 @@ class AcademicYearServiceImpl implements AcademicYearService {
         AcademicYear year = findOrThrow(id);
         repo.clearCurrentForSchool(year.getSchoolId());
         year.setCurrent(true);
-        return AcademicYearResponse.from(repo.save(year));
+        AcademicYear saved = repo.save(year);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.CONFIG_ACADEMIC_YEAR_CURRENT_SET,
+                "AcademicYear",
+                id.toString(),
+                "Academic year set as current",
+                Map.of("schoolId", saved.getSchoolId().toString()));
+        return AcademicYearResponse.from(saved);
     }
 
     @Override
@@ -100,14 +114,26 @@ class AcademicYearServiceImpl implements AcademicYearService {
         }
         year.setStatus(AcademicYearStatus.CLOSED);
         year.setCurrent(false);
-        return AcademicYearResponse.from(repo.save(year));
+        AcademicYear saved = repo.save(year);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.CONFIG_ACADEMIC_YEAR_CLOSED,
+                "AcademicYear",
+                id.toString(),
+                "Academic year closed",
+                Map.of("schoolId", saved.getSchoolId().toString()));
+        return AcademicYearResponse.from(saved);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
 
     private AcademicYear findOrThrow(UUID id) {
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
-        return repo.findByIdAndTenantId(id, tenantId)
+        return repo.findByIdAndTenantId(id, currentTenantId())
                    .orElseThrow(() -> new NotFoundException("Academic year not found: " + id));
+    }
+
+    private UUID currentTenantId() {
+        return UUID.fromString(RequestContext.getTenantId());
     }
 }

@@ -1,5 +1,7 @@
 package com.cloudcampus.payment.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
@@ -40,6 +42,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HexFormat;
+import java.util.Map;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -56,6 +59,7 @@ class PaymentServiceImpl implements PaymentService {
     private final FeeService                feeService;
     private final RazorpayProperties        razorpay;
     private final JdbcTemplate              jdbcTemplate;
+    private final AuditLogService           auditLog;
     private final String                    razorpayWebhookSecret;
     private final Duration                  orderExpiry;
 
@@ -67,6 +71,7 @@ class PaymentServiceImpl implements PaymentService {
                        FeeService                feeService,
                        RazorpayProperties        razorpay,
                        JdbcTemplate              jdbcTemplate,
+                       AuditLogService           auditLog,
                        @Value("${app.razorpay.webhook-secret:}") String razorpayWebhookSecret,
                        @Value("${app.razorpay.order-expiry-minutes:30}") long orderExpiryMinutes) {
         this.orderRepo             = orderRepo;
@@ -77,6 +82,7 @@ class PaymentServiceImpl implements PaymentService {
         this.feeService            = feeService;
         this.razorpay              = razorpay;
         this.jdbcTemplate          = jdbcTemplate;
+        this.auditLog              = auditLog;
         this.razorpayWebhookSecret = razorpayWebhookSecret != null ? razorpayWebhookSecret.trim() : "";
         this.orderExpiry           = Duration.ofMinutes(Math.max(1L, orderExpiryMinutes));
     }
@@ -134,6 +140,17 @@ class PaymentServiceImpl implements PaymentService {
                 record.getStudentId(), initiatedByUserId,
                 gatewayOrderId, amountPaise);
         orderRepo.save(order);
+        auditLog.logCriticalMutation(
+                initiatedByUserId,
+                tenantId,
+                AuditAction.FINANCE_PAYMENT_ORDER_CREATED,
+                "PaymentOrder",
+                order.getId().toString(),
+                "Payment order created",
+                Map.of(
+                        "feeRecordId", record.getId().toString(),
+                        "studentId", record.getStudentId().toString(),
+                        "amountPaise", String.valueOf(amountPaise)));
 
         // Prefill student contact details for the Razorpay modal
         Student student = studentRepo.findByIdAndTenantId(record.getStudentId(), tenantId).orElse(null);
@@ -289,6 +306,17 @@ class PaymentServiceImpl implements PaymentService {
 
         order.markSuccess(gatewayPaymentId, gatewaySignature, paymentResponse.id());
         orderRepo.save(order);
+        auditLog.logCriticalMutation(
+                order.getInitiatedBy(),
+                order.getTenantId(),
+                AuditAction.FINANCE_PAYMENT_CAPTURED,
+                "PaymentOrder",
+                order.getId().toString(),
+                "Payment captured",
+                Map.of(
+                        "feeRecordId", order.getFeeRecordId().toString(),
+                        "feePaymentId", paymentResponse.id().toString(),
+                        "gatewayPaymentId", gatewayPaymentId));
 
         log.info("Payment captured: paymentOrder={} razorpayPayment={} feeRecord={}",
                 order.getId(), gatewayPaymentId, order.getFeeRecordId());

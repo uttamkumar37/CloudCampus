@@ -1,5 +1,7 @@
 package com.cloudcampus.student.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.auth.entity.User;
 import com.cloudcampus.auth.entity.UserRole;
 import com.cloudcampus.auth.repository.UserRepository;
@@ -14,6 +16,7 @@ import com.cloudcampus.student.repository.StudentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,13 +26,16 @@ class ParentLinkServiceImpl implements ParentLinkService {
     private final StudentParentLinkRepository linkRepo;
     private final StudentRepository           studentRepo;
     private final UserRepository              userRepo;
+    private final AuditLogService             auditLog;
 
     ParentLinkServiceImpl(StudentParentLinkRepository linkRepo,
                            StudentRepository studentRepo,
-                           UserRepository userRepo) {
+                           UserRepository userRepo,
+                           AuditLogService auditLog) {
         this.linkRepo    = linkRepo;
         this.studentRepo = studentRepo;
         this.userRepo    = userRepo;
+        this.auditLog    = auditLog;
     }
 
     @Override
@@ -62,7 +68,19 @@ class ParentLinkServiceImpl implements ParentLinkService {
         StudentParentLink link = StudentParentLink.create(
                 tenantId, studentId, req.parentUserId(), req.relationship(), req.makePrimary());
 
-        return ParentLinkResponse.from(linkRepo.save(link));
+        StudentParentLink saved = linkRepo.save(link);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                tenantId,
+                AuditAction.DATA_PARENT_LINK_CREATED,
+                "StudentParentLink",
+                saved.getId().toString(),
+                "Parent linked to student",
+                Map.of(
+                        "studentId", studentId.toString(),
+                        "parentUserId", req.parentUserId().toString(),
+                        "relationship", String.valueOf(req.relationship())));
+        return ParentLinkResponse.from(saved);
     }
 
     @Override
@@ -86,5 +104,15 @@ class ParentLinkServiceImpl implements ParentLinkService {
         StudentParentLink link = linkRepo.findByIdAndTenantId(linkId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Parent link not found: " + linkId));
         linkRepo.delete(link);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                tenantId,
+                AuditAction.DATA_PARENT_LINK_DELETED,
+                "StudentParentLink",
+                linkId.toString(),
+                "Parent link removed",
+                Map.of(
+                        "studentId", link.getStudentId().toString(),
+                        "parentUserId", link.getParentUserId().toString()));
     }
 }
