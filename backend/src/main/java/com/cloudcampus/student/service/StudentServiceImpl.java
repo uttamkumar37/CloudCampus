@@ -240,12 +240,16 @@ class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional
-    public PromotionResult promoteStudents(UUID schoolId, StudentPromotionRequest req) {
+    public PromotionResult promoteStudents(UUID schoolId, StudentPromotionRequest req, boolean dryRun) {
         List<Student> students = req.sourceSectionId() != null
-                ? repo.findAllByClassIdAndSectionIdAndStatusOrderByLastNameAscFirstNameAsc(
-                        req.sourceClassId(), req.sourceSectionId(), StudentStatus.ACTIVE)
-                : repo.findAllByClassIdAndStatusOrderByLastNameAscFirstNameAsc(
-                        req.sourceClassId(), StudentStatus.ACTIVE);
+                ? repo.findAllBySchoolIdAndClassIdAndSectionIdAndStatusOrderByLastNameAscFirstNameAsc(
+                        schoolId, req.sourceClassId(), req.sourceSectionId(), StudentStatus.ACTIVE)
+                : repo.findAllBySchoolIdAndClassIdAndStatusOrderByLastNameAscFirstNameAsc(
+                        schoolId, req.sourceClassId(), StudentStatus.ACTIVE);
+
+        if (dryRun) {
+            return PromotionResult.dryRun(req, students.size());
+        }
 
         for (Student s : students) {
             s.setClassId(req.targetClassId());
@@ -263,7 +267,7 @@ class StudentServiceImpl implements StudentService {
                         "sourceClassId", req.sourceClassId().toString(),
                         "targetClassId", req.targetClassId().toString(),
                         "promotedCount", String.valueOf(students.size())));
-        return new PromotionResult(students.size(), students.size());
+        return PromotionResult.completed(req, students.size());
     }
 
     private UUID currentTenantId() {

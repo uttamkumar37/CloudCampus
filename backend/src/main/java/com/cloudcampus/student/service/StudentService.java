@@ -58,5 +58,5 @@ public interface StudentService {
     BulkImportResult bulkAdmit(UUID schoolId, List<BulkStudentRow> rows);
 
     /** Bulk-promote all ACTIVE students from one class/section to another (CC-0509). */
-    PromotionResult promoteStudents(UUID schoolId, StudentPromotionRequest request);
+    PromotionResult promoteStudents(UUID schoolId, StudentPromotionRequest request, boolean dryRun);
 }

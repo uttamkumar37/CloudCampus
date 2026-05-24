@@ -75,6 +75,25 @@ export default function StudentPromotionPage() {
 
   const activePreview = previewStudents.filter((s) => s.status === 'ACTIVE');
 
+  const canDryRun = !!schoolId && !!srcClassId && !!tgtClassId;
+  const { data: dryRunPreview, isFetching: isDryRunFetching } = useQuery({
+    queryKey: ['promote-dry-run', schoolId, srcClassId, srcSectionId, tgtClassId, tgtSectionId],
+    queryFn: () =>
+      promoteStudents(
+        schoolId,
+        {
+          sourceClassId:   srcClassId,
+          sourceSectionId: srcSectionId || null,
+          targetClassId:   tgtClassId,
+          targetSectionId: tgtSectionId || null,
+        },
+        { dryRun: true },
+      ),
+    enabled: canDryRun,
+  });
+
+  const previewCount = dryRunPreview?.studentsFound ?? activePreview.length;
+
   // ── Mutation ───────────────────────────────────────────────────────────────
   const { mutate, isPending, isError } = useMutation({
     mutationFn: () =>
@@ -94,7 +113,8 @@ export default function StudentPromotionPage() {
   const canPromote =
     !!srcClassId &&
     !!tgtClassId &&
-    activePreview.length > 0 &&
+    previewCount > 0 &&
+    !!dryRunPreview &&
     !result;
 
   // ── Success screen ─────────────────────────────────────────────────────────
@@ -209,8 +229,8 @@ export default function StudentPromotionPage() {
                 ? 'bg-blue-50 text-blue-800'
                 : 'bg-gray-50 text-gray-500'
             }`}>
-              {activePreview.length > 0
-                ? <><span className="font-bold">{activePreview.length}</span> ACTIVE student{activePreview.length !== 1 ? 's' : ''} will be promoted</>
+              {previewCount > 0
+                ? <><span className="font-bold">{previewCount}</span> ACTIVE student{previewCount !== 1 ? 's' : ''} will be promoted</>
                 : 'No ACTIVE students found in this selection.'}
             </div>
           )}
@@ -286,7 +306,9 @@ export default function StudentPromotionPage() {
           {isPending
             ? 'Promoting…'
             : canPromote
-              ? `Promote ${activePreview.length} Student${activePreview.length !== 1 ? 's' : ''}`
+              ? `Promote ${previewCount} Student${previewCount !== 1 ? 's' : ''}`
+              : isDryRunFetching
+                ? 'Checking Preview…'
               : 'Promote Students'}
         </button>
       </div>
@@ -296,7 +318,7 @@ export default function StudentPromotionPage() {
         onClose={() => setConfirmPromote(false)}
         onConfirm={() => { mutate(); setConfirmPromote(false); }}
         title="Promote students"
-        description={`Promote ${activePreview.length} ACTIVE student${activePreview.length !== 1 ? 's' : ''}? This cannot be undone.`}
+        description={`Promote ${previewCount} ACTIVE student${previewCount !== 1 ? 's' : ''}? This cannot be undone.`}
         confirmLabel="Promote"
         loading={isPending}
       />

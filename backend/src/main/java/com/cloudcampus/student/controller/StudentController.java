@@ -82,13 +82,14 @@ public class StudentController {
     }
 
     @Operation(summary = "Bulk-promote ACTIVE students to a new class/section (CC-0509)",
-               description = "Moves all ACTIVE students from sourceClassId (optionally filtered by sourceSectionId) to targetClassId/targetSectionId. Used at year-end for class promotion.")
+               description = "Moves all ACTIVE students from sourceClassId (optionally filtered by sourceSectionId) to targetClassId/targetSectionId. Pass dryRun=true to preview the count and target delta without writing.")
     @PostMapping("/schools/{schoolId}/students/promote")
     public ResponseEntity<ApiResponse<PromotionResult>> promote(
             @PathVariable UUID schoolId,
+            @RequestParam(defaultValue = "false") boolean dryRun,
             @Valid @RequestBody StudentPromotionRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
-                service.promoteStudents(schoolId, request)));
+                service.promoteStudents(schoolId, request, dryRun)));
     }
 
     @Operation(summary = "List students for a school",

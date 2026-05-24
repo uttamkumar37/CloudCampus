@@ -187,15 +187,22 @@ export interface StudentPromotionRequest {
 export interface PromotionResult {
   studentsFound:    number;
   studentsPromoted: number;
+  dryRun:           boolean;
+  sourceClassId:    string;
+  sourceSectionId:  string | null;
+  targetClassId:    string;
+  targetSectionId:  string | null;
 }
 
 export async function promoteStudents(
   schoolId: string,
   body: StudentPromotionRequest,
+  options?: { dryRun?: boolean },
 ): Promise<PromotionResult> {
   const { data } = await axiosInstance.post<ApiResponse<PromotionResult>>(
     `/v1/school-admin/schools/${schoolId}/students/promote`,
     body,
+    { params: options?.dryRun ? { dryRun: true } : undefined },
   );
   return data.data!;
 }
