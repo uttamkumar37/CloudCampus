@@ -1,6 +1,7 @@
 package com.cloudcampus.whatsapp.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.ratelimit.RateLimit;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.common.web.RequestContext;
@@ -56,6 +57,7 @@ public class WhatsAppController {
 
     @PostMapping("/send")
     @Operation(summary = "Send a WhatsApp template message to a recipient (async)")
+    @RateLimit
     public ResponseEntity<ApiResponse<Void>> send(
             @PathVariable UUID schoolId,
             @Valid @RequestBody SendWhatsAppRequest request) {

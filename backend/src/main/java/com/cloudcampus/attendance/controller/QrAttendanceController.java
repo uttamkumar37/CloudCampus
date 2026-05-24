@@ -3,6 +3,7 @@ package com.cloudcampus.attendance.controller;
 import com.cloudcampus.attendance.dto.QrMarkRequest;
 import com.cloudcampus.attendance.service.QrAttendanceService;
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.ratelimit.RateLimit;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +41,7 @@ public class QrAttendanceController {
 
     @Operation(summary = "Self-mark attendance via QR token (Student)")
     @PostMapping("/v1/student/attendance/qr-mark")
+    @RateLimit
     public ResponseEntity<ApiResponse<Map<String, String>>> selfMark(
             @Valid @RequestBody QrMarkRequest request) {
 

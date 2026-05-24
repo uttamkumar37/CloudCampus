@@ -1,6 +1,7 @@
 package com.cloudcampus.payment.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.ratelimit.RateLimit;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.finance.dto.FeePaymentResponse;
@@ -50,6 +51,7 @@ public class PaymentController {
                description = "Student initiates online payment for their own outstanding fee record.")
     @PostMapping("/v1/student/fee-records/{recordId}/payment-order")
     @PreAuthorize("hasRole('STUDENT')")
+    @RateLimit
     public ResponseEntity<ApiResponse<CreatePaymentOrderResponse>> createOrderStudent(
             @PathVariable UUID recordId) {
         UUID userId = RequestContext.getUserId();
@@ -64,6 +66,7 @@ public class PaymentController {
                description = "School admin initiates a Razorpay order for a student's fee record.")
     @PostMapping("/v1/school-admin/fee-records/{recordId}/payment-order")
     @PreAuthorize("hasAnyRole('SCHOOL_ADMIN', 'TENANT_ADMIN')")
+    @RateLimit
     public ResponseEntity<ApiResponse<CreatePaymentOrderResponse>> createOrderAdmin(
             @PathVariable UUID recordId) {
         UUID userId = RequestContext.getUserId();
@@ -78,6 +81,7 @@ public class PaymentController {
                description = "Parent initiates online payment for a linked child's outstanding fee record.")
     @PostMapping("/v1/parent/children/{studentId}/fee-records/{recordId}/payment-order")
     @PreAuthorize("hasRole('PARENT')")
+    @RateLimit
     public ResponseEntity<ApiResponse<CreatePaymentOrderResponse>> createOrderParent(
             @PathVariable UUID studentId,
             @PathVariable UUID recordId) {

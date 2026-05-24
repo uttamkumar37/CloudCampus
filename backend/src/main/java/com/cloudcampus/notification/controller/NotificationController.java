@@ -1,6 +1,7 @@
 package com.cloudcampus.notification.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.ratelimit.RateLimit;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.notification.dto.NotificationLogResponse;
@@ -77,6 +78,7 @@ public class NotificationController {
      */
     @PostMapping("/notifications/send-email")
     @Operation(summary = "Send a templated email to a recipient (async)")
+    @RateLimit
     public ResponseEntity<ApiResponse<Void>> sendEmail(
             @PathVariable UUID schoolId,
             @Valid @RequestBody SendEmailRequest request) {
@@ -108,6 +110,7 @@ public class NotificationController {
      */
     @PostMapping("/notifications/send-push")
     @Operation(summary = "Send a push notification to a user's registered devices (async)")
+    @RateLimit
     public ResponseEntity<ApiResponse<Void>> sendPush(
             @PathVariable UUID schoolId,
             @Valid @RequestBody PushNotificationRequest request) {
