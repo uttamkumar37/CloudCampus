@@ -16,7 +16,8 @@ import static com.cloudcampus.demo.DemoConstants.TENANT_ID;
  * Nightly reset for the JNV Lucknow demo tenant.
  *
  * Runs at 02:00 AM server time.  Deletes transient demo data (attendance,
- * marks, lesson plans, homework) and re-seeds via {@link DemoDataSeeder}.
+ * marks, assignments, fees, lesson plans, homework) and re-seeds via
+ * {@link DemoDataSeeder}.
  * Structural data (tenant, school, classes, sections, subjects, users) is
  * preserved to avoid breaking existing JWT sessions.
  *
@@ -45,7 +46,7 @@ public class DemoResetScheduler {
 
         deleteTransientData();
 
-        // Re-seed students, attendance, exams, lesson plans
+        // Re-seed students, attendance, exams, fees, assignments, and lesson plans.
         seeder.run(null);  // guard-check will pass (students deleted above)
 
         log.info("DEMO RESET: completed in {} ms.", System.currentTimeMillis() - start);
@@ -54,6 +55,14 @@ public class DemoResetScheduler {
     // ── Deletion order respects FK constraints ────────────────────────────────
 
     private void deleteTransientData() {
+        // Fees and payment orders block student deletion through FK references.
+        jdbc.update("DELETE FROM payment_orders      WHERE school_id = ?", SCHOOL_ID);
+        jdbc.update("DELETE FROM student_fee_records WHERE school_id = ?", SCHOOL_ID);
+
+        // Assignments and submissions
+        jdbc.update("DELETE FROM assignment_submissions WHERE school_id = ?", SCHOOL_ID);
+        jdbc.update("DELETE FROM assignments            WHERE school_id = ?", SCHOOL_ID);
+
         // Marks & results
         jdbc.update("DELETE FROM student_marks   WHERE school_id = ?", SCHOOL_ID);
         jdbc.update("DELETE FROM exam_results    WHERE school_id = ?", SCHOOL_ID);
@@ -67,6 +76,9 @@ public class DemoResetScheduler {
 
         // Lesson plans & homework
         jdbc.update("DELETE FROM lesson_plans          WHERE school_id = ?", SCHOOL_ID);
+        jdbc.update("DELETE FROM homework_submissions  WHERE tenant_id = ? "
+                  + "AND homework_id IN (SELECT id FROM homework_assignments WHERE school_id = ?)",
+            TENANT_ID, SCHOOL_ID);
         jdbc.update("DELETE FROM homework_assignments  WHERE school_id = ?", SCHOOL_ID);
         jdbc.update("DELETE FROM school_notices        WHERE school_id = ?", SCHOOL_ID);
 

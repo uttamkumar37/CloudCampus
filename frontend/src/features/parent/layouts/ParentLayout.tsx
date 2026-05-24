@@ -2,6 +2,7 @@ import type React from 'react';
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useRouteScopedDisclosure } from '@/shared/hooks/useRouteScopedDisclosure';
+import { DemoEnvironmentBanner } from '@/shared/demo/DemoEnvironmentBanner';
 
 // ── Icon helpers ──────────────────────────────────────────────────────────────
 
@@ -150,6 +151,7 @@ export function ParentLayout() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <DemoEnvironmentBanner />
           <Outlet />
         </main>
       </div>
