@@ -1,6 +1,7 @@
 import axiosInstance from '@/shared/api/axiosInstance';
 import type { ApiResponse } from '@/shared/types/api';
 import type { TimetableSlot } from '@/features/timetable/types/timetable';
+import type { CreatePaymentOrderResponse } from '@/features/student/api/paymentApi';
 
 // ── Children ──────────────────────────────────────────────────────────────────
 
@@ -107,6 +108,16 @@ export async function getChildFees(studentId: string): Promise<ChildFeeRecord[]>
   const { data } = await axiosInstance.get<ApiResponse<ChildFeeRecord[]>>(
     `/v1/parent/children/${studentId}/fees`);
   return data.data ?? [];
+}
+
+export async function createParentPaymentOrder(
+  studentId: string,
+  recordId: string,
+): Promise<CreatePaymentOrderResponse> {
+  const { data } = await axiosInstance.post<ApiResponse<CreatePaymentOrderResponse>>(
+    `/v1/parent/children/${studentId}/fee-records/${recordId}/payment-order`,
+  );
+  return data.data!;
 }
 
 // ── Notices (shared with student portal) ─────────────────────────────────────

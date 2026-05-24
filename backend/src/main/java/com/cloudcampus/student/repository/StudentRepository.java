@@ -50,9 +50,17 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     List<Student> findAllByClassIdAndStatusOrderByLastNameAscFirstNameAsc(
             UUID classId, StudentStatus status);
 
+    /** Students in a school + class filtered by status. */
+    List<Student> findAllBySchoolIdAndClassIdAndStatusOrderByLastNameAscFirstNameAsc(
+            UUID schoolId, UUID classId, StudentStatus status);
+
     /** Students in a section filtered by status. */
     List<Student> findAllBySectionIdAndStatusOrderByLastNameAscFirstNameAsc(
             UUID sectionId, StudentStatus status);
+
+    /** Students in a school + class + section filtered by status. */
+    List<Student> findAllBySchoolIdAndClassIdAndSectionIdAndStatusOrderByLastNameAscFirstNameAsc(
+            UUID schoolId, UUID classId, UUID sectionId, StudentStatus status);
 
     /** Find by unique student number within a school. */
     Optional<Student> findBySchoolIdAndStudentNumber(UUID schoolId, String studentNumber);

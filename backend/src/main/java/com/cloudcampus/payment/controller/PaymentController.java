@@ -31,7 +31,8 @@ import java.util.UUID;
  *   3. On success, client calls POST payment/verify → payment recorded, fee status updated
  *
  * Two variants of step 1: student self-pay and school-admin-initiated.
- * Step 3 is role-agnostic (any authenticated user can verify their own order).
+ * Step 3 is limited to payment-capable roles; non-admin users can verify only
+ * orders they initiated.
  */
 @RestController
 @Tag(name = "Payments", description = "Online payment gateway (Razorpay) — CC-0903")
@@ -71,13 +72,28 @@ public class PaymentController {
                 .body(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
     }
 
-    // ── Verify + capture (any authenticated role) ─────────────────────────────
+    // ── Parent-initiated payment for a linked child ──────────────────────────
+
+    @Operation(summary = "Create payment order (parent)",
+               description = "Parent initiates online payment for a linked child's outstanding fee record.")
+    @PostMapping("/v1/parent/children/{studentId}/fee-records/{recordId}/payment-order")
+    @PreAuthorize("hasRole('PARENT')")
+    public ResponseEntity<ApiResponse<CreatePaymentOrderResponse>> createOrderParent(
+            @PathVariable UUID studentId,
+            @PathVariable UUID recordId) {
+        UUID userId = RequestContext.getUserId();
+        CreatePaymentOrderResponse body = service.createParentOrder(studentId, recordId, userId);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
+    }
+
+    // ── Verify + capture ─────────────────────────────────────────────────────
 
     @Operation(summary = "Verify payment and record it",
                description = "Verifies the Razorpay HMAC signature and records the payment "
                            + "against the fee record. Idempotent if already captured.")
     @PostMapping("/v1/payment/verify")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('STUDENT', 'PARENT', 'SCHOOL_ADMIN', 'TENANT_ADMIN')")
     public ResponseEntity<ApiResponse<FeePaymentResponse>> verify(
             @Valid @RequestBody VerifyPaymentRequest request) {
         FeePaymentResponse body = service.verifyAndCapture(request);

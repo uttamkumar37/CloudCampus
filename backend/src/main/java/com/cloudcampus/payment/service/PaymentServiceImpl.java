@@ -18,6 +18,7 @@ import com.cloudcampus.payment.entity.PaymentOrder;
 import com.cloudcampus.payment.entity.PaymentOrderStatus;
 import com.cloudcampus.payment.repository.PaymentOrderRepository;
 import com.cloudcampus.student.entity.Student;
+import com.cloudcampus.student.repository.StudentParentLinkRepository;
 import com.cloudcampus.student.repository.StudentRepository;
 import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
@@ -50,6 +51,7 @@ class PaymentServiceImpl implements PaymentService {
     private final PaymentOrderRepository    orderRepo;
     private final StudentFeeRecordRepository recordRepo;
     private final StudentRepository         studentRepo;
+    private final StudentParentLinkRepository linkRepo;
     private final FeePaymentRepository      paymentRepo;
     private final FeeService                feeService;
     private final RazorpayProperties        razorpay;
@@ -60,6 +62,7 @@ class PaymentServiceImpl implements PaymentService {
     PaymentServiceImpl(PaymentOrderRepository    orderRepo,
                        StudentFeeRecordRepository recordRepo,
                        StudentRepository         studentRepo,
+                       StudentParentLinkRepository linkRepo,
                        FeePaymentRepository      paymentRepo,
                        FeeService                feeService,
                        RazorpayProperties        razorpay,
@@ -69,6 +72,7 @@ class PaymentServiceImpl implements PaymentService {
         this.orderRepo             = orderRepo;
         this.recordRepo            = recordRepo;
         this.studentRepo           = studentRepo;
+        this.linkRepo              = linkRepo;
         this.paymentRepo           = paymentRepo;
         this.feeService            = feeService;
         this.razorpay              = razorpay;
@@ -84,7 +88,27 @@ class PaymentServiceImpl implements PaymentService {
         StudentFeeRecord record = recordRepo.findByIdAndTenantId(feeRecordId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Fee record not found: " + feeRecordId));
         assertMayUseRecord(record, initiatedByUserId);
+        return createOrderForRecord(record, initiatedByUserId, tenantId);
+    }
 
+    @Override
+    @Transactional
+    public CreatePaymentOrderResponse createParentOrder(UUID studentId, UUID feeRecordId, UUID parentUserId) {
+        UUID tenantId = currentTenantId();
+        StudentFeeRecord record = recordRepo.findByIdAndTenantId(feeRecordId, tenantId)
+                .orElseThrow(() -> new NotFoundException("Fee record not found: " + feeRecordId));
+        if (!record.getStudentId().equals(studentId)) {
+            throw new NotFoundException("Fee record not found for child: " + studentId);
+        }
+        if (!linkRepo.existsByStudentIdAndParentUserId(studentId, parentUserId)) {
+            throw new NotFoundException("Student not linked to this parent account");
+        }
+        return createOrderForRecord(record, parentUserId, tenantId);
+    }
+
+    private CreatePaymentOrderResponse createOrderForRecord(StudentFeeRecord record,
+                                                            UUID initiatedByUserId,
+                                                            UUID tenantId) {
         BigDecimal balance = record.getAmountDue()
                 .subtract(record.getDiscount())
                 .subtract(record.getAmountPaid());
@@ -98,7 +122,7 @@ class PaymentServiceImpl implements PaymentService {
 
         String gatewayOrderId;
         if (razorpay.enabled()) {
-            gatewayOrderId = createRazorpayOrder(amountPaise, feeRecordId);
+            gatewayOrderId = createRazorpayOrder(amountPaise, record.getId());
         } else {
             // Dev/test mode — generate a mock order ID without hitting Razorpay
             gatewayOrderId = "mock_order_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
@@ -106,7 +130,7 @@ class PaymentServiceImpl implements PaymentService {
         }
 
         PaymentOrder order = PaymentOrder.create(
-                record.getTenantId(), record.getSchoolId(), feeRecordId,
+                record.getTenantId(), record.getSchoolId(), record.getId(),
                 record.getStudentId(), initiatedByUserId,
                 gatewayOrderId, amountPaise);
         orderRepo.save(order);
@@ -408,18 +432,20 @@ class PaymentServiceImpl implements PaymentService {
     }
 
     private void assertMayVerifyOrder(PaymentOrder order, UUID userId) {
-        if (hasRole("STUDENT")) {
-            if (!order.getInitiatedBy().equals(userId)) {
-                throw new ForbiddenException("Students can only verify their own payment orders");
-            }
-            return;
-        }
-
         if (hasRole("SCHOOL_ADMIN")) {
             UUID schoolId = currentSchoolId();
             if (!order.getSchoolId().equals(schoolId)) {
                 throw new ForbiddenException("School admin cannot access this payment order");
             }
+            return;
+        }
+
+        if (hasRole("TENANT_ADMIN")) {
+            return;
+        }
+
+        if (!order.getInitiatedBy().equals(userId)) {
+            throw new ForbiddenException("Users can only verify their own payment orders");
         }
     }
 
