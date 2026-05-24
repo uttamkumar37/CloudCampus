@@ -14,9 +14,9 @@ _Audit date: 2026-05-22 — branch `main` — commit `f53c009`. **Updated and re
 | Ready for real paying schools? | **No — controlled pilot only.** |
 | Ready for sensitive student/parent/payment data at commercial scale? | **No.** |
 | Ready for hundreds–thousands of schools? | **No — needs load testing and several correctness fixes first.** |
-| Overall readiness score | **67 / 100** (see §19 scorecard). |
-| Strongest areas | Critical-mutation audit hooks now exist for fee/payment, student lifecycle, marks/results, notices, leave approvals, settings, academic years, custom domains, parent links, and AI Copilot; bulk student promotion now has backend `dryRun=true` protection plus UI preview; payment HMAC + webhook idempotency are real; parent fee payment now exists in the parent portal; first-login forced password-change and prod bootstrap secret enforcement now exist; demo tenant reset hygiene and demo-only labeling now exist; comprehensive observability stack (Prometheus / Grafana / Loki / Tempo); DR drill workflow exists; backend full suite passes after P1-09; frontend strict TS/build pass; clean role separation per portal at the URL prefix level. |
-| Biggest blockers | (1) Broad rate-limit coverage and mutating-controller `@Valid` sweep are still required before pilots. (2) CVE dependency versions are bumped in `backend/pom.xml`, but the container scan gate still needs to be made PR-blocking in P0-18. (3) Audit viewer UI and reason capture for irreversible actions still need to ship before pilots. (4) Student/parent/teacher self-profile endpoints are still missing for pilot polish. |
+| Overall readiness score | **68 / 100** (see §19 scorecard). |
+| Strongest areas | Critical-mutation audit hooks now exist for fee/payment, student lifecycle, marks/results, notices, leave approvals, settings, academic years, custom domains, parent links, and AI Copilot; high-cost/high-abuse endpoints now use the shared API rate limiter; bulk student promotion now has backend `dryRun=true` protection plus UI preview; payment HMAC + webhook idempotency are real; parent fee payment now exists in the parent portal; first-login forced password-change and prod bootstrap secret enforcement now exist; demo tenant reset hygiene and demo-only labeling now exist; comprehensive observability stack (Prometheus / Grafana / Loki / Tempo); DR drill workflow exists; backend full suite passes after P0-16; frontend strict TS/build pass; clean role separation per portal at the URL prefix level. |
+| Biggest blockers | (1) Mutating-controller `@Valid` sweep is still required before pilots. (2) CVE dependency versions are bumped in `backend/pom.xml`, but the container scan gate still needs to be made PR-blocking in P0-18. (3) Audit viewer UI and reason capture for irreversible actions still need to ship before pilots. (4) Student/parent/teacher self-profile endpoints are still missing for pilot polish. |
 | Recommendation | **Stop and fix Phase-0 blockers → demo at Level A → onboard 1–3 pilot schools at Level B → take money at Level C.** Do not accept paid customers until §18 "Level C — First Paid Customer Ready" checklist passes. |
 
 This verdict is honest. Detailed evidence and file references are in §3–§20.
@@ -25,35 +25,35 @@ This verdict is honest. Detailed evidence and file references are in §3–§20.
 
 ## 1.1 Exact Change Requirement Dashboard
 
-**Updated through Task 16 / P1-09 on 2026-05-24.** Counts derived from spot-checking the actual code; see §3 for the per-finding verification matrix.
+**Updated through Task 17 / P0-16 on 2026-05-24.** Counts derived from spot-checking the actual code; see §3 for the per-finding verification matrix.
 
 | Release Target | Required Remaining Tasks | Critical Blockers Remaining | Current Status | Can Start Selling? |
 |---|---:|---:|---|---|
 | **Level A — Customer Demo Ready** | **0** | **0** | PASS — customer demo ready with demo-only data | Demo only |
-| **Level B — Controlled Pilot Ready** | **8** | **3** remaining Phase-0 blockers + pilot-critical Phase-1 items | FAIL — several Phase-0 fixes still need to ship | No |
-| **Level C — First Paid Customer Ready** | **23 tracked tasks + mandatory non-task evidence** | **3** remaining Phase-0 blockers + parent-payment-in-prod hardening + audit viewer + legal docs + MFA + **external penetration test (P2-10)** + non-task commercial evidence (pricing, support process, payment reconciliation, security/trust page, completed pilot validation) | FAIL — both tracked tasks AND mandatory evidence required; **pen-test mandatory** | No |
-| **Level D — Revenue Expansion Ready** | **31** | All of C + report-card PDF + parent-teacher chat + pilot validation | FAIL | No |
-| **Level E — Scale / Enterprise Ready** | **40** | All of D + load test + multi-school proof + per-tenant restore | FAIL | No |
+| **Level B — Controlled Pilot Ready** | **7** | **2** remaining Phase-0 blockers + pilot-critical Phase-1 items | FAIL — several Phase-0 fixes still need to ship | No |
+| **Level C — First Paid Customer Ready** | **22 tracked tasks + mandatory non-task evidence** | **2** remaining Phase-0 blockers + parent-payment-in-prod hardening + audit viewer + legal docs + MFA + **external penetration test (P2-10)** + non-task commercial evidence (pricing, support process, payment reconciliation, security/trust page, completed pilot validation) | FAIL — both tracked tasks AND mandatory evidence required; **pen-test mandatory** | No |
+| **Level D — Revenue Expansion Ready** | **30** | All of C + report-card PDF + parent-teacher chat + pilot validation | FAIL | No |
+| **Level E — Scale / Enterprise Ready** | **39** | All of D + load test + multi-school proof + per-tenant restore | FAIL | No |
 
 ### Task-count math (re-verified against the roadmap in §16)
 
 | Measurement | Count |
 |---|---:|
 | Total roadmap tasks after scope cleanup | 56 |
-| Already completed in current code (verified by grep + spot read) | 16 |
+| Already completed in current code (verified by grep + spot read) | 17 |
 | Partially completed | 0 |
-| Still required | 40 |
+| Still required | 39 |
 | Duplicate scope found and resolved | **1 overlap corrected between P0-01 and P0-13** (see correction note below) |
 | Invalid tasks removed | 0 |
 | New paid-sale requirement promoted into a mandatory milestone | **P2-10 external penetration test now included in Level C** (was previously listed but not counted in the Level C task count) |
 | New tasks discovered during re-verification | 0 |
-| **Final remaining tasks** | **40** |
-| Remaining Phase-0 blockers | 3 |
+| **Final remaining tasks** | **39** |
+| Remaining Phase-0 blockers | 2 |
 | Remaining before **Customer Demo Ready (Level A)** | **0** |
-| Remaining before Controlled Pilot Ready (Level B) | 8 |
-| Remaining before **First Paid Customer Ready (Level C)** | **23** |
-| Remaining before Revenue Expansion Ready (Level D) | 31 |
-| Remaining before Scale / Enterprise Ready (Level E) | 40 |
+| Remaining before Controlled Pilot Ready (Level B) | 7 |
+| Remaining before **First Paid Customer Ready (Level C)** | **22** |
+| Remaining before Revenue Expansion Ready (Level D) | 30 |
+| Remaining before Scale / Enterprise Ready (Level E) | 39 |
 
 ### Re-verification corrections to the original roadmap
 
@@ -68,25 +68,25 @@ This verdict is honest. Detailed evidence and file references are in §3–§20.
 | `dryRun` flag on bulk promote now exists in StudentController. | P0-10 added `?dryRun=true`, backend preview metadata, UI preview wiring, and focused service tests proving dry-run does not save or audit. |
 | Demo tenant reset + demo-only label hygiene now exists. | P1-09 hardened `DemoResetScheduler` deletion order for fee/payment, assignment, and homework data; added a visible demo-only banner for School Admin, Teacher, Student, and Parent portals; focused backend/frontend tests pass. |
 | Force-first-login password reset and prod bootstrap hardening now exist. | P0-12 added `ForcePasswordChangeFilter`, clears the force flag on successful password reset/change, redirects forced users to `/change-password`, and makes `BOOTSTRAP_ADMIN_PASSWORD` mandatory in `prod`. |
-| Method-level rate-limit annotations beyond login endpoint: **none**. | `ApiRateLimiterService` and `RateLimitInterceptor` exist as scaffolding but no controller method uses them; P0-16 still required. |
+| Method-level rate-limit annotations beyond login endpoint now cover the P0-16 high-cost endpoints. | `@RateLimit` is applied to AI Copilot query, email/push notification sends, WhatsApp send, student/admin/parent payment-order creation, QR mark, video initiate, and result generation. `MultiSchoolMultiTenantIT` proves the N+1 request returns HTTP 429 through the shared API limiter. |
 | `/v1/student/me`, `/v1/parent/me`, `/v1/teacher/me`: **still missing**. | grep for these endpoint strings returns 0 matches; only `/v1/school-admin/me` exists. |
-| Backend tests at HEAD after P1-09: **240 pass / 0 fail / 0 error / 0 skip** (`mvn -f backend/pom.xml test` re-run on 2026-05-24, exit 0). Surefire includes `*IT` so `MultiSchoolMultiTenantIT` is part of the normal backend gate. |
+| Backend tests at HEAD after P0-16: **241 pass / 0 fail / 0 error / 0 skip** (`mvn -f backend/pom.xml test` re-run on 2026-05-24, exit 0). Surefire includes `*IT` so `MultiSchoolMultiTenantIT` is part of the normal backend gate. |
 | Frontend at HEAD: `tsc -b` PASS, `npm run build` PASS, `npm run lint` PASS. |
 
 ---
 
 ## 1.2 Simple Founder Answer
 
-> Plain answers a non-engineer can act on. Each number is updated through Task 16 / P1-09 on 2026-05-24.
+> Plain answers a non-engineer can act on. Each number is updated through Task 17 / P0-16 on 2026-05-24.
 
 **Q1. How many changes are required right now before I can safely show the product to a prospective school (Customer Demo Ready)?**
 **0 tasks remain out of the original 8. Customer Demo Ready is complete for demo-only conversations.** **P0-01, P0-02, P0-03, P0-04, P0-12, P0-13, P0-14, and P1-09 are done.** Demo data is visibly labeled and reset-safe; do not use real student, parent, or payment data in demos.
 
 **Q2. How many changes before I can onboard pilot schools (Controlled Pilot Ready)?**
-**8 tasks remain.** Controlled Pilot Ready still requires the 3 remaining Phase-0 tasks plus 5 pilot-critical Phase-1 items (profile endpoints, audit-log viewer, per-tenant restore drill, privacy policy + Terms, and required-reason on irreversible mutations). After these, you can safely take 1–3 friendly schools as pilots — single-campus only.
+**7 tasks remain.** Controlled Pilot Ready still requires the 2 remaining Phase-0 tasks plus 5 pilot-critical Phase-1 items (profile endpoints, audit-log viewer, per-tenant restore drill, privacy policy + Terms, and required-reason on irreversible mutations). After these, you can safely take 1–3 friendly schools as pilots — single-campus only.
 
 **Q3. How many changes before I can charge real money (First Paid Customer Ready)?**
-**23 tracked engineering/product/security tasks remain PLUS mandatory non-task commercial/operational evidence.** The remaining tracked-task calculation is **8 pilot tasks + 8 remaining Phase-1 items not already in pilot + 7 Phase-2 paid-readiness items = 23**. The 7 Phase-2 items required for Level C are exactly:
+**22 tracked engineering/product/security tasks remain PLUS mandatory non-task commercial/operational evidence.** The remaining tracked-task calculation is **7 pilot tasks + 8 remaining Phase-1 items not already in pilot + 7 Phase-2 paid-readiness items = 22**. The 7 Phase-2 items required for Level C are exactly:
 - **P2-01** Report-card PDF download (student + parent).
 - **P2-02** Parent read-only child documents.
 - **P2-04** In-app notification feed.
@@ -121,7 +121,7 @@ Build none of these until the remaining Controlled Pilot Ready blockers are comp
 
 ## 1.3 Implementation Progress Tracker
 
-> Last updated: 2026-05-24 after Task 16 / P1-09 landed. Tracked via the §17 Top-25 queue order and the §16 phase tables. All counts re-derived from the actual code state at HEAD.
+> Last updated: 2026-05-24 after Task 17 / P0-16 landed. Tracked via the §17 Top-25 queue order and the §16 phase tables. All counts re-derived from the actual code state at HEAD.
 
 ### Completed tasks (verified by `mvn test` green)
 
@@ -143,27 +143,28 @@ Build none of these until the remaining Controlled Pilot Ready blockers are comp
 | **14** | **P0-07** | Critical mutation audit hooks across fee/payment, student lifecycle, marks/results, notices, leave approvals, settings, academic years, custom domains, parent links, and AI Copilot | 2026-05-24 | Focused payment integration tests pass; backend 236-test suite passes |
 | **15** | **P0-10** | Bulk Promote Students dry-run preview (`?dryRun=true`) plus UI preview wiring | 2026-05-24 | `StudentServiceImplTest` focused dry-run tests pass; frontend build passes; backend 238-test suite passes |
 | **16** | **P1-09** | Demo tenant reset hardening plus visible demo-only banner across demo role portals | 2026-05-24 | `DemoResetSchedulerTest` passes; `DemoEnvironmentBanner` tests pass; frontend build passes |
+| **17** | **P0-16** | Shared API rate limiting on AI Copilot, notifications, WhatsApp, payment-order creation, QR mark, video initiate, and result generation | 2026-05-24 | `RateLimitedEndpointCoverageTest` + `MultiSchoolMultiTenantIT` pass; backend 241-test suite passes |
 
 ### Per-milestone progress
 
 | Milestone | Total tracked tasks | **Done** | Remaining | Next gate task |
 |---|---:|---:|---:|---|
 | **Level A — Customer Demo Ready** | 8 | **8** | **0** | Complete |
-| Level B — Controlled Pilot Ready | 24 | **16** | **8** | P0-16 (Order 17) |
-| Level C — First Paid Customer Ready | **39 tracked + non-task evidence** | **16** | **23 tracked + all non-task evidence** | P0-16 (Order 17) |
-| Level D — Revenue Expansion Ready | 47 | 16 | 31 | P0-16 (Order 17) |
-| Level E — Scale / Enterprise Ready | 56 | 16 | 40 | P0-16 (Order 17) |
+| Level B — Controlled Pilot Ready | 24 | **17** | **7** | P0-11 (Order 18) |
+| Level C — First Paid Customer Ready | **39 tracked + non-task evidence** | **17** | **22 tracked + all non-task evidence** | P0-11 (Order 18) |
+| Level D — Revenue Expansion Ready | 47 | 17 | 30 | P0-11 (Order 18) |
+| Level E — Scale / Enterprise Ready | 56 | 17 | 39 | P0-11 (Order 18) |
 
 ### Per-phase progress
 
 | Phase | Total | **Done** | Remaining | Notes |
 |---|---:|---:|---:|---|
-| Phase 0 | 18 | **15** (P0-01, P0-02, P0-03, P0-04, P0-05, P0-06, P0-07, P0-08, P0-09, P0-10, P0-12, P0-13, P0-14, P0-15, P0-17) | 3 | All fifteen are critical Phase-0 blockers |
+| Phase 0 | 18 | **16** (P0-01, P0-02, P0-03, P0-04, P0-05, P0-06, P0-07, P0-08, P0-09, P0-10, P0-12, P0-13, P0-14, P0-15, P0-16, P0-17) | 2 | Sixteen critical Phase-0 blockers are complete |
 | Phase 1 | 14 | 1 | 13 | P1-09 complete |
 | Phase 2 | 10 | 0 | 10 | Includes P2-10 pen-test (mandatory for Level C) |
 | Phase 3 | 7 | 0 | 7 | |
 | Phase 4 | 7 | 0 | 7 | |
-| **Total** | **56** | **16** | **40** | |
+| **Total** | **56** | **17** | **39** | |
 
 ### Remaining Level-A tasks
 
@@ -173,13 +174,14 @@ All **8 Customer-Demo-Ready tasks** are complete.
 
 | Suite | Count | Status |
 |---|---:|---|
-| Backend `mvn -f backend/pom.xml test` | **240** | PASS (0 failures, 0 errors, 0 skipped; includes `*IT`) |
+| Backend `mvn -f backend/pom.xml test` | **241** | PASS (0 failures, 0 errors, 0 skipped; includes `*IT`) |
 | Focused P0-07 payment integration suite | 2 | PASS (`PaymentFlowIntegrationTest`, `PaymentWebhookIdempotencyTest`) |
 | Focused P0-12 backend suite | 15 | PASS (`AuthServiceImplTest`, `ForcePasswordChangeFilterTest`, `SecretsGuardConfigTest`) |
 | Frontend `ProtectedRoute.test.tsx` | 9 | PASS |
 | Focused P0-15 storage/payment suite | 25 | PASS (`StorageServiceTest`, `PaymentServiceImplTest`, `PaymentFlowIntegrationTest`, `PaymentWebhookIdempotencyTest`) |
 | `MultiSchoolMultiTenantIT` alone | 10 | PASS (TI-01..TI-10) |
 | Focused P0-17 regression suite | 101 | PASS (`MultiSchoolMultiTenantIT`, `RoleMatrixIntegrationTest`, `PaymentServiceImplTest`, `ParentPortalServiceImplTest`) |
+| Focused P0-16 rate-limit suite | 11 | PASS (`RateLimitedEndpointCoverageTest`, `MultiSchoolMultiTenantIT`) |
 | `RoleMatrixIntegrationTest` alone | 79 | PASS (+P0-06 payment verify role/owner coverage) |
 | Frontend `npx tsc -b` | — | PASS via `npm run build` on 2026-05-24 |
 | Frontend `npm run build` | — | PASS on 2026-05-24 |
@@ -213,7 +215,7 @@ All **8 Customer-Demo-Ready tasks** are complete.
 - **Infrastructure that exists:** [docker-compose.yml](docker-compose.yml), [infra/](infra/) (alertmanager, grafana, k8s starter, **load-tests**, loki, nginx, **pgbackup**, prometheus, promtail, secrets, tempo).
 - **CI workflows:** [.github/workflows/](.github/workflows) — `ci.yml`, `deploy.yml`, `docker-publish.yml`, `dr-drill.yml`, `openapi-publish.yml`, `security-nightly.yml`.
 - **Docs:** Significant documentation tree at [docs/](docs/) — `00-core`, `01-backend` through `14-decisions`, `role-audits`, `reference`.
-- **Tests:** 240 backend tests pass after P1-09 (see §1.3 validation). Tests cover at least: tenant isolation, role matrix, payment webhook idempotency, payment flow, retention, AI insight, fee/exam service unit, parent result draft-exclusion, student self-profile redaction, prompt injection defences, parent payment ownership, storage service compatibility, forced password-change enforcement, prod bootstrap secret validation, student-promotion dry-run, demo reset hygiene, and multi-school / multi-tenant regression scenarios.
+- **Tests:** 241 backend tests pass after P0-16 (see §1.3 validation). Tests cover at least: tenant isolation, role matrix, payment webhook idempotency, payment flow, retention, AI insight, fee/exam service unit, parent result draft-exclusion, student self-profile redaction, prompt injection defences, parent payment ownership, storage service compatibility, forced password-change enforcement, prod bootstrap secret validation, student-promotion dry-run, demo reset hygiene, high-cost endpoint rate-limit coverage, and multi-school / multi-tenant regression scenarios.
 
 ### What is mocked / hardcoded / incomplete
 
@@ -234,8 +236,8 @@ All **8 Customer-Demo-Ready tasks** are complete.
 | Role | Existing Core Capabilities | Major Missing Features | Security / Correctness Risks | Sellability Status | Score |
 |---|---|---|---|---|---|
 | **Super Admin** | Tenant CRUD, suspend/activate, subscription assignment, feature toggles, analytics, AI prompts, knowledge base, AI usage, Experience Studio, Public Website builder, comparison | School create/list/detail in Super Admin; school-admin user creation; subscription plan CRUD; billing/payment view; impersonation/support access; audit log viewer; real system health | DTOs without `@Valid` across Experience Studio + Public Website; critical audit rows now exist but no viewer UI; dashboard contains hardcoded health/monetization copy | **Operational, not sellable for self-service** | 62 |
-| **School Admin** | Dashboard, academic structure, students, staff, attendance, fees, exams/marks/results, homework, assignments, timetable, notices, reports, website builder, custom domain, AI copilot, settings | Audit log viewer; subscription/invoices UI; class-teacher assignment endpoint; transfer certificate; bulk staff import; receipt resend; marks moderation; storage usage widget | Path-only RBAC; `schoolId` from URL not centrally verified against caller tenant/school; no rate-limit on AI/notifications/WhatsApp; results-generate has no preview; bulk promote now has dry-run but remains irreversible after confirmation | **Functional for demo, unsafe for real customers** | 68 |
-| **Teacher** | Dashboard, timetable, attendance + QR, homework list, assignment grading, lesson plans, online classes, video upload, leave, notices | `/v1/teacher/me`; create homework/assignments from Teacher portal; marks-entry permission; class-performance reports; exam duties roster; leave-balance | `/v1/teacher/**` not in SecurityConfig matcher list — relies solely on method-level `@PreAuthorize`; no class/section/subject assignment ownership check; assignment grading has no `maxMarks` clamp; attendance edit window not enforced; no audit log; QR session and video initiate have no rate limit; notice endpoint uses `/v1/mobile/notices` (any auth role) | **Works for read-heavy daily use; not commercially complete** | 74 |
+| **School Admin** | Dashboard, academic structure, students, staff, attendance, fees, exams/marks/results, homework, assignments, timetable, notices, reports, website builder, custom domain, AI copilot, settings | Audit log viewer; subscription/invoices UI; class-teacher assignment endpoint; transfer certificate; bulk staff import; receipt resend; marks moderation; storage usage widget | Path-only RBAC; `schoolId` from URL not centrally verified against caller tenant/school; high-cost endpoints are rate-limited after P0-16 but results-generate still has no preview; bulk promote now has dry-run but remains irreversible after confirmation | **Functional for demo, unsafe for real customers** | 69 |
+| **Teacher** | Dashboard, timetable, attendance + QR, homework list, assignment grading, lesson plans, online classes, video upload, leave, notices | `/v1/teacher/me`; create homework/assignments from Teacher portal; marks-entry permission; class-performance reports; exam duties roster; leave-balance | `/v1/teacher/**` not in SecurityConfig matcher list — relies solely on method-level `@PreAuthorize`; no class/section/subject assignment ownership check; assignment grading has no `maxMarks` clamp; attendance edit window not enforced; no audit log; video initiate is rate-limited after P0-16 but QR session generation still needs review; notice endpoint uses `/v1/mobile/notices` (any auth role) | **Works for read-heavy daily use; not commercially complete** | 74 |
 | **Student** | Profile-360 (self), homework + submit, assignments + submit, timetable, attendance + QR self-mark, results, fees, Razorpay payment, notices | `/v1/student/me`, documents read-only, report-card PDF, in-app notifications, leave application, achievements export | P0-02/P0-09/P0-13/P0-17 now cover QR role gating, self-profile redaction, multi-school notices, and matrix regression. Remaining risks: no audit log on submits/payments and broader production hardening still needed | **Smallest surface; mostly correct on ownership; security gaps blocking** | 76 |
 | **Parent** | Linked children list, child attendance / homework / results / timetable / fees, notices, Razorpay test-mode fee payment | `/v1/parent/me`, child profile/documents, leave application for child, in-app notifications, notice acknowledgement, parent-teacher messaging, upcoming exams | P0-01/P0-13 fixed the `MAIN` school resolver issues; P0-08 fixed draft result leakage; P0-14 added parent payment; P0-17 locks cross-owner and multi-school parent paths. Remaining risks: profile/consent/chat gaps and production payment hardening | **Readable portal plus demo payment flow; still needs pilot hardening** | 72 |
 
@@ -294,7 +296,7 @@ Findings from the five role audits ([docs/role-audits/](docs/role-audits/)) were
 | BL-11 | Parent fee payment | `PaymentController` + parent portal | **Fixed for demo in P0-14.** Parent order creation exists with child-link and fee-record ownership checks; parent UI can start Razorpay test-mode payment. | P1-07 still required for production hardening and polish. | Parent pays own child's fee; another parent's child rejected. |
 | BL-12 | Teacher cannot post homework / assignments from Teacher portal | No `POST /v1/teacher/homework` or `/assignments` | Sidebar implies feature; UX gap | Add the endpoints; reuse existing `HomeworkService.create` with teacher ownership. | UI + backend test. |
 | BL-13 | Teacher access to class/section/subject not validated | All `/v1/teacher/...` endpoints accepting `classId`/`sectionId`/`subjectId` | Privacy/integrity risk between teachers of same school | Add `StaffAssignmentService.assertTeacherAssignedTo(...)`. | Cross-teacher test. |
-| BL-14 | No rate-limit on AI Copilot, notifications, WhatsApp, payment-order, QR mark, video initiate, results-generate | `SchoolAdminAiCopilotController`, `NotificationController`, `WhatsAppController`, `PaymentController.createOrderStudent`, `QrAttendanceController`, `VideoController.initiate`, `ResultController.generate` | Compromised account can burn AI/WhatsApp credit; QR token flood | Use existing `common.ratelimit` framework. | Integration test with N+1 requests/second. |
+| BL-14 | High-cost endpoint rate limiting | `SchoolAdminAiCopilotController`, `NotificationController`, `WhatsAppController`, `PaymentController`, `QrAttendanceController`, `VideoController`, `ResultController` | **Closed in P0-16.** Compromised-account blast radius is reduced for AI/WhatsApp/payment/QR/video/result-generation abuse paths. | Keep `@RateLimit` on these endpoints and tune `app.rate-limit.api.*` per environment. | `RateLimitedEndpointCoverageTest` verifies annotations; `MultiSchoolMultiTenantIT` proves N+1 returns HTTP 429. |
 | BL-15 | Container CVEs (3 CRITICAL + 11 HIGH) | Tomcat 10.1.54, Netty 4.1.132, BC 1.78, MinIO 8.5.12, commons-io 2.13.0, org.json 20180130 | Production-blocking; CI security gate fails | **Done in P0-15:** `backend/pom.xml` now pins Tomcat 10.1.55, Netty 4.1.133.Final, BouncyCastle 1.84, MinIO 8.6.0, commons-io 2.14.0, org.json 20231013, and explicit okhttp 4.12.0 via properties/dependency management. | Dependency list confirms target versions; focused storage/payment suite PASS; full backend `mvn -f backend/pom.xml test` PASS (236 tests after P0-12). Run container Trivy again in CI after image build and make it blocking in P0-18. |
 | BL-16 | DTOs missing `@Valid` across many mutating endpoints | `OnlineClassController.updateStatus/addRecording`, `VideoController.confirm`, `StaffLeaveController.submit`, `PaymentController.createOrderAdmin`, several Experience Studio + Public Website endpoints | Invalid state reaches DB | Sweep — add `@Valid` to every controller mutation body. | Existing tests + new boundary tests. |
 | BL-17 | Cross-tenant + cross-owner integration tests sparse | [backend/src/test/java/com/cloudcampus/rbac/](backend/src/test/java/com/cloudcampus/rbac/) | A future regression that breaks isolation passes CI | New tests for: parent A vs child B; teacher A vs class B; student A vs result B; school-admin A vs school B; QR mark by non-student; verify-payment ownership; PUBLISHED-only results to parent. | Tests must FAIL before fixes land and PASS after. |
@@ -320,7 +322,7 @@ Review with the lens of a school that will store hundreds to thousands of childr
 | Parent access privacy | 7 | `checkAccess(studentId)` on every per-child call (strong) | Multi-school MAIN bug surfaces wrong child's data; parent profile / payment / consent missing | BL-01, BL-11. |
 | Teacher authorization limits | 5 | `hasRole('TEACHER')` on every teacher controller | No class/section/subject ownership check between teachers of same school; can fetch any class roster | BL-13. |
 | Admin privilege risk | 5 | SCHOOL_ADMIN can suspend / graduate / transfer / waive without audit, dry-run, or reason | Insider risk, dispute risk | BL-07, BL-10. |
-| Payment security | 8 | HMAC-SHA256 webhook signature ([PaymentServiceImpl.java:291-307](backend/src/main/java/com/cloudcampus/payment/service/PaymentServiceImpl.java)); webhook idempotency by `eventId`; dedicated tests (`PaymentWebhookIdempotencyTest`, `PaymentFlowIntegrationTest`) | `/v1/payment/verify` role too broad; no rate-limit on order create; no audit | BL-06, BL-07, BL-14. |
+| Payment security | 8 | HMAC-SHA256 webhook signature ([PaymentServiceImpl.java:291-307](backend/src/main/java/com/cloudcampus/payment/service/PaymentServiceImpl.java)); webhook idempotency by `eventId`; dedicated tests (`PaymentWebhookIdempotencyTest`, `PaymentFlowIntegrationTest`); payment-order creation is rate-limited after P0-16 | Production hardening and richer audit/viewer evidence remain | BL-07, P1-07. |
 | Webhook verification | 9 | Verified HMAC; dedup table by `eventId` | Body-size cap not visible; replay window not bounded by signature timestamp | Add `Content-Length` cap; document Razorpay timestamp check. |
 | Upload / document security | 6 | Storage service with magic-byte sniffing (`StorageServiceTest`); MinIO key path `tenantId/schoolId/studentId/...`; per-tenant quota (`StorageQuotaController`); upload audit exists for `StudentDocumentServiceImpl` | No antivirus / quarantine integration; MIME allowlist not visible at upload time for homework/assignment (no file upload there yet); presigned URL default TTL is the MinIO default | Add MIME allowlist + quarantine; tunable presigned URL TTL. |
 | Audit trails | 5 | `AuditLogService` exists with `logDataPurge`, `logStudentProfileSectionUpdated`, etc.; used in 3 services | Most mutations not audited; no audit log viewer UI | BL-07; add Super-Admin and School-Admin audit log pages. |
@@ -328,7 +330,7 @@ Review with the lens of a school that will store hundreds to thousands of childr
 | Secret handling | 5 | `.env.example` placeholders; `infra/secrets` exists; KMS not visible | Reviewer cannot verify whether prod uses KMS / Vault / sealed-secrets | Document and demo. |
 | Backups + encryption | 7 | `infra/pgbackup/backup.sh` exists; DR drill workflow does encrypted backup + restore + row-count validation; `[backups]` GPG-encrypted to MinIO per workflow | Customer cannot verify "we can restore your school"; restore evidence runs monthly but no per-tenant restore tested | Per-tenant restore drill; customer-facing data-export endpoint. |
 | OWASP / API security | 6 | CORS locked; security headers filter; CSRF disabled (stateless); rate-limit framework present | No formal pen-test; many endpoints lack rate limit; SecurityHeaders may need CSP for public website | External pen-test before charging money. |
-| AI / prompt injection | 7 | `TASK-022 — Prompt injection defenses for prompt rendering` and `... for knowledge-base RAG` tests exist; `TASK-023 — Knowledge-base / Embedding tenant isolation` tests exist | AI Copilot endpoint has no rate limit and no per-tenant cost cap | BL-14; integrate with `ai_usage_logs` quota. |
+| AI / prompt injection | 7 | `TASK-022 — Prompt injection defenses for prompt rendering` and `... for knowledge-base RAG` tests exist; `TASK-023 — Knowledge-base / Embedding tenant isolation` tests exist; AI Copilot query is rate-limited after P0-16 | No per-tenant AI cost cap | Integrate with `ai_usage_logs` quota. |
 
 ### Can a school legally and operationally trust this system today?
 
@@ -406,7 +408,7 @@ Modules ranked. Scores explicitly avoid claiming things that haven't been runtim
 | Timetable | 7 | 7 | 6 | 6 | 3 | 7 | Medium |
 | Reports | 6 | 6 | 5 | 6 | 3 | 4 (sync CSV) | High |
 | Website builder / public site | 6 | 5 | 4 | 7 | 3 | 6 | Medium |
-| AI features | 7 | 7 | 6 | 6 (no rate-limit) | 4 | 6 | High |
+| AI features | 7 | 7 | 6 | 7 (Copilot rate-limited) | 4 | 6 | High |
 | Monitoring / audit | 6 (service ready) | 6 | 7 | 8 | n/a | 7 | High |
 | Support / admin tooling | 3 (no impersonation, no audit-log viewer) | 3 | 3 | 8 | 3 | n/a | High |
 
@@ -419,7 +421,7 @@ Cross-cutting checks:
 - **Duplicate / dead APIs:** documented per-role (§3).
 - **N+1:** confirmed in `ParentPortalServiceImpl.getLinkedChildren`; suspected in dashboard endpoints.
 - **Caching:** Redis used for feature-flag cache, rate-limit counters, OTP. No HTTP response cache yet.
-- **Rate limiting:** framework exists (`common.ratelimit`); annotation usage on endpoints is sparse — see BL-14.
+- **Rate limiting:** framework exists (`common.ratelimit`); P0-16 applies it to the high-cost/high-abuse endpoints. Broader non-critical API rate-limit policy can still be tuned later.
 - **Idempotency:** strong on Razorpay webhook (`PaymentWebhookIdempotencyTest`). Other money-side endpoints (waive, payment-order) need idempotency keys.
 - **Async reliability:** notifications dispatched async via `@Async` (`NotificationService.sendEmailAsync`, `PushService.sendPushToUserAsync`). RabbitMQ is wired; need to verify retry + DLQ.
 - **Retry / DLQ:** not visible in the inspected files; needs explicit verification.
@@ -500,7 +502,7 @@ All values are **hypotheses to test in market**, not committed prices.
 
 | Plan | Target School | Included Features | Pricing Hypothesis | Why They Would Pay | Product Work Needed First |
 |---|---|---|---|---|---|
-| **Starter** | <500 students single campus | Auth, students, attendance, fees + Razorpay, notices, parent portal read-only, basic reports | ₹15–25 / student / year (annual) | Replaces excel + WhatsApp groups | BL-07, BL-18, plus P0-11/P0-16/P0-18 |
+| **Starter** | <500 students single campus | Auth, students, attendance, fees + Razorpay, notices, parent portal read-only, basic reports | ₹15–25 / student / year (annual) | Replaces excel + WhatsApp groups | BL-07, BL-18, plus P0-11/P0-18 |
 | **Growth** | 500–1500 students | Starter + exams + marks + results PDF, homework + assignments + teacher portal, WhatsApp pass-through, audit logs | ₹40–60 / student / year + WhatsApp pass-through | One system for daily ops | BL-12, BL-13, plus pagination + report PDFs |
 | **Premium** | 1500+ students or chain | Growth + custom domain + website builder + AI Copilot + analytics + branding | ₹80–120 / student / year + setup ₹50k–2L | Differentiated brand + insights | Phase-2 features |
 | **Enterprise** | Chain / network | Premium + multi-school correctness (real, not MAIN-hack), payroll, transport, dedicated SLA | Custom (₹3–10 L / year base) | Operational consolidation | Phase-3 + real multi-school resolver |
@@ -540,7 +542,7 @@ All values are **hypotheses to test in market**, not committed prices.
 
 **Before showing schools:** Complete all Level A — Customer Demo Ready tasks: **P0-01, P0-02, P0-03, P0-04, P0-12, P0-13, P0-14 and P1-09.** Then rehearse the complete customer demo flow using demo data only. **Do not use real student, parent or payment data during demos.**
 
-**Before collecting money:** add BL-07, BL-18, BL-19, complete P0-11/P0-16/P0-18, have privacy policy / terms / DPA published, and have a public security disclosure page.
+**Before collecting money:** add BL-07, BL-18, BL-19, complete P0-11/P0-18, have privacy policy / terms / DPA published, and have a public security disclosure page.
 
 **Before claiming production readiness:** load test (see §12), real-world DR drill, external pen-test.
 
@@ -576,7 +578,7 @@ Claimed targets: 1000 schools × ~1000 students × ~100 teachers each = ~1M stud
 | Operations Capability | Exists? | Production Quality? | Evidence | Missing Work |
 |---|---:|---:|---|---|
 | Build pipeline | Yes | Yes | [.github/workflows/ci.yml](.github/workflows/ci.yml) — `Backend Build & Test`, `Frontend TS & Build`, `Secret Scan (TruffleHog)` all green | None for build correctness |
-| Automated tests | Yes | Partial | 240 backend tests pass; frontend tsc/build pass; ProtectedRoute and demo-banner RTL tests pass; no broad frontend RTL suite | Per-mutation audit and broader frontend RTL coverage |
+| Automated tests | Yes | Partial | 241 backend tests pass; frontend tsc/build pass; ProtectedRoute and demo-banner RTL tests pass; no broad frontend RTL suite | Per-mutation audit and broader frontend RTL coverage |
 | Security scans | Yes (running) | Partial | Trivy + OWASP Dependency Check + TruffleHog (TruffleHog green); dependency bumps landed in P0-15 | P0-18 PR-blocking gate |
 | Docker configuration | Yes | Partial | `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.yml` | Multi-stage prod images verified once CVEs cleared |
 | Production profiles | Yes | Partial | `application-prod.yml`, `application-dev.yml`, `application-staging.yml` (assumed) | Document each profile's variance |
@@ -663,7 +665,7 @@ Answers to required questions:
 | TD-16 | Performance | N+1 in `getLinkedChildren` | [ParentPortalServiceImpl.java:64-85](backend/src/main/java/com/cloudcampus/mobile/service/ParentPortalServiceImpl.java) | Slow at 4+ children | Single aggregate query | Medium |
 | TD-17 | Performance | Synchronous CSV report export | [ReportController.java](backend/src/main/java/com/cloudcampus/reports/controller/ReportController.java) | Request thread hang | Async job | High |
 | TD-18 | Performance | Dashboard fan-out queries | `ParentDashboardPage.tsx`, `StudentDashboardPage.tsx` | Mobile bandwidth waste | Aggregate endpoints | Medium |
-| TD-19 | Security risk | No rate-limit on AI, notifications, WhatsApp, QR, video, results-generate | grep `@RateLimit` is sparse | Cost / abuse | Apply existing framework | High |
+| TD-19 | Security risk | High-cost endpoint rate limiting | P0-16 added `@RateLimit` coverage and tests | Cost / abuse blast radius reduced | Keep coverage test and tune limits by environment | Closed |
 | TD-20 | Missing feature | No audit log viewer UI | No `/super-admin/audit-logs` or `/school-admin/audit-logs` page | Compliance | Build viewer | High |
 | TD-21 | Security risk | Default credentials in dev memory + demo seed | `.claude/memory/`, `DemoDataSeeder` (`gw.admin/Demo@1234`) | Cannot ship to prod | **Done in P0-12 + P1-09:** force first-login reset gate and mandatory `BOOTSTRAP_ADMIN_PASSWORD` in prod; demo tenant surfaces now clearly warn demo-only and reset nightly. | Closed for prod path and demo-labeling path |
 | TD-22 | Dependency | 3 CRITICAL + 11 HIGH CVEs in container | Trivy log 2026-05-22 | Production-blocking; naive bumps regress tests | **Done in P0-15:** coordinated dependency-management bump with explicit `okhttp` pin; target versions resolved and backend tests green | Closed |
@@ -709,7 +711,7 @@ Roadmap is organized by **commercial milestones** (Levels A→E), not by module.
 | P0-13 | **Secure and fix shared Mobile notices.** Scope: `MobileController` + `/v1/mobile/notices` only. Do NOT touch `ParentPortalServiceImpl` (covered by P0-01). Add explicit `@PreAuthorize` for the roles intentionally allowed to consume notices; resolve notice visibility using caller's actual school context (Student of BRANCH sees BRANCH notices; parent linked only to a BRANCH child sees BRANCH notices); document which roles are allowed. | Today `MobileController` has no `@PreAuthorize` and hard-codes `"MAIN"` school resolution; multi-school tenants see wrong notices | `backend/src/main/java/com/cloudcampus/mobile/controller/MobileController.java` | Class-level role allow-list; school resolved from caller (student's school or one of parent's linked children's schools, not hard-coded `"MAIN"`); unauthorized roles return 403 | Role-aware multi-school notices integration test in `RoleMatrixIntegrationTest`/`MultiSchoolMultiTenantIT`; existing tests green | Risk: critical | **[x] Done — 2026-05-24** (`@PreAuthorize("hasAnyRole('STUDENT','PARENT','TEACHER','STAFF','SCHOOL_ADMIN','TENANT_ADMIN')")` added; `resolveMainSchool` → `resolveCallerSchool` using JWT `schoolId` via `SchoolRepository.findByIdFiltered`; 202 tests green) |
 | P0-14 | Implement parent fee payment | Revenue blocker | New endpoint `POST /v1/parent/children/{studentId}/fee-records/{recordId}/payment-order` | Parent paying for own child works; another child rejected | E2E test (Razorpay test mode) | Revenue: critical | **[x] Done — 2026-05-24** (`createParentOrder` link + record-child checks; parent fees tab Pay Online; backend focused 90 tests green; frontend build green) |
 | P0-15 | Container CVE bumps (Tomcat, Netty, BouncyCastle, MinIO, commons-io, org.json) + explicit okhttp pin | 3 CRITICAL + 11 HIGH | `backend/pom.xml` | Target vulnerable dependency versions replaced; backend suite remains green. Container Trivy should be re-run in CI after image build and made blocking in P0-18. | Dependency list confirms target versions; focused storage/payment suite and full backend suite pass | Risk: critical | **[x] Done — 2026-05-24** (Tomcat 10.1.55, Netty 4.1.133.Final, BouncyCastle 1.84, MinIO 8.6.0, commons-io 2.14.0, org.json 20231013, okhttp 4.12.0; 236 tests green after P0-12) |
-| P0-16 | Rate-limit AI Copilot, notifications, WhatsApp, payment order, QR mark, video initiate, results generate | Cost + abuse | Multiple controllers | Annotations applied; integration test trips 429 | Test passes | Risk: high | [ ] Not Started |
+| P0-16 | Rate-limit AI Copilot, notifications, WhatsApp, payment order, QR mark, video initiate, results generate | Cost + abuse | Multiple controllers | Annotations applied; integration test trips 429 | Test passes | Risk: high | **[x] Done — 2026-05-24** (`@RateLimit` on all target endpoints; 11-test focused suite and 241-test backend suite pass) |
 | P0-17 | Cross-tenant + cross-owner + multi-school integration test matrix (TI-01..TI-10 + role-matrix negatives) | Test discipline; lock in all earlier fixes | `backend/src/test/java/com/cloudcampus/rbac/MultiSchoolMultiTenantIT.java` (new) + existing `RoleMatrixIntegrationTest` updates | All 10 scenarios in §6 pass; non-owner / non-tenant negative paths all return 403 or 404 | `mvn test` green | Risk: critical | **[x] Done — 2026-05-24** (`MultiSchoolMultiTenantIT` covers 10 TI scenarios; Surefire includes `*IT`; 236-test backend suite green after P0-12) |
 | P0-18 | Move CVE / dependency check to release-gate (block merges) | Quality gate | `.github/workflows/security-nightly.yml` | Workflow runs on PR; merge blocked on high+critical | Workflow run | Risk: high | [ ] Not Started |
 
@@ -777,7 +779,7 @@ Roadmap is organized by **commercial milestones** (Levels A→E), not by module.
 
 ## 16.5 Remaining Change Count by Commercial Milestone
 
-> Re-counted on 2026-05-24 after Task 16 / P1-09. Per-task verification in §3 + §16.
+> Re-counted on 2026-05-24 after Task 17 / P0-16. Per-task verification in §3 + §16.
 
 ### Before Level A — Customer Demo Ready
 
@@ -790,16 +792,16 @@ A "customer demo" here means a sales conversation with a prospective school, not
 
 ### Before Level B — Controlled Pilot Ready
 
-- **Required remaining tasks: 8** (3 remaining Phase-0 + 5 remaining pilot-critical Phase-1 tasks; total Phase-0 = 18, total pilot-Phase-1 = 6).
-- **Exact task IDs:** P0-11, P0-16, P0-18, P1-01, P1-04, P1-10, P1-11, P1-13.
+- **Required remaining tasks: 7** (2 remaining Phase-0 + 5 remaining pilot-critical Phase-1 tasks; total Phase-0 = 18, total pilot-Phase-1 = 6).
+- **Exact task IDs:** P0-11, P0-18, P1-01, P1-04, P1-10, P1-11, P1-13.
 - **What real data becomes safe after completion:** Real students, real parents, real fees (Razorpay test mode for early pilots), real attendance, real notices — for **1–3 carefully chosen single-campus schools** with documented support SLAs. **Not** multi-school. **Not** chain operators. **Not** schools with strict regulatory regimes.
 
 ### Before Level C — First Paid Customer Ready
 
 > **Level C requires both (a) 39 tracked tasks AND (b) mandatory non-task commercial/operational evidence.** Increasing or decreasing the tracked-task count is not how non-task evidence is captured.
 
-- **Required remaining tracked tasks: 23.**
-- **Math:** 8 remaining Pilot Ready tasks + **8 remaining Phase-1 tasks not already in Pilot** + **7 required Phase-2 paid-readiness tasks (including P2-10 external pen-test)** = **23**.
+- **Required remaining tracked tasks: 22.**
+- **Math:** 7 remaining Pilot Ready tasks + **8 remaining Phase-1 tasks not already in Pilot** + **7 required Phase-2 paid-readiness tasks (including P2-10 external pen-test)** = **22**.
 - **8 remaining Phase-1 tasks (not in Pilot):** P1-02 (Teacher creates homework/assignments from Teacher portal), P1-03 (Teacher class assignment ownership), P1-05 (Async reports export), P1-06 (Pagination across endpoints), P1-07 (Parent payment hardening + UI cache invalidation in production), P1-08 (Marks bounds + attendance edit window), P1-12 (React Query invalidation after mutating actions), P1-14 (Bulk staff import).
 - **7 required Phase-2 paid-readiness tasks (exact, no swaps):**
   - **P2-01** — Report-card PDF download (student + parent).
@@ -821,12 +823,12 @@ A "customer demo" here means a sales conversation with a prospective school, not
 
 ### Before Level D — Revenue Expansion Ready
 
-- **Required remaining tasks: 31.** Math: **23 remaining Level-C tasks + 3 remaining Phase-2 tasks not required for first paid sale (P2-03, P2-06, P2-08) + 5 validated Phase-3 revenue-expansion tasks = 31.**
+- **Required remaining tasks: 30.** Math: **22 remaining Level-C tasks + 3 remaining Phase-2 tasks not required for first paid sale (P2-03, P2-06, P2-08) + 5 validated Phase-3 revenue-expansion tasks = 30.**
 - **Premium features that should only be built after customer feedback (Phase 3):** Library, Transport, Hostel, Payroll, AI insights dashboard, white-label / branding upsell, Analytics export. Do **not** start any of these until ≥5 schools renew once at Level C.
 
 ### Before Level E — Scale / Enterprise Ready
 
-- **Required remaining tasks: 40** (all remaining roadmap tasks through Phase 4).
+- **Required remaining tasks: 39** (all remaining roadmap tasks through Phase 4).
 - **Items that require load testing instead of assumptions:**
   - P4-01 read-replica routing + pgbouncer cutover.
   - P4-02 partitioning of `attendance_records`, `audit_logs`, `notification_logs`, `ai_usage_logs`.
@@ -857,7 +859,7 @@ A "customer demo" here means a sales conversation with a prospective school, not
 | 14 | **P0-07** | Inject `AuditLogService` and write audit rows from: fee waive, fee payment, student suspend/graduate/transfer/reinstate, marks bulk, results generate, notice publish, leave approve/reject, school settings update, academic year set-current/close, custom domain delete, parent link CRUD, AI Copilot query. | Provenance for disputes; mandatory before paying schools store real data. | Many service classes (`FeeServiceImpl`, `StudentServiceImpl`, `MarksService`, `ResultService`, etc.) | Per-mutation integration test asserts `audit_logs` row written | [x] Done — 2026-05-24 |
 | 15 | **P0-10** | Add `?dryRun=true` flag to `POST /v1/school-admin/schools/{schoolId}/students/promote` returning the proposed delta without writing; UI preview before commit. | Stops catastrophic mass mutation by mis-click. | `StudentController.promote`, `StudentServiceImpl.promoteStudents`, `StudentPromotionPage.tsx` | Dry-run does not save/audit; UI shows backend preview | **[x] Done — 2026-05-24** (`StudentServiceImplTest`; frontend build; backend 238-test suite) |
 | 16 | **P1-09** | Demo tenant freeze + nightly reset + visible "demo-only" banner separating demo from any pilot tenant. | Completes Level A (Customer Demo Ready) once Top-15 are done. | `DemoDataSeeder`, `DemoResetScheduler`, role portal banner | Nightly reset runs; demo tenant data cannot mix with pilot | **[x] Done — 2026-05-24** (`DemoResetSchedulerTest`; `DemoEnvironmentBanner` tests; frontend build) |
-| 17 | **P0-16** | Rate-limit AI Copilot, notifications (email + push), WhatsApp, payment-order, QR mark, video initiate, results-generate using existing `ApiRateLimitInterceptor`. | Cost + abuse prevention. | Multiple controllers; existing `common/ratelimit/RateLimitInterceptor` | Integration test trips 429 on the N+1 request | [ ] Not Started |
+| 17 | **P0-16** | Rate-limit AI Copilot, notifications (email + push), WhatsApp, payment-order, QR mark, video initiate, results-generate using existing `ApiRateLimitInterceptor`. | Cost + abuse prevention. | Multiple controllers; existing `common/ratelimit/RateLimitInterceptor` | Integration test trips 429 on the N+1 request | **[x] Done — 2026-05-24** (`RateLimitedEndpointCoverageTest`; `MultiSchoolMultiTenantIT` 429 assertion; backend 241-test suite) |
 | 18 | **P0-11** | `@Valid` sweep across every mutating controller body (especially `OnlineClassController.updateStatus/addRecording`, `VideoController.confirm`, `StaffLeaveController.submit`, `PaymentController.createOrderAdmin`, Experience Studio + Public Website endpoints). | Stops invalid data reaching repositories. | Many controllers | Boundary tests pass | [ ] Not Started |
 | 19 | **P0-18** | Make Trivy + OWASP Dependency Check PR-blocking in `.github/workflows/security-nightly.yml` (or new workflow); merge blocked on CRITICAL / HIGH. | Prevents reintroducing CVEs after P0-15. | `.github/workflows/security-nightly.yml` | PR workflow runs; merge blocked on critical findings | [ ] Not Started |
 | 20 | **P1-13** | Backend requires `reason` field on irreversible mutations (suspend, graduate, transfer, terminate, fee waive, close-academic-year); UI captures it. | Audit + dispute defence; pairs naturally with P0-07. | Multiple controllers + matching UI dialogs | Backend rejects mutation without reason; reason stored in `audit_logs` | [ ] Not Started |
@@ -916,13 +918,13 @@ Operational checks (do these AFTER the 8 tasks):
 - [ ] Demo + pilot tenants separated (no shared data).
 - [ ] No CRITICAL Trivy findings; ≤2 HIGH with documented justification.
 
-**Current status:** **FAIL** — 15 of 18 Phase-0 tasks are complete; P0-11, P0-16, and P0-18 remain.
+**Current status:** **FAIL** — 16 of 18 Phase-0 tasks are complete; P0-11 and P0-18 remain.
 
 ### Level C — First Paid Customer Ready (can accept money and store real school/student/payment data safely)
 
 **Level C — First Paid Customer Ready requires BOTH:**
 
-**(a) 39 tracked engineering / product / security tasks** — already counted in the §16 roadmap and §17 Top 25. These are: all 18 Phase-0 + 14 Phase-1 + the seven required Phase-2 paid-readiness tasks (P2-01, P2-02, P2-04, P2-05, P2-09, P2-10, P2-11). Current tracked status after P0-12: 13 done, 26 remaining, plus all mandatory non-task evidence.
+**(a) 39 tracked engineering / product / security tasks** — already counted in the §16 roadmap and §17 Top 25. These are: all 18 Phase-0 + 14 Phase-1 + the seven required Phase-2 paid-readiness tasks (P2-01, P2-02, P2-04, P2-05, P2-09, P2-10, P2-11). Current tracked status after P0-16: 17 done, 22 remaining, plus all mandatory non-task evidence.
 
 **(b) Mandatory commercial and operational evidence that is NOT included in the 39-task roadmap count.** None of these are tracked as roadmap tasks because they are external or operational deliverables:
 
@@ -981,19 +983,19 @@ Pre-existing operational checklist (kept for record; items overlap with the 39 t
 | Area | Score | Reason | Minimum Score Required Before Paid Sale |
 |---|---:|---|---:|
 | Product completeness | 67 | All five role portals functional; parent demo payment exists; still missing teacher homework creation, audit viewer, several profile endpoints | 80 |
-| Security | 60 | Strong auth + HMAC + tenant filter; weak method-level RBAC, MAIN-school bug, broad payment-verify, no MFA enforcement, default creds | 85 |
-| Tenant isolation | 60 | `tenant_id` filter strong at ORM; multi-school resolver broken; cross-tenant `schoolId` not centrally validated | 90 |
-| Payments / revenue flow | 62 | HMAC + webhook + idempotency strong; verify is role/owner checked; parent demo payment exists; no audit and production hardening still required | 85 |
+| Security | 68 | Strong auth + HMAC + tenant filter + high-cost endpoint rate limits; remaining gaps are validation sweep, MFA, external pen-test, audit viewer/reason capture, and PR-blocking CVE gate | 85 |
+| Tenant isolation | 75 | `tenant_id` filter strong at ORM; multi-school parent/mobile fixes and school-path tenant guard now exist; broader per-endpoint proof and scale validation still needed | 90 |
+| Payments / revenue flow | 66 | HMAC + webhook + idempotency strong; verify is role/owner checked; parent demo payment exists; payment-order creation is rate-limited; production hardening still required | 85 |
 | UX / ease for schools | 60 | Surface complete; missing daily-use flows on Teacher (post homework) and Parent (pay fees, leave, consent); destructive admin actions lack confirmation | 80 |
 | Scalability | 55 | Solid foundation (Hikari env-driven, Redis, RMQ, MinIO, Prometheus); sync CSV exports, N+1, no partitioning, no read-replica | 70 |
 | Reliability / DevOps | 70 | Backups + DR drill + CI + observability are real; rollback runbook missing; per-tenant restore missing; CVE gate failing | 85 |
-| Testing | 70 | 240 backend tests pass; cross-tenant / role-matrix / payment / KB-isolation / parent draft-result exclusion / student self-profile redaction / forced password-change / prod bootstrap / student-promotion dry-run / demo reset hygiene / multi-school matrix tests exist; per-mutation audit and broad frontend RTL gaps remain | 85 |
+| Testing | 71 | 241 backend tests pass; cross-tenant / role-matrix / payment / KB-isolation / parent draft-result exclusion / student self-profile redaction / forced password-change / prod bootstrap / student-promotion dry-run / demo reset hygiene / rate-limit / multi-school matrix tests exist; per-mutation audit and broad frontend RTL gaps remain | 85 |
 | Sales / demo readiness | 60 | Demo tenant + role logins ready; no marketing site, no pricing, no legal docs, no screenshots | 80 |
 | Future feature readiness | 70 | Modular architecture; clean feature-flag system; subscription scaffolding | 70 |
 
-- **Overall current score: 67 / 100.**
+- **Overall current score: 68 / 100.**
 - **Recommended commercial status:** **Controlled Pilot (after Phase-0 fixes).** Not "Paid Sale Ready".
-- **Exact reason:** Phase-0 items represent ~3 weeks of focused engineering. None of them is research-grade; each is "find the file, add the annotation / helper / test". Without them, a single pen-test or a school operating across two campuses will surface a public-grade incident.
+- **Exact reason:** Two Phase-0 items still block controlled pilots: the mutating-controller validation sweep and PR-blocking security scan gate. Without them, invalid payloads and reintroduced CVEs can still reach pilot environments.
 
 ---
 
@@ -1050,39 +1052,41 @@ Pre-existing operational checklist (kept for record; items overlap with the 39 t
 
 ## Immediate Next Step
 
-> Last updated 2026-05-24 after Task 16 (§17) shipped. See §1.3 for the full progress tracker.
+> Last updated 2026-05-24 after Task 17 (§17) shipped. See §1.3 for the full progress tracker.
 
-- **Tasks completed so far:** **16 of 56** — P0-01, P0-02, P0-03, P0-04, P0-05, P0-06, P0-07, P0-08, P0-09, P0-10, P0-12, P0-13, P0-14, P0-15, P0-17, P1-09.
-- **Current total remaining roadmap tasks:** **40** (was 56).
+- **Tasks completed so far:** **17 of 56** — P0-01, P0-02, P0-03, P0-04, P0-05, P0-06, P0-07, P0-08, P0-09, P0-10, P0-12, P0-13, P0-14, P0-15, P0-16, P0-17, P1-09.
+- **Current total remaining roadmap tasks:** **39** (was 56).
 - **Remaining Customer Demo Ready (Level A) tasks:** **0** — was 8.
-- **Remaining Controlled Pilot Ready (Level B) tasks:** **8** — was 24.
-- **Remaining First Paid Customer Ready (Level C) tasks:** **23 tracked + all non-task evidence** — was 39 tracked; includes **P2-10 external penetration test**.
-- **Remaining Phase-0 security/product blockers:** **3** (was 18).
+- **Remaining Controlled Pilot Ready (Level B) tasks:** **7** — was 24.
+- **Remaining First Paid Customer Ready (Level C) tasks:** **22 tracked + all non-task evidence** — was 39 tracked; includes **P2-10 external penetration test**.
+- **Remaining Phase-0 security/product blockers:** **2** (was 18).
 
 ### The exact next task to implement
 
-**Task 17 — P0-16:** Rate-limit AI Copilot, notifications, WhatsApp, payment order, QR mark, video initiate, and results generate.
+**Task 18 — P0-11:** Add `@Valid` to every mutating controller body and sweep DTO validation gaps.
 
-- **Files:** existing `common/ratelimit` framework plus the affected controllers.
-- **Change scope:** apply rate-limit annotations or interceptors to high-cost/high-abuse endpoints and keep role-specific flows working.
-- **Test coverage:** integration test proves the N+1 request returns HTTP 429.
+- **Files:** mutating controllers, with special attention to `OnlineClassController.updateStatus/addRecording`, `VideoController.confirm`, `StaffLeaveController.submit`, `PaymentController.createOrderAdmin`, Experience Studio endpoints, and Public Website endpoints.
+- **Change scope:** add missing `@Valid` and DTO constraints without changing endpoint semantics.
+- **Test coverage:** boundary tests prove invalid bodies are rejected before service/repository mutation.
 
-### Validation command that proves Task 17 is completed
+### Validation command that proves Task 18 is completed
 
 ```
 cd backend && mvn test --batch-mode --no-transfer-progress
 ```
 
-…must show **`Failures: 0, Errors: 0`**. Task 17 should also include evidence that high-cost endpoints return HTTP 429 after the configured limit.
+…must show **`Failures: 0, Errors: 0`**. Task 18 should also include focused evidence that at least the known high-risk invalid payloads return HTTP 400.
 
 ### Warning
 
-**Do not implement multiple unrelated tasks together.** Each Phase-0 task has its own verification test. Bundling them makes regression diagnosis painful and review slower. Tackle them in the **§17 Top-25 order** strictly. After Task 16 lands and the test passes, move to Task 17 (P0-16 — rate-limit high-cost and abuse-prone endpoints).
+**Do not implement multiple unrelated tasks together.** Each Phase-0 task has its own verification test. Bundling them makes regression diagnosis painful and review slower. Tackle them in the **§17 Top-25 order** strictly. After Task 17 lands and the test passes, move to Task 18 (P0-11 — mutating-controller validation sweep).
 
 ---
 
 _Validation run during this audit (2026-05-22):_
 - P0-17 focused regression: **PASS** — 101 tests, 0 failures, 0 errors, 0 skipped (re-confirmed 2026-05-24, exit 0).
+- P0-16 focused rate-limit suite: **PASS** — 11 tests, 0 failures, 0 errors, 0 skipped (2026-05-24, exit 0).
+- Backend full suite after P0-16: **PASS** — 241 tests, 0 failures, 0 errors, 0 skipped (2026-05-24, exit 0).
 - `npx tsc -b --pretty false`: **PASS** — exit 0.
 - `npm run build`: **PASS** — exit 0.
 - `npm run lint`: **PASS** — exit 0.

@@ -6,6 +6,7 @@ import com.cloudcampus.ai.copilot.dto.CopilotQueryRequest;
 import com.cloudcampus.ai.copilot.dto.CopilotQueryResponse;
 import com.cloudcampus.ai.gateway.AiGatewayService;
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.ratelimit.RateLimit;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
 import io.swagger.v3.oas.annotations.Operation;
@@ -69,6 +70,7 @@ public class SchoolAdminAiCopilotController {
                     + "Requires the SCHOOL_ADMIN role. Returns a mock answer when app.ai.enabled=false."
     )
     @PostMapping("/query")
+    @RateLimit
     public ResponseEntity<ApiResponse<CopilotQueryResponse>> query(
             @Valid @RequestBody CopilotQueryRequest request) {
 

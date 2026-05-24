@@ -1,6 +1,7 @@
 package com.cloudcampus.video.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.ratelimit.RateLimit;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.staff.repository.StaffRepository;
@@ -37,6 +38,7 @@ public class VideoController {
                description = "Returns a pre-signed MinIO PUT URL. Client uploads the file directly to that URL, then calls /confirm.")
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/v1/teacher/videos/initiate")
+    @RateLimit
     public ApiResponse<Map<String, Object>> initiate(@Valid @RequestBody VideoUploadRequest req) {
         UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         com.cloudcampus.staff.entity.Staff staff = resolveStaff();

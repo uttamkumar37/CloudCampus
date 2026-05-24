@@ -1,6 +1,7 @@
 package com.cloudcampus.exam.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.ratelimit.RateLimit;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.exam.dto.ExamResultResponse;
@@ -47,6 +48,7 @@ public class ResultController {
 
     @Operation(summary = "Generate (or re-generate) results for the exam")
     @PostMapping("/generate")
+    @RateLimit
     public ResponseEntity<ApiResponse<List<ExamResultResponse>>> generate(
             @PathVariable UUID schoolId,
             @PathVariable UUID examId) {

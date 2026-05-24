@@ -89,7 +89,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = {
         "app.ai.enabled=true",
         "app.ai.chat-provider-bean=p017MockChatModel",
-        "app.ai.rate-limit.max-per-user-per-minute=1"
+        "app.ai.rate-limit.max-per-user-per-minute=1",
+        "app.rate-limit.api.per-user-requests=1",
+        "app.rate-limit.api.per-user-window-seconds=60",
+        "app.rate-limit.api.per-tenant-requests=100",
+        "app.rate-limit.api.per-tenant-window-seconds=60"
 })
 @AutoConfigureMockMvc
 @Testcontainers
@@ -393,7 +397,8 @@ class MultiSchoolMultiTenantIT {
                         .header("Authorization", auth)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isTooManyRequests());
+                .andExpect(status().isTooManyRequests())
+                .andExpect(content().string(containsString("Rate limit exceeded. Please slow down.")));
     }
 
     private UUID seedFeeRecord(String suffix) {
