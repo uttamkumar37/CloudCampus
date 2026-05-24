@@ -21,6 +21,13 @@
         <jjwt.version>0.12.6</jjwt.version>
         <log4j2.version>2.26.0</log4j2.version>
         <logstash-logback.version>8.0</logstash-logback.version>
+        <tomcat.version>10.1.55</tomcat.version>
+        <netty.version>4.1.133.Final</netty.version>
+        <bouncycastle.version>1.84</bouncycastle.version>
+        <commons-io.version>2.14.0</commons-io.version>
+        <minio.version>8.6.0</minio.version>
+        <okhttp.version>4.12.0</okhttp.version>
+        <org-json.version>20231013</org-json.version>
         <postgresql.version>42.7.11</postgresql.version>
         <spring-ai.version>1.0.7</spring-ai.version>
         <springdoc.version>2.8.17</springdoc.version>
@@ -39,6 +46,41 @@
                 <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>${org-json.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>logging-interceptor</artifactId>
+                <version>${okhttp.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -208,7 +250,12 @@
         <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
-            <version>8.5.12</version>
+            <version>${minio.version}</version>
+        </dependency>
+        <!-- P0-15: MinIO 8.6.x no longer brings okhttp transitively everywhere this app needs it. -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
         </dependency>
 
         <!-- Razorpay Java SDK — online payment gateway integration (CC-0903) -->
