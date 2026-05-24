@@ -1,5 +1,6 @@
 package com.cloudcampus.config;
 
+import com.cloudcampus.auth.security.ForcePasswordChangeFilter;
 import com.cloudcampus.auth.security.JwtAuthenticationFilter;
 import com.cloudcampus.common.tenant.TenantSuspensionFilter;
 import com.cloudcampus.common.web.JsonAuthEntryPoint;
@@ -63,6 +64,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ForcePasswordChangeFilter forcePasswordChangeFilter;
     private final TenantSuspensionFilter  tenantSuspensionFilter;
     private final JsonAuthEntryPoint      jsonAuthEntryPoint;
 
@@ -79,9 +81,11 @@ public class SecurityConfig {
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
+            ForcePasswordChangeFilter forcePasswordChangeFilter,
             TenantSuspensionFilter  tenantSuspensionFilter,
             JsonAuthEntryPoint      jsonAuthEntryPoint) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.forcePasswordChangeFilter = forcePasswordChangeFilter;
         this.tenantSuspensionFilter  = tenantSuspensionFilter;
         this.jsonAuthEntryPoint      = jsonAuthEntryPoint;
     }
@@ -122,6 +126,14 @@ public class SecurityConfig {
     }
 
     @Bean
+    public FilterRegistrationBean<ForcePasswordChangeFilter> forcePasswordChangeFilterRegistration(
+            ForcePasswordChangeFilter filter) {
+        FilterRegistrationBean<ForcePasswordChangeFilter> bean = new FilterRegistrationBean<>(filter);
+        bean.setEnabled(false);
+        return bean;
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 // Disable CSRF — stateless REST API, no cookies for auth.
@@ -136,8 +148,10 @@ public class SecurityConfig {
 
                 // ── JWT filter — populates SecurityContext when token is present ────
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // ── First-login password reset gate — runs after JWT context exists ──
+                .addFilterAfter(forcePasswordChangeFilter, JwtAuthenticationFilter.class)
                 // ── Tenant suspension filter — rejects SUSPENDED tenant requests ──
-                .addFilterAfter(tenantSuspensionFilter, JwtAuthenticationFilter.class)
+                .addFilterAfter(tenantSuspensionFilter, ForcePasswordChangeFilter.class)
 
                 // ── Authorization rules (CC-0113 / CC-0114) ─────────────────────
                 .authorizeHttpRequests(auth -> auth

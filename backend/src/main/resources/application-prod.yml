@@ -174,7 +174,7 @@ app:
     order-expiry-minutes: ${RAZORPAY_ORDER_EXPIRY_MINUTES:30}
     enabled: ${RAZORPAY_ENABLED:false}
   bootstrap:
-    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD}
     admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}
   demo:
     public-credentials-enabled: false

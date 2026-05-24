@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '@/shared/components/ProtectedRoute';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import type { AuthUser } from '@/features/auth/types/auth';
@@ -21,10 +21,29 @@ const mockUser = (overrides?: Partial<AuthUser>): AuthUser => ({
 function renderGuard(
   props: { roles?: AuthUser['role'][]; feature?: string },
   children = <p>Protected Content</p>,
+  initialPath = '/app/dashboard',
 ) {
   return render(
-    <MemoryRouter initialEntries={['/app/dashboard']}>
+    <MemoryRouter initialEntries={[initialPath]}>
       <ProtectedRoute {...props}>{children}</ProtectedRoute>
+    </MemoryRouter>,
+  );
+}
+
+function renderGuardWithRoutes() {
+  return render(
+    <MemoryRouter initialEntries={['/app/dashboard']}>
+      <Routes>
+        <Route
+          path="/app/dashboard"
+          element={
+            <ProtectedRoute>
+              <p>Protected Content</p>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/change-password" element={<p>Change Password</p>} />
+      </Routes>
     </MemoryRouter>,
   );
 }
@@ -35,7 +54,7 @@ describe('ProtectedRoute', () => {
   beforeEach(() => useAuthStore.getState().clearAuth());
 
   it('redirects to /login when not authenticated', () => {
-    const { container } = renderGuard({});
+    const { container } = renderGuard({}, <p>Protected Content</p>, '/app/dashboard');
     // Navigate renders nothing in MemoryRouter — protected content absent
     expect(container.querySelector('p')).toBeNull();
   });
@@ -56,6 +75,27 @@ describe('ProtectedRoute', () => {
     useAuthStore.getState().setTokens('tok', 'ref', mockUser({ role: 'TEACHER' }));
     const { container } = renderGuard({ roles: ['SUPER_ADMIN'] });
     expect(container.querySelector('p')).toBeNull();
+  });
+
+  it('redirects forced password-change users away from protected app pages', () => {
+    useAuthStore.setState({
+      accessToken: 'tok',
+      refreshToken: 'ref',
+      user: mockUser({ requiresPasswordChange: true }),
+    });
+    renderGuardWithRoutes();
+    expect(screen.getByText('Change Password')).toBeInTheDocument();
+    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+  });
+
+  it('allows forced password-change users to open the change-password page', () => {
+    useAuthStore.setState({
+      accessToken: 'tok',
+      refreshToken: 'ref',
+      user: mockUser({ requiresPasswordChange: true }),
+    });
+    renderGuard({}, <p>Change Password</p>, '/change-password');
+    expect(screen.getByText('Change Password')).toBeInTheDocument();
   });
 
   it('renders children when tenant has required feature', () => {
