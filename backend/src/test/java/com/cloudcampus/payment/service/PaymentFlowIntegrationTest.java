@@ -187,6 +187,7 @@ class PaymentFlowIntegrationTest {
         jdbc.update("DELETE FROM students         WHERE tenant_id = ?", tenantId);
         jdbc.update("DELETE FROM users            WHERE tenant_id = ?", tenantId);
         jdbc.update("DELETE FROM schools          WHERE tenant_id = ?", tenantId);
+        jdbc.update("DELETE FROM audit_log        WHERE tenant_id = ?", tenantId);
         jdbc.update("DELETE FROM tenants          WHERE id = ?",        tenantId);
     }
 
