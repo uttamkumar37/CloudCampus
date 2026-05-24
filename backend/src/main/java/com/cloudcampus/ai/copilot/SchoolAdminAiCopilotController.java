@@ -1,5 +1,7 @@
 package com.cloudcampus.ai.copilot;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.ai.copilot.dto.CopilotQueryRequest;
 import com.cloudcampus.ai.copilot.dto.CopilotQueryResponse;
 import com.cloudcampus.ai.gateway.AiGatewayService;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -47,12 +50,14 @@ public class SchoolAdminAiCopilotController {
             "Set app.ai.enabled=true and configure a valid AI provider to use the AI Copilot.";
 
     private final AiGatewayService aiGateway;
+    private final AuditLogService auditLog;
 
     @Value("${app.ai.enabled:false}")
     private boolean aiEnabled;
 
-    public SchoolAdminAiCopilotController(AiGatewayService aiGateway) {
+    public SchoolAdminAiCopilotController(AiGatewayService aiGateway, AuditLogService auditLog) {
         this.aiGateway = aiGateway;
+        this.auditLog = auditLog;
     }
 
     // ── POST /v1/school-admin/ai/query ────────────────────────────────────────
@@ -68,6 +73,7 @@ public class SchoolAdminAiCopilotController {
             @Valid @RequestBody CopilotQueryRequest request) {
 
         if (!aiEnabled) {
+            auditQuery(request, false);
             CopilotQueryResponse body = new CopilotQueryResponse(MOCK_ANSWER, 0, false);
             return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
         }
@@ -78,12 +84,28 @@ public class SchoolAdminAiCopilotController {
         String systemText = buildSystemPrompt(schoolId, request.contextKeys());
         String answer     = aiGateway.completeStructured(systemText, request.question(),
                                                          PROMPT_KEY, tenantId);
+        auditQuery(request, true);
 
         // tokensUsed is tracked internally by AiGatewayService → UsageLoggingService.
         // We surface 0 here because the gateway does not return token counts directly;
         // actual usage is visible via the super-admin AI usage dashboard (CC-1605).
         CopilotQueryResponse body = new CopilotQueryResponse(answer, 0, false);
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
+    }
+
+    private void auditQuery(CopilotQueryRequest request, boolean aiEnabled) {
+        String tenant = RequestContext.getTenantId();
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                tenant != null ? UUID.fromString(tenant) : null,
+                AuditAction.DATA_AI_COPILOT_QUERIED,
+                "AiCopilotQuery",
+                RequestContext.getSchoolId(),
+                "AI Copilot queried",
+                Map.of(
+                        "promptKey", PROMPT_KEY,
+                        "enabled", String.valueOf(aiEnabled),
+                        "questionLength", String.valueOf(request.question().length())));
     }
 
     // ── Prompt construction ───────────────────────────────────────────────────

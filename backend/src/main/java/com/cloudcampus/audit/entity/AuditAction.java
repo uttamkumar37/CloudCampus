@@ -43,10 +43,36 @@ public enum AuditAction {
     // ── CONFIG ────────────────────────────────────────────────────────────
     CONFIG_FEATURE_ENABLED,
     CONFIG_FEATURE_DISABLED,
+    CONFIG_SCHOOL_SETTINGS_UPDATED,
+    CONFIG_ACADEMIC_YEAR_CURRENT_SET,
+    CONFIG_ACADEMIC_YEAR_CLOSED,
+    CONFIG_CUSTOM_DOMAIN_DELETED,
+
+    // ── FINANCE ───────────────────────────────────────────────────────────
+    FINANCE_FEE_WAIVED,
+    FINANCE_FEE_PAYMENT_RECORDED,
+    FINANCE_PAYMENT_ORDER_CREATED,
+    FINANCE_PAYMENT_CAPTURED,
 
     // ── DATA ──────────────────────────────────────────────────────────────
     DATA_PURGE_COMPLETED,            // nightly retention job hard-deleted expired soft-deleted rows
     DATA_STUDENT_PROFILE_UPDATED,
+    DATA_STUDENT_STATUS_CHANGED,
+    DATA_STUDENT_BULK_PROMOTED,
+    DATA_PARENT_LINK_CREATED,
+    DATA_PARENT_LINK_DELETED,
+    DATA_MARKS_BULK_SAVED,
+    DATA_MARK_UPDATED,
+    DATA_MARK_DELETED,
+    DATA_RESULTS_GENERATED,
+    DATA_NOTICE_CREATED,
+    DATA_NOTICE_PUBLISHED,
+    DATA_NOTICE_DELETED,
+    DATA_LEAVE_REQUEST_CREATED,
+    DATA_LEAVE_REQUEST_APPROVED,
+    DATA_LEAVE_REQUEST_REJECTED,
+    DATA_LEAVE_REQUEST_CANCELLED,
+    DATA_AI_COPILOT_QUERIED,
 
     // ── SYSTEM ────────────────────────────────────────────────────────────
     SYSTEM_BOOTSTRAP,

@@ -1,5 +1,7 @@
 package com.cloudcampus.student.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.usage.UsageLimitEnforcer;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -34,13 +37,16 @@ class StudentServiceImpl implements StudentService {
     private final StudentRepository   repo;
     private final BulkStudentImporter bulkImporter;
     private final UsageLimitEnforcer  limitEnforcer;
+    private final AuditLogService     auditLog;
 
     StudentServiceImpl(StudentRepository repo,
                        BulkStudentImporter bulkImporter,
-                       UsageLimitEnforcer limitEnforcer) {
+                       UsageLimitEnforcer limitEnforcer,
+                       AuditLogService auditLog) {
         this.repo          = repo;
         this.bulkImporter  = bulkImporter;
         this.limitEnforcer = limitEnforcer;
+        this.auditLog      = auditLog;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -116,7 +122,16 @@ class StudentServiceImpl implements StudentService {
             throw new BadRequestException("Only SUSPENDED students can be reinstated");
         }
         student.setStatus(StudentStatus.ACTIVE);
-        return StudentResponse.from(repo.save(student));
+        Student saved = repo.save(student);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.DATA_STUDENT_STATUS_CHANGED,
+                "Student",
+                saved.getId().toString(),
+                "Student status changed to ACTIVE",
+                Map.of("status", StudentStatus.ACTIVE.name()));
+        return StudentResponse.from(saved);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -188,7 +203,16 @@ class StudentServiceImpl implements StudentService {
                     "Cannot set status " + target + " — student must be " + required);
         }
         student.setStatus(target);
-        return StudentResponse.from(repo.save(student));
+        Student saved = repo.save(student);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.DATA_STUDENT_STATUS_CHANGED,
+                "Student",
+                saved.getId().toString(),
+                "Student status changed to " + target,
+                Map.of("status", target.name()));
+        return StudentResponse.from(saved);
     }
 
     /**
@@ -228,7 +252,22 @@ class StudentServiceImpl implements StudentService {
             s.setSectionId(req.targetSectionId());
         }
         repo.saveAll(students);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.DATA_STUDENT_BULK_PROMOTED,
+                "Student",
+                schoolId.toString(),
+                "Students promoted in bulk",
+                Map.of(
+                        "sourceClassId", req.sourceClassId().toString(),
+                        "targetClassId", req.targetClassId().toString(),
+                        "promotedCount", String.valueOf(students.size())));
         return new PromotionResult(students.size(), students.size());
+    }
+
+    private UUID currentTenantId() {
+        return UUID.fromString(RequestContext.getTenantId());
     }
 
     private String resolveStudentNumber(UUID schoolId, String provided) {

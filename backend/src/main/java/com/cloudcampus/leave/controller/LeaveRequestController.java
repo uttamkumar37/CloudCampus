@@ -1,5 +1,7 @@
 package com.cloudcampus.leave.controller;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.api.ApiResponse;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
@@ -34,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -63,12 +66,15 @@ public class LeaveRequestController {
 
     private final LeaveRequestRepository leaveRepo;
     private final SchoolRepository       schoolRepo;
+    private final AuditLogService        auditLog;
 
     public LeaveRequestController(
             LeaveRequestRepository leaveRepo,
-            SchoolRepository       schoolRepo) {
+            SchoolRepository       schoolRepo,
+            AuditLogService        auditLog) {
         this.leaveRepo  = leaveRepo;
         this.schoolRepo = schoolRepo;
+        this.auditLog   = auditLog;
     }
 
     @Operation(summary = "Create leave request")
@@ -88,9 +94,11 @@ public class LeaveRequestController {
                 tenantId, schoolId, req.staffId(),
                 req.leaveType(), req.startDate(), req.endDate(), req.reason());
 
+        LeaveRequest saved = leaveRepo.save(lr);
+        auditLeave(saved, AuditAction.DATA_LEAVE_REQUEST_CREATED, "Leave request created");
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
-                        LeaveRequestResponse.from(leaveRepo.save(lr))));
+                        LeaveRequestResponse.from(saved)));
     }
 
     @Operation(summary = "List leave requests",
@@ -123,8 +131,10 @@ public class LeaveRequestController {
             throw new BadRequestException("Only PENDING requests can be approved");
         }
         lr.approve(RequestContext.getUserId(), req != null ? req.notes() : null);
+        LeaveRequest saved = leaveRepo.save(lr);
+        auditLeave(saved, AuditAction.DATA_LEAVE_REQUEST_APPROVED, "Leave request approved");
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
-                LeaveRequestResponse.from(leaveRepo.save(lr)));
+                LeaveRequestResponse.from(saved));
     }
 
     @Operation(summary = "Reject leave request")
@@ -139,8 +149,10 @@ public class LeaveRequestController {
             throw new BadRequestException("Only PENDING requests can be rejected");
         }
         lr.reject(RequestContext.getUserId(), req != null ? req.notes() : null);
+        LeaveRequest saved = leaveRepo.save(lr);
+        auditLeave(saved, AuditAction.DATA_LEAVE_REQUEST_REJECTED, "Leave request rejected");
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
-                LeaveRequestResponse.from(leaveRepo.save(lr)));
+                LeaveRequestResponse.from(saved));
     }
 
     @Operation(summary = "Cancel leave request (PENDING only)")
@@ -154,7 +166,8 @@ public class LeaveRequestController {
             throw new BadRequestException("Only PENDING requests can be cancelled");
         }
         lr.cancel();
-        leaveRepo.save(lr);
+        LeaveRequest saved = leaveRepo.save(lr);
+        auditLeave(saved, AuditAction.DATA_LEAVE_REQUEST_CANCELLED, "Leave request cancelled");
         return ResponseEntity.noContent().build();
     }
 
@@ -171,5 +184,19 @@ public class LeaveRequestController {
         validateSchool(schoolId);
         return leaveRepo.findBySchoolIdAndId(schoolId, id)
                 .orElseThrow(() -> new NotFoundException("Leave request not found"));
+    }
+
+    private void auditLeave(LeaveRequest leave, AuditAction action, String description) {
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                UUID.fromString(RequestContext.getTenantId()),
+                action,
+                "LeaveRequest",
+                leave.getId().toString(),
+                description,
+                Map.of(
+                        "schoolId", leave.getSchoolId().toString(),
+                        "staffId", leave.getStaffId().toString(),
+                        "status", leave.getStatus().name()));
     }
 }
