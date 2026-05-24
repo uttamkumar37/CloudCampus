@@ -76,7 +76,7 @@ public class StudentController {
     @PostMapping("/schools/{schoolId}/students/bulk")
     public ResponseEntity<ApiResponse<BulkImportResult>> bulkAdmit(
             @PathVariable UUID schoolId,
-            @RequestBody List<BulkStudentRow> rows) {
+            @Valid @RequestBody List<@Valid BulkStudentRow> rows) {
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
                 service.bulkAdmit(schoolId, rows)));
     }

@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -92,7 +93,7 @@ public class PublicExperienceController {
     @Operation(summary = "Start a self-serve demo session")
     @PostMapping("/demo/start")
     public ResponseEntity<ApiResponse<DemoSessionResponse>> startDemo(
-            @RequestBody DemoStartRequest req) {
+            @Valid @RequestBody DemoStartRequest req) {
         DemoSessionResponse session = demoService.startSession(req);
         return ResponseEntity.ok(ApiResponse.ok(null, session));
     }
@@ -148,7 +149,7 @@ public class PublicExperienceController {
     @Operation(summary = "Ingest batched analytics events (fire-and-forget)")
     @PostMapping("/events")
     public ResponseEntity<Void> ingestEvents(
-            @RequestBody IngestEventsRequest req,
+            @Valid @RequestBody IngestEventsRequest req,
             HttpServletRequest httpRequest) {
         if (req.events() == null || req.events().isEmpty()) {
             return ResponseEntity.accepted().build();

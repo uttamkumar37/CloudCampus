@@ -7,6 +7,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +24,10 @@ import java.util.Optional;
 @RequestMapping("/v1/experience/public/investor")
 @Tag(name = "Public — Investor Room", description = "Investor data room access")
 public class InvestorRoomController {
+
+    public record AccessRequest(
+            @NotBlank @Size(max = 200) String password
+    ) {}
 
     private final InvestorRoomService investorRoomService;
 
@@ -42,10 +49,10 @@ public class InvestorRoomController {
     @PostMapping("/{roomCode}/access")
     public ResponseEntity<ApiResponse<Map<String, Object>>> verifyAccess(
             @PathVariable String roomCode,
-            @RequestBody Map<String, String> body,
+            @Valid @RequestBody AccessRequest requestBody,
             HttpServletRequest request) {
         Optional<InvestorRoomResponse> room =
-                investorRoomService.unlockRoom(roomCode, body.getOrDefault("password", ""), clientIp(request));
+                investorRoomService.unlockRoom(roomCode, requestBody.password(), clientIp(request));
         if (room.isEmpty()) {
             return ResponseEntity.ok(ApiResponse.ok(null, Map.of("granted", false)));
         }

@@ -76,7 +76,7 @@ public class PromptController {
     @PostMapping("/{id}/render")
     public ApiResponse<PromptRenderResponse> render(
             @PathVariable UUID id,
-            @RequestBody PromptRenderRequest request) {
+            @Valid @RequestBody PromptRenderRequest request) {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
                 promptService.render(id, request));
     }

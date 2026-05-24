@@ -5,6 +5,7 @@ import com.cloudcampus.common.ratelimit.RateLimit;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.staff.repository.StaffRepository;
+import com.cloudcampus.video.dto.VideoConfirmRequest;
 import com.cloudcampus.video.dto.VideoResponse;
 import com.cloudcampus.video.dto.VideoUploadRequest;
 import com.cloudcampus.video.service.VideoService;
@@ -52,13 +53,11 @@ public class VideoController {
     @PostMapping("/v1/teacher/videos/{videoId}/confirm")
     public ApiResponse<VideoResponse> confirm(
             @PathVariable UUID videoId,
-            @RequestBody Map<String, Object> body
+            @Valid @RequestBody VideoConfirmRequest request
     ) {
         UUID tenantId       = UUID.fromString(RequestContext.getTenantId());
-        Long fileSizeBytes  = body.containsKey("fileSizeBytes") ? Long.valueOf(body.get("fileSizeBytes").toString()) : null;
-        Integer durationSec = body.containsKey("durationSeconds") ? Integer.valueOf(body.get("durationSeconds").toString()) : null;
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
-                service.confirmUpload(tenantId, videoId, fileSizeBytes, durationSec));
+                service.confirmUpload(tenantId, videoId, request.fileSizeBytes(), request.durationSeconds()));
     }
 
     @Operation(summary = "List my uploaded videos")
