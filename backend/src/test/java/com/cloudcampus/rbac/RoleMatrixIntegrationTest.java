@@ -230,6 +230,146 @@ class RoleMatrixIntegrationTest {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    // 4b. /v1/student/attendance/qr-mark — @PreAuthorize("hasRole('STUDENT')") (P0-02)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Body that satisfies QrMarkRequest's @Valid (token must be non-blank) so the
+     * security gate is what determines the response, not validation. The token
+     * value is rejected later by QrAttendanceService, but the response status is
+     * what proves the @PreAuthorize gate ran first.
+     */
+    private static final String QR_MARK_VALID_BODY = "{\"token\":\"rbac-probe-token\"}";
+
+    @Test
+    @DisplayName("[qr-mark] STUDENT → passes class-level @PreAuthorize (P0-02)")
+    void qrMark_allowedForStudent() throws Exception {
+        int httpStatus = mockMvc.perform(post("/v1/student/attendance/qr-mark")
+                        .header("Authorization", bearerToken(UserRole.STUDENT))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(QR_MARK_VALID_BODY))
+                .andReturn().getResponse().getStatus();
+        assertThat(httpStatus)
+                .as("STUDENT must pass @PreAuthorize(\"hasRole('STUDENT')\") on /v1/student/attendance/qr-mark — no 401/403")
+                .isNotEqualTo(401)
+                .isNotEqualTo(403);
+    }
+
+    @ParameterizedTest(name = "[qr-mark] {0} → 403")
+    @EnumSource(value = UserRole.class,
+                names = {"TEACHER", "PARENT", "SCHOOL_ADMIN"})
+    @DisplayName("[qr-mark] TEACHER, PARENT, SCHOOL_ADMIN are forbidden by @PreAuthorize (P0-02)")
+    void qrMark_forbiddenForNonStudent(UserRole role) throws Exception {
+        mockMvc.perform(post("/v1/student/attendance/qr-mark")
+                        .header("Authorization", bearerToken(role))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(QR_MARK_VALID_BODY))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("[qr-mark] No token → 401 (P0-02)")
+    void qrMark_unauthorizedWithNoToken() throws Exception {
+        mockMvc.perform(post("/v1/student/attendance/qr-mark")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(QR_MARK_VALID_BODY))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 4c. /v1/parent/** — hasRole("PARENT") (P0-03 path matcher)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Test
+    @DisplayName("[parent] PARENT → passes /v1/parent/** path security (P0-03)")
+    void parentRoute_allowedForParent() throws Exception {
+        int httpStatus = mockMvc.perform(get("/v1/parent/children")
+                        .header("Authorization", bearerToken(UserRole.PARENT)))
+                .andReturn().getResponse().getStatus();
+        assertThat(httpStatus)
+                .as("PARENT must pass /v1/parent/** path security — no 401/403")
+                .isNotEqualTo(401)
+                .isNotEqualTo(403);
+    }
+
+    @ParameterizedTest(name = "[parent] {0} → 403")
+    @EnumSource(value = UserRole.class,
+                names = {"SUPER_ADMIN", "TENANT_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STAFF", "STUDENT"})
+    @DisplayName("[parent] Non-PARENT roles are forbidden by /v1/parent/** path matcher (P0-03)")
+    void parentRoute_forbiddenForNonParent(UserRole role) throws Exception {
+        mockMvc.perform(get("/v1/parent/children")
+                        .header("Authorization", bearerToken(role)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("[parent] No token → 401 (P0-03)")
+    void parentRoute_unauthorizedWithNoToken() throws Exception {
+        mockMvc.perform(get("/v1/parent/children"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 4d. /v1/student/videos/** — shared STUDENT/PARENT/TEACHER carve-out (P0-03)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @ParameterizedTest(name = "[student-videos shared] {0} → passes path security")
+    @EnumSource(value = UserRole.class, names = {"STUDENT", "PARENT", "TEACHER"})
+    @DisplayName("[student-videos shared] STUDENT, PARENT, TEACHER all pass the shared carve-out (P0-03)")
+    void studentVideos_allowedForSharedRoles(UserRole role) throws Exception {
+        int httpStatus = mockMvc.perform(get("/v1/student/videos/{id}", UUID.randomUUID())
+                        .header("Authorization", bearerToken(role)))
+                .andReturn().getResponse().getStatus();
+        assertThat(httpStatus)
+                .as("Role %s must pass /v1/student/videos/** shared carve-out — no 401/403", role)
+                .isNotEqualTo(401)
+                .isNotEqualTo(403);
+    }
+
+    @ParameterizedTest(name = "[student-videos shared] {0} → 403")
+    @EnumSource(value = UserRole.class,
+                names = {"SUPER_ADMIN", "TENANT_ADMIN", "SCHOOL_ADMIN", "STAFF"})
+    @DisplayName("[student-videos shared] Admin/staff roles are forbidden (P0-03)")
+    void studentVideos_forbiddenForAdminRoles(UserRole role) throws Exception {
+        mockMvc.perform(get("/v1/student/videos/{id}", UUID.randomUUID())
+                        .header("Authorization", bearerToken(role)))
+                .andExpect(status().isForbidden());
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 4e. /v1/mobile/** — intentionally multi-role (P0-03)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @ParameterizedTest(name = "[mobile] {0} → passes /v1/mobile/** path security")
+    @EnumSource(value = UserRole.class,
+                names = {"STUDENT", "PARENT", "TEACHER", "STAFF", "SCHOOL_ADMIN", "TENANT_ADMIN"})
+    @DisplayName("[mobile] All tenant-scoped roles pass /v1/mobile/** (P0-03)")
+    void mobileRoute_allowedForTenantRoles(UserRole role) throws Exception {
+        int httpStatus = mockMvc.perform(get("/v1/mobile/notices")
+                        .header("Authorization", bearerToken(role)))
+                .andReturn().getResponse().getStatus();
+        assertThat(httpStatus)
+                .as("Role %s must pass /v1/mobile/** path security — no 401/403", role)
+                .isNotEqualTo(401)
+                .isNotEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("[mobile] SUPER_ADMIN → 403 on /v1/mobile/** (no tenant context) (P0-03)")
+    void mobileRoute_forbiddenForSuperAdmin() throws Exception {
+        mockMvc.perform(get("/v1/mobile/notices")
+                        .header("Authorization", bearerToken(UserRole.SUPER_ADMIN)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("[mobile] No token → 401 (P0-03)")
+    void mobileRoute_unauthorizedWithNoToken() throws Exception {
+        mockMvc.perform(get("/v1/mobile/notices"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     // 5. anyRequest().authenticated() — every valid JWT passes, no token → 401
     // ══════════════════════════════════════════════════════════════════════════
 

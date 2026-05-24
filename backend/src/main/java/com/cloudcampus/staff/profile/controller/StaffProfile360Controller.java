@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1/school-admin/staff/{staffId}/profile-360")
 @Tag(name = "School Admin — Staff 360 Profile", description = "Enterprise staff workforce profile, analytics, timeline, and risk insights")
+@PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TENANT_ADMIN')")
 public class StaffProfile360Controller {
 
     private final StaffProfile360Service service;

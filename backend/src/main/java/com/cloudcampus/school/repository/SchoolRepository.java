@@ -20,6 +20,8 @@ public interface SchoolRepository extends JpaRepository<School, UUID> {
 
     boolean existsByTenantIdAndCode(UUID tenantId, String code);
 
+    boolean existsByIdAndTenantId(UUID id, UUID tenantId);
+
     /**
      * JPQL findById that respects Hibernate @Filter (unlike em.find() used by
      * the default findById which bypasses filters). Use this when tenant

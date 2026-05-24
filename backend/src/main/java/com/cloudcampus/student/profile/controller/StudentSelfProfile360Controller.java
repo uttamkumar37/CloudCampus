@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/v1/student/profile-360")
 @PreAuthorize("hasRole('STUDENT')")
@@ -36,9 +38,10 @@ public class StudentSelfProfile360Controller {
                description = "Returns the authenticated student's own 360 profile aggregate.")
     @GetMapping
     public ApiResponse<StudentProfile360Response> myProfile() {
-        Student student = studentRepo.findByUserId(RequestContext.getUserId())
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        Student student = studentRepo.findByUserIdAndTenantId(RequestContext.getUserId(), tenantId)
                 .orElseThrow(() -> new NotFoundException("Student profile not found"));
 
-        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), profileService.getProfile(student.getId()));
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), profileService.getSelfProfile(student.getId()));
     }
 }

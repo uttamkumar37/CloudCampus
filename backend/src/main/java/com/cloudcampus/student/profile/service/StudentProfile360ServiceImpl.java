@@ -58,12 +58,19 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 class StudentProfile360ServiceImpl implements StudentProfile360Service {
 
     private static final PageRequest RECENT_FIVE = PageRequest.of(0, 5);
+    private static final Set<String> STUDENT_SELF_HIDDEN_VISIBILITIES =
+            Set.of("STAFF_ONLY", "ADMIN_ONLY", "PRIVATE", "COUNSELOR", "FINANCE", "HEALTH");
+    private static final Set<String> STUDENT_SELF_HIDDEN_SECTION_KEYS =
+            Set.of("IDENTITY", "CONTACT", "GUARDIANS", "HEALTH", "BEHAVIOR", "FINANCE", "COMMUNICATION", "AI");
+    private static final Set<String> STUDENT_SELF_HIDDEN_TIMELINE_TYPES =
+            Set.of("HEALTH", "BEHAVIOR", "COMMUNICATION");
 
     private final StudentRepository studentRepo;
     private final StudentIdentityProfileRepository identityRepo;
@@ -133,6 +140,13 @@ class StudentProfile360ServiceImpl implements StudentProfile360Service {
     public StudentProfile360Response getProfile(UUID studentId) {
         Student student = findStudent(studentId);
         return build(student);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public StudentProfile360Response getSelfProfile(UUID studentId) {
+        Student student = findStudent(studentId);
+        return redactForStudentSelf(build(student));
     }
 
     @Override
@@ -269,6 +283,85 @@ class StudentProfile360ServiceImpl implements StudentProfile360Service {
         return new StudentProfile360Response(studentId, profileCompletion, sections, timeline, quickStats,
                 header, completionDetails, activityFeed, aiInsights, academicAnalytics, healthWellbeing,
                 parentFamily, riskProfile, documentVault, communicationCenter);
+    }
+
+    private StudentProfile360Response redactForStudentSelf(StudentProfile360Response profile) {
+        List<ProfileSectionResponse> sections = profile.sections().stream()
+                .filter(this::isVisibleToStudentSelf)
+                .map(this::readOnlySection)
+                .toList();
+        List<TimelineItemResponse> timeline = redactTimeline(profile.timeline());
+
+        return new StudentProfile360Response(
+                profile.studentId(),
+                completionPercent(sections),
+                sections,
+                timeline,
+                keep(profile.quickStats(), "attendancePercent", "documents", "achievements"),
+                keep(profile.header(), "photoUrl", "fullName", "preferredName", "admissionNumber",
+                        "rollNumber", "className", "sectionName", "academicYear", "campus", "status",
+                        "transportStatus", "hostelStatus", "attendanceStreak", "lastActive", "badges"),
+                completionData(sections),
+                activityFeedData(timeline),
+                List.of(),
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                List.of(),
+                keep(profile.documentVault(), "documentCount", "requiredTypes"),
+                Map.of()
+        );
+    }
+
+    private boolean isVisibleToStudentSelf(ProfileSectionResponse section) {
+        return !STUDENT_SELF_HIDDEN_SECTION_KEYS.contains(normalize(section.key()))
+                && !STUDENT_SELF_HIDDEN_VISIBILITIES.contains(normalize(section.visibility()));
+    }
+
+    private ProfileSectionResponse readOnlySection(ProfileSectionResponse section) {
+        return new ProfileSectionResponse(
+                section.key(),
+                section.title(),
+                section.description(),
+                section.visibility(),
+                false,
+                section.completionPercent(),
+                copy(section.data()),
+                redactTimeline(section.timeline()));
+    }
+
+    private List<TimelineItemResponse> redactTimeline(List<TimelineItemResponse> timeline) {
+        if (timeline == null) return List.of();
+        return timeline.stream()
+                .filter(item -> !STUDENT_SELF_HIDDEN_TIMELINE_TYPES.contains(normalize(item.type()))
+                        && !STUDENT_SELF_HIDDEN_VISIBILITIES.contains(normalize(item.visibility())))
+                .toList();
+    }
+
+    private int completionPercent(List<ProfileSectionResponse> sections) {
+        return (int) Math.round(sections.stream()
+                .mapToInt(ProfileSectionResponse::completionPercent)
+                .average()
+                .orElse(0));
+    }
+
+    private Map<String, Object> keep(Map<String, Object> source, String... keys) {
+        if (source == null || source.isEmpty()) return Map.of();
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (String key : keys) {
+            if (source.containsKey(key)) {
+                out.put(key, source.get(key));
+            }
+        }
+        return out;
+    }
+
+    private Map<String, Object> copy(Map<String, Object> source) {
+        return source == null ? Map.of() : new LinkedHashMap<>(source);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toUpperCase();
     }
 
     private Map<String, Object> headerData(Student student, School school, ClassRoom classRoom, Section section,

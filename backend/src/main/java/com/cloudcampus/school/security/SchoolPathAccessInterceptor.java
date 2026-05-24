@@ -1,6 +1,7 @@
 package com.cloudcampus.school.security;
 
 import com.cloudcampus.common.exception.ForbiddenException;
+import com.cloudcampus.common.tenant.TenantSecurity;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.school.service.UserSchoolAccessService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,9 +29,12 @@ public class SchoolPathAccessInterceptor implements HandlerInterceptor {
             "^/v1/school-admin/schools/([0-9a-fA-F-]{36})(?:/.*)?$");
 
     private final UserSchoolAccessService userSchoolAccessService;
+    private final TenantSecurity tenantSecurity;
 
-    public SchoolPathAccessInterceptor(UserSchoolAccessService userSchoolAccessService) {
+    public SchoolPathAccessInterceptor(UserSchoolAccessService userSchoolAccessService,
+                                       TenantSecurity tenantSecurity) {
         this.userSchoolAccessService = userSchoolAccessService;
+        this.tenantSecurity = tenantSecurity;
     }
 
     @Override
@@ -46,6 +50,9 @@ public class SchoolPathAccessInterceptor implements HandlerInterceptor {
         if (auth == null || !auth.isAuthenticated()) {
             throw new ForbiddenException("School access denied");
         }
+        UUID requestedSchoolId = UUID.fromString(matcher.group(1));
+        tenantSecurity.assertSchoolBelongsToTenant(requestedSchoolId);
+
         if (hasRole(auth, "ROLE_SUPER_ADMIN") || hasRole(auth, "ROLE_TENANT_ADMIN")) {
             return true;
         }
@@ -53,7 +60,6 @@ public class SchoolPathAccessInterceptor implements HandlerInterceptor {
             throw new ForbiddenException("School access denied");
         }
 
-        UUID requestedSchoolId = UUID.fromString(matcher.group(1));
         UUID userId = RequestContext.getUserId();
         if (userId == null) {
             throw new ForbiddenException("School access denied");

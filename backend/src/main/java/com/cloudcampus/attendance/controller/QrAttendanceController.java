@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,6 +28,7 @@ import java.util.UUID;
  * co-located with the rest of the teacher attendance flow.
  */
 @RestController
+@PreAuthorize("hasRole('STUDENT')")
 @Tag(name = "QR Attendance — Student", description = "Student self-mark via scanned QR token (CC-0802)")
 public class QrAttendanceController {
 

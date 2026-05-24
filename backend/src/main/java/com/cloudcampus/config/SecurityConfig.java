@@ -176,6 +176,34 @@ public class SecurityConfig {
                         .requestMatchers("/v1/school-admin/**")
                                 .hasAnyRole("SCHOOL_ADMIN", "TENANT_ADMIN")
 
+                        // ── Role-portal path matchers (P0-03) ────────────────────────────
+                        // First-match-wins ordering: more specific shared carve-outs MUST
+                        // appear before the broad role-exclusive matchers below.
+                        // Method-level @PreAuthorize on each controller further narrows.
+
+                        // /v1/student/videos/** is intentionally shared across STUDENT,
+                        // PARENT and TEACHER (method-level @PreAuthorize on the videoId
+                        // endpoint allows all three; the listing endpoint narrows further).
+                        .requestMatchers("/v1/student/videos/**")
+                                .hasAnyRole("STUDENT", "PARENT", "TEACHER")
+
+                        // /v1/student/**  — every other student endpoint is STUDENT-only.
+                        .requestMatchers("/v1/student/**").hasRole("STUDENT")
+
+                        // /v1/parent/**   — every parent endpoint is PARENT-only.
+                        .requestMatchers("/v1/parent/**").hasRole("PARENT")
+
+                        // /v1/teacher/**  — every teacher endpoint is TEACHER-only.
+                        .requestMatchers("/v1/teacher/**").hasRole("TEACHER")
+
+                        // /v1/mobile/**   — intentionally multi-role. Used by Student,
+                        // Parent, Teacher pages plus admin-side tooling. SUPER_ADMIN is
+                        // excluded because mobile endpoints require a tenant context.
+                        .requestMatchers("/v1/mobile/**")
+                                .hasAnyRole(
+                                        "STUDENT", "PARENT", "TEACHER",
+                                        "STAFF", "SCHOOL_ADMIN", "TENANT_ADMIN")
+
                         // ── Everything else: any valid JWT ──────────────────────────────
                         .anyRequest().authenticated()
                 )

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -33,6 +34,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1/school-admin/schools/{schoolId}/settings")
 @Tag(name = "School Admin — Settings", description = "Manage operational configuration for a school")
+@PreAuthorize("hasAnyRole('SCHOOL_ADMIN','TENANT_ADMIN')")
 public class SchoolSettingsController {
 
     private final SchoolSettingsService service;
