@@ -5,6 +5,7 @@ import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useFeatureFlag } from '@/shared/hooks/useFeatureFlag';
 import { useBranding } from '@/shared/hooks/useBranding';
 import { useRouteScopedDisclosure } from '@/shared/hooks/useRouteScopedDisclosure';
+import { DemoEnvironmentBanner } from '@/shared/demo/DemoEnvironmentBanner';
 import { listMySchoolsApi, switchSchoolApi } from '../api/schoolAccessApi';
 import axiosInstance from '@/shared/api/axiosInstance';
 import type { ApiResponse } from '@/shared/types/api';
@@ -349,6 +350,7 @@ export function SchoolAdminLayout() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <DemoEnvironmentBanner />
           <Outlet />
         </main>
       </div>
