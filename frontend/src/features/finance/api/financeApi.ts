@@ -113,9 +113,10 @@ export async function createFeeRecord(
   return data.data!;
 }
 
-export async function waiveFeeRecord(recordId: string): Promise<StudentFeeRecordResponse> {
+export async function waiveFeeRecord(recordId: string, reason: string): Promise<StudentFeeRecordResponse> {
   const { data } = await axiosInstance.patch<ApiResponse<StudentFeeRecordResponse>>(
     `${base}/fee-records/${recordId}/waive`,
+    { reason },
   );
   return data.data!;
 }

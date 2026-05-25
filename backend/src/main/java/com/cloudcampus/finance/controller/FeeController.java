@@ -1,6 +1,7 @@
 package com.cloudcampus.finance.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.dto.ReasonRequest;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.finance.dto.CreateFeeCategoryRequest;
 import com.cloudcampus.finance.dto.CreateFeeStructureRequest;
@@ -174,8 +175,9 @@ public class FeeController {
     @Operation(summary = "Waive a fee record")
     @PatchMapping("/fee-records/{recordId}/waive")
     public ResponseEntity<ApiResponse<StudentFeeRecordResponse>> waiveRecord(
-            @PathVariable UUID recordId) {
-        StudentFeeRecordResponse body = service.waiveRecord(recordId);
+            @PathVariable UUID recordId,
+            @Valid @RequestBody ReasonRequest request) {
+        StudentFeeRecordResponse body = service.waiveRecord(recordId, request.normalizedReason());
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), body));
     }
 

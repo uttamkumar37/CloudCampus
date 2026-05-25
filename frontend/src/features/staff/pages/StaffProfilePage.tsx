@@ -649,7 +649,12 @@ export function StaffProfilePage() {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
-  const [pendingAction, setPendingAction] = useState<{ fn: (id: string) => Promise<unknown>; message: string; successLabel: string } | null>(null);
+  const [pendingAction, setPendingAction] = useState<{
+    fn: (id: string, reason: string) => Promise<unknown>;
+    message: string;
+    successLabel: string;
+    reasonRequired?: boolean;
+  } | null>(null);
   const user = useAuthStore((s) => s.user);
   const schoolId = user?.schoolId ?? '';
 
@@ -688,7 +693,14 @@ export function StaffProfilePage() {
   }, [staff]);
 
   const statusMutation = useMutation({
-    mutationFn: ({ fn }: { fn: (id: string) => Promise<unknown>; label: string }) => fn(id!),
+    mutationFn: ({
+      fn,
+      reason = '',
+    }: {
+      fn: (id: string, reason: string) => Promise<unknown>;
+      label: string;
+      reason?: string;
+    }) => fn(id!, reason),
     onSuccess: (_data, { label }) => {
       success(label);
       queryClient.invalidateQueries({ queryKey: ['staff-member', id] });
@@ -697,8 +709,13 @@ export function StaffProfilePage() {
     onError: () => { toastError('Action failed. Please try again.'); },
   });
 
-  function confirmStatus(fn: (id: string) => Promise<unknown>, message: string, successLabel: string) {
-    setPendingAction({ fn, message, successLabel });
+  function confirmStatus(
+    fn: (id: string, reason: string) => Promise<unknown>,
+    message: string,
+    successLabel: string,
+    reasonRequired = false,
+  ) {
+    setPendingAction({ fn, message, successLabel, reasonRequired });
   }
 
   if (isLoading || isProfileLoading) return <Skeleton />;
@@ -755,7 +772,7 @@ export function StaffProfilePage() {
               )}
               {canTerminate && (
                 <button
-                  onClick={() => confirmStatus(terminateStaff, `Terminate ${staff.firstName} ${staff.lastName}? This cannot be undone.`, 'Staff terminated')}
+                  onClick={() => confirmStatus(terminateStaff, `Terminate ${staff.firstName} ${staff.lastName}? This cannot be undone.`, 'Staff terminated', true)}
                   className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100"
                 >
                   Terminate
@@ -815,15 +832,22 @@ export function StaffProfilePage() {
       <ConfirmDialog
         open={pendingAction !== null}
         onClose={() => setPendingAction(null)}
-        onConfirm={() => {
+        onConfirm={(reason) => {
           if (pendingAction) {
-            statusMutation.mutate({ fn: pendingAction.fn, label: pendingAction.successLabel });
+            statusMutation.mutate({
+              fn: pendingAction.fn,
+              label: pendingAction.successLabel,
+              reason,
+            });
             setPendingAction(null);
           }
         }}
         title={pendingAction?.message ?? 'Confirm action'}
         confirmLabel="Confirm"
         loading={statusMutation.isPending}
+        reasonRequired={pendingAction?.reasonRequired}
+        reasonLabel="Reason"
+        reasonPlaceholder="Enter the audit reason"
       />
     </div>
   );

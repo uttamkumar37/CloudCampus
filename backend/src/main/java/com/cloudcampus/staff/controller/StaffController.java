@@ -1,6 +1,7 @@
 package com.cloudcampus.staff.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.dto.ReasonRequest;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.staff.dto.CreateStaffRequest;
 import com.cloudcampus.staff.dto.SchoolAdminMeResponse;
@@ -144,8 +145,11 @@ public class StaffController {
 
     @Operation(summary = "Terminate staff (involuntary exit)")
     @PatchMapping("/staff/{id}/terminate")
-    public ResponseEntity<ApiResponse<StaffResponse>> terminate(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<StaffResponse>> terminate(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReasonRequest request) {
         return ResponseEntity.ok(
-                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.terminate(id)));
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                        service.terminate(id, request.normalizedReason())));
     }
 }

@@ -1,6 +1,7 @@
 package com.cloudcampus.tenant.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.dto.ReasonRequest;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.common.web.Pagination;
@@ -74,8 +75,11 @@ public class SuperAdminTenantController {
 
     @Operation(summary = "Suspend tenant", description = "Sets status to SUSPENDED. Tenant users will receive 403 on login.")
     @PatchMapping("/{id}/suspend")
-    public ApiResponse<TenantResponse> suspend(@PathVariable UUID id) {
-        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), tenantService.suspend(id));
+    public ApiResponse<TenantResponse> suspend(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReasonRequest request) {
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                tenantService.suspend(id, request.normalizedReason()));
     }
 
     @Operation(summary = "Activate tenant", description = "Restores a SUSPENDED tenant to ACTIVE status.")
@@ -100,4 +104,3 @@ public class SuperAdminTenantController {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), configService.set(id, key, request.value()));
     }
 }
-

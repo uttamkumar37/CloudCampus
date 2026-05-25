@@ -44,7 +44,7 @@ import {
 } from '../api/studentDocumentApi';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import type { StudentResponse } from '../types/student';
-import { useToast, Spinner, PageSpinner } from '@/shared/ui';
+import { useToast, Spinner, PageSpinner, ConfirmDialog } from '@/shared/ui';
 
 // ── Edit form ─────────────────────────────────────────────────────────────────
 
@@ -1251,6 +1251,9 @@ export function StudentProfilePage() {
   const [editing, setEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<(typeof PROFILE_TABS)[number][0]>('overview');
   const [activeTimelineFilter, setActiveTimelineFilter] = useState('ALL');
+  const [pendingLifecycleAction, setPendingLifecycleAction] = useState<
+    { kind: 'graduate' | 'transfer' | 'suspend'; title: string; confirmLabel: string } | null
+  >(null);
   const schoolId = useAuthStore((s) => s.user?.schoolId) ?? '';
 
   const { data: student, isLoading, isError } = useQuery({
@@ -1271,17 +1274,17 @@ export function StudentProfilePage() {
 
   const { success: pageSuccess, error: pageError } = useToast();
   const graduate = useMutation({
-    mutationFn: () => graduateStudent(id!),
+    mutationFn: (reason: string) => graduateStudent(id!, reason),
     onSuccess: () => { pageSuccess('Student graduated'); invalidate(); },
     onError: () => { pageError('Failed to graduate student.'); },
   });
   const transfer = useMutation({
-    mutationFn: () => transferStudent(id!),
+    mutationFn: (reason: string) => transferStudent(id!, reason),
     onSuccess: () => { pageSuccess('Student transferred'); invalidate(); },
     onError: () => { pageError('Failed to transfer student.'); },
   });
   const suspend = useMutation({
-    mutationFn: () => suspendStudent(id!),
+    mutationFn: (reason: string) => suspendStudent(id!, reason),
     onSuccess: () => { pageSuccess('Student suspended'); invalidate(); },
     onError: () => { pageError('Failed to suspend student.'); },
   });
@@ -1293,6 +1296,14 @@ export function StudentProfilePage() {
 
   const anyPending =
     graduate.isPending || transfer.isPending || suspend.isPending || reinstate.isPending;
+
+  function runLifecycleAction(reason?: string) {
+    if (!pendingLifecycleAction || !reason) return;
+    if (pendingLifecycleAction.kind === 'graduate') graduate.mutate(reason);
+    if (pendingLifecycleAction.kind === 'transfer') transfer.mutate(reason);
+    if (pendingLifecycleAction.kind === 'suspend') suspend.mutate(reason);
+    setPendingLifecycleAction(null);
+  }
 
   if (isLoading) {
     return <PageSpinner />;
@@ -1318,23 +1329,33 @@ export function StudentProfilePage() {
       {student.status === 'ACTIVE' && (
         <>
           <button
-            onClick={() => graduate.mutate()}
+            onClick={() => setPendingLifecycleAction({
+              kind: 'graduate',
+              title: 'Graduate this student?',
+              confirmLabel: 'Graduate',
+            })}
             disabled={anyPending}
             className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
           >
             Graduate
           </button>
           <button
-            onClick={() => transfer.mutate()}
+            onClick={() => setPendingLifecycleAction({
+              kind: 'transfer',
+              title: 'Transfer this student?',
+              confirmLabel: 'Transfer',
+            })}
             disabled={anyPending}
             className="rounded-lg border border-yellow-200 px-3 py-2 text-xs font-semibold text-yellow-700 hover:bg-yellow-50 disabled:opacity-50"
           >
             Transfer
           </button>
           <button
-            onClick={() => {
-              if (confirm('Suspend this student?')) suspend.mutate();
-            }}
+            onClick={() => setPendingLifecycleAction({
+              kind: 'suspend',
+              title: 'Suspend this student?',
+              confirmLabel: 'Suspend',
+            })}
             disabled={anyPending}
             className="rounded-lg border border-orange-200 px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-50 disabled:opacity-50"
           >
@@ -1521,6 +1542,17 @@ export function StudentProfilePage() {
           />
         </aside>
       </div>
+      <ConfirmDialog
+        open={pendingLifecycleAction !== null}
+        onClose={() => setPendingLifecycleAction(null)}
+        onConfirm={runLifecycleAction}
+        title={pendingLifecycleAction?.title ?? 'Confirm action'}
+        confirmLabel={pendingLifecycleAction?.confirmLabel ?? 'Confirm'}
+        loading={anyPending}
+        reasonRequired
+        reasonLabel="Reason"
+        reasonPlaceholder="Enter the audit reason"
+      />
     </div>
   );
 }

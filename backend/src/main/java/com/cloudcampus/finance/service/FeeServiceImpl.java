@@ -210,7 +210,8 @@ class FeeServiceImpl implements FeeService {
 
     @Override
     @Transactional
-    public StudentFeeRecordResponse waiveRecord(UUID recordId) {
+    public StudentFeeRecordResponse waiveRecord(UUID recordId, String reason) {
+        String reasonText = normalizeReason(reason);
         StudentFeeRecord record = requireRecord(recordId);
         if (record.getStatus() == FeeStatus.PAID) {
             throw new BadRequestException("Cannot waive an already paid fee record");
@@ -227,8 +228,16 @@ class FeeServiceImpl implements FeeService {
                 "Fee record waived",
                 Map.of(
                         "studentId", saved.getStudentId().toString(),
-                        "schoolId", saved.getSchoolId().toString()));
+                        "schoolId", saved.getSchoolId().toString(),
+                        "reason", reasonText));
         return StudentFeeRecordResponse.from(saved, catName);
+    }
+
+    private String normalizeReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new BadRequestException("A reason is required for this action");
+        }
+        return reason.trim();
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ import {
   closeAcademicYear,
 } from '../api/academicYearApi';
 import type { AcademicYearResponse } from '../types/academic';
-import { useToast, PageHeader, Badge, PageSpinner, EmptyState } from '@/shared/ui';
+import { useToast, PageHeader, Badge, PageSpinner, EmptyState, ConfirmDialog } from '@/shared/ui';
 
 // ── Create form ───────────────────────────────────────────────────────────────
 
@@ -142,6 +142,7 @@ function CreateForm({ schoolId, onClose }: CreateFormProps) {
 function YearRow({ year }: { year: AcademicYearResponse }) {
   const { success, error: toastError } = useToast();
   const queryClient = useQueryClient();
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
 
   const setCurrent = useMutation({
     mutationFn: () => setCurrentAcademicYear(year.id),
@@ -153,7 +154,7 @@ function YearRow({ year }: { year: AcademicYearResponse }) {
   });
 
   const close = useMutation({
-    mutationFn: () => closeAcademicYear(year.id),
+    mutationFn: (reason: string) => closeAcademicYear(year.id, reason),
     onSuccess: () => {
       success('Academic year closed');
       queryClient.invalidateQueries({ queryKey: ['academic-years', year.schoolId] });
@@ -190,7 +191,7 @@ function YearRow({ year }: { year: AcademicYearResponse }) {
           )}
           {year.status !== 'CLOSED' && (
             <button
-              onClick={() => close.mutate()}
+              onClick={() => setCloseConfirmOpen(true)}
               disabled={close.isPending}
               className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
             >
@@ -198,6 +199,22 @@ function YearRow({ year }: { year: AcademicYearResponse }) {
             </button>
           )}
         </div>
+        <ConfirmDialog
+          open={closeConfirmOpen}
+          onClose={() => setCloseConfirmOpen(false)}
+          onConfirm={(reason) => {
+            if (!reason) return;
+            setCloseConfirmOpen(false);
+            close.mutate(reason);
+          }}
+          title="Close academic year?"
+          description="This action cannot be undone."
+          confirmLabel="Close"
+          loading={close.isPending}
+          reasonRequired
+          reasonLabel="Reason"
+          reasonPlaceholder="Enter the audit reason"
+        />
       </td>
     </tr>
   );

@@ -124,7 +124,7 @@ export default function StudentFeeDetailPage() {
   });
 
   const waiveMutation = useMutation({
-    mutationFn: () => waiveFeeRecord(recordId!),
+    mutationFn: (reason: string) => waiveFeeRecord(recordId!, reason),
     onSuccess: () => {
       success('Fee waived successfully');
       qc.invalidateQueries({ queryKey: ['fee-record', recordId] });
@@ -240,11 +240,18 @@ export default function StudentFeeDetailPage() {
           <ConfirmDialog
             open={waiveConfirmOpen}
             onClose={() => setWaiveConfirmOpen(false)}
-            onConfirm={() => { setWaiveConfirmOpen(false); waiveMutation.mutate(); }}
+            onConfirm={(reason) => {
+              if (!reason) return;
+              setWaiveConfirmOpen(false);
+              waiveMutation.mutate(reason);
+            }}
             title="Waive this fee record?"
             description="This action cannot be undone."
             confirmLabel="Waive Fee"
             loading={waiveMutation.isPending}
+            reasonRequired
+            reasonLabel="Reason"
+            reasonPlaceholder="Enter the audit reason"
           />
           <button
             onClick={() => invoiceMutation.mutate()}

@@ -1,5 +1,7 @@
 package com.cloudcampus.staff.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.usage.UsageLimitEnforcer;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Year;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -31,13 +34,16 @@ class StaffServiceImpl implements StaffService {
     private final UsageLimitEnforcer limitEnforcer;
     private final SchoolRepository   schoolRepo;
     private final TenantRepository   tenantRepo;
+    private final AuditLogService    auditLog;
 
     StaffServiceImpl(StaffRepository repo, UsageLimitEnforcer limitEnforcer,
-                     SchoolRepository schoolRepo, TenantRepository tenantRepo) {
+                     SchoolRepository schoolRepo, TenantRepository tenantRepo,
+                     AuditLogService auditLog) {
         this.repo          = repo;
         this.limitEnforcer = limitEnforcer;
         this.schoolRepo    = schoolRepo;
         this.tenantRepo    = tenantRepo;
+        this.auditLog      = auditLog;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -112,7 +118,8 @@ class StaffServiceImpl implements StaffService {
 
     @Override
     @Transactional
-    public StaffResponse terminate(UUID id) {
+    public StaffResponse terminate(UUID id, String reason) {
+        String reasonText = normalizeReason(reason);
         Staff staff = findOrThrow(id);
         if (staff.getStatus() == StaffStatus.RESIGNED
                 || staff.getStatus() == StaffStatus.TERMINATED) {
@@ -120,7 +127,16 @@ class StaffServiceImpl implements StaffService {
                     "Staff is already " + staff.getStatus() + " — cannot terminate");
         }
         staff.setStatus(StaffStatus.TERMINATED);
-        return StaffResponse.from(repo.save(staff));
+        Staff saved = repo.save(staff);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                currentTenantId(),
+                AuditAction.DATA_STAFF_STATUS_CHANGED,
+                "Staff",
+                saved.getId().toString(),
+                "Staff status changed to TERMINATED",
+                Map.of("status", StaffStatus.TERMINATED.name(), "reason", reasonText));
+        return StaffResponse.from(saved);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -189,6 +205,17 @@ class StaffServiceImpl implements StaffService {
         }
         staff.setStatus(target);
         return StaffResponse.from(repo.save(staff));
+    }
+
+    private UUID currentTenantId() {
+        return UUID.fromString(RequestContext.getTenantId());
+    }
+
+    private String normalizeReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new BadRequestException("A reason is required for this action");
+        }
+        return reason.trim();
     }
 
     /**

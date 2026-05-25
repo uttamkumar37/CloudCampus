@@ -15,10 +15,9 @@ public interface TenantService {
 
     PageResponse<TenantResponse> list(Pagination pagination);
 
-    TenantResponse suspend(UUID id);
+    TenantResponse suspend(UUID id, String reason);
 
     TenantResponse activate(UUID id);
 
     SuperAdminStatsResponse getStats();
 }
-

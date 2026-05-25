@@ -79,9 +79,10 @@ export async function resignStaff(id: string): Promise<StaffResponse> {
   return data.data!;
 }
 
-export async function terminateStaff(id: string): Promise<StaffResponse> {
+export async function terminateStaff(id: string, reason: string): Promise<StaffResponse> {
   const { data } = await axiosInstance.patch<ApiResponse<StaffResponse>>(
     `${byId(id)}/terminate`,
+    { reason },
   );
   return data.data!;
 }

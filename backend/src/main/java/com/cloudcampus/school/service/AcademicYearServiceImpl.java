@@ -107,7 +107,8 @@ class AcademicYearServiceImpl implements AcademicYearService {
     @Override
     @Transactional
     @CacheEvict(value = "academic-years", key = "#result.schoolId")
-    public AcademicYearResponse close(UUID id) {
+    public AcademicYearResponse close(UUID id, String reason) {
+        String reasonText = normalizeReason(reason);
         AcademicYear year = findOrThrow(id);
         if (year.getStatus() == AcademicYearStatus.CLOSED) {
             throw new BadRequestException("Academic year is already closed");
@@ -122,8 +123,15 @@ class AcademicYearServiceImpl implements AcademicYearService {
                 "AcademicYear",
                 id.toString(),
                 "Academic year closed",
-                Map.of("schoolId", saved.getSchoolId().toString()));
+                Map.of("schoolId", saved.getSchoolId().toString(), "reason", reasonText));
         return AcademicYearResponse.from(saved);
+    }
+
+    private String normalizeReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new BadRequestException("A reason is required for this action");
+        }
+        return reason.trim();
     }
 
     // ─────────────────────────────────────────────────────────────────────────

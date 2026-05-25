@@ -41,7 +41,7 @@ public interface FeeService {
 
     StudentFeeRecordResponse getRecord(UUID recordId);
 
-    StudentFeeRecordResponse waiveRecord(UUID recordId);
+    StudentFeeRecordResponse waiveRecord(UUID recordId, String reason);
 
     // ── Payments ────────────────────────────────────────────────────────────
 

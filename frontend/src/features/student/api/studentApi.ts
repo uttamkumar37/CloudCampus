@@ -69,23 +69,26 @@ export async function updateStudent(
   return data.data!;
 }
 
-export async function graduateStudent(id: string): Promise<StudentResponse> {
+export async function graduateStudent(id: string, reason: string): Promise<StudentResponse> {
   const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
     `${byId(id)}/graduate`,
+    { reason },
   );
   return data.data!;
 }
 
-export async function transferStudent(id: string): Promise<StudentResponse> {
+export async function transferStudent(id: string, reason: string): Promise<StudentResponse> {
   const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
     `${byId(id)}/transfer`,
+    { reason },
   );
   return data.data!;
 }
 
-export async function suspendStudent(id: string): Promise<StudentResponse> {
+export async function suspendStudent(id: string, reason: string): Promise<StudentResponse> {
   const { data } = await axiosInstance.patch<ApiResponse<StudentResponse>>(
     `${byId(id)}/suspend`,
+    { reason },
   );
   return data.data!;
 }

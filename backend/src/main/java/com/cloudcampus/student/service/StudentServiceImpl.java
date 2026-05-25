@@ -98,20 +98,20 @@ class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional
-    public StudentResponse graduate(UUID id) {
-        return changeStatus(id, StudentStatus.GRADUATED, StudentStatus.ACTIVE);
+    public StudentResponse graduate(UUID id, String reason) {
+        return changeStatus(id, StudentStatus.GRADUATED, StudentStatus.ACTIVE, reason);
     }
 
     @Override
     @Transactional
-    public StudentResponse transfer(UUID id) {
-        return changeStatus(id, StudentStatus.TRANSFERRED, StudentStatus.ACTIVE);
+    public StudentResponse transfer(UUID id, String reason) {
+        return changeStatus(id, StudentStatus.TRANSFERRED, StudentStatus.ACTIVE, reason);
     }
 
     @Override
     @Transactional
-    public StudentResponse suspend(UUID id) {
-        return changeStatus(id, StudentStatus.SUSPENDED, StudentStatus.ACTIVE);
+    public StudentResponse suspend(UUID id, String reason) {
+        return changeStatus(id, StudentStatus.SUSPENDED, StudentStatus.ACTIVE, reason);
     }
 
     @Override
@@ -196,7 +196,8 @@ class StudentServiceImpl implements StudentService {
                    .orElseThrow(() -> new NotFoundException("Student not found: " + id));
     }
 
-    private StudentResponse changeStatus(UUID id, StudentStatus target, StudentStatus required) {
+    private StudentResponse changeStatus(UUID id, StudentStatus target, StudentStatus required, String reason) {
+        String reasonText = normalizeReason(reason);
         Student student = findOrThrow(id);
         if (student.getStatus() != required) {
             throw new BadRequestException(
@@ -211,8 +212,15 @@ class StudentServiceImpl implements StudentService {
                 "Student",
                 saved.getId().toString(),
                 "Student status changed to " + target,
-                Map.of("status", target.name()));
+                Map.of("status", target.name(), "reason", reasonText));
         return StudentResponse.from(saved);
+    }
+
+    private String normalizeReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new BadRequestException("A reason is required for this action");
+        }
+        return reason.trim();
     }
 
     /**

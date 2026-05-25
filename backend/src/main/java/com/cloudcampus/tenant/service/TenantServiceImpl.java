@@ -1,10 +1,13 @@
 package com.cloudcampus.tenant.service;
 
+import com.cloudcampus.audit.entity.AuditAction;
+import com.cloudcampus.audit.service.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.common.web.Pagination;
+import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.school.entity.School;
 import com.cloudcampus.school.entity.SchoolStatus;
 import com.cloudcampus.school.repository.SchoolRepository;
@@ -24,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -33,14 +37,17 @@ public class TenantServiceImpl implements TenantService {
     private final SchoolRepository schoolRepository;
     private final SchoolSettingsService schoolSettingsService;
     private final TenantBootstrapService tenantBootstrapService;
+    private final AuditLogService auditLog;
 
     public TenantServiceImpl(TenantRepository tenantRepository, SchoolRepository schoolRepository,
                              SchoolSettingsService schoolSettingsService,
-                             TenantBootstrapService tenantBootstrapService) {
+                             TenantBootstrapService tenantBootstrapService,
+                             AuditLogService auditLog) {
         this.tenantRepository       = tenantRepository;
         this.schoolRepository       = schoolRepository;
         this.schoolSettingsService  = schoolSettingsService;
         this.tenantBootstrapService = tenantBootstrapService;
+        this.auditLog               = auditLog;
     }
 
     @Override
@@ -111,14 +118,31 @@ public class TenantServiceImpl implements TenantService {
 
     @Override
     @Transactional
-    public TenantResponse suspend(UUID id) {
+    public TenantResponse suspend(UUID id, String reason) {
+        String reasonText = normalizeReason(reason);
         Tenant tenant = tenantRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Tenant not found"));
         if (tenant.getStatus() == TenantStatus.SUSPENDED) {
             throw new BadRequestException("Tenant is already suspended");
         }
         tenant.setStatus(TenantStatus.SUSPENDED);
-        return toResponse(tenantRepository.save(tenant));
+        Tenant saved = tenantRepository.save(tenant);
+        auditLog.logCriticalMutation(
+                RequestContext.getUserId(),
+                null,
+                AuditAction.TENANT_SUSPENDED,
+                "Tenant",
+                saved.getId().toString(),
+                "Tenant suspended",
+                Map.of("tenantCode", saved.getCode(), "reason", reasonText));
+        return toResponse(saved);
+    }
+
+    private String normalizeReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new BadRequestException("A reason is required for this action");
+        }
+        return reason.trim();
     }
 
     @Override
@@ -155,4 +179,3 @@ public class TenantServiceImpl implements TenantService {
         );
     }
 }
-
