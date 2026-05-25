@@ -2,6 +2,7 @@ package com.cloudcampus.audit.repository;
 
 import com.cloudcampus.audit.entity.AuditLog;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.UUID;
 
@@ -11,5 +12,5 @@ import java.util.UUID;
  * Never call delete* or any mutation method on this repository.
  * Archival / retention is a scheduled background job (CC-1802).
  */
-public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
+public interface AuditLogRepository extends JpaRepository<AuditLog, UUID>, JpaSpecificationExecutor<AuditLog> {
 }
