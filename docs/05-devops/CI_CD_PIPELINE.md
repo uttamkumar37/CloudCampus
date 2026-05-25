@@ -27,7 +27,7 @@ npx expo export --platform android
 ```
 
 ## Security Nightly
-OWASP Dependency Check runs in `security-nightly.yml` on schedule, manual dispatch, main, and release branches. It is currently report-only with `continue-on-error: true` while remediation is managed.
+OWASP Dependency Check and Trivy run in `security-nightly.yml` as the `Security — Release Gate` workflow on pull requests, main, release branches, nightly schedule, and manual dispatch. OWASP fails the job on CVSS >= 7 findings, and Trivy fails on HIGH or CRITICAL findings in the freshly built backend image for the current ref.
 
 ## Docker Publish
 Docker Build & Push is skipped for feature branches and PRs because `docker-publish.yml` only runs on `main`, `release/**`, tags `v*`, or manual dispatch. It also assumes protected branches require CI to pass before merge; once backend CI passes and code reaches a publish trigger, Docker runs again.
