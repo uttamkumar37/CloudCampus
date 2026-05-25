@@ -155,6 +155,8 @@ class MultiSchoolMultiTenantIT {
     final UUID branchStudentUser = UUID.randomUUID();
     final UUID otherStudentUser = UUID.randomUUID();
     final UUID aiUser = UUID.randomUUID();
+    final UUID tenantBAdminUser = UUID.randomUUID();
+    final UUID superAdminUser = UUID.randomUUID();
 
     School mainSchool;
     School branchSchool;
@@ -185,6 +187,8 @@ class MultiSchoolMultiTenantIT {
         seedUser(branchStudentUser, tenantA, "p017-student-branch-" + suffix + "@example.test", UserRole.STUDENT);
         seedUser(otherStudentUser, tenantA, "p017-student-other-" + suffix + "@example.test", UserRole.STUDENT);
         seedUser(aiUser, tenantA, "p017-ai-admin-" + suffix + "@example.test", UserRole.SCHOOL_ADMIN);
+        seedUser(tenantBAdminUser, tenantB, "p017-admin-b-" + suffix + "@example.test", UserRole.SCHOOL_ADMIN);
+        seedUser(superAdminUser, null, "p017-super-admin-" + suffix + "@example.test", UserRole.SUPER_ADMIN);
 
         mainSchool = schoolRepo.save(new School(UUID.randomUUID(), tenantA, "Main School", "MAIN-" + suffix,
                 SchoolStatus.ACTIVE, Instant.now()));
@@ -345,6 +349,57 @@ class MultiSchoolMultiTenantIT {
                 .andExpect(jsonPath("$.data.staffId").value(branchTeacher.getId().toString()))
                 .andExpect(jsonPath("$.data.schoolId").value(branchSchool.getId().toString()))
                 .andExpect(jsonPath("$.data.staffType").value("TEACHER"));
+    }
+
+    @Test
+    @DisplayName("5b. Audit log viewer is tenant-scoped for school admins and filterable for super admins")
+    void auditLogViewerScopesAndFiltersAuditRows() throws Exception {
+        String sharedResourceId = "p1-04-" + UUID.randomUUID();
+        UUID tenantAEntry = UUID.randomUUID();
+        UUID tenantBEntry = UUID.randomUUID();
+
+        jdbc.update("""
+                INSERT INTO audit_log
+                    (id, tenant_id, actor_id, actor_username, category, event_type,
+                     resource_type, resource_id, description, metadata, created_at)
+                VALUES
+                    (?, ?, ?, 'school-admin-a@example.test', 'FINANCE', 'FINANCE_FEE_WAIVED',
+                     'FeeRecord', ?, 'Tenant A fee waiver', '{"reason":"tenant-a"}'::jsonb, now()),
+                    (?, ?, ?, 'school-admin-b@example.test', 'FINANCE', 'FINANCE_FEE_WAIVED',
+                     'FeeRecord', ?, 'Tenant B fee waiver', '{"reason":"tenant-b"}'::jsonb, now())
+                """, tenantAEntry, tenantA, aiUser, sharedResourceId,
+                tenantBEntry, tenantB, tenantBAdminUser, sharedResourceId);
+
+        mockMvc.perform(get("/v1/school-admin/audit-logs")
+                        .param("category", "FINANCE")
+                        .param("resourceType", "FeeRecord")
+                        .param("resourceId", sharedResourceId)
+                        .param("size", "10")
+                        .header("Authorization", token(UserRole.SCHOOL_ADMIN, tenantA, branchSchool.getId(), aiUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].id").value(tenantAEntry.toString()))
+                .andExpect(content().string(not(containsString(tenantBEntry.toString()))));
+
+        mockMvc.perform(get("/v1/super-admin/audit-logs")
+                        .param("eventType", "FINANCE_FEE_WAIVED")
+                        .param("resourceId", sharedResourceId)
+                        .param("size", "10")
+                        .header("Authorization", token(UserRole.SUPER_ADMIN, null, null, superAdminUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(2))
+                .andExpect(content().string(containsString(tenantAEntry.toString())))
+                .andExpect(content().string(containsString(tenantBEntry.toString())));
+
+        mockMvc.perform(get("/v1/super-admin/audit-logs")
+                        .param("tenantId", tenantB.toString())
+                        .param("resourceId", sharedResourceId)
+                        .param("size", "10")
+                        .header("Authorization", token(UserRole.SUPER_ADMIN, null, null, superAdminUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].id").value(tenantBEntry.toString()))
+                .andExpect(content().string(not(containsString(tenantAEntry.toString()))));
     }
 
     @Test

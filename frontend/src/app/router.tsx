@@ -23,6 +23,7 @@ const PromptListPage           = lazy(() => import('@/features/super-admin/pages
 const PromptDetailPage         = lazy(() => import('@/features/super-admin/pages/PromptDetailPage').then(m => ({ default: m.PromptDetailPage })));
 const KnowledgeBasePage        = lazy(() => import('@/features/super-admin/pages/KnowledgeBasePage').then(m => ({ default: m.KnowledgeBasePage })));
 const AiUsagePage              = lazy(() => import('@/features/super-admin/pages/AiUsagePage').then(m => ({ default: m.AiUsagePage })));
+const SuperAdminAuditLogPage   = lazy(() => import('@/features/super-admin/pages/AuditLogPage').then(m => ({ default: m.AuditLogPage })));
 
 // ── School Admin ──────────────────────────────────────────────────────────────
 const SchoolAdminLayout        = lazy(() => import('@/features/school-admin/layouts/SchoolAdminLayout').then(m => ({ default: m.SchoolAdminLayout })));
@@ -37,6 +38,7 @@ const SchoolSettingsPage       = lazy(() => import('@/features/school-admin/page
 const DepartmentListPage       = lazy(() => import('@/features/school-admin/pages/DepartmentListPage').then(m => ({ default: m.DepartmentListPage })));
 const WebsiteBuilderPage       = lazy(() => import('@/features/school-admin/pages/WebsiteBuilderPage').then(m => ({ default: m.WebsiteBuilderPage })));
 const CustomDomainPage         = lazy(() => import('@/features/school-admin/pages/CustomDomainPage').then(m => ({ default: m.CustomDomainPage })));
+const SchoolAdminAuditLogPage  = lazy(() => import('@/features/school-admin/pages/AuditLogPage').then(m => ({ default: m.AuditLogPage })));
 
 // ── Students ──────────────────────────────────────────────────────────────────
 const StudentListPage          = lazy(() => import('@/features/student/pages/StudentListPage').then(m => ({ default: m.StudentListPage })));
@@ -189,6 +191,7 @@ export function AppRouter() {
             <Route path="ai/knowledge"     element={<KnowledgeBasePage />} />
             <Route path="ai/usage"         element={<AiUsagePage />} />
             <Route path="experience"       element={<ExperienceControlCenter />} />
+            <Route path="audit-logs"        element={<SuperAdminAuditLogPage />} />
             <Route path="public-website" element={<PublicWebsiteDashboardPage />} />
             <Route path="public-website/pages" element={<PublicWebsitePagesPage />} />
             <Route path="public-website/branding" element={<PublicWebsiteBrandingPage />} />
@@ -250,6 +253,7 @@ export function AppRouter() {
             <Route path="website" element={<WebsiteBuilderPage />} />
             <Route path="custom-domain" element={<CustomDomainPage />} />
             <Route path="ai-copilot" element={<AiCopilotPage />} />
+            <Route path="audit-logs" element={<SchoolAdminAuditLogPage />} />
             <Route path="profile" element={<SchoolAdminProfilePage />} />
             <Route path="settings" element={<SchoolSettingsPage />} />
           </Route>
