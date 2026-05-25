@@ -2,6 +2,8 @@ package com.cloudcampus.rbac;
 
 import com.cloudcampus.auth.entity.UserRole;
 import com.cloudcampus.auth.security.JwtUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.cloudcampus.exam.entity.Exam;
 import com.cloudcampus.exam.entity.ExamResult;
 import com.cloudcampus.exam.entity.ExamType;
@@ -58,6 +60,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -70,6 +73,8 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
@@ -131,6 +136,7 @@ class MultiSchoolMultiTenantIT {
     @Autowired MockMvc mockMvc;
     @Autowired JwtUtil jwtUtil;
     @Autowired JdbcTemplate jdbc;
+    @Autowired ObjectMapper objectMapper;
 
     @Autowired TenantRepository tenantRepo;
     @Autowired SchoolRepository schoolRepo;
@@ -519,6 +525,52 @@ class MultiSchoolMultiTenantIT {
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.items[0].id").value(tenantBEntry.toString()))
                 .andExpect(content().string(not(containsString(tenantAEntry.toString()))));
+    }
+
+    @Test
+    @DisplayName("5d. School admin report export jobs complete asynchronously")
+    void reportExportJobCompletesAsynchronously() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        UUID reportAdminUser = UUID.randomUUID();
+        seedUser(reportAdminUser, tenantA, "p105-report-admin-" + suffix + "@example.test", UserRole.SCHOOL_ADMIN);
+        String auth = token(UserRole.SCHOOL_ADMIN, tenantA, branchSchool.getId(), reportAdminUser);
+
+        MvcResult created = mockMvc.perform(post("/v1/school-admin/schools/{schoolId}/reports/attendance/export-jobs",
+                                branchSchool.getId())
+                        .param("academicYearId", branchYear.getId().toString())
+                        .header("Authorization", auth))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.type").value("ATTENDANCE"))
+                .andExpect(jsonPath("$.data.jobId").exists())
+                .andReturn();
+
+        String jobId = objectMapper.readTree(created.getResponse().getContentAsString())
+                .at("/data/jobId")
+                .asText();
+
+        JsonNode job = null;
+        for (int i = 0; i < 20; i++) {
+            MvcResult statusResult = mockMvc.perform(get("/v1/school-admin/schools/{schoolId}/reports/jobs/{jobId}",
+                                    branchSchool.getId(), jobId)
+                            .header("Authorization", auth))
+                    .andExpect(status().isOk())
+                    .andReturn();
+            job = objectMapper.readTree(statusResult.getResponse().getContentAsString()).at("/data");
+            if ("COMPLETED".equals(job.path("status").asText())) {
+                break;
+            }
+            assertTrue(!"FAILED".equals(job.path("status").asText()), job.path("errorMessage").asText());
+            Thread.sleep(50);
+        }
+
+        assertEquals("COMPLETED", job.path("status").asText());
+        assertTrue(job.path("downloadUrl").asText().contains(jobId));
+
+        mockMvc.perform(get("/v1/school-admin/schools/{schoolId}/reports/jobs/{jobId}/download",
+                        branchSchool.getId(), jobId)
+                        .header("Authorization", auth))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Student Number,First Name,Last Name")));
     }
 
     @Test

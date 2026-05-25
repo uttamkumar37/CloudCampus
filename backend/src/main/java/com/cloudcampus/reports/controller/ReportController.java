@@ -6,21 +6,26 @@ import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.reports.dto.AttendanceReportResponse;
 import com.cloudcampus.reports.dto.FeeReportResponse;
 import com.cloudcampus.reports.dto.PerformanceReportResponse;
+import com.cloudcampus.reports.dto.ReportExportJobResponse;
+import com.cloudcampus.reports.service.ReportCsvExportService;
+import com.cloudcampus.reports.service.ReportCsvExportService.CsvExport;
+import com.cloudcampus.reports.service.ReportExportJobService;
 import com.cloudcampus.reports.service.ReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -40,9 +45,15 @@ import java.util.UUID;
 public class ReportController {
 
     private final ReportService reportService;
+    private final ReportCsvExportService csvExportService;
+    private final ReportExportJobService exportJobService;
 
-    ReportController(ReportService reportService) {
+    ReportController(ReportService reportService,
+                     ReportCsvExportService csvExportService,
+                     ReportExportJobService exportJobService) {
         this.reportService = reportService;
+        this.csvExportService = csvExportService;
+        this.exportJobService = exportJobService;
     }
 
     @GetMapping("/attendance")
@@ -77,29 +88,63 @@ public class ReportController {
 
     // ── CSV exports ───────────────────────────────────────────────────────────
 
+    @PostMapping("/attendance/export-jobs")
+    @RateLimit
+    @Operation(summary = "Start async attendance CSV export job")
+    public ResponseEntity<ApiResponse<ReportExportJobResponse>> createAttendanceExportJob(
+            @PathVariable UUID schoolId,
+            @RequestParam UUID academicYearId) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                        exportJobService.createAttendance(schoolId, academicYearId)));
+    }
+
+    @PostMapping("/fees/export-jobs")
+    @RateLimit
+    @Operation(summary = "Start async fee collection CSV export job")
+    public ResponseEntity<ApiResponse<ReportExportJobResponse>> createFeesExportJob(
+            @PathVariable UUID schoolId,
+            @RequestParam UUID academicYearId) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                        exportJobService.createFees(schoolId, academicYearId)));
+    }
+
+    @PostMapping("/performance/export-jobs")
+    @RateLimit
+    @Operation(summary = "Start async performance CSV export job")
+    public ResponseEntity<ApiResponse<ReportExportJobResponse>> createPerformanceExportJob(
+            @PathVariable UUID schoolId,
+            @RequestParam UUID examId) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                        exportJobService.createPerformance(schoolId, examId)));
+    }
+
+    @GetMapping("/jobs/{jobId}")
+    @Operation(summary = "Get async report export job status")
+    public ResponseEntity<ApiResponse<ReportExportJobResponse>> getExportJob(
+            @PathVariable UUID schoolId,
+            @PathVariable UUID jobId) {
+        return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                exportJobService.get(schoolId, jobId)));
+    }
+
+    @GetMapping("/jobs/{jobId}/download")
+    @Operation(summary = "Download completed async report export")
+    public ResponseEntity<byte[]> downloadExportJob(
+            @PathVariable UUID schoolId,
+            @PathVariable UUID jobId) {
+        return csvResponse(exportJobService.download(schoolId, jobId));
+    }
+
     @GetMapping("/attendance/export")
     @RateLimit
     @Operation(summary = "Export attendance report as CSV (CC-1401)")
     public ResponseEntity<byte[]> exportAttendance(
             @PathVariable UUID schoolId,
             @RequestParam UUID academicYearId) {
-
-        AttendanceReportResponse report = reportService.attendanceReport(schoolId, academicYearId);
-        StringBuilder sb = new StringBuilder();
-        sb.append("Student Number,First Name,Last Name,Total Sessions,Present,Absent,Late,Excused,Attendance %\r\n");
-        for (AttendanceReportResponse.Row r : report.rows()) {
-            sb.append(csv(r.studentNumber()))
-              .append(',').append(csv(r.firstName()))
-              .append(',').append(csv(r.lastName()))
-              .append(',').append(r.totalSessions())
-              .append(',').append(r.presentCount())
-              .append(',').append(r.absentCount())
-              .append(',').append(r.lateCount())
-              .append(',').append(r.excusedCount())
-              .append(',').append(String.format("%.1f", r.attendancePercentage()))
-              .append("\r\n");
-        }
-        return csvResponse(sb, "attendance-report.csv");
+        return csvResponse(csvExportService.attendance(schoolId, academicYearId));
     }
 
     @GetMapping("/fees/export")
@@ -108,20 +153,7 @@ public class ReportController {
     public ResponseEntity<byte[]> exportFees(
             @PathVariable UUID schoolId,
             @RequestParam UUID academicYearId) {
-
-        FeeReportResponse report = reportService.feeReport(schoolId, academicYearId);
-        StringBuilder sb = new StringBuilder();
-        sb.append("Total Records,Total Due (INR),Total Paid (INR),Pending,Partial,Paid,Waived,Collection Rate (%)\r\n");
-        sb.append(report.totalRecords())
-          .append(',').append(report.totalAmountDue())
-          .append(',').append(report.totalAmountPaid())
-          .append(',').append(report.pendingCount())
-          .append(',').append(report.partialCount())
-          .append(',').append(report.paidCount())
-          .append(',').append(report.waivedCount())
-          .append(',').append(String.format("%.1f", report.collectionRate()))
-          .append("\r\n");
-        return csvResponse(sb, "fee-report.csv");
+        return csvResponse(csvExportService.fees(schoolId, academicYearId));
     }
 
     @GetMapping("/performance/export")
@@ -130,42 +162,15 @@ public class ReportController {
     public ResponseEntity<byte[]> exportPerformance(
             @PathVariable UUID schoolId,
             @RequestParam UUID examId) {
-
-        PerformanceReportResponse report = reportService.performanceReport(schoolId, examId);
-        StringBuilder sb = new StringBuilder();
-        sb.append("Rank,Student Number,First Name,Last Name,Marks Obtained,Marks Possible,Percentage,Grade,Passed\r\n");
-        for (PerformanceReportResponse.Row r : report.rows()) {
-            sb.append(r.rank() != null ? r.rank() : "")
-              .append(',').append(csv(r.studentNumber()))
-              .append(',').append(csv(r.firstName()))
-              .append(',').append(csv(r.lastName()))
-              .append(',').append(r.totalMarksObtained())
-              .append(',').append(r.totalMarksPossible())
-              .append(',').append(String.format("%.1f", r.percentage()))
-              .append(',').append(csv(r.grade()))
-              .append(',').append(r.passed() ? "Yes" : "No")
-              .append("\r\n");
-        }
-        return csvResponse(sb, "performance-report.csv");
+        return csvResponse(csvExportService.performance(schoolId, examId));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static ResponseEntity<byte[]> csvResponse(StringBuilder sb, String filename) {
-        byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+    private static ResponseEntity<byte[]> csvResponse(CsvExport csv) {
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .body(bytes);
-    }
-
-    /** Wraps a field in double-quotes and escapes embedded quotes. */
-    private static String csv(Object value) {
-        if (value == null) return "";
-        String s = value.toString();
-        if (s.contains(",") || s.contains("\"") || s.contains("\n")) {
-            return "\"" + s.replace("\"", "\"\"") + "\"";
-        }
-        return s;
+                .contentType(MediaType.parseMediaType(csv.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + csv.filename() + "\"")
+                .body(csv.bytes());
     }
 }

@@ -94,4 +94,22 @@ public class AsyncConfig {
                 "notification_executor", List.of());
         return executor;
     }
+
+    @Bean(name = "reportExportExecutor")
+    public Executor reportExportExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("report-export-");
+        executor.setTaskDecorator(new RequestContextTaskDecorator());
+        executor.setRejectedExecutionHandler((r, exec) -> {
+            log.warn("Report export executor queue full — running task on caller thread");
+            r.run();
+        });
+        executor.initialize();
+        ExecutorServiceMetrics.monitor(meterRegistry, executor.getThreadPoolExecutor(),
+                "report_export_executor", List.of());
+        return executor;
+    }
 }
