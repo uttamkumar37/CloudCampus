@@ -19,7 +19,7 @@ import {
 } from '../api/subscriptionApi';
 import type { AssignPlanRequest } from '../api/subscriptionApi';
 import type { FeatureType, TenantStatus } from '../types/tenant';
-import { useToast, PageHeader, PageSpinner } from '@/shared/ui';
+import { useToast, PageHeader, PageSpinner, ConfirmDialog } from '@/shared/ui';
 
 const STATUS_BADGE: Record<TenantStatus, string> = {
   ACTIVE:    'bg-green-100 text-green-700',
@@ -96,6 +96,7 @@ export function TenantDetailPage() {
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue]   = useState('');
+  const [suspendConfirmOpen, setSuspendConfirmOpen] = useState(false);
 
   const configMutation = useMutation({
     mutationFn: ({ key, value }: { key: string; value: string }) =>
@@ -110,7 +111,7 @@ export function TenantDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['super-admin-stats'] });
   };
 
-  const suspendMutation  = useMutation({ mutationFn: () => suspendTenant(id!),  onSuccess: () => { success('Tenant suspended'); invalidateTenant(); }, onError: () => { toastError('Failed to suspend tenant. Please try again.'); } });
+  const suspendMutation  = useMutation({ mutationFn: (reason: string) => suspendTenant(id!, reason),  onSuccess: () => { success('Tenant suspended'); invalidateTenant(); }, onError: () => { toastError('Failed to suspend tenant. Please try again.'); } });
   const activateMutation = useMutation({ mutationFn: () => activateTenant(id!), onSuccess: () => { success('Tenant activated'); invalidateTenant(); }, onError: () => { toastError('Failed to activate tenant. Please try again.'); } });
 
   const [featureError, setFeatureError] = useState<string | null>(null);
@@ -165,7 +166,7 @@ export function TenantDetailPage() {
         </span>
         {tenant.status === 'ACTIVE' && (
           <button
-            onClick={() => suspendMutation.mutate()}
+            onClick={() => setSuspendConfirmOpen(true)}
             disabled={isBusy}
             className="rounded-lg border border-orange-200 px-4 py-1.5 text-sm font-medium text-orange-600 hover:bg-orange-50 disabled:opacity-60"
           >
@@ -182,6 +183,22 @@ export function TenantDetailPage() {
           </button>
         )}
       </div>
+      <ConfirmDialog
+        open={suspendConfirmOpen}
+        onClose={() => setSuspendConfirmOpen(false)}
+        onConfirm={(reason) => {
+          if (!reason) return;
+          setSuspendConfirmOpen(false);
+          suspendMutation.mutate(reason);
+        }}
+        title="Suspend tenant?"
+        description="Tenant users will lose access until reactivated."
+        confirmLabel="Suspend"
+        loading={suspendMutation.isPending}
+        reasonRequired
+        reasonLabel="Reason"
+        reasonPlaceholder="Enter the audit reason"
+      />
 
       {/* Info card */}
       <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4">

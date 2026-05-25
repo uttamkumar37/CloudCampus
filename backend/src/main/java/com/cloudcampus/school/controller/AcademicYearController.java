@@ -1,6 +1,7 @@
 package com.cloudcampus.school.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.dto.ReasonRequest;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.school.dto.AcademicYearRequest;
 import com.cloudcampus.school.dto.AcademicYearResponse;
@@ -94,8 +95,10 @@ public class AcademicYearController {
     @Operation(summary = "Close academic year",
                description = "Marks the year as CLOSED. A closed year cannot be reopened.")
     @PatchMapping("/academic-years/{id}/close")
-    public ResponseEntity<ApiResponse<Void>> close(@PathVariable UUID id) {
-        service.close(id);
+    public ResponseEntity<ApiResponse<Void>> close(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReasonRequest request) {
+        service.close(id, request.normalizedReason());
         return ResponseEntity.ok(ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), null));
     }
 }

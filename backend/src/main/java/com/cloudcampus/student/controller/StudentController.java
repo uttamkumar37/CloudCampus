@@ -1,6 +1,7 @@
 package com.cloudcampus.student.controller;
 
 import com.cloudcampus.common.api.ApiResponse;
+import com.cloudcampus.common.dto.ReasonRequest;
 import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.student.dto.AdmitStudentRequest;
 import com.cloudcampus.student.dto.BulkImportResult;
@@ -145,23 +146,32 @@ public class StudentController {
 
     @Operation(summary = "Mark student as graduated")
     @PatchMapping("/students/{id}/graduate")
-    public ResponseEntity<ApiResponse<StudentResponse>> graduate(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<StudentResponse>> graduate(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReasonRequest request) {
         return ResponseEntity.ok(
-                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.graduate(id)));
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                        service.graduate(id, request.normalizedReason())));
     }
 
     @Operation(summary = "Mark student as transferred to another school")
     @PatchMapping("/students/{id}/transfer")
-    public ResponseEntity<ApiResponse<StudentResponse>> transfer(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<StudentResponse>> transfer(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReasonRequest request) {
         return ResponseEntity.ok(
-                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.transfer(id)));
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                        service.transfer(id, request.normalizedReason())));
     }
 
     @Operation(summary = "Suspend student (disciplinary)")
     @PatchMapping("/students/{id}/suspend")
-    public ResponseEntity<ApiResponse<StudentResponse>> suspend(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<StudentResponse>> suspend(
+            @PathVariable UUID id,
+            @Valid @RequestBody ReasonRequest request) {
         return ResponseEntity.ok(
-                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), service.suspend(id)));
+                ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY),
+                        service.suspend(id, request.normalizedReason())));
     }
 
     @Operation(summary = "Reinstate suspended student")

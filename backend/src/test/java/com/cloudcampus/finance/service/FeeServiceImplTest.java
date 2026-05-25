@@ -66,7 +66,7 @@ class FeeServiceImplTest {
         when(recordRepo.save(record)).thenReturn(record);
 
         try (MockedStatic<RequestContext> ctx = tenantContext()) {
-            feeService.waiveRecord(RECORD_ID);
+            feeService.waiveRecord(RECORD_ID, "Hardship scholarship approved");
         }
 
         assertThat(record.getStatus()).isEqualTo(FeeStatus.WAIVED);
@@ -81,10 +81,17 @@ class FeeServiceImplTest {
         stubFoundRecord(paid);
 
         try (MockedStatic<RequestContext> ctx = tenantContext()) {
-            assertThatThrownBy(() -> feeService.waiveRecord(RECORD_ID))
+            assertThatThrownBy(() -> feeService.waiveRecord(RECORD_ID, "Duplicate billing correction"))
                     .isInstanceOf(BadRequestException.class)
                     .hasMessageContaining("Cannot waive");
         }
+    }
+
+    @Test
+    void waiveRecord_whenReasonBlank_throwsBadRequest() {
+        assertThatThrownBy(() -> feeService.waiveRecord(RECORD_ID, " "))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("reason is required");
     }
 
     // ── recordPayment ────────────────────────────────────────────────────────

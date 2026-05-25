@@ -41,9 +41,11 @@ export async function setCurrentAcademicYear(
 
 export async function closeAcademicYear(
   id: string,
+  reason: string,
 ): Promise<AcademicYearResponse> {
   const { data } = await axiosInstance.patch<ApiResponse<AcademicYearResponse>>(
     `${byId(id)}/close`,
+    { reason },
   );
   return data.data!;
 }

@@ -205,7 +205,9 @@ class CrossTenantIsolationIntegrationTest {
     void tenantA_graduateStudentB_returns404() throws Exception {
         mockMvc.perform(
                         patch("/v1/school-admin/students/{id}/graduate", studentBId)
-                                .header("Authorization", tenantAdminToken(tenantA)))
+                                .header("Authorization", tenantAdminToken(tenantA))
+                                .contentType("application/json")
+                                .content("{\"reason\":\"Cross-tenant isolation check\"}"))
                 .andExpect(status().isNotFound());
     }
 
@@ -214,7 +216,9 @@ class CrossTenantIsolationIntegrationTest {
     void tenantA_suspendStudentB_returns404() throws Exception {
         mockMvc.perform(
                         patch("/v1/school-admin/students/{id}/suspend", studentBId)
-                                .header("Authorization", tenantAdminToken(tenantA)))
+                                .header("Authorization", tenantAdminToken(tenantA))
+                                .contentType("application/json")
+                                .content("{\"reason\":\"Cross-tenant isolation check\"}"))
                 .andExpect(status().isNotFound());
     }
 

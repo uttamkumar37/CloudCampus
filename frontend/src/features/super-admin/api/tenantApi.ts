@@ -29,8 +29,11 @@ export async function createTenant(body: TenantCreateRequest): Promise<TenantRes
   return data.data!;
 }
 
-export async function suspendTenant(id: string): Promise<TenantResponse> {
-  const { data } = await axiosInstance.patch<ApiResponse<TenantResponse>>(`${BASE}/${id}/suspend`);
+export async function suspendTenant(id: string, reason: string): Promise<TenantResponse> {
+  const { data } = await axiosInstance.patch<ApiResponse<TenantResponse>>(
+    `${BASE}/${id}/suspend`,
+    { reason },
+  );
   return data.data!;
 }
 

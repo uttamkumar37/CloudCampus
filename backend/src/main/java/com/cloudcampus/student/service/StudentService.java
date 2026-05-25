@@ -43,13 +43,13 @@ public interface StudentService {
     StudentResponse update(UUID id, UpdateStudentRequest request);
 
     /** Mark student as graduated. */
-    StudentResponse graduate(UUID id);
+    StudentResponse graduate(UUID id, String reason);
 
     /** Mark student as transferred. */
-    StudentResponse transfer(UUID id);
+    StudentResponse transfer(UUID id, String reason);
 
     /** Suspend student (disciplinary). */
-    StudentResponse suspend(UUID id);
+    StudentResponse suspend(UUID id, String reason);
 
     /** Lift suspension — returns to ACTIVE. */
     StudentResponse reinstate(UUID id);

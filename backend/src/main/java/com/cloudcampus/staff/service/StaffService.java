@@ -50,7 +50,7 @@ public interface StaffService {
     StaffResponse resign(UUID id);
 
     /** Terminate — involuntary exit. */
-    StaffResponse terminate(UUID id);
+    StaffResponse terminate(UUID id, String reason);
 
     /** Profile of the currently authenticated school-admin. */
     SchoolAdminMeResponse getMe();
