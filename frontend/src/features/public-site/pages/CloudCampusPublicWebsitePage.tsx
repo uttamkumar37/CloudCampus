@@ -687,7 +687,7 @@ function PlatformPreviewSection() {
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3">
                 {portal.metrics.map((metric) => (
-                  <MetricTile key={metric.label} metric={metric} />
+                  <MetricTile key={metric.label} metric={{ ...metric, href: undefined }} />
                 ))}
               </div>
             </div>
