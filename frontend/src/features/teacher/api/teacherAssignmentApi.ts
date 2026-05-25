@@ -1,5 +1,6 @@
 import axiosInstance from '@/shared/api/axiosInstance';
 import type { ApiResponse, PageResponse } from '@/shared/types/api';
+import type { Assignment, AssignmentCreateRequest } from '@/features/assignments/types/assignment';
 
 export type AssignmentStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED';
 export type SubmissionStatus = 'PENDING' | 'SUBMITTED' | 'LATE' | 'GRADED';
@@ -39,6 +40,12 @@ export interface GradeRequest {
 export async function listMyAssignments(page = 0, size = 20): Promise<PageResponse<AssignmentSummary>> {
   const { data } = await axiosInstance.get<ApiResponse<PageResponse<AssignmentSummary>>>(
     '/v1/teacher/assignments', { params: { page, size } });
+  return data.data!;
+}
+
+export async function createTeacherAssignment(body: AssignmentCreateRequest): Promise<Assignment> {
+  const { data } = await axiosInstance.post<ApiResponse<Assignment>>(
+    '/v1/teacher/assignments', body);
   return data.data!;
 }
 

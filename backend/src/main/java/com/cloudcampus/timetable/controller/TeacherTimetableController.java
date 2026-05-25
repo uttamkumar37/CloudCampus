@@ -60,11 +60,9 @@ public class TeacherTimetableController {
     public ApiResponse<List<TimetableSlotResponse>> myTimetable(
             @RequestParam(required = false) UUID academicYearId) {
 
-        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
         UUID userId   = RequestContext.getUserId();
 
-        School school = schoolRepository.findByTenantIdAndCode(tenantId, "MAIN")
-                .orElseThrow(() -> new NotFoundException("School not found"));
+        School school = resolveSchool();
 
         Staff staff = staffRepository.findBySchoolIdAndUserId(school.getId(), userId)
                 .orElseThrow(() -> new NotFoundException("Staff profile not found for this account"));
@@ -84,5 +82,17 @@ public class TeacherTimetableController {
                 .map(AcademicYear::getId)
                 .orElseThrow(() -> new NotFoundException(
                         "No current academic year set — please provide academicYearId"));
+    }
+
+    private School resolveSchool() {
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        String schoolId = RequestContext.getSchoolId();
+        if (schoolId != null && !schoolId.isBlank()) {
+            return schoolRepository.findByIdFiltered(UUID.fromString(schoolId))
+                    .filter(s -> s.getTenantId().equals(tenantId))
+                    .orElseThrow(() -> new NotFoundException("School not found"));
+        }
+        return schoolRepository.findByTenantIdAndCode(tenantId, "MAIN")
+                .orElseThrow(() -> new NotFoundException("School not found"));
     }
 }
