@@ -125,6 +125,7 @@ const ParentNoticesPage        = lazy(() => import('@/features/parent/pages/Pare
 
 // ── Public site ───────────────────────────────────────────────────────────────
 const PublicSitePage           = lazy(() => import('@/features/public-site/pages/PublicSitePage').then(m => ({ default: m.PublicSitePage })));
+const LegalPage                = lazy(() => import('@/features/public-site/pages/LegalPage').then(m => ({ default: m.LegalPage })));
 
 // ── DSEP — Experience Platform (public, no auth) ──────────────────────────────
 const DemoPage                 = lazy(() => import('@/features/experience/pages/DemoPage'));
@@ -347,6 +348,12 @@ export function AppRouter() {
           <Route path="/contact" element={<CloudCampusPublicWebsitePage />} />
           <Route path="/pricing" element={<CloudCampusPublicWebsitePage />} />
           <Route path="/about" element={<CloudCampusPublicWebsitePage />} />
+          <Route path="/privacy" element={<LegalPage documentType="privacy" />} />
+          <Route path="/terms" element={<LegalPage documentType="terms" />} />
+          <Route path="/dpa" element={<LegalPage documentType="dpa" />} />
+          <Route path="/legal/privacy" element={<LegalPage documentType="privacy" />} />
+          <Route path="/legal/terms" element={<LegalPage documentType="terms" />} />
+          <Route path="/legal/dpa" element={<LegalPage documentType="dpa" />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
         <AnalyticsConsentBanner />

@@ -348,6 +348,14 @@ const siteConfig: PublicWebsiteConfig = {
           { label: 'Admin Login', href: '/login' },
         ],
       },
+      {
+        title: 'Legal',
+        links: [
+          { label: 'Privacy Policy', href: '/privacy' },
+          { label: 'Terms of Service', href: '/terms' },
+          { label: 'Data Processing Addendum', href: '/dpa' },
+        ],
+      },
     ],
     socials: [
       { label: 'LinkedIn', href: '#contact' },
@@ -831,7 +839,7 @@ function SiteFooter() {
           </div>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {siteConfig.footer.groups.map((group) => (
             <div key={group.title}>
               <h3 className="text-sm font-black text-slate-950">{group.title}</h3>
