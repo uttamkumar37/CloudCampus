@@ -5,6 +5,7 @@ import com.cloudcampus.common.web.CorrelationId;
 import com.cloudcampus.exam.dto.ExamResultResponse;
 import com.cloudcampus.finance.dto.StudentFeeRecordResponse;
 import com.cloudcampus.homework.dto.HomeworkResponse;
+import com.cloudcampus.mobile.dto.ParentMeResponse;
 import com.cloudcampus.mobile.service.ParentPortalService;
 import com.cloudcampus.timetable.dto.TimetableSlotResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,6 +49,12 @@ public class ParentController {
     @GetMapping("/children")
     public ApiResponse<List<ParentPortalService.ChildSummary>> children() {
         return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), portalService.getLinkedChildren());
+    }
+
+    @Operation(summary = "My parent profile", description = "Returns the authenticated parent's portal identity snapshot")
+    @GetMapping("/me")
+    public ApiResponse<ParentMeResponse> me() {
+        return ApiResponse.ok(MDC.get(CorrelationId.MDC_KEY), portalService.getMe());
     }
 
     @Operation(summary = "Child attendance summary")

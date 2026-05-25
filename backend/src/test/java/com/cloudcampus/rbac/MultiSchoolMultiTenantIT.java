@@ -322,6 +322,32 @@ class MultiSchoolMultiTenantIT {
     }
 
     @Test
+    @DisplayName("5a. Portal /me endpoints return the authenticated student, parent and teacher")
+    void portalMeEndpointsReturnCurrentUserSnapshots() throws Exception {
+        mockMvc.perform(get("/v1/student/me")
+                        .header("Authorization", token(UserRole.STUDENT, tenantA, branchSchool.getId(), branchStudentUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.studentId").value(branchStudent.getId().toString()))
+                .andExpect(jsonPath("$.data.schoolId").value(branchSchool.getId().toString()))
+                .andExpect(content().string(not(containsString(otherStudent.getId().toString()))));
+
+        mockMvc.perform(get("/v1/parent/me")
+                        .header("Authorization", token(UserRole.PARENT, tenantA, branchSchool.getId(), parentAUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userId").value(parentAUser.toString()))
+                .andExpect(jsonPath("$.data.linkedChildrenCount").value(1))
+                .andExpect(jsonPath("$.data.children[0].studentId").value(branchStudent.getId().toString()))
+                .andExpect(content().string(not(containsString(otherStudent.getId().toString()))));
+
+        mockMvc.perform(get("/v1/teacher/me")
+                        .header("Authorization", token(UserRole.TEACHER, tenantA, branchSchool.getId(), teacherUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.staffId").value(branchTeacher.getId().toString()))
+                .andExpect(jsonPath("$.data.schoolId").value(branchSchool.getId().toString()))
+                .andExpect(jsonPath("$.data.staffType").value("TEACHER"));
+    }
+
+    @Test
     @DisplayName("6. QR mark remains STUDENT-only")
     void qrMarkRejectsNonStudentRoles() throws Exception {
         String body = "{\"token\":\"p017-probe-token\"}";

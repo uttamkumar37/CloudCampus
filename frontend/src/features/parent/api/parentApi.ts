@@ -3,6 +3,21 @@ import type { ApiResponse } from '@/shared/types/api';
 import type { TimetableSlot } from '@/features/timetable/types/timetable';
 import type { CreatePaymentOrderResponse } from '@/features/student/api/paymentApi';
 
+// ── Me ───────────────────────────────────────────────────────────────────────
+
+export interface ParentMe {
+  userId:              string;
+  username:            string;
+  tenantId:            string;
+  linkedChildrenCount: number;
+  children:            ChildSummary[];
+}
+
+export async function getParentMe(): Promise<ParentMe> {
+  const { data } = await axiosInstance.get<ApiResponse<ParentMe>>('/v1/parent/me');
+  return data.data!;
+}
+
 // ── Children ──────────────────────────────────────────────────────────────────
 
 export interface ChildSummary {

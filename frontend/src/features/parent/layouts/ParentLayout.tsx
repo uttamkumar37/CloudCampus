@@ -1,8 +1,10 @@
 import type React from 'react';
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useRouteScopedDisclosure } from '@/shared/hooks/useRouteScopedDisclosure';
 import { DemoEnvironmentBanner } from '@/shared/demo/DemoEnvironmentBanner';
+import { getParentMe } from '../api/parentApi';
 
 // ── Icon helpers ──────────────────────────────────────────────────────────────
 
@@ -52,8 +54,22 @@ function NavSection({ title, children }: { title: string; children: React.ReactN
 
 export function ParentLayout() {
   const { isOpen: sidebarOpen, open: openSidebar, close: closeSidebar } = useRouteScopedDisclosure();
+  const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate  = useNavigate();
+
+  const { data: me } = useQuery({
+    queryKey: ['parent-me'],
+    queryFn: getParentMe,
+    enabled: user?.role === 'PARENT',
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  });
+
+  const parentName = me?.username ?? 'Parent Portal';
+  const childCountLabel = me
+    ? `${me.linkedChildrenCount} linked ${me.linkedChildrenCount === 1 ? 'child' : 'children'}`
+    : null;
 
   function handleLogout() {
     clearAuth();
@@ -73,6 +89,10 @@ export function ParentLayout() {
       </NavSection>
 
       <div className="mt-auto border-t border-gray-100 pt-4 space-y-0.5">
+        <div className="px-3 pb-2">
+          <p className="truncate text-xs font-medium text-gray-700">{parentName}</p>
+          {childCountLabel && <p className="truncate text-xs text-gray-400">{childCountLabel}</p>}
+        </div>
         <Link
           to="/change-password"
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -140,7 +160,10 @@ export function ParentLayout() {
           </button>
           <span className="text-sm font-medium text-gray-700 lg:hidden">CloudCampus</span>
           <div className="ml-auto flex items-center gap-3">
-            <span className="hidden sm:block text-sm text-gray-500">Parent Portal</span>
+            <div className="hidden sm:block text-right">
+              <p className="text-sm font-semibold text-gray-800">{parentName}</p>
+              {childCountLabel && <p className="text-xs text-gray-400">{childCountLabel}</p>}
+            </div>
             <button
               onClick={handleLogout}
               className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"

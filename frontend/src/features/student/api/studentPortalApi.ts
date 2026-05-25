@@ -1,6 +1,27 @@
 import axiosInstance from '@/shared/api/axiosInstance';
 import type { ApiResponse } from '@/shared/types/api';
 
+// ── Me ───────────────────────────────────────────────────────────────────────
+
+export interface StudentMe {
+  studentId:     string;
+  firstName:     string;
+  lastName:      string;
+  studentNumber: string | null;
+  status:        string | null;
+  admissionDate: string | null;
+  schoolId:      string;
+  schoolName:    string;
+  classId:       string | null;
+  sectionId:     string | null;
+  photoUrl:      string | null;
+}
+
+export async function getStudentMe(): Promise<StudentMe> {
+  const { data } = await axiosInstance.get<ApiResponse<StudentMe>>('/v1/student/me');
+  return data.data!;
+}
+
 // ── Homework ─────────────────────────────────────────────────────────────────
 
 export type HomeworkStatus = 'DRAFT' | 'PUBLISHED' | 'CLOSED';

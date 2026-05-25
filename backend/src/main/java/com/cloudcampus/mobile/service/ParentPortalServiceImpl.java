@@ -1,5 +1,7 @@
 package com.cloudcampus.mobile.service;
 
+import com.cloudcampus.auth.entity.User;
+import com.cloudcampus.auth.repository.UserRepository;
 import com.cloudcampus.attendance.entity.AttendanceStatus;
 import com.cloudcampus.attendance.repository.AttendanceRecordRepository;
 import com.cloudcampus.common.exception.NotFoundException;
@@ -11,6 +13,7 @@ import com.cloudcampus.finance.dto.StudentFeeRecordResponse;
 import com.cloudcampus.finance.service.FeeService;
 import com.cloudcampus.homework.dto.HomeworkResponse;
 import com.cloudcampus.homework.repository.HomeworkRepository;
+import com.cloudcampus.mobile.dto.ParentMeResponse;
 import com.cloudcampus.school.entity.AcademicYear;
 import com.cloudcampus.school.entity.School;
 import com.cloudcampus.school.repository.AcademicYearRepository;
@@ -32,6 +35,7 @@ import java.util.UUID;
 class ParentPortalServiceImpl implements ParentPortalService {
 
     private final StudentParentLinkRepository linkRepo;
+    private final UserRepository              userRepo;
     private final StudentRepository           studentRepo;
     private final AttendanceRecordRepository  attendanceRepo;
     private final ExamResultRepository        resultRepo;
@@ -43,6 +47,7 @@ class ParentPortalServiceImpl implements ParentPortalService {
 
     ParentPortalServiceImpl(
             StudentParentLinkRepository linkRepo,
+            UserRepository              userRepo,
             StudentRepository           studentRepo,
             AttendanceRecordRepository  attendanceRepo,
             ExamResultRepository        resultRepo,
@@ -52,6 +57,7 @@ class ParentPortalServiceImpl implements ParentPortalService {
             SchoolRepository            schoolRepo,
             FeeService                  feeService) {
         this.linkRepo         = linkRepo;
+        this.userRepo         = userRepo;
         this.studentRepo      = studentRepo;
         this.attendanceRepo   = attendanceRepo;
         this.resultRepo       = resultRepo;
@@ -83,6 +89,16 @@ class ParentPortalServiceImpl implements ParentPortalService {
                 })
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    @Override
+    public ParentMeResponse getMe() {
+        UUID parentUserId = RequestContext.getUserId();
+        UUID tenantId = UUID.fromString(RequestContext.getTenantId());
+        User parent = userRepo.findByIdAndTenantId(parentUserId, tenantId)
+                .orElseThrow(() -> new NotFoundException("Parent account not found"));
+        List<ChildSummary> children = getLinkedChildren();
+        return new ParentMeResponse(parent.getId(), parent.getUsername(), tenantId, children.size(), children);
     }
 
     @Override

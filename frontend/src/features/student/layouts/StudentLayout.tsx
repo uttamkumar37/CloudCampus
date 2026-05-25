@@ -1,8 +1,10 @@
 import type React from 'react';
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useRouteScopedDisclosure } from '@/shared/hooks/useRouteScopedDisclosure';
 import { DemoEnvironmentBanner } from '@/shared/demo/DemoEnvironmentBanner';
+import { getStudentMe } from '../api/studentPortalApi';
 
 // ── Icon helpers ──────────────────────────────────────────────────────────────
 
@@ -84,6 +86,16 @@ export function StudentLayout() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate  = useNavigate();
 
+  const { data: me } = useQuery({
+    queryKey: ['student-me'],
+    queryFn: getStudentMe,
+    enabled: user?.role === 'STUDENT',
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  });
+
+  const studentName = me ? `${me.firstName} ${me.lastName}` : 'Student';
+
   function handleLogout() {
     clearAuth();
     navigate('/login', { replace: true });
@@ -114,6 +126,10 @@ export function StudentLayout() {
       </NavSection>
 
       <div className="mt-auto border-t border-gray-100 pt-4 space-y-0.5">
+        <div className="px-3 pb-2">
+          <p className="truncate text-xs font-medium text-gray-700">{studentName}</p>
+          {me?.schoolName && <p className="truncate text-xs text-gray-400">{me.schoolName}</p>}
+        </div>
         <NavItem to="/student/profile" icon={<UserIcon />} label="My Profile" />
         <Link
           to="/change-password"
@@ -182,9 +198,10 @@ export function StudentLayout() {
           </button>
           <span className="text-sm font-medium text-gray-700 lg:hidden">CloudCampus</span>
           <div className="ml-auto flex items-center gap-3">
-            <span className="hidden sm:block text-sm text-gray-500">
-              {user?.role === 'STUDENT' ? 'Student' : ''}
-            </span>
+            <div className="hidden sm:block text-right">
+              <p className="text-sm font-semibold text-gray-800">{studentName}</p>
+              {me?.schoolName && <p className="text-xs text-gray-400">{me.schoolName}</p>}
+            </div>
             <button
               onClick={handleLogout}
               className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
