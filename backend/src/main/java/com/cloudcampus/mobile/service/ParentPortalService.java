@@ -3,6 +3,7 @@ package com.cloudcampus.mobile.service;
 import com.cloudcampus.exam.dto.ExamResultResponse;
 import com.cloudcampus.finance.dto.StudentFeeRecordResponse;
 import com.cloudcampus.homework.dto.HomeworkResponse;
+import com.cloudcampus.mobile.dto.ParentMeResponse;
 import com.cloudcampus.timetable.dto.TimetableSlotResponse;
 
 import java.util.List;
@@ -39,6 +40,8 @@ public interface ParentPortalService {
     ) {}
 
     List<ChildSummary>             getLinkedChildren();
+
+    ParentMeResponse               getMe();
 
     AttendanceSummary              getChildAttendance(UUID studentId);
 

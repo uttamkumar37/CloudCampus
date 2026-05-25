@@ -1,5 +1,6 @@
 package com.cloudcampus.mobile.service;
 
+import com.cloudcampus.auth.repository.UserRepository;
 import com.cloudcampus.attendance.repository.AttendanceRecordRepository;
 import com.cloudcampus.common.web.RequestContext;
 import com.cloudcampus.exam.entity.ExamStatus;
@@ -44,6 +45,7 @@ class ParentPortalServiceImplTest {
     private static final UUID ACADEMIC_YEAR_ID = UUID.randomUUID();
 
     @Mock StudentParentLinkRepository linkRepo;
+    @Mock UserRepository userRepo;
     @Mock StudentRepository studentRepo;
     @Mock AttendanceRecordRepository attendanceRepo;
     @Mock ExamResultRepository resultRepo;
@@ -59,6 +61,7 @@ class ParentPortalServiceImplTest {
     void setUp() {
         service = new ParentPortalServiceImpl(
                 linkRepo,
+                userRepo,
                 studentRepo,
                 attendanceRepo,
                 resultRepo,
