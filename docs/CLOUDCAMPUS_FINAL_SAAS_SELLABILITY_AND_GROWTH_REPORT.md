@@ -31,36 +31,36 @@ This verdict is honest. Detailed evidence and file references are in §3–§20.
 |---|---:|---:|---|---|
 | **Level A — Customer Demo Ready** | **0** | **0** | PASS — customer demo ready with demo-only data | Demo only |
 | **Level B — Controlled Pilot Ready** | **0** | Operational checklist evidence | ROADMAP PASS — pilot still waits for operational sign-off | Pilot after checklist |
-| **Level C — First Paid Customer Ready** | **15 tracked tasks + mandatory non-task evidence** | Parent-payment-in-prod hardening + MFA + **external penetration test (P2-10)** + data export + non-task commercial evidence (pricing, support process, payment reconciliation, security/trust page, completed pilot validation) | FAIL — both tracked tasks AND mandatory evidence required; **pen-test mandatory** | No |
-| **Level D — Revenue Expansion Ready** | **23** | All of C + report-card PDF + parent-teacher chat + pilot validation | FAIL | No |
-| **Level E — Scale / Enterprise Ready** | **32** | All of D + load test + multi-school proof at scale | FAIL | No |
+| **Level C — First Paid Customer Ready** | **13 tracked tasks + mandatory non-task evidence** | Parent-payment-in-prod hardening + MFA + **external penetration test (P2-10)** + data export + non-task commercial evidence (pricing, support process, payment reconciliation, security/trust page, completed pilot validation) | FAIL — both tracked tasks AND mandatory evidence required; **pen-test mandatory** | No |
+| **Level D — Revenue Expansion Ready** | **21** | All of C + report-card PDF + parent-teacher chat + pilot validation | FAIL | No |
+| **Level E — Scale / Enterprise Ready** | **30** | All of D + load test + multi-school proof at scale | FAIL | No |
 
 ### Task-count math (re-verified against the roadmap in §16)
 
 | Measurement | Count |
 |---|---:|
 | Total roadmap tasks after scope cleanup | 56 |
-| Already completed in current code (verified by grep + spot read) | 24 |
+| Already completed in current code (verified by grep + spot read) | 26 |
 | Partially completed | 0 |
-| Still required | 32 |
+| Still required | 30 |
 | Duplicate scope found and resolved | **1 overlap corrected between P0-01 and P0-13** (see correction note below) |
 | Invalid tasks removed | 0 |
 | New paid-sale requirement promoted into a mandatory milestone | **P2-10 external penetration test now included in Level C** (was previously listed but not counted in the Level C task count) |
 | New tasks discovered during re-verification | 0 |
-| **Final remaining tasks** | **32** |
+| **Final remaining tasks** | **30** |
 | Remaining Phase-0 blockers | 0 |
 | Remaining before **Customer Demo Ready (Level A)** | **0** |
 | Remaining before Controlled Pilot Ready (Level B) | 0 |
-| Remaining before **First Paid Customer Ready (Level C)** | **15** |
-| Remaining before Revenue Expansion Ready (Level D) | 23 |
-| Remaining before Scale / Enterprise Ready (Level E) | 32 |
+| Remaining before **First Paid Customer Ready (Level C)** | **13** |
+| Remaining before Revenue Expansion Ready (Level D) | 21 |
+| Remaining before Scale / Enterprise Ready (Level E) | 30 |
 
 ### Re-verification corrections to the original roadmap
 
 | What changed | Reason |
 |---|---|
 | **Duplicate scope between P0-01 and P0-13 corrected.** Previously both tasks touched `MobileController`. After cleanup: **P0-01** is parent-portal-only (`ParentPortalServiceImpl.resolveSchool()` + `getChildResults` + `getChildTimetable`). **P0-13** is mobile-controller-only (`MobileController` authorization + school resolution from caller's actual school). Total task count unchanged at 56. | Scope-overlap audit on 2026-05-23. |
-| **P2-10 (external penetration test) promoted into Level C task count.** Previously listed in §5 evidence checklist but excluded from the 38-task math. Now Level C = 24 (pilot) + 8 remaining Phase-1 + **7 Phase-2** = **39 tasks**. | Paid sale cannot occur without an independent pen-test with all CRITICAL findings closed and HIGH findings closed or formally risk-accepted. |
+| **P2-10 (external penetration test) promoted into Level C task count.** Previously listed in §5 evidence checklist but excluded from the 38-task math. Level C tracked scope is 24 pilot tasks + 8 Phase-1 paid-readiness tasks + **7 Phase-2** = **39 tasks**; current remaining counts are in the tracker above. | Paid sale cannot occur without an independent pen-test with all CRITICAL findings closed and HIGH findings closed or formally risk-accepted. |
 | **Level A (Customer Demo Ready) raised from 6 → 8 tasks.** Added **P0-14** (Parent fee payment in Razorpay test mode) and clarified **P0-01** (Parent multi-school correctness) is also a demo prerequisite, because a customer demo must show parent paying fees and parent seeing correct child data. A demo that omits these will not convince a school operator. | Sales-realism check 2026-05-23. |
 | **P0-03 scope clarified.** Was framed as a 3-line SecurityConfig change. Updated to a 5-step task: inventory + classify (role-exclusive / intentionally shared / misplaced / dead) → add matchers for role-exclusive → move shared to a neutral path or carve allow-rules → keep working flows working → regression tests. Original framing risked breaking `/v1/student/online-classes` and `/v1/student/videos` (consumed by Teacher portal) and `/v1/student/profile-360` (already STUDENT-only but shares path prefix). | Audit-finding overlap 2026-05-23. |
 | BL-04 / TD-04 / P0-04: list of `/v1/school-admin/...` controllers without `@PreAuthorize` is **14, not 15**. | Re-grep on 2026-05-22 confirms `StudentDocumentController.java:35` already has `@PreAuthorize("hasRole('SCHOOL_ADMIN')")`. All other 14 controllers in the original list verified missing. |
@@ -90,7 +90,7 @@ This verdict is honest. Detailed evidence and file references are in §3–§20.
 **0 roadmap tasks remain.** Controlled Pilot Ready is now code-complete for the tracked roadmap, but you still need operational sign-off: pilot agreement, CI evidence, support channel, incident runbook, and current security scan evidence before onboarding real schools.
 
 **Q3. How many changes before I can charge real money (First Paid Customer Ready)?**
-**15 tracked engineering/product/security tasks remain PLUS mandatory non-task commercial/operational evidence.** The remaining tracked-task calculation is **0 pilot tasks + 8 remaining Phase-1 items not already in pilot + 7 Phase-2 paid-readiness items = 15**. The 7 Phase-2 items required for Level C are exactly:
+**13 tracked engineering/product/security tasks remain PLUS mandatory non-task commercial/operational evidence.** The remaining tracked-task calculation is **0 pilot tasks + 6 remaining Phase-1 items not already in pilot + 7 Phase-2 paid-readiness items = 13**. The 7 Phase-2 items required for Level C are exactly:
 - **P2-01** Report-card PDF download (student + parent).
 - **P2-02** Parent read-only child documents.
 - **P2-04** In-app notification feed.
@@ -162,20 +162,20 @@ Build none of these until the remaining Controlled Pilot Ready blockers are comp
 |---|---:|---:|---:|---|
 | **Level A — Customer Demo Ready** | 8 | **8** | **0** | Complete |
 | Level B — Controlled Pilot Ready | 24 | **24** | **0** | Operational checklist |
-| Level C — First Paid Customer Ready | **39 tracked + non-task evidence** | **24** | **15 tracked + all non-task evidence** | P2-10 (Order 25, external) |
-| Level D — Revenue Expansion Ready | 47 | 24 | 23 | P2-10 (Order 25, external) |
-| Level E — Scale / Enterprise Ready | 56 | 24 | 32 | P2-10 (Order 25, external) |
+| Level C — First Paid Customer Ready | **39 tracked + non-task evidence** | **26** | **13 tracked + all non-task evidence** | P2-10 (Order 25, external) |
+| Level D — Revenue Expansion Ready | 47 | 26 | 21 | P2-10 (Order 25, external) |
+| Level E — Scale / Enterprise Ready | 56 | 26 | 30 | P2-10 (Order 25, external) |
 
 ### Per-phase progress
 
 | Phase | Total | **Done** | Remaining | Notes |
 |---|---:|---:|---:|---|
 | Phase 0 | 18 | **18** (P0-01, P0-02, P0-03, P0-04, P0-05, P0-06, P0-07, P0-08, P0-09, P0-10, P0-11, P0-12, P0-13, P0-14, P0-15, P0-16, P0-17, P0-18) | 0 | Phase 0 complete |
-| Phase 1 | 14 | 6 | 8 | P1-01, P1-04, P1-09, P1-10, P1-11, and P1-13 complete |
+| Phase 1 | 14 | 8 | 6 | P1-01, P1-02, P1-03, P1-04, P1-09, P1-10, P1-11, and P1-13 complete |
 | Phase 2 | 10 | 0 | 10 | Includes P2-10 pen-test (mandatory for Level C) |
 | Phase 3 | 7 | 0 | 7 | |
 | Phase 4 | 7 | 0 | 7 | |
-| **Total** | **56** | **22** | **34** | |
+| **Total** | **56** | **25** | **31** | |
 
 ### Remaining Level-A tasks
 
@@ -699,7 +699,7 @@ Roadmap is organized by **commercial milestones** (Levels A→E), not by module.
 | Phase | Milestone reached when subset is done | Tasks in this phase | Completed in this phase | Remaining in this phase |
 |---|---|---:|---:|---:|
 | Phase 0 | Customer Demo Ready (Level A — after the 7 Phase-0 tasks listed in Level A + P1-09 demo hygiene); Controlled Pilot Ready (Level B — after all 18 Phase-0 + the 6 pilot-critical Phase-1 items) | 18 | 18 | 0 |
-| Phase 1 | Level B (complete); start of Level C | 14 | 6 | 8 |
+| Phase 1 | Level B (complete); start of Level C | 14 | 8 | 6 |
 | Phase 2 | Level C tracked tasks (after the 7 paid-readiness Phase-2 items: P2-01, P2-02, P2-04, P2-05, P2-09, P2-10, P2-11). The other 3 Phase-2 tasks (P2-03, P2-06, P2-08) are post-Level-C improvements. | 10 | 0 | 10 |
 | Phase 3 | Level D (complete) | 7 | 0 | 7 |
 | Phase 4 | Level E (complete) | 7 | 0 | 7 |
@@ -732,8 +732,8 @@ Roadmap is organized by **commercial milestones** (Levels A→E), not by module.
 | Task ID | Task | Reason | Affected | Acceptance | Verification | Impact | Status |
 |---|---|---|---|---|---|---|---|
 | P1-01 | `/v1/student/me`, `/v1/parent/me`, `/v1/teacher/me` | UX | New controllers in respective modules | Layout uses real profile | Manual + tests | UX critical for demos | **[x] Done — 2026-05-25** (`StudentMeController`, `ParentController.me`, and `TeacherMeController` added; role layouts query real identity; `MultiSchoolMultiTenantIT` 11-test suite, backend 247-test suite, and frontend build pass) |
-| P1-02 | Teacher cannot create homework / assignment | UX | `TeacherHomeworkController.create`, `TeacherAssignmentController.create` | Teacher posts homework end-to-end | E2E | UX critical | [ ] Not Started |
-| P1-03 | Teacher class/section/subject assignment ownership | Privacy | `StaffAssignmentService` | Cross-teacher tests pass | mvn test | Risk: high | [ ] Not Started |
+| P1-02 | Teacher cannot create homework / assignment | UX | `TeacherHomeworkController.create`, `TeacherAssignmentController.create` | Teacher posts homework end-to-end | E2E | UX critical | **[x] Done — 2026-05-26** (`POST /v1/teacher/homework`, `POST /v1/teacher/assignments`, teacher-scoped work options, and Teacher portal create panels added; focused `MultiSchoolMultiTenantIT` regression and frontend build pass) |
+| P1-03 | Teacher class/section/subject assignment ownership | Privacy | `StaffAssignmentService` | Cross-teacher tests pass | mvn test | Risk: high | **[x] Done — 2026-05-26** (`StaffAssignmentService` enforces timetable-backed class/section/subject ownership for teacher homework and assignments; teacher work options and timetable are scoped to the authenticated school/staff; cross-teacher integration test passes) |
 | P1-04 | Audit Log viewer UI for SCHOOL_ADMIN + SUPER_ADMIN | Compliance | New pages + endpoints | List + filter | Manual | Risk: high | **[x] Done — 2026-05-25** (`/v1/school-admin/audit-logs` and `/v1/super-admin/audit-logs` added with pagination + filters; frontend routes and nav added; tenant-scoped integration test, backend 248-test suite, and frontend build pass) |
 | P1-05 | Async / streaming reports export | Performance | `ReportController.export*` | Returns job; `/jobs/{id}` polls | Manual + tests | Reliability: high | [ ] Not Started |
 | P1-06 | Pagination on `/v1/student/homework`, `/assignments`, `/attendance`, parent fees, parent results, teacher submissions, notification logs, whatsapp logs, leave requests, attendance sessions | Performance | Many controllers | Each list paginates | Tests | Performance: high | [ ] Not Started |
@@ -812,9 +812,9 @@ A "customer demo" here means a sales conversation with a prospective school, not
 
 > **Level C requires both (a) 39 tracked tasks AND (b) mandatory non-task commercial/operational evidence.** Increasing or decreasing the tracked-task count is not how non-task evidence is captured.
 
-- **Required remaining tracked tasks: 15.**
-- **Math:** 0 remaining Pilot Ready tasks + **8 remaining Phase-1 tasks not already in Pilot** + **7 required Phase-2 paid-readiness tasks (including P2-10 external pen-test)** = **15**.
-- **8 remaining Phase-1 tasks (not in Pilot):** P1-02 (Teacher creates homework/assignments from Teacher portal), P1-03 (Teacher class assignment ownership), P1-05 (Async reports export), P1-06 (Pagination across endpoints), P1-07 (Parent payment hardening + UI cache invalidation in production), P1-08 (Marks bounds + attendance edit window), P1-12 (React Query invalidation after mutating actions), P1-14 (Bulk staff import).
+- **Required remaining tracked tasks: 13.**
+- **Math:** 0 remaining Pilot Ready tasks + **6 remaining Phase-1 tasks not already in Pilot** + **7 required Phase-2 paid-readiness tasks (including P2-10 external pen-test)** = **13**.
+- **6 remaining Phase-1 tasks (not in Pilot):** P1-05 (Async reports export), P1-06 (Pagination across endpoints), P1-07 (Parent payment hardening + UI cache invalidation in production), P1-08 (Marks bounds + attendance edit window), P1-12 (React Query invalidation after mutating actions), P1-14 (Bulk staff import).
 - **7 required Phase-2 paid-readiness tasks (exact, no swaps):**
   - **P2-01** — Report-card PDF download (student + parent).
   - **P2-02** — Parent read-only child documents.
@@ -835,12 +835,12 @@ A "customer demo" here means a sales conversation with a prospective school, not
 
 ### Before Level D — Revenue Expansion Ready
 
-- **Required remaining tasks: 23.** Math: **15 remaining Level-C tracked tasks + 3 remaining Phase-2 tasks not required for first paid sale (P2-03, P2-06, P2-08) + 5 validated Phase-3 revenue-expansion tasks = 23.**
+- **Required remaining tasks: 21.** Math: **13 remaining Level-C tracked tasks + 3 remaining Phase-2 tasks not required for first paid sale (P2-03, P2-06, P2-08) + 5 validated Phase-3 revenue-expansion tasks = 21.**
 - **Premium features that should only be built after customer feedback (Phase 3):** Library, Transport, Hostel, Payroll, AI insights dashboard, white-label / branding upsell, Analytics export. Do **not** start any of these until ≥5 schools renew once at Level C.
 
 ### Before Level E — Scale / Enterprise Ready
 
-- **Required remaining tasks: 32** (all remaining roadmap tasks through Phase 4).
+- **Required remaining tasks: 30** (all remaining roadmap tasks through Phase 4).
 - **Items that require load testing instead of assumptions:**
   - P4-01 read-replica routing + pgbouncer cutover.
   - P4-02 partitioning of `attendance_records`, `audit_logs`, `notification_logs`, `ai_usage_logs`.
@@ -879,9 +879,9 @@ A "customer demo" here means a sales conversation with a prospective school, not
 | 22 | **P1-04** | Audit log viewer UI at `/super-admin/audit-logs` and `/school-admin/audit-logs`; backend list endpoint with pagination + filters. | Compliance + sales evidence — schools will ask to see this. | New endpoints + 2 frontend pages | List + filter works; tenant-scoped | **[x] Done — 2026-05-25** (`AuditLogViewerController`, `AuditLogRepository` specifications, reusable AuditLogViewer page, admin routes/nav; `MultiSchoolMultiTenantIT` 12-test suite, backend 248-test suite, frontend build pass) |
 | 23 | **P1-10** | Per-tenant restore drill in `infra/pgbackup/drill.sh` + GitHub workflow that exercises restoring ONE tenant from encrypted backup. | Reliability evidence for pilot SLA. | `infra/pgbackup/drill.sh`, `.github/workflows/dr-drill.yml` | Workflow runs green; restores a specific tenant; row counts validated | **[x] Done — 2026-05-25** (`DRILL_TENANT_ID` support, tenant-only scratch schema, bystander-tenant workflow seed; local containerized drill PASS with 71 tenant-scoped tables validated and zero cross-tenant scoped rows) |
 | 24 | **P1-11** | Publish Privacy Policy + Terms + Data Processing Addendum on public website. | Legal requirement before pilot data ingestion. | `frontend/public/legal/*` + public-site pages | Pages exist and link from public site | **[x] Done — 2026-05-25** (`LegalPage`, `/privacy`, `/terms`, `/dpa`, `/legal/*` aliases, footer links, and static markdown artifacts; frontend build and route smoke pass) |
-| 25 | **P2-10** | External penetration test by an accredited firm; close all CRITICAL findings; close all HIGH findings or formally risk-accept with founder-signed justification renewable every 90 days. | Hard prerequisite for First Paid Customer Ready (Level C); cannot accept money without it. | External vendor + remediation work across the codebase | Pen-test report + remediation evidence + risk-acceptance log | [ ] Not Started |
+| 25 | **P2-10** | External penetration test by an accredited firm; close all CRITICAL findings; close all HIGH findings or formally risk-accept with founder-signed justification renewable every 90 days. | Hard prerequisite for First Paid Customer Ready (Level C); cannot accept money without it. | External vendor + remediation work across the codebase | Pen-test report + remediation evidence + risk-acceptance log | [ ] Not Started — external / vendor-blocked |
 
-After Task 25, audit the in-flight pilots, re-score, then move into Phase 1 remainder, Phase 2, etc.
+While Task 25 waits on an external vendor, continue with the next in-repo Phase-1 paid-readiness tasks.
 
 ---
 
@@ -936,7 +936,7 @@ Operational checks (do these AFTER the 8 tasks):
 
 **Level C — First Paid Customer Ready requires BOTH:**
 
-**(a) 39 tracked engineering / product / security tasks** — already counted in the §16 roadmap and §17 Top 25. These are: all 18 Phase-0 + 14 Phase-1 + the seven required Phase-2 paid-readiness tasks (P2-01, P2-02, P2-04, P2-05, P2-09, P2-10, P2-11). Current tracked status after P1-11: 24 done, 15 remaining, plus all mandatory non-task evidence.
+**(a) 39 tracked engineering / product / security tasks** — already counted in the §16 roadmap and §17 Top 25. These are: all 18 Phase-0 + 14 Phase-1 + the seven required Phase-2 paid-readiness tasks (P2-01, P2-02, P2-04, P2-05, P2-09, P2-10, P2-11). Current tracked status after P1-03: 26 done, 13 remaining, plus all mandatory non-task evidence.
 
 **(b) Mandatory commercial and operational evidence that is NOT included in the 39-task roadmap count.** None of these are tracked as roadmap tasks because they are external or operational deliverables:
 
@@ -1021,7 +1021,7 @@ Pre-existing operational checklist (kept for record; items overlap with the 39 t
 - React Native mobile app (already removed — keep removed).
 
 **Fix first (next 3 weeks):**
-- Operational Level-B checklist, then the next Level-C blockers in §17. Task 25 is external pen-test evidence; the next in-repo product work after that is the remaining Phase-1 paid-readiness backlog.
+- Operational Level-B checklist, Task 25 external pen-test evidence, and the remaining Phase-1 paid-readiness backlog while the vendor work is pending.
 
 **Target the first customer:**
 - 2–3 small private K-12 schools in your founder network in one city.
@@ -1064,16 +1064,16 @@ Pre-existing operational checklist (kept for record; items overlap with the 39 t
 
 ## Immediate Next Step
 
-> Last updated 2026-05-25 after Task 24 (§17) shipped. See §1.3 for the full progress tracker.
+> Last updated 2026-05-26 after P1-03 shipped. See §1.3 for the full progress tracker.
 
-- **Tasks completed so far:** **24 of 56** — P0-01, P0-02, P0-03, P0-04, P0-05, P0-06, P0-07, P0-08, P0-09, P0-10, P0-11, P0-12, P0-13, P0-14, P0-15, P0-16, P0-17, P0-18, P1-01, P1-04, P1-09, P1-10, P1-11, P1-13.
-- **Current total remaining roadmap tasks:** **32** (was 56).
+- **Tasks completed so far:** **26 of 56** — P0-01, P0-02, P0-03, P0-04, P0-05, P0-06, P0-07, P0-08, P0-09, P0-10, P0-11, P0-12, P0-13, P0-14, P0-15, P0-16, P0-17, P0-18, P1-01, P1-02, P1-03, P1-04, P1-09, P1-10, P1-11, P1-13.
+- **Current total remaining roadmap tasks:** **30** (was 56).
 - **Remaining Customer Demo Ready (Level A) tasks:** **0** — was 8.
 - **Remaining Controlled Pilot Ready (Level B) tasks:** **0** — was 24.
-- **Remaining First Paid Customer Ready (Level C) tasks:** **15 tracked + all non-task evidence** — was 39 tracked; includes **P2-10 external penetration test**.
+- **Remaining First Paid Customer Ready (Level C) tasks:** **13 tracked + all non-task evidence** — was 39 tracked; includes **P2-10 external penetration test**.
 - **Remaining Phase-0 security/product blockers:** **0** (was 18).
 
-### The exact next task to implement
+### The exact next task to unblock
 
 **Task 25 — P2-10:** External penetration test.
 
@@ -1081,10 +1081,14 @@ Pre-existing operational checklist (kept for record; items overlap with the 39 t
 - **Change scope:** schedule an accredited external penetration test, remediate all CRITICAL findings, and close or formally risk-accept HIGH findings.
 - **Test coverage:** signed report, remediation evidence, and CI/security gates green.
 
-### Validation command that proves Task 24 is completed
+### Next in-repo task while P2-10 is externally blocked
+
+**P1-05:** Async / streaming reports export.
+
+### Validation command that proves P1-03 is completed
 
 ```
-git diff --check && npm --prefix frontend run build
+git diff --check && mvn -f backend/pom.xml -Dtest=MultiSchoolMultiTenantIT#teacherCreatesHomeworkAndAssignmentsInsideOwnSchool test && npm --prefix frontend run build
 ```
 
 Route smoke from 2026-05-25:

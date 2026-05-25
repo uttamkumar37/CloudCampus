@@ -352,7 +352,126 @@ class MultiSchoolMultiTenantIT {
     }
 
     @Test
-    @DisplayName("5b. Audit log viewer is tenant-scoped for school admins and filterable for super admins")
+    @DisplayName("5b. Teacher can create homework and assignments only inside their school")
+    void teacherCreatesHomeworkAndAssignmentsInsideOwnSchool() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        UUID otherTeacherUser = UUID.randomUUID();
+        seedUser(otherTeacherUser, tenantA, "p103-other-teacher-" + suffix + "@example.test", UserRole.TEACHER);
+
+        Subject otherSubject = subjectRepo.save(Subject.create(tenantA, branchSchool.getId(),
+                "Branch Science", "BSCI-" + suffix, "Other teacher subject"));
+        Section otherSection = sectionRepo.save(Section.create(tenantA, branchSchool.getId(),
+                branchClass.getId(), "C-" + suffix, (short) 40));
+        Staff otherTeacher = Staff.create(tenantA, branchSchool.getId(), "T2-" + suffix, StaffType.TEACHER,
+                "Other", "Teacher", LocalDate.now());
+        otherTeacher.setUserId(otherTeacherUser);
+        otherTeacher = staffRepo.save(otherTeacher);
+        timetableRepo.save(TimetableSlot.create(tenantA, branchSchool.getId(), branchYear.getId(),
+                branchClass.getId(), otherSection.getId(), otherSubject.getId(), otherTeacher.getId(),
+                DayOfWeek.TUESDAY, (short) 2, LocalTime.of(10, 0), LocalTime.of(10, 45)));
+
+        String auth = token(UserRole.TEACHER, tenantA, branchSchool.getId(), teacherUser);
+
+        mockMvc.perform(get("/v1/teacher/work-options")
+                        .header("Authorization", auth))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(branchClass.getId().toString())))
+                .andExpect(content().string(containsString(branchSubject.getId().toString())))
+                .andExpect(content().string(not(containsString(otherSubject.getId().toString()))))
+                .andExpect(content().string(not(containsString(otherSection.getId().toString()))))
+                .andExpect(content().string(not(containsString(mainClass.getId().toString()))));
+
+        mockMvc.perform(get("/v1/teacher/timetable")
+                        .param("academicYearId", branchYear.getId().toString())
+                        .header("Authorization", auth))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(branchSubject.getId().toString())))
+                .andExpect(content().string(not(containsString(otherSubject.getId().toString()))));
+
+        String homeworkBody = """
+                {
+                  "academicYearId": "%s",
+                  "classId": "%s",
+                  "sectionId": "%s",
+                  "subjectId": "%s",
+                  "title": "Branch algebra practice",
+                  "description": "Complete worksheet 4",
+                  "dueDate": "%s",
+                  "publishImmediately": true
+                }
+                """.formatted(
+                branchYear.getId(),
+                branchClass.getId(),
+                branchSection.getId(),
+                branchSubject.getId(),
+                LocalDate.now().plusDays(7));
+
+        mockMvc.perform(post("/v1/teacher/homework")
+                        .header("Authorization", auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(homeworkBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.schoolId").value(branchSchool.getId().toString()))
+                .andExpect(jsonPath("$.data.assignedBy").value(branchTeacher.getId().toString()))
+                .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
+
+        mockMvc.perform(get("/v1/teacher/homework")
+                        .header("Authorization", auth))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Branch algebra practice")));
+
+        String assignmentBody = """
+                {
+                  "academicYearId": "%s",
+                  "classId": "%s",
+                  "sectionId": "%s",
+                  "subjectId": "%s",
+                  "title": "Branch unit test",
+                  "description": "Submit answers online",
+                  "dueDate": "%s",
+                  "maxMarks": 25,
+                  "publishImmediately": false
+                }
+                """.formatted(
+                branchYear.getId(),
+                branchClass.getId(),
+                branchSection.getId(),
+                branchSubject.getId(),
+                LocalDate.now().plusDays(8));
+
+        mockMvc.perform(post("/v1/teacher/assignments")
+                        .header("Authorization", auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(assignmentBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.schoolId").value(branchSchool.getId().toString()))
+                .andExpect(jsonPath("$.data.assignedBy").value(branchTeacher.getId().toString()))
+                .andExpect(jsonPath("$.data.status").value("DRAFT"));
+
+        String crossSchoolBody = homeworkBody.replace(branchClass.getId().toString(), mainClass.getId().toString());
+        mockMvc.perform(post("/v1/teacher/homework")
+                        .header("Authorization", auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(crossSchoolBody))
+                .andExpect(status().isBadRequest());
+
+        String crossSubjectBody = homeworkBody.replace(branchSubject.getId().toString(), otherSubject.getId().toString());
+        mockMvc.perform(post("/v1/teacher/homework")
+                        .header("Authorization", auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(crossSubjectBody))
+                .andExpect(status().isForbidden());
+
+        String crossSectionBody = homeworkBody.replace(branchSection.getId().toString(), otherSection.getId().toString());
+        mockMvc.perform(post("/v1/teacher/homework")
+                        .header("Authorization", auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(crossSectionBody))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("5c. Audit log viewer is tenant-scoped for school admins and filterable for super admins")
     void auditLogViewerScopesAndFiltersAuditRows() throws Exception {
         String sharedResourceId = "p1-04-" + UUID.randomUUID();
         UUID tenantAEntry = UUID.randomUUID();
