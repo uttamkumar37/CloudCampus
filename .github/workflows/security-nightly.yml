@@ -1,28 +1,34 @@
-name: Security — Nightly Scans
+name: Security — Release Gate
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Heavy security scans that are NOT required on every developer push.
+# Security scans that must block release-bound changes.
 #
 # Why this is its own workflow:
 #   OWASP Dependency-Check downloads the NVD database (~200 MB) and runs for
-#   3-5 minutes per build. Running it on every push and PR slows developer
-#   feedback and burns CI minutes for no signal — CVEs in dependencies don't
-#   appear faster than nightly.
+#   several minutes. Keeping it out of fast CI preserves developer feedback
+#   while still requiring it before code can merge to protected branches.
 #
-#   Trivy container scan needs a built image and is only meaningful against
-#   what we'd actually ship.
+#   Trivy is run against a freshly-built backend image for the current ref, so
+#   PRs are blocked by the image they would actually ship instead of a stale
+#   GHCR :latest tag.
 #
-# Triggers (intentionally NOT including push to feature branches):
+# Triggers:
+#   • pull_request      — release gate; configure as required in branch rules
 #   • schedule          — runs every night at 02:00 UTC
 #   • workflow_dispatch — on-demand manual run for any release/security review
 #   • push to main       — keeps the green-on-main invariant
 #   • push to release/** — release branch hardening
 #
-# Branch protection: this workflow is NOT a required check. It alerts the
-# team but does not block PR merges.
+# Branch protection: require both jobs from this workflow:
+#   • OWASP Dependency Check
+#   • Trivy — Backend image CVE scan
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
+  pull_request:
+    branches:
+      - main
+      - 'release/**'
   schedule:
     - cron: '0 2 * * *'   # 02:00 UTC daily
   workflow_dispatch:
@@ -36,8 +42,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/cloudcampus-backend
+  BACKEND_IMAGE: cloudcampus-backend:${{ github.sha }}
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
@@ -58,8 +63,7 @@ jobs:
           distribution: temurin
           cache: maven
 
-      - name: OWASP dependency-check (report CVSS >= 7)
-        continue-on-error: true   # Report-only while remediation train is in flight.
+      - name: OWASP dependency-check (block CVSS >= 7)
         working-directory: backend
         run: |
           mvn org.owasp:dependency-check-maven:10.0.4:check \
@@ -78,36 +82,50 @@ jobs:
   # ────────────────────────────────────────────────────────────────────────────
   # Trivy — container image scan.
   #
-  # Pulls the most recently published `:latest` from GHCR and scans it.
-  # If you want to scan a specific tag, run this workflow manually via
-  # workflow_dispatch and use input `image_tag` (set to e.g. v1.4.2).
+  # Builds the backend image for the current ref and scans that local image.
   # ────────────────────────────────────────────────────────────────────────────
   container-scan:
-    name: Trivy — Container CVE scan
+    name: Trivy — Backend image CVE scan
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      packages: read
 
     steps:
-      - name: Log in to GHCR (read-only)
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      - name: Package backend JAR
+        working-directory: backend
+        run: mvn package -DskipTests --batch-mode --no-transfer-progress
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Build backend image for scan
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: false
+          load: true
+          tags: ${{ env.BACKEND_IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Trivy scan (HIGH + CRITICAL, ignore unfixed)
-        env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -e TRIVY_USERNAME=${{ github.actor }} \
-            -e TRIVY_PASSWORD=${{ secrets.GITHUB_TOKEN }} \
             aquasec/trivy:0.61.0 image \
             --exit-code 1 \
             --severity HIGH,CRITICAL \
             --ignore-unfixed \
-            "$IMAGE"
+            "${{ env.BACKEND_IMAGE }}"

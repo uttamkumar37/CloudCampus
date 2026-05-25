@@ -23,5 +23,5 @@ CloudCampus is a multi-tenant school ERP and experience platform. The codebase c
 - Standalone `transport` and `hostel` packages are absent; logistics data exists in `student/profile`.
 - Backend route security is centralized in `SecurityConfig`, with method-level `@PreAuthorize` on many controllers.
 - Tenant ownership is mostly enforced by tenant-scoped repositories and `RequestContext`/Hibernate filtering.
-- CI runs backend `mvn verify`, frontend `npm run build`, and secret scan. OWASP is in `security-nightly.yml` and report-only with `continue-on-error: true`.
+- CI runs backend `mvn verify`, frontend `npm run build`, and secret scan. OWASP Dependency Check and Trivy run in `security-nightly.yml` as a PR-triggered release gate that blocks CVSS >= 7 dependency findings and HIGH/CRITICAL backend-image findings.
 - Docker publish is a separate workflow for `main`, `release/**`, tags, or manual dispatch; it assumes CI passed through branch protection.
