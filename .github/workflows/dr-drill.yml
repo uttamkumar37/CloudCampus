@@ -45,6 +45,7 @@ jobs:
       # Passphrase protects the GPG-encrypted dump. CI uses a dedicated
       # drill-only passphrase — no real customer data is involved.
       BACKUP_PASSPHRASE: ${{ secrets.DR_DRILL_PASSPHRASE || 'ci-drill-passphrase-not-real-data' }}
+      DRILL_TENANT_ID: 00000000-0000-0000-0000-000000000001
 
     steps:
       - name: Checkout
@@ -100,12 +101,31 @@ jobs:
             NOW(), NOW()
           );
 
+          INSERT INTO tenants (id, code, name, status, created_at, updated_at)
+          VALUES (
+            '00000000-0000-0000-0000-000000000101',
+            'BYSTANDER',
+            'Bystander Tenant',
+            'ACTIVE',
+            NOW(), NOW()
+          );
+
           INSERT INTO schools (id, tenant_id, name, code, status, created_at, updated_at)
           VALUES (
             '00000000-0000-0000-0000-000000000002',
             '00000000-0000-0000-0000-000000000001',
             'DR Drill School',
             'DRILL-SCH',
+            'ACTIVE',
+            NOW(), NOW()
+          );
+
+          INSERT INTO schools (id, tenant_id, name, code, status, created_at, updated_at)
+          VALUES (
+            '00000000-0000-0000-0000-000000000102',
+            '00000000-0000-0000-0000-000000000101',
+            'Bystander School',
+            'BYSTANDER-SCH',
             'ACTIVE',
             NOW(), NOW()
           );
@@ -119,6 +139,16 @@ jobs:
             'TENANT_ADMIN',
             'ACTIVE'
           );
+
+          INSERT INTO users (id, tenant_id, username, password_hash, role, status)
+          VALUES (
+            '00000000-0000-0000-0000-000000000103',
+            '00000000-0000-0000-0000-000000000101',
+            'bystander@cloudcampus.io',
+            '$2a$10$drill.placeholder.not.a.real.hash',
+            'TENANT_ADMIN',
+            'ACTIVE'
+          );
           SQL
 
       # ── Backup ─────────────────────────────────────────────────────────────
@@ -127,7 +157,7 @@ jobs:
         run: sh backup.sh
 
       # ── Restore + validate ─────────────────────────────────────────────────
-      - name: Run drill.sh (decrypt → pg_restore → validate)
+      - name: Run drill.sh (decrypt → pg_restore → validate one tenant)
         working-directory: infra/pgbackup
         run: DRILL_SKIP_BACKUP=1 sh drill.sh
 
