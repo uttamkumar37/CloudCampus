@@ -27,6 +27,26 @@ class AuditCoverageMatrixTest {
                     )
             ),
             Map.entry(
+                    "com/cloudcampus/platform/tenantadmin/school/TenantAdminSchoolController.java",
+                    evidence(
+                            "com/cloudcampus/platform/tenantadmin/school/TenantAdminSchoolService.java",
+                            "SCHOOL_CREATED",
+                            "SCHOOL_UPDATED",
+                            "SCHOOL_DEACTIVATED",
+                            "SCHOOL_ADMIN_INVITED",
+                            "SCHOOL_ADMIN_INVITATION_RESENT",
+                            "SCHOOL_ACCESS_REVOKED",
+                            "SCHOOL_ACCESS_GRANTED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/platform/tenantadmin/settings/TenantAdminSettingsController.java",
+                    evidence(
+                            "com/cloudcampus/platform/tenantadmin/settings/TenantAdminSettingsService.java",
+                            "TENANT_SETTINGS_UPDATED"
+                    )
+            ),
+            Map.entry(
                     "com/cloudcampus/identity/auth/invitation/InvitationController.java",
                     evidence("com/cloudcampus/identity/auth/invitation/InvitationAcceptanceService.java", "INVITATION_ACCEPTED")
             ),
@@ -123,6 +143,46 @@ class AuditCoverageMatrixTest {
                             "FEE_DEMAND_CREATED",
                             "FEE_PAYMENT_RECORDED",
                             "RECEIPT_ISSUED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/operations/attendance/AttendanceController.java",
+                    evidence(
+                            "com/cloudcampus/operations/attendance/AttendanceService.java",
+                            "ATTENDANCE_SUBMITTED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/operations/homework/HomeworkController.java",
+                    evidence(
+                            "com/cloudcampus/operations/homework/HomeworkService.java",
+                            "HOMEWORK_PUBLISHED",
+                            "HOMEWORK_SUBMITTED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/operations/exam/ExamController.java",
+                    evidence(
+                            "com/cloudcampus/operations/exam/ExamService.java",
+                            "EXAM_CREATED",
+                            "EXAM_MARKS_RECORDED",
+                            "EXAM_RESULTS_PUBLISHED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/operations/notice/NoticeController.java",
+                    evidence(
+                            "com/cloudcampus/operations/notice/NoticeService.java",
+                            "NOTICE_CREATED",
+                            "NOTICE_PUBLISHED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/operations/report/ReportExportController.java",
+                    evidence(
+                            "com/cloudcampus/operations/report/ReportExportService.java",
+                            "REPORT_EXPORT_REQUESTED",
+                            "REPORT_EXPORT_COMPLETED"
                     )
             )
     );

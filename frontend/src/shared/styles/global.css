@@ -132,7 +132,8 @@ h1 {
 }
 
 .workflow-form input,
-.workflow-form textarea {
+.workflow-form textarea,
+.workflow-form select {
   width: 100%;
   min-height: 42px;
   border: 1px solid #bcccdc;
@@ -145,6 +146,16 @@ h1 {
 .workflow-form textarea {
   min-height: 180px;
   resize: vertical;
+}
+
+.compact-summary {
+  margin-top: 10px;
+  font-size: 0.94rem;
+  line-height: 1.45;
+}
+
+.auth-panel .workflow-form {
+  margin-top: 12px;
 }
 
 .workflow-form .inline-check input {

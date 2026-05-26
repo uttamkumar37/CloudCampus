@@ -444,11 +444,8 @@ public class AuthSessionService {
     }
 
     private List<SchoolAccessResponse> schoolAccessResponses(UserAccount user) {
-        String tenantId = user.getTenant().getId();
-        return userSchoolAccessRepository.findByUserId(user.getId())
+        return tenantConsistentAccessList(user)
                 .stream()
-                .filter(access -> access.getTenant().getId().equals(tenantId))
-                .filter(access -> access.getSchool().getTenant().getId().equals(tenantId))
                 .sorted(Comparator
                         .comparing(UserSchoolAccess::isPrimaryAccess).reversed()
                         .thenComparing(access -> access.getSchool().getName()))
@@ -467,13 +464,25 @@ public class AuthSessionService {
     }
 
     private String chooseInitialActiveSchoolId(String userId) {
-        return userSchoolAccessRepository.findByUserId(userId)
+        UserAccount user = userAccountRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("Authenticated user was not found."));
+        List<UserSchoolAccess> accessList = tenantConsistentAccessList(user);
+        return accessList
                 .stream()
                 .filter(UserSchoolAccess::isPrimaryAccess)
                 .findFirst()
-                .or(() -> userSchoolAccessRepository.findByUserId(userId).stream().findFirst())
+                .or(() -> accessList.stream().findFirst())
                 .map(access -> access.getSchool().getId())
                 .orElse(null);
+    }
+
+    private List<UserSchoolAccess> tenantConsistentAccessList(UserAccount user) {
+        String tenantId = user.getTenant().getId();
+        return userSchoolAccessRepository.findByUserId(user.getId())
+                .stream()
+                .filter(access -> access.getTenant().getId().equals(tenantId))
+                .filter(access -> access.getSchool().getTenant().getId().equals(tenantId))
+                .toList();
     }
 
     private IssuedRefreshToken issueRefreshToken(UserAccount user) {

@@ -115,6 +115,12 @@ class SchoolScopedControllerGuardCoverageTest {
                 "com/cloudcampus/people/staff/StaffProvisioningController.java",
                 "com/cloudcampus/people/student/StudentImportController.java",
                 "com/cloudcampus/people/student/StudentLoginController.java",
+                "com/cloudcampus/operations/attendance/AttendanceController.java",
+                "com/cloudcampus/operations/homework/HomeworkController.java",
+                "com/cloudcampus/operations/exam/ExamController.java",
+                "com/cloudcampus/operations/notice/NoticeController.java",
+                "com/cloudcampus/operations/report/ReportExportController.java",
+                "com/cloudcampus/platform/tenantadmin/report/TenantAdminReportController.java",
                 "com/cloudcampus/operations/bulk/BulkJobController.java",
                 "com/cloudcampus/operations/finance/FeeController.java"
         ).contains(relative(path));

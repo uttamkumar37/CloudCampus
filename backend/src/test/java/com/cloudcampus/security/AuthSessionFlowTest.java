@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLog;
 import com.cloudcampus.audit.AuditLogRepository;
+import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
@@ -391,6 +392,116 @@ class AuthSessionFlowTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(activation.at("/accessToken").asText())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.activeSchool.schoolId").value(schoolId));
+    }
+
+    @Test
+    void multiSchoolUserCanSwitchActiveSchoolWithServerVerifiedGrant() throws Exception {
+        JsonNode onboarding = onboard("auth-switch-a", "auth-switch-main-a", "switch-admin-a@example.com");
+        String tenantId = onboarding.at("/tenant/id").asText();
+        String primarySchoolId = onboarding.at("/school/id").asText();
+        String userId = onboarding.at("/schoolAdminInvitation/userId").asText();
+        acceptInvitation(onboarding.at("/schoolAdminInvitation/token").asText(), "StrongerPass123!");
+
+        Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
+        School branchSchool = schoolRepository.save(new School(
+                tenant,
+                "AUTH-SWITCH-BRANCH",
+                "Auth Switch Branch",
+                false
+        ));
+        var user = userAccountRepository.findById(userId).orElseThrow();
+        userSchoolAccessRepository.save(new UserSchoolAccess(
+                tenant,
+                branchSchool,
+                user,
+                UserRole.SCHOOL_ADMIN,
+                false
+        ));
+
+        String accessToken = login("switch-admin-a@example.com", "StrongerPass123!").at("/accessToken").asText();
+
+        JsonNode schools = jsonBody(mockMvc.perform(get("/v1/me/schools")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+                .andExpect(status().isOk())
+                .andReturn());
+        assertThat(schools.findValuesAsText("schoolId"))
+                .containsExactly(primarySchoolId, branchSchool.getId());
+
+        JsonNode activation = jsonBody(mockMvc.perform(post("/v1/me/schools/{schoolId}/activate?tenantId=spoofed-tenant",
+                        branchSchool.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(accessToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "tenantId": "spoofed-tenant",
+                                  "schoolId": "%s",
+                                  "role": "SUPER_ADMIN"
+                                }
+                                """.formatted(primarySchoolId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.user.tenantId").value(tenantId))
+                .andExpect(jsonPath("$.user.role").value("SCHOOL_ADMIN"))
+                .andExpect(jsonPath("$.user.activeSchool.schoolId").value(branchSchool.getId()))
+                .andReturn());
+
+        String switchedToken = activation.at("/accessToken").asText();
+        mockMvc.perform(get("/v1/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(switchedToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.activeSchool.schoolId").value(branchSchool.getId()))
+                .andExpect(jsonPath("$.allowedSchools[0].schoolId").value(primarySchoolId))
+                .andExpect(jsonPath("$.allowedSchools[1].schoolId").value(branchSchool.getId()));
+
+        AuditLog auditLog = auditLogRepository.findByTenantId(tenantId)
+                .stream()
+                .filter(log -> log.getAction() == AuditAction.SCHOOL_CONTEXT_ACTIVATED)
+                .reduce((first, second) -> second)
+                .orElseThrow();
+        assertThat(auditLog.getActorId()).isEqualTo(userId);
+        assertThat(auditLog.getSchoolId()).isEqualTo(branchSchool.getId());
+        assertThat(auditLog.getMetadataJson())
+                .contains(branchSchool.getId(), "\"role\":\"SCHOOL_ADMIN\"")
+                .doesNotContain("spoofed-tenant", primarySchoolId, "SUPER_ADMIN");
+    }
+
+    @Test
+    void loginDoesNotUseMalformedCrossTenantSchoolGrantAsInitialActiveSchool() throws Exception {
+        Tenant tenantA = tenantRepository.save(new Tenant("auth-switch-tenant-a", "Auth Switch Tenant A"));
+        Tenant tenantB = tenantRepository.save(new Tenant("auth-switch-tenant-b", "Auth Switch Tenant B"));
+        School schoolB = schoolRepository.save(new School(
+                tenantB,
+                "AUTH-SWITCH-FOREIGN",
+                "Auth Switch Foreign",
+                true
+        ));
+        UserAccount user = new UserAccount(
+                tenantA,
+                "malformed-switch@example.com",
+                "Malformed Switch",
+                UserRole.TEACHER
+        );
+        user.activate(passwordEncoder.encode("StrongerPass123!"), "Malformed Switch", java.time.Instant.now());
+        userAccountRepository.save(user);
+        userSchoolAccessRepository.save(new UserSchoolAccess(
+                tenantA,
+                schoolB,
+                user,
+                UserRole.TEACHER,
+                true
+        ));
+
+        JsonNode login = login("malformed-switch@example.com", "StrongerPass123!");
+        assertThat(login.at("/user/tenantId").asText()).isEqualTo(tenantA.getId());
+        assertThat(login.at("/user/activeSchool").isNull()).isTrue();
+        assertThat(login.at("/user/allowedSchools")).isEmpty();
+
+        mockMvc.perform(get("/v1/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(login.at("/accessToken").asText())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tenantId").value(tenantA.getId()))
+                .andExpect(jsonPath("$.activeSchool").doesNotExist())
+                .andExpect(jsonPath("$.allowedSchools").isEmpty());
     }
 
     @Test

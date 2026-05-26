@@ -55,7 +55,7 @@ describe('LoginPage', () => {
       'cloudcampus.auth.refreshToken',
       'refresh-token',
     );
-    expect(screen.getByText(/active school: real school/i)).toBeInTheDocument();
+    expect(await screen.findByText(/active school: real school/i)).toBeInTheDocument();
   });
 
   it('verifies an MFA challenge before storing tokens', async () => {
@@ -110,9 +110,46 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /verify/i }));
 
     await waitFor(() => expect(onVerifyMfa).toHaveBeenCalledWith('challenge-1', '123456'));
-    expect(storage.setItem).toHaveBeenCalledWith(
+    await waitFor(() => expect(storage.setItem).toHaveBeenCalledWith(
       'cloudcampus.auth.accessToken',
       'signed-token',
-    );
+    ));
+  });
+
+  it('notifies the auth state when login completes', async () => {
+    const storage = { setItem: vi.fn() };
+    const onAuthenticated = vi.fn();
+    const session = {
+      accessToken: 'signed-token',
+      refreshToken: 'refresh-token',
+      tokenType: 'Bearer' as const,
+      expiresAt: '2026-05-26T11:00:00Z',
+      mfaRequired: false,
+      mfaChallengeId: null,
+      mfaCode: null,
+      mfaExpiresAt: null,
+      user: {
+        userId: 'user-1',
+        email: 'admin@example.com',
+        displayName: 'Admin User',
+        role: 'SCHOOL_ADMIN' as const,
+        tenantId: 'tenant-1',
+        activeSchool: null,
+        allowedSchools: [],
+      },
+    };
+    const onSubmit = vi.fn().mockResolvedValue(session);
+
+    render(<LoginPage onAuthenticated={onAuthenticated} onSubmit={onSubmit} storage={storage} />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'admin@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: 'StrongerPass123!' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => expect(onAuthenticated).toHaveBeenCalledWith(session));
   });
 });
