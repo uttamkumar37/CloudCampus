@@ -55,6 +55,14 @@ public class School {
         this.primarySchool = primarySchool;
     }
 
+    public void rename(String name) {
+        this.name = name.trim();
+    }
+
+    public void deactivate() {
+        this.active = false;
+    }
+
     @PrePersist
     void prePersist() {
         if (id == null) {

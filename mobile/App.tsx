@@ -10,8 +10,8 @@ export default function App() {
         <Text style={styles.eyebrow}>CloudCampus STRUCT-002</Text>
         <Text style={styles.title}>Mobile baseline shell</Text>
         <Text style={styles.summary}>
-          The mobile app is ready for future parent, teacher, student, and school admin
-          flows after the approved backend onboarding foundation exists.
+          The mobile app is ready for future tenant admin, school admin, staff,
+          teacher, parent, and student flows after the approved backend foundation exists.
         </Text>
 
         <View style={styles.cardList}>
@@ -19,6 +19,9 @@ export default function App() {
             <View key={portal.role} style={styles.card}>
               <Text style={styles.cardTitle}>{portal.role}</Text>
               <Text style={styles.cardText}>{portal.initialScope}</Text>
+              <Text style={styles.cardMeta}>
+                {portal.supportsSchoolSwitching ? 'School switching ready' : 'No school switch'}
+              </Text>
             </View>
           ))}
         </View>
@@ -75,5 +78,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginTop: 6,
+  },
+  cardMeta: {
+    color: '#2f6b4f',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0,
+    marginTop: 10,
+    textTransform: 'uppercase',
   },
 });

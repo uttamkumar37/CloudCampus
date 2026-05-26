@@ -9,4 +9,6 @@ public interface StaffProfileRepository extends JpaRepository<StaffProfile, Stri
     Optional<StaffProfile> findBySchoolIdAndUserId(String schoolId, String userId);
 
     boolean existsBySchoolIdAndEmployeeNumberIgnoreCase(String schoolId, String employeeNumber);
+
+    long countByTenantId(String tenantId);
 }

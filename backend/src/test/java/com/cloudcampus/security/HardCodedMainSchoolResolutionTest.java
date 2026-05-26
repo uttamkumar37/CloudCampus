@@ -16,7 +16,8 @@ class HardCodedMainSchoolResolutionTest {
 
     private static final Path MAIN_SOURCE_ROOT = Path.of("src/main/java");
     private static final Set<String> ALLOWED_MAIN_REFERENCES = Set.of(
-            "com/cloudcampus/platform/superadmin/onboarding/TenantOnboardingService.java"
+            "com/cloudcampus/platform/superadmin/onboarding/TenantOnboardingService.java",
+            "com/cloudcampus/platform/tenantadmin/school/TenantAdminSchoolService.java"
     );
     private static final List<String> PROHIBITED_SCHOOL_RESOLUTION_MARKERS = List.of(
             "\"MAIN\"",
@@ -41,10 +42,14 @@ class HardCodedMainSchoolResolutionTest {
     }
 
     @Test
-    void onboardingReservedMainGuardIsTheOnlyAllowedMainSchoolReference() throws IOException {
+    void reservedMainGuardsAreTheOnlyAllowedMainSchoolReferences() throws IOException {
         Path onboardingService = MAIN_SOURCE_ROOT.resolve("com/cloudcampus/platform/superadmin/onboarding/TenantOnboardingService.java");
+        Path tenantAdminSchoolService = MAIN_SOURCE_ROOT.resolve("com/cloudcampus/platform/tenantadmin/school/TenantAdminSchoolService.java");
 
         assertThat(Files.readString(onboardingService, StandardCharsets.UTF_8))
+                .contains("RESERVED_MAIN_CODE")
+                .contains("\"MAIN\"");
+        assertThat(Files.readString(tenantAdminSchoolService, StandardCharsets.UTF_8))
                 .contains("RESERVED_MAIN_CODE")
                 .contains("\"MAIN\"");
     }

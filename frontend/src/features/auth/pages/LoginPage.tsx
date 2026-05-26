@@ -7,11 +7,13 @@ const REFRESH_TOKEN_STORAGE_KEY = 'cloudcampus.auth.refreshToken';
 
 type LoginPageProps = {
   onSubmit?: (payload: LoginRequest) => Promise<AuthSession>;
+  onAuthenticated?: (session: AuthSession) => Promise<void> | void;
   onVerifyMfa?: (challengeId: string, code: string) => Promise<AuthSession>;
   storage?: Pick<Storage, 'setItem'>;
 };
 
 export function LoginPage({
+  onAuthenticated,
   onSubmit = login,
   onVerifyMfa = verifyMfa,
   storage = globalThis.sessionStorage,
@@ -44,7 +46,7 @@ export function LoginPage({
         setSession(null);
         return;
       }
-      completeSession(nextSession);
+      await completeSession(nextSession);
     } catch {
       setError('Login failed.');
       setSession(null);
@@ -65,7 +67,7 @@ export function LoginPage({
     setError(null);
     try {
       const nextSession = await onVerifyMfa(mfaChallenge.challengeId, code);
-      completeSession(nextSession);
+      await completeSession(nextSession);
       setMfaChallenge(null);
     } catch {
       setError('MFA verification failed.');
@@ -75,7 +77,7 @@ export function LoginPage({
     }
   }
 
-  function completeSession(nextSession: AuthSession) {
+  async function completeSession(nextSession: AuthSession) {
     if (!nextSession.accessToken || !nextSession.user) {
       throw new Error('Authenticated session was not returned.');
     }
@@ -84,6 +86,7 @@ export function LoginPage({
       storage.setItem(REFRESH_TOKEN_STORAGE_KEY, nextSession.refreshToken);
     }
     setSession(nextSession);
+    await onAuthenticated?.(nextSession);
   }
 
   return (

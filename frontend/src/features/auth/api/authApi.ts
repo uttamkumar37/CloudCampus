@@ -1,11 +1,14 @@
-export type UserRole =
-  | 'SUPER_ADMIN'
-  | 'TENANT_ADMIN'
-  | 'SCHOOL_ADMIN'
-  | 'TEACHER'
-  | 'STAFF'
-  | 'PARENT'
-  | 'STUDENT';
+export const BACKEND_USER_ROLES = [
+  'SUPER_ADMIN',
+  'TENANT_ADMIN',
+  'SCHOOL_ADMIN',
+  'TEACHER',
+  'STAFF',
+  'PARENT',
+  'STUDENT',
+] as const;
+
+export type UserRole = (typeof BACKEND_USER_ROLES)[number];
 
 export type SchoolAccess = {
   schoolId: string;
