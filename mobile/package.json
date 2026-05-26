@@ -1,31 +1,24 @@
 {
-  "name": "cloudcampus-mobile",
+  "name": "@cloudcampus/mobile",
   "version": "0.1.0",
   "private": true,
-  "main": "node_modules/expo/AppEntry.js",
+  "main": "expo/AppEntry",
   "scripts": {
     "start": "expo start",
-    "web": "expo start --web --port 8081",
     "android": "expo start --android",
     "ios": "expo start --ios",
+    "web": "expo start --web",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@expo/metro-runtime": "~4.0.1",
-    "axios": "^1.7.9",
-    "expo": "~52.0.46",
-    "expo-asset": "~11.0.5",
-    "expo-constants": "~17.0.8",
-    "expo-secure-store": "~14.0.1",
-    "expo-status-bar": "~2.0.1",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-native": "0.76.9",
-    "react-native-web": "~0.19.13"
+    "expo": "^56.0.4",
+    "react": "^19.2.6",
+    "react-native": "^0.85.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@types/react": "~18.3.12",
-    "typescript": "~5.3.3"
+    "@types/react": "^19.2.15",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
   }
 }

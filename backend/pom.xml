@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -12,84 +13,22 @@
 
     <groupId>com.cloudcampus</groupId>
     <artifactId>cloudcampus-backend</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>cloudcampus-backend</name>
-    <description>CloudCampus Backend</description>
+    <version>0.1.0-SNAPSHOT</version>
+    <name>CloudCampus Backend</name>
+    <description>Baseline backend shell for the CloudCampus School ERP SaaS platform.</description>
 
     <properties>
         <java.version>21</java.version>
-        <jjwt.version>0.12.6</jjwt.version>
-        <log4j2.version>2.26.0</log4j2.version>
-        <logstash-logback.version>8.0</logstash-logback.version>
-        <tomcat.version>10.1.55</tomcat.version>
-        <netty.version>4.1.133.Final</netty.version>
-        <bouncycastle.version>1.84</bouncycastle.version>
-        <commons-io.version>2.14.0</commons-io.version>
-        <minio.version>8.6.0</minio.version>
-        <okhttp.version>4.12.0</okhttp.version>
-        <org-json.version>20231013</org-json.version>
-        <postgresql.version>42.7.11</postgresql.version>
-        <spring-ai.version>1.0.7</spring-ai.version>
-        <springdoc.version>2.8.17</springdoc.version>
-        <jacocoArgLine></jacocoArgLine>
-        <!-- T-13: Coverage gate is opt-in via `-Dcoverage.enforce=true`.
-             Default is `false` so day-to-day `mvn verify` does not block on
-             coverage while the test suite is still being built out. -->
-        <coverage.enforce>false</coverage.enforce>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.ai</groupId>
-                <artifactId>spring-ai-bom</artifactId>
-                <version>${spring-ai.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcutil-jdk18on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>${commons-io.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.json</groupId>
-                <artifactId>json</artifactId>
-                <version>${org-json.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${okhttp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>logging-interceptor</artifactId>
-                <version>${okhttp.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
-        <!-- ===== WEB ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -97,380 +36,36 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
-        <!-- OpenAPI / Swagger UI — springdoc 2.x for Spring Boot 3 (EUP-006 / B7).
-             Enabled in dev profile only; see application.yml springdoc.api-docs.enabled. -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>${springdoc.version}</version>
-        </dependency>
-
-        <!-- AOP — required for TenantFilterAspect (Hibernate @Filter activation, CC-0203) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
-        </dependency>
-
-        <!-- Spring Cache abstraction — wired to Redis (CC-1702) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-cache</artifactId>
-        </dependency>
-
-        <!-- Email — OTP password reset (CC-1002 / B10) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-
-        <!-- Firebase Admin SDK — FCM / APNs push dispatch (CC-1003 / E13).
-             Conditionally activated via app.firebase.enabled=true.
-             App starts cleanly without it (FirebaseMessaging injected as Optional). -->
-        <dependency>
-            <groupId>com.google.firebase</groupId>
-            <artifactId>firebase-admin</artifactId>
-            <version>9.9.0</version>
-        </dependency>
-
-        <!-- ===== SECURITY ===== -->
-        <!-- Added in permit-all mode. Auth enforcement comes in Phase 2 (CC-0101). -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-
-        <!-- JWT — JJWT 0.12.x (stateless auth foundation) -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>${jjwt.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- ===== DATA ===== -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-
-        <!-- Redis — sessions, feature-flag cache, rate-limit counters, OTP -->
-        <!-- Wired in RedisConfig. Requires Redis 7+ running (see docker-compose.yml) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-
-        <!-- H-14: commons-pool2 enables the Lettuce connection pool.
-             Without this dependency the pool config in application.yml is silently ignored
-             and all Redis operations share a single blocking connection. -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-pool2</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
-        <!-- Flyway 10 requires explicit database-specific dependency for PostgreSQL -->
         <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- H2 for local dev only (profile: dev). Swap to Testcontainers in CC-0210. -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- ===== OBSERVABILITY ===== -->
-        <!-- Prometheus metrics endpoint for Grafana/alerting -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency>
-        <!-- OpenTelemetry tracing bridge + OTLP exporter (CC-0017 phase 2) -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-tracing-bridge-otel</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
-        </dependency>
-
-        <!-- RabbitMQ — durable async notification queue (CC-1504) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-amqp</artifactId>
-        </dependency>
-
-        <!-- ZXing — QR code generation for attendance (CC-0802) -->
-        <dependency>
-            <groupId>com.google.zxing</groupId>
-            <artifactId>core</artifactId>
-            <version>3.5.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.zxing</groupId>
-            <artifactId>javase</artifactId>
-            <version>3.5.3</version>
-        </dependency>
-
-        <!-- OpenPDF — fee invoice PDF generation (CC-0904) -->
-        <dependency>
-            <groupId>com.github.librepdf</groupId>
-            <artifactId>openpdf</artifactId>
-            <version>2.0.3</version>
-        </dependency>
-
-        <!-- MinIO Java SDK — object storage for student documents (CC-0505) -->
-        <dependency>
-            <groupId>io.minio</groupId>
-            <artifactId>minio</artifactId>
-            <version>${minio.version}</version>
-        </dependency>
-        <!-- P0-15: MinIO 8.6.x no longer brings okhttp transitively everywhere this app needs it. -->
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-        </dependency>
-
-        <!-- Razorpay Java SDK — online payment gateway integration (CC-0903) -->
-        <dependency>
-            <groupId>com.razorpay</groupId>
-            <artifactId>razorpay-java</artifactId>
-            <version>1.4.5</version>
-        </dependency>
-
-        <!-- ===== AI — Spring AI 1.0.x ===== -->
-        <!-- Anthropic Claude — chat completions (CC-1600) -->
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-anthropic</artifactId>
-        </dependency>
-        <!-- OpenAI — text embeddings (CC-1602) -->
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-openai</artifactId>
-        </dependency>
-        <!-- pgvector store — vector similarity search (CC-1602) -->
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
-        </dependency>
-
-        <!-- ===== LOGGING ===== -->
-        <!-- JSON log output for production log aggregation (Loki / ELK) -->
-        <dependency>
-            <groupId>net.logstash.logback</groupId>
-            <artifactId>logstash-logback-encoder</artifactId>
-            <version>${logstash-logback.version}</version>
-        </dependency>
-
-        <!-- ===== TEST ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- Testcontainers: replace H2 with real PostgreSQL in integration tests (CC-0210) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-testcontainers</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- Required by DockerApiVersionFixStrategy to access DefaultDockerClientConfig.
-             docker-java-core is NOT pulled transitively (only docker-java-api is). -->
-        <dependency>
-            <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java-core</artifactId>
-            <version>3.4.1</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- T-24: ArchUnit — architectural fitness functions executed as tests.
-             Used to enforce: controllers must have @PreAuthorize, entities
-             must not appear in controller signatures, services must not
-             access EntityManager directly, etc. -->
-        <dependency>
-            <groupId>com.tngtech.archunit</groupId>
-            <artifactId>archunit-junit5</artifactId>
-            <version>1.3.0</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- ShedLock — distributed scheduler locking via Redis (CRIT-19) -->
-        <dependency>
-            <groupId>net.javacrumbs.shedlock</groupId>
-            <artifactId>shedlock-spring</artifactId>
-            <version>6.9.1</version>
-        </dependency>
-        <dependency>
-            <groupId>net.javacrumbs.shedlock</groupId>
-            <artifactId>shedlock-provider-redis-spring</artifactId>
-            <version>6.9.1</version>
-        </dependency>
     </dependencies>
 
     <build>
-        <!-- L-30: exclude application-local.yml so it never ships inside the JAR.
-             Developers keep the file locally; it must NOT reach staging/prod images. -->
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <excludes>
-                    <exclude>application-local.yml</exclude>
-                </excludes>
-                <filtering>false</filtering>
-            </resource>
-        </resources>
-
         <plugins>
-            <!-- Surefire: pass -Dapi.version=1.41 so docker-java 3.4.1 uses
-                 /v1.41/info instead of /v1.24/info (Docker Engine 29.x MinAPIVersion=1.40). -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>@{jacocoArgLine} -Dapi.version=1.41</argLine>
-                    <includes>
-                        <include>**/*Test.java</include>
-                        <include>**/*Tests.java</include>
-                        <include>**/*TestCase.java</include>
-                        <include>**/*IT.java</include>
-                    </includes>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.12</version>
-                <executions>
-                    <execution>
-                        <id>prepare-agent</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                        <configuration>
-                            <propertyName>jacocoArgLine</propertyName>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                    <!-- T-13: Coverage gates for security-critical packages.
-                         These thresholds are conservative starting points;
-                         ratchet upward as test coverage grows. The build will
-                         fail when coverage drops below the floor.
-                         Toggle on via -Dcoverage.enforce=true on the mvn cli
-                         once the team agrees on the baseline. -->
-                    <execution>
-                        <id>check-coverage</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                            <haltOnFailure>${coverage.enforce}</haltOnFailure>
-                            <rules>
-                                <rule>
-                                    <element>BUNDLE</element>
-                                    <limits>
-                                        <!-- Overall bar — modest until we add more tests. -->
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.30</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                                <rule>
-                                    <element>PACKAGE</element>
-                                    <includes>
-                                        <include>com.cloudcampus.auth.*</include>
-                                        <include>com.cloudcampus.tenant.*</include>
-                                        <include>com.cloudcampus.subscription.*</include>
-                                        <include>com.cloudcampus.payment.*</include>
-                                        <include>com.cloudcampus.finance.*</include>
-                                        <include>com.cloudcampus.common.usage</include>
-                                        <include>com.cloudcampus.common.crypto</include>
-                                    </includes>
-                                    <limits>
-                                        <!-- Security-critical packages: higher bar. -->
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.60</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <!-- Layered JAR for Docker layer caching — faster CI rebuilds -->
-                    <layers>
-                        <enabled>true</enabled>
-                    </layers>
-                    <!-- Exclude dev-only deps from the production fat-jar -->
-                    <excludes>
-                        <exclude>
-                            <groupId>com.h2database</groupId>
-                            <artifactId>h2</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
             </plugin>
         </plugins>
     </build>
-
 </project>
