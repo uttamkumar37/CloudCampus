@@ -1,297 +1,31 @@
 spring:
   application:
     name: cloudcampus-backend
-  profiles:
-    active: dev
-
-  # C-09: Reject requests larger than 10 MB to prevent payload-bomb attacks.
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
-
-  # ── JPA ──────────────────────────────────────────────────────────────────
+  datasource:
+    url: ${CLOUDCAMPUS_JDBC_URL:jdbc:h2:mem:cloudcampus;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
+    driver-class-name: ${CLOUDCAMPUS_JDBC_DRIVER:org.h2.Driver}
+    username: ${CLOUDCAMPUS_JDBC_USERNAME:sa}
+    password: ${CLOUDCAMPUS_JDBC_PASSWORD:}
+  flyway:
+    enabled: true
   jpa:
-    open-in-view: false          # Never keep a DB connection open for the HTTP render phase.
     hibernate:
       ddl-auto: validate
+    open-in-view: false
     properties:
       hibernate:
         jdbc:
           time_zone: UTC
-          batch_size: 50         # Batch inserts for bulk operations (attendance, imports).
-        order_inserts: true
-        order_updates: true
-        # C-20: Log queries slower than 200 ms in all environments to surface N+1 early.
-        session:
-          events:
-            log:
-              LOG_QUERIES_SLOWER_THAN_MS: 200
-
-  # ── RABBITMQ ─────────────────────────────────────────────────────────────
-  # CC-1504: Durable notification queue. Connection details via env vars in prod.
-  # Dev: overridden in application-dev.yml to point at Docker Compose RabbitMQ.
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:cloudcampus}
-    password: ${RABBITMQ_PASSWORD:cloudcampus_dev}
-    virtual-host: /
-    # H-07: publisher confirms — broker acks every message it has durably stored.
-    # Without this, a broker restart between publish and persistence silently loses messages.
-    publisher-confirm-type: correlated
-    publisher-returns: true
-    listener:
-      simple:
-        concurrency: 1
-        max-concurrency: 3
-        acknowledge-mode: manual  # explicit basicAck/basicNack in consumer (CRIT-18)
-        # H-17: prefetch limits in-flight unacked messages per consumer.
-        # Without this the broker pushes all queued messages at once; manual-ack
-        # consumers then hold 250+ unacked messages in memory with no back-pressure.
-        prefetch: 10
-
-  # ── REDIS ────────────────────────────────────────────────────────────────
-  # C-20: App starts even if Redis is temporarily unavailable (lazy-connect).
-  # Feature flags and permission cache fall back to DB until Redis reconnects.
-  data:
-    redis:
-      connect-timeout: 2s
-      timeout: 1s
-      repositories:
-        enabled: false           # We use RedisTemplate directly, not Spring Data Redis repos.
-      # H-14: Lettuce connection pool — requires commons-pool2 on the classpath.
-      # Without pooling every Redis call borrows and returns a single shared connection
-      # serially, causing latency spikes under concurrent auth/cache/rate-limit load.
-      lettuce:
-        pool:
-          max-active: 20         # max simultaneous connections
-          max-idle: 10           # connections kept ready when idle
-          min-idle: 2            # always keep 2 warm connections
-          max-wait: 1000ms       # block at most 1 s waiting for a connection
-
-  # ── MAIL ─────────────────────────────────────────────────────────────────
-  # Production: set MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD env vars.
-  # Dev: overridden in application-dev.yml to point at MailHog (localhost:1025).
-  mail:
-    host: ${MAIL_HOST:smtp.example.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-
-  # ── Spring AI (CC-1600/1601/1602) ─────────────────────────────────────────
-  # Set APP_AI_ENABLED=true + real API keys in staging/production.
-  # In dev, APP_AI_ENABLED=false → no API calls, no cost.
-  ai:
-    anthropic:
-      api-key: ${ANTHROPIC_API_KEY:dev-placeholder}
-      chat:
-        enabled: ${APP_AI_ENABLED:false}
-        options:
-          model: ${AI_CHAT_MODEL:claude-haiku-4-5-20251001}
-          max-tokens: 2048
-    openai:
-      api-key: ${OPENAI_API_KEY:dev-placeholder}
-      embedding:
-        enabled: ${APP_AI_ENABLED:false}
-        options:
-          model: ${AI_EMBEDDING_MODEL:text-embedding-3-small}
-    vectorstore:
-      pgvector:
-        initialize-schema: false
-        dimensions: 1536
-        distance-type: COSINE_DISTANCE
-        index-type: HNSW
-        schema-name: public
-        table-name: vector_store
-
-  threads:
-    virtual:
-      # L-23: enable virtual threads (Project Loom) for Spring MVC thread pool.
-      # Removes the ThreadLocal migration blocker (CC-0011) by making virtual
-      # threads the default executor — each request gets its own lightweight
-      # carrier thread so blocking I/O (DB, Redis) no longer stalls a platform
-      # thread. Compatible with Spring Boot 3.2+ / Java 21.
-      enabled: true
 
 server:
   port: 8080
-
-  # C-12: Enable gzip compression — critical for mobile clients on slow connections.
-  compression:
-    enabled: true
-    mime-types: application/json,application/xml,text/html,text/xml,text/plain
-    min-response-size: 1024     # Only compress responses larger than 1 KB.
-
-  # H-04: Trust forwarded-IP headers only from the nginx reverse proxy.
-  # Tomcat's RemoteIpValve processes X-Forwarded-For / X-Real-IP and rewrites
-  # request.getRemoteAddr() to the real client IP. Client-injected headers
-  # from non-trusted addresses (i.e. not the loopback / private range of the
-  # proxy) are stripped, preventing rate-limiter bypass via spoofed headers.
-  forward-headers-strategy: native
-
-  # C-09: Tomcat-level payload size limit (safety net after servlet layer).
-  tomcat:
-    max-http-form-post-size: 10MB
 
 management:
   endpoints:
     web:
       exposure:
-        # C-19: prometheus endpoint for Grafana scraping.
-        include: health,info,metrics,prometheus
+        include: health,info
   endpoint:
     health:
       probes:
         enabled: true
-      show-details: never        # Never expose DB/Redis details publicly.
-  health:
-    livenessstate:
-      enabled: true
-    readinessstate:
-      enabled: true
-  metrics:
-    tags:
-      application: ${spring.application.name}
-  tracing:
-    enabled: true
-    # Dev defaults to full sampling; staging/prod override below.
-    sampling:
-      probability: 1.0
-  otlp:
-    tracing:
-      # Local Tempo OTLP/HTTP endpoint (see docker-compose tempo service).
-      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
-
-# ── JWT configuration ─────────────────────────────────────────────────────
-# Secret loaded from JWT_SECRET env var. Minimum 32 characters required.
-# Production: pull from HashiCorp Vault or AWS Secrets Manager.
-app:
-  jwt:
-    secret: ${JWT_SECRET:changeme-dev-secret-minimum-32-chars!!}
-    access-token-expiry-seconds: 900        # 15 minutes
-    refresh-token-expiry-seconds: 2592000   # 30 days
-
-  # ── Firebase (CC-1003 / E13) ──────────────────────────────────────────────
-  # FCM / APNs push dispatch via Firebase Admin SDK.
-  # Disabled by default — the app starts cleanly without Firebase credentials.
-  #
-  # Production setup:
-  #   1. Download service-account JSON from Firebase Console → Project Settings → Service Accounts.
-  #   2. Mount it as a Kubernetes secret or set APP_FIREBASE_CREDENTIALS_PATH env var.
-  #   3. Set APP_FIREBASE_ENABLED=true.
-  #
-  # SECURITY: Never commit the service-account JSON to source control.
-  firebase:
-    enabled: ${APP_FIREBASE_ENABLED:false}
-    credentials-path: ${APP_FIREBASE_CREDENTIALS_PATH:}   # absolute path to service-account JSON
-    project-id: ${APP_FIREBASE_PROJECT_ID:}               # optional — inferred from JSON when blank
-
-  # ── Bootstrap Super Admin ─────────────────────────────────────────────
-  # Runs ONCE on first boot. Idempotent — skips if user already exists.
-  # Set via environment variables; never hardcode in this file.
-  bootstrap:
-    admin:
-      username: ${BOOTSTRAP_ADMIN_USERNAME:superadmin}
-      password: ${BOOTSTRAP_ADMIN_PASSWORD:}  # Empty = skip bootstrap (safe default)
-
-  # ── Login rate limiting (CC-1801 / EUP-030) ──────────────────────────
-  # Two independent sliding windows tracked in Redis.
-  # Tighten in production — loosen in dev if needed (see application-dev.yml).
-  rate-limit:
-    login:
-      max-attempts-per-ip: 20          # 20 failures per IP in 5 minutes
-      window-seconds-per-ip: 300       # 5 minutes
-      max-attempts-per-username: 10    # 10 failures per username in 15 minutes
-      window-seconds-per-username: 900 # 15 minutes
-      lockout-threshold: 10            # 10 consecutive bad-credential failures → account suspended
-      lockout-window-seconds: 3600     # counter resets after 1 hour of inactivity
-    api:
-      per-user-requests: 20            # 20 @RateLimit calls per user per minute
-      per-user-window-seconds: 60
-      # H-30: 60 req/min tenant ceiling blocked schools with >3 concurrent users
-      # (3 users × 20 req/user/min = 60, saturating the tenant bucket immediately).
-      # 500 req/min supports ~25 active users at full per-user throughput, while
-      # still providing a meaningful DoS barrier at the tenant level.
-      per-tenant-requests: 500         # 500 @RateLimit calls per tenant per minute
-      per-tenant-window-seconds: 60
-    public:
-      max-requests: 120
-      window-seconds: 60
-
-  # ── PII data retention (CC-1806) ──────────────────────────────────────────────
-  # Nightly job (02:00 UTC) hard-deletes user rows soft-deleted for longer than
-  # this window. Set to 0 to disable physical purge (soft-delete-only mode).
-  retention:
-    soft-delete-retention-days: 90
-
-  # ── PII field encryption (CC-1803) ────────────────────────────────────────────
-  # AES-256-GCM key for Student.phone/address and Staff.phone/email/address.
-  # Production: load from HashiCorp Vault / AWS Secrets Manager.
-  # SECURITY: Never commit the real secret to source control.
-  encryption:
-    secret: ${ENCRYPTION_SECRET:dev-encryption-key-must-be-at-least-32ch}
-
-  # ── MinIO object storage (CC-0505) ────────────────────────────────────────────
-  # Production: set MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY env vars.
-  # Dev: overridden in application-dev.yml to point at Docker Compose MinIO.
-  minio:
-    endpoint:   ${MINIO_ENDPOINT:http://localhost:9000}
-    access-key: ${MINIO_ACCESS_KEY:minioadmin}
-    secret-key: ${MINIO_SECRET_KEY:minioadmin}
-    bucket:     ${MINIO_BUCKET:cloudcampus-documents}
-    presign-expiry-minutes: 60
-
-  # ── OTP (password reset) ───────────────────────────────────────────────────────
-  # Redis key: cc:otp:{userId}  TTL: 5 min (CC-0108)
-  otp:
-    ttl-seconds: 300        # 5 minutes
-    length: 6
-    from-email: ${MAIL_FROM:noreply@cloudcampus.io}
-
-  # ── Frontend base URL (used for QR deep-links CC-0802) ───────────────────
-  frontend:
-    base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
-
-  # ── AI Foundation (CC-1600/1601/1602) ────────────────────────────────────
-  # Set APP_AI_ENABLED=true + real API keys in staging/production.
-  # In dev, APP_AI_ENABLED=false → mock beans kick in (no API calls, no cost).
-  ai:
-    enabled: ${APP_AI_ENABLED:false}
-    embedding-dimensions: 1536
-    chat-model: ${AI_CHAT_MODEL:claude-haiku-4-5-20251001}
-    embedding-model: ${AI_EMBEDDING_MODEL:text-embedding-3-small}
-    # H-23: cap LLM output to prevent runaway responses burning budget or leaking data
-    max-output-chars: ${AI_MAX_OUTPUT_CHARS:8000}
-    # H-24: per-user sliding-window limit on AI inference calls (60 s window)
-    rate-limit:
-      max-per-user-per-minute: ${AI_RATE_LIMIT_PER_USER:20}
-
-  # ── Razorpay — online payment gateway (CC-0903) ───────────────────────────
-  # Set RAZORPAY_ENABLED=true and provide real keys in staging/production.
-  # In dev/test, enabled=false generates mock order IDs without calling Razorpay.
-  razorpay:
-    key-id:     ${RAZORPAY_KEY_ID:rzp_test_placeholder}
-    key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
-    webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
-    order-expiry-minutes: ${RAZORPAY_ORDER_EXPIRY_MINUTES:30}
-    enabled:    ${RAZORPAY_ENABLED:false}
-
-springdoc:
-  api-docs:
-    enabled: false
-    path: /v3/api-docs
-  swagger-ui:
-    enabled: false
-    path: /swagger-ui.html
-    display-request-duration: true
-    operations-sorter: alpha
-    tags-sorter: alpha
-  show-actuator: false

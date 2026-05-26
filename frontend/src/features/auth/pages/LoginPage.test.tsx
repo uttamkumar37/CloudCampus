@@ -1,60 +1,118 @@
-import { screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LoginPage } from '@/features/auth/pages/LoginPage';
-import * as authApi from '@/features/auth/api/authApi';
-import { renderWithProviders } from '@/test/renderWithProviders';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-
-function renderLoginPage() {
-  return renderWithProviders(<LoginPage />);
-}
-
-// ── tests ─────────────────────────────────────────────────────────────────────
+import { LoginPage } from './LoginPage';
 
 describe('LoginPage', () => {
-  beforeEach(() => vi.restoreAllMocks());
-
-  it('renders username, password fields and submit button', () => {
-    renderLoginPage();
-    expect(screen.getByLabelText(/email or username/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
-  });
-
-  it('shows validation errors when form is submitted empty', async () => {
-    renderLoginPage();
-    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
-    expect(await screen.findByText(/username is required/i)).toBeInTheDocument();
-    expect(await screen.findByText(/password is required/i)).toBeInTheDocument();
-  });
-
-  it('shows error alert on failed login', async () => {
-    vi.spyOn(authApi, 'loginApi').mockRejectedValue(new Error('401'));
-    renderLoginPage();
-
-    fireEvent.change(screen.getByLabelText(/email or username/i), {
-      target: { value: 'user@example.com' },
+  it('submits credentials and stores the access token in session storage', async () => {
+    const storage = { setItem: vi.fn() };
+    const onSubmit = vi.fn().mockResolvedValue({
+      accessToken: 'signed-token',
+      refreshToken: 'refresh-token',
+      tokenType: 'Bearer',
+      expiresAt: '2026-05-26T11:00:00Z',
+      mfaRequired: false,
+      mfaChallengeId: null,
+      mfaCode: null,
+      mfaExpiresAt: null,
+      user: {
+        userId: 'user-1',
+        email: 'admin@example.com',
+        displayName: 'Admin User',
+        role: 'SCHOOL_ADMIN',
+        tenantId: 'tenant-1',
+        activeSchool: {
+          schoolId: 'school-1',
+          code: 'REAL',
+          name: 'Real School',
+          role: 'SCHOOL_ADMIN',
+          primaryAccess: true,
+        },
+        allowedSchools: [],
+      },
     });
-    fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: 'wrongpass' },
+
+    render(<LoginPage onSubmit={onSubmit} storage={storage} />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'admin@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: 'StrongerPass123!' },
     });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
-    expect(
-      await screen.findByText(/unable to sign in/i),
-    ).toBeInTheDocument();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit).toHaveBeenCalledWith({
+      email: 'admin@example.com',
+      password: 'StrongerPass123!',
+    });
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'cloudcampus.auth.accessToken',
+      'signed-token',
+    );
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'cloudcampus.auth.refreshToken',
+      'refresh-token',
+    );
+    expect(screen.getByText(/active school: real school/i)).toBeInTheDocument();
   });
 
-  it('toggles password visibility', () => {
-    renderLoginPage();
-    const passwordInput = screen.getByLabelText(/^password$/i);
-    expect(passwordInput).toHaveAttribute('type', 'password');
+  it('verifies an MFA challenge before storing tokens', async () => {
+    const storage = { setItem: vi.fn() };
+    const onSubmit = vi.fn().mockResolvedValue({
+      accessToken: null,
+      refreshToken: null,
+      tokenType: 'Bearer',
+      expiresAt: null,
+      user: null,
+      mfaRequired: true,
+      mfaChallengeId: 'challenge-1',
+      mfaCode: '123456',
+      mfaExpiresAt: '2026-05-26T11:00:00Z',
+    });
+    const onVerifyMfa = vi.fn().mockResolvedValue({
+      accessToken: 'signed-token',
+      refreshToken: 'refresh-token',
+      tokenType: 'Bearer',
+      expiresAt: '2026-05-26T11:00:00Z',
+      mfaRequired: false,
+      mfaChallengeId: null,
+      mfaCode: null,
+      mfaExpiresAt: null,
+      user: {
+        userId: 'user-1',
+        email: 'admin@example.com',
+        displayName: 'Admin User',
+        role: 'SCHOOL_ADMIN',
+        tenantId: 'tenant-1',
+        activeSchool: null,
+        allowedSchools: [],
+      },
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: /show password/i }));
-    expect(passwordInput).toHaveAttribute('type', 'text');
+    render(<LoginPage onSubmit={onSubmit} onVerifyMfa={onVerifyMfa} storage={storage} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /hide password/i }));
-    expect(passwordInput).toHaveAttribute('type', 'password');
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'admin@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: 'StrongerPass123!' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    expect(await screen.findByText(/scaffold mfa code: 123456/i)).toBeInTheDocument();
+    expect(storage.setItem).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText(/mfa code/i), {
+      target: { value: '123456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /verify/i }));
+
+    await waitFor(() => expect(onVerifyMfa).toHaveBeenCalledWith('challenge-1', '123456'));
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'cloudcampus.auth.accessToken',
+      'signed-token',
+    );
   });
 });
