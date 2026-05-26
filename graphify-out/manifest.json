@@ -25,8 +25,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/pgbackup/backup.sh": {
-    "mtime": 1779081976.05712,
-    "ast_hash": "9602c82194d431afa1d49deabce48ed4",
+    "mtime": 1779117731.3450346,
+    "ast_hash": "2b3be6838f38480fbf8daf7c36ca154b",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/nginx/gen-certs.sh": {
@@ -38,6 +38,16 @@
     "mtime": 1778816463.4579298,
     "ast_hash": "6b2349eb506fe7b613874524bf4d43b3",
     "semantic_hash": "6b2349eb506fe7b613874524bf4d43b3"
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/load-tests/enterprise-smoke.js": {
+    "mtime": 1779301696.463821,
+    "ast_hash": "29997aebb9f0da80dadf8e04d6282a76",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/load-tests/load-school-admin.js": {
+    "mtime": 1779169746.9555786,
+    "ast_hash": "02291ff098f8fada4111ca6843734dd7",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/load-tests/load-reports.js": {
     "mtime": 1778816480.7542303,
@@ -52,6 +62,11 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/load-tests/stress.js": {
     "mtime": 1779081976.055575,
     "ast_hash": "ab8dcbe5bf399f95d8409eb5b9d18b91",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/load-tests/load-public-website.js": {
+    "mtime": 1779169876.0982063,
+    "ast_hash": "0fcb721c96223a60bc3bd5d1a222667d",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/load-tests/helpers/auth.js": {
@@ -70,9 +85,9 @@
     "semantic_hash": "45d56586d40fa51ca3d1c0c602208fbb"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/package.json": {
-    "mtime": 1778658528.1960666,
-    "ast_hash": "9c135101c59de1f4a91c5e61f2157d0a",
-    "semantic_hash": "9c135101c59de1f4a91c5e61f2157d0a"
+    "mtime": 1779340110.5634704,
+    "ast_hash": "82836f59d0cc9a38f7bc7f301ca700f6",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/tsconfig.json": {
     "mtime": 1778562483.7825983,
@@ -80,9 +95,9 @@
     "semantic_hash": "a3d39fa780ebff65444de257f291ce6c"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/eslint.config.js": {
-    "mtime": 1778562483.7800977,
-    "ast_hash": "0355276bc79439afe3c53e3a2470ca1e",
-    "semantic_hash": "0355276bc79439afe3c53e3a2470ca1e"
+    "mtime": 1779356249.8553355,
+    "ast_hash": "4c0e734428ffe31e41453d0c20b13a8f",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/vite.config.ts": {
     "mtime": 1778658528.2268746,
@@ -100,19 +115,19 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/app/router.tsx": {
-    "mtime": 1779110481.6284559,
-    "ast_hash": "0ee6c5fcbaf51cd0f9d2e6358bfbb3be",
+    "mtime": 1779302836.8198183,
+    "ast_hash": "48cdc8172c52f642d6d781d172d9fb99",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/app/ErrorBoundary.tsx": {
-    "mtime": 1779081976.0480902,
-    "ast_hash": "fbd8a8b6675e57447ad7d6b859e71202",
+    "mtime": 1779363659.4755008,
+    "ast_hash": "ba735c8b75b7829f0a8ac5a857e97361",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/app/providers.tsx": {
-    "mtime": 1778658528.1964912,
-    "ast_hash": "4eee5ad2756a0f1de14bd1c80b3c2464",
-    "semantic_hash": "4eee5ad2756a0f1de14bd1c80b3c2464"
+    "mtime": 1779217109.5743718,
+    "ast_hash": "161924f3c59b9de726ede8acd675feec",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/test/App.test.tsx": {
     "mtime": 1778696890.956711,
@@ -120,9 +135,14 @@
     "semantic_hash": "9a9d664c778644a7b17df56afbd8cd78"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/test/setup.ts": {
-    "mtime": 1778696890.9568062,
-    "ast_hash": "00e47f7b9836e8f731101981fa2bb2de",
-    "semantic_hash": "00e47f7b9836e8f731101981fa2bb2de"
+    "mtime": 1779339654.5758958,
+    "ast_hash": "4b03a74741f7e19bb3d90a075c07a661",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/test/renderWithProviders.tsx": {
+    "mtime": 1779339977.235572,
+    "ast_hash": "39d595d9130dd4434adb49136f49a220",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/config/env.ts": {
     "mtime": 1778658528.1971524,
@@ -140,28 +160,43 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/attendance/pages/AttendanceMarkPage.tsx": {
-    "mtime": 1778855009.3848567,
-    "ast_hash": "cfc99bf59187c1f38c0facc85ed23990",
+    "mtime": 1779249070.4928272,
+    "ast_hash": "7f5b0cde7591d4eb95ba6d33a67bbb65",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/attendance/pages/AttendanceCreateSessionPage.tsx": {
-    "mtime": 1779112942.5868034,
-    "ast_hash": "4c8274fc6b2b34ad845da13341274f64",
+    "mtime": 1779220738.6442292,
+    "ast_hash": "0fd4f7eb73efe66ddbb912993a63c2fb",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/attendance/pages/AttendanceSessionListPage.tsx": {
-    "mtime": 1778658528.201052,
-    "ast_hash": "7468e13f1385805c698ed75b67d2fee6",
-    "semantic_hash": "7468e13f1385805c698ed75b67d2fee6"
+    "mtime": 1779252205.5802789,
+    "ast_hash": "3e63e0ff5b796eb7186e3a468f2f7443",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/experience/components/AnalyticsConsentBanner.tsx": {
+    "mtime": 1779188392.5017452,
+    "ast_hash": "0e5301fbf9038054b613b6eddfd5213a",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/experience/components/AnalyticsConsentBanner.test.tsx": {
+    "mtime": 1779188428.5947542,
+    "ast_hash": "8cf239682e1632e9c23b30c7458bac58",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/experience/api/experienceApi.ts": {
     "mtime": 1779094067.529886,
     "ast_hash": "8232ca07f9a669346d9b5601c6983ea4",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/experience/api/analyticsTracker.test.tsx": {
+    "mtime": 1779188428.6381543,
+    "ast_hash": "167c620e97acab79833d5398743e5d0a",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/experience/api/analyticsTracker.ts": {
-    "mtime": 1779081976.0491068,
-    "ast_hash": "f080cfe8ff91d78f510432770c8df5bb",
+    "mtime": 1779188448.5665233,
+    "ast_hash": "5306673034edc2c99ed23ed65ad15735",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/experience/pages/DemoPage.tsx": {
@@ -175,8 +210,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/experience/store/experienceStore.ts": {
-    "mtime": 1779081976.049743,
-    "ast_hash": "5284b2191369d6b43c0a28e299d999af",
+    "mtime": 1779188366.7615843,
+    "ast_hash": "86bc3198bbe08faa9088c1e674b55258",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/notice-board/api/noticeApi.ts": {
@@ -185,9 +220,9 @@
     "semantic_hash": "33fed8b7daee53038b43b7aca8e910e4"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/notice-board/pages/NoticeBoardPage.tsx": {
-    "mtime": 1778658528.2098196,
-    "ast_hash": "f16e9ddf1d2a4cc2988a35211671440a",
-    "semantic_hash": "f16e9ddf1d2a4cc2988a35211671440a"
+    "mtime": 1779249365.3601508,
+    "ast_hash": "0a12fdf0e884956236c48a6fa0271c74",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/assignments/types/assignment.ts": {
     "mtime": 1778658528.1999612,
@@ -200,19 +235,19 @@
     "semantic_hash": "a52cb63b0cbc6fcd64b409ba4958c534"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/assignments/pages/AssignmentDetailPage.tsx": {
-    "mtime": 1778658528.1984308,
-    "ast_hash": "e062571f30184523d58b025ad804296c",
-    "semantic_hash": "e062571f30184523d58b025ad804296c"
+    "mtime": 1779252205.5791428,
+    "ast_hash": "d0eb8d4cfdc5f009465f16f6c284578b",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/assignments/pages/AssignmentCreatePage.tsx": {
-    "mtime": 1778658528.1976945,
-    "ast_hash": "3631419b5727317a3d416512aef9625e",
-    "semantic_hash": "3631419b5727317a3d416512aef9625e"
+    "mtime": 1779220738.643218,
+    "ast_hash": "99aeb62ab2a3f91613febb5eee93a90e",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/assignments/pages/AssignmentListPage.tsx": {
-    "mtime": 1778658528.198639,
-    "ast_hash": "b067c37692fa7ae4f74b698b9c03dac3",
-    "semantic_hash": "b067c37692fa7ae4f74b698b9c03dac3"
+    "mtime": 1779249232.5201142,
+    "ast_hash": "2018ce98e7f21644069b608f3db5d000",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/types/auth.ts": {
     "mtime": 1778658528.2032979,
@@ -230,29 +265,29 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/pages/LoginPage.tsx": {
-    "mtime": 1778741611.2362719,
-    "ast_hash": "ea33ded367b2476263e99389bd704407",
-    "semantic_hash": "ea33ded367b2476263e99389bd704407"
+    "mtime": 1779305004.3426547,
+    "ast_hash": "2990181b5f9bd61396df7b20556dc2ff",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/pages/ChangePasswordPage.test.tsx": {
-    "mtime": 1779081976.0488021,
-    "ast_hash": "cec1703fd8d68cdcb088ba44bec879de",
+    "mtime": 1779339990.7809663,
+    "ast_hash": "23c63685e841a4373d696973fe84bd3a",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/pages/ForgotPasswordPage.tsx": {
-    "mtime": 1778658528.2019522,
-    "ast_hash": "a4a220a12c546266bfdfb72926ae58c9",
-    "semantic_hash": "a4a220a12c546266bfdfb72926ae58c9"
+    "mtime": 1779220121.1124284,
+    "ast_hash": "e7d799a69eaab3c39993b5349cab5ffe",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/pages/ChangePasswordPage.tsx": {
-    "mtime": 1778926437.4051518,
-    "ast_hash": "425d255a6f2690c86f98cecc07fdcb28",
+    "mtime": 1779305020.8310297,
+    "ast_hash": "62fd5449ee5d2f8f012f5aa7639a2c89",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/pages/ResetPasswordPage.tsx": {
-    "mtime": 1778755867.3685067,
-    "ast_hash": "eaa36fb5881be59b793d2ac05c9edaa9",
-    "semantic_hash": "eaa36fb5881be59b793d2ac05c9edaa9"
+    "mtime": 1779220192.5251436,
+    "ast_hash": "d97624d6bc1fdb74ab3e196c1eb7cc18",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/pages/ForbiddenPage.tsx": {
     "mtime": 1778658528.2016933,
@@ -260,9 +295,9 @@
     "semantic_hash": "81e678443e93e6a25b8a18c2a2d45dc3"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/pages/LoginPage.test.tsx": {
-    "mtime": 1778658528.202077,
-    "ast_hash": "2d6a661db7d61320de2f70f63e10d137",
-    "semantic_hash": "2d6a661db7d61320de2f70f63e10d137"
+    "mtime": 1779339983.7966828,
+    "ast_hash": "78f0d5635c40289ea9ba468a4cd0e3c3",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/pages/PlanUpgradePage.tsx": {
     "mtime": 1778909269.2714252,
@@ -270,14 +305,14 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/store/useAuthStore.test.ts": {
-    "mtime": 1779081976.0489721,
-    "ast_hash": "7bd71760ed74f8d74bd0e3674bed3c52",
+    "mtime": 1779337216.362616,
+    "ast_hash": "9e8373f80a2337a9d27c39bc256dc0b8",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/auth/store/useAuthStore.ts": {
-    "mtime": 1778658528.2030895,
-    "ast_hash": "e61c05db00e26e769fb681688a20bf4a",
-    "semantic_hash": "e61c05db00e26e769fb681688a20bf4a"
+    "mtime": 1779337205.765743,
+    "ast_hash": "636d5a3f416a502c202c9ac7410871a8",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/notification/types/notification.ts": {
     "mtime": 1778658528.2110362,
@@ -290,9 +325,9 @@
     "semantic_hash": "3e28cfb5b58fec9362912845a9302d67"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/notification/pages/NotificationLogPage.tsx": {
-    "mtime": 1778658528.2107413,
-    "ast_hash": "28e2adb61537c1a916cc0abf1a3dcb8c",
-    "semantic_hash": "28e2adb61537c1a916cc0abf1a3dcb8c"
+    "mtime": 1779249366.8546247,
+    "ast_hash": "2ed528fca9d917e0989e911a1967a79a",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/types/academic.ts": {
     "mtime": 1778658528.2151268,
@@ -300,18 +335,18 @@
     "semantic_hash": "1fd49bf61a131ecf03ce0a5130f7909f"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/layouts/SchoolAdminLayout.test.tsx": {
-    "mtime": 1779081976.050256,
-    "ast_hash": "8b103162bf7673248076631cbb247553",
+    "mtime": 1779339758.4771667,
+    "ast_hash": "67e8d401732250de6886e597300ba074",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/layouts/SchoolAdminLayout.tsx": {
-    "mtime": 1779100785.0864937,
-    "ast_hash": "e70910b604ebad638136bc301ab29096",
+    "mtime": 1779356249.858165,
+    "ast_hash": "2428c369ef1a7695796c129c981ef750",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/api/lessonPlanApi.ts": {
-    "mtime": 1778948876.9593048,
-    "ast_hash": "d24abf9fb38179375a4417538077f2a5",
+    "mtime": 1779250042.7174842,
+    "ast_hash": "38a2bfda7ee5721094e41f4b5d5b82bc",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/api/websiteApi.ts": {
@@ -340,9 +375,9 @@
     "semantic_hash": "4af2dd2d43fd08c168f30f57f386c562"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/api/classApi.ts": {
-    "mtime": 1778658528.2119787,
-    "ast_hash": "c786eeacb2edb135d4f5a1408b8d9bd7",
-    "semantic_hash": "c786eeacb2edb135d4f5a1408b8d9bd7"
+    "mtime": 1779214039.363866,
+    "ast_hash": "21ea6b3b699764bb5d66e68f08eaf452",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/api/settingsApi.ts": {
     "mtime": 1778658528.21244,
@@ -355,8 +390,8 @@
     "semantic_hash": "65db088aa954a4d69d64f2df7a783d28"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/api/domainApi.ts": {
-    "mtime": 1778948876.9592764,
-    "ast_hash": "a52f29563654ee408da3bdfc85b97040",
+    "mtime": 1779250015.7008374,
+    "ast_hash": "caf835ec763d7583b5b2e56d8573c9bb",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/api/schoolAccessApi.ts": {
@@ -370,58 +405,58 @@
     "semantic_hash": "1c3460ecc6030b7dbcfaf3fe250c9a89"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/AcademicYearListPage.tsx": {
-    "mtime": 1778658528.2133033,
-    "ast_hash": "898c95e9fbc5ed134f99c27396d7b02c",
-    "semantic_hash": "898c95e9fbc5ed134f99c27396d7b02c"
+    "mtime": 1779252220.6598055,
+    "ast_hash": "cd4154792d7e8ba1423921debc82c9de",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/CustomDomainPage.tsx": {
-    "mtime": 1779112893.0224378,
-    "ast_hash": "ecd0ee238e7885d3c46af50ac56f06ab",
+    "mtime": 1779249368.0482528,
+    "ast_hash": "76035d5443ffdb0bc3d062eb829f8754",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/ClassListPage.tsx": {
-    "mtime": 1779112850.0616987,
-    "ast_hash": "e13052fab336dbca23b4e8bb8bc60262",
+    "mtime": 1779220868.605271,
+    "ast_hash": "11ef053f9ca67bae6cd1b2339ec1473a",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/SchoolAdminProfilePage.tsx": {
-    "mtime": 1779100045.3557646,
-    "ast_hash": "2625e28bcd0c28c3bbf973b1c427826a",
+    "mtime": 1779217624.0077443,
+    "ast_hash": "3893023b3332438fbcc385901704c072",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/SchoolSettingsPage.tsx": {
-    "mtime": 1779112983.0350173,
-    "ast_hash": "33c2f2161c40f7505f149f8a19c18446",
+    "mtime": 1779220936.9568522,
+    "ast_hash": "d4c3257b250de4326106b1932ba6578b",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/SchoolAdminDashboardPage.tsx": {
-    "mtime": 1779081976.0505607,
-    "ast_hash": "ad070ff92f53cd86a7516f0a493b7317",
+    "mtime": 1779301014.7994533,
+    "ast_hash": "16b48448276f446d6aab70c3ec8a5a68",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/SubjectListPage.tsx": {
-    "mtime": 1778658528.2146778,
-    "ast_hash": "01b71f70204d7b7cd892f438f3082528",
-    "semantic_hash": "01b71f70204d7b7cd892f438f3082528"
+    "mtime": 1779220871.6584,
+    "ast_hash": "356e572ea1a8583af6b7f84a39763dcb",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/SectionListPage.tsx": {
-    "mtime": 1779112860.524211,
-    "ast_hash": "6e2d2db070fc2f0dc6ebabd8ad95afc2",
+    "mtime": 1779220870.5325654,
+    "ast_hash": "e38e1993a2611164415c8a5ab21f32b3",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/AiCopilotPage.tsx": {
-    "mtime": 1779097044.6880157,
-    "ast_hash": "3098702edccd20b64e789b82fa2b5212",
+    "mtime": 1779257556.6216483,
+    "ast_hash": "81617084a0c969545a4e6f3755a015c4",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/DepartmentListPage.tsx": {
-    "mtime": 1779112866.8165865,
-    "ast_hash": "17d9b33ad208f191d6e2cf98d93c18ac",
+    "mtime": 1779220913.1544702,
+    "ast_hash": "f65cde1985d3af2349defdc05dc93c57",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/school-admin/pages/WebsiteBuilderPage.tsx": {
-    "mtime": 1779100814.991166,
-    "ast_hash": "6420cec58d33aea429dc0adb35e0c5b1",
+    "mtime": 1779257634.3339338,
+    "ast_hash": "c53d8e6e321d1a324d6644c73a754868",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/types/student.ts": {
@@ -430,9 +465,9 @@
     "semantic_hash": "2e321f72c7ecdf9e48656c0871f600ed"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/layouts/StudentLayout.tsx": {
-    "mtime": 1778739578.419414,
-    "ast_hash": "50da09e080c98d5b3ec4e2ce0ff4e411",
-    "semantic_hash": "50da09e080c98d5b3ec4e2ce0ff4e411"
+    "mtime": 1779356249.8585827,
+    "ast_hash": "6a5440f8d374f4a0c3c4617f3dcf96bc",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/hooks/useRazorpay.ts": {
     "mtime": 1778908386.6454883,
@@ -442,6 +477,11 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/api/studentPortalApi.ts": {
     "mtime": 1778911118.8078437,
     "ast_hash": "14ff090c8368d9a052a865db1fe2d15f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/api/studentProfile360Api.ts": {
+    "mtime": 1779302795.1720488,
+    "ast_hash": "b1ff9444133fd57c978dfa9e83bb245b",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/api/paymentApi.ts": {
@@ -460,88 +500,103 @@
     "semantic_hash": "65ae91214b7f3d740eae71d86ab9d6a9"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentListPage.tsx": {
-    "mtime": 1778759748.3727207,
-    "ast_hash": "a214ae192e4de64347531bb41a4ecd67",
-    "semantic_hash": "a214ae192e4de64347531bb41a4ecd67"
+    "mtime": 1779252220.6608584,
+    "ast_hash": "d674c7760b80725a421f88ba8f0c737c",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentFeesPage.tsx": {
-    "mtime": 1778908413.2607155,
-    "ast_hash": "5653c47752ab83c2d7ef6a57a4d2e89e",
+    "mtime": 1779252205.58658,
+    "ast_hash": "3470828534f3ed2e494528fcaef0bfff",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentResultsPage.tsx": {
-    "mtime": 1778702521.5238638,
-    "ast_hash": "d1a7ff612b7ef91c556f77c6a2fbfe78",
-    "semantic_hash": "d1a7ff612b7ef91c556f77c6a2fbfe78"
+    "mtime": 1779220743.4851732,
+    "ast_hash": "6aaedbff9c0fb1bb30315daa7ba4497c",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentHomeworkPage.tsx": {
-    "mtime": 1779112899.2348619,
-    "ast_hash": "873cc2ca1ccfa94931dfa90dee4e26f5",
+    "mtime": 1779220738.627519,
+    "ast_hash": "b7e38bf321ca06a42dbadc55da0c1c9e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentSelfProfilePage.tsx": {
+    "mtime": 1779303625.9768384,
+    "ast_hash": "d7a1b09c07c6a0ceade81153696fb427",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentPromotionPage.tsx": {
-    "mtime": 1778761025.266701,
-    "ast_hash": "88d7569e49e3f9e55dae64dbcd85428b",
-    "semantic_hash": "88d7569e49e3f9e55dae64dbcd85428b"
+    "mtime": 1779220795.9020872,
+    "ast_hash": "19545bcd4f8dbe6bfb12ed190fd2e822",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentAssignmentsPage.tsx": {
-    "mtime": 1778697804.458019,
-    "ast_hash": "cf794dc5584756ffb6f75279359ed3bc",
-    "semantic_hash": "cf794dc5584756ffb6f75279359ed3bc"
+    "mtime": 1779220769.8504314,
+    "ast_hash": "d5bae384469d2d82f5d227702d0b8f06",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentAttendancePage.tsx": {
-    "mtime": 1778855042.1998737,
-    "ast_hash": "507c402590f35d2e75a371a62b8dafc0",
+    "mtime": 1779220738.627217,
+    "ast_hash": "f8ead55b4b356a7333df3d5911704759",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentNoticesPage.tsx": {
-    "mtime": 1778697835.8781261,
-    "ast_hash": "4020f8c7882f236eef6bd7fc0b2cdb65",
-    "semantic_hash": "4020f8c7882f236eef6bd7fc0b2cdb65"
+    "mtime": 1779220690.979507,
+    "ast_hash": "6b2044cf0abcd9cc2c4a4e2b4a64f4b6",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentDashboardPage.tsx": {
-    "mtime": 1778697940.4598157,
-    "ast_hash": "843d0026a56edcb4efe319929a4e6598",
-    "semantic_hash": "843d0026a56edcb4efe319929a4e6598"
+    "mtime": 1779356287.8028026,
+    "ast_hash": "1409893bf7d24a62ecfbc048e0d15a2a",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentQrScanPage.tsx": {
-    "mtime": 1779081976.0507684,
-    "ast_hash": "b96750c5613bc6525ed868a40ce3a401",
+    "mtime": 1779217903.976795,
+    "ast_hash": "0b27d6c9d06226d3c6d947c5020f22fe",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentAdmitPage.tsx": {
-    "mtime": 1778658528.2167947,
-    "ast_hash": "c5a108e712ba35d98e00157e4b27887d",
-    "semantic_hash": "c5a108e712ba35d98e00157e4b27887d"
+    "mtime": 1779252235.858554,
+    "ast_hash": "593c10d397e5e2be6f04d1ee3169bc46",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentTimetablePage.tsx": {
-    "mtime": 1778855984.2479935,
-    "ast_hash": "83c46889d0e459dbf466ec2cca5798e0",
+    "mtime": 1779303905.016235,
+    "ast_hash": "0f3b68245ef13b7efcb6d88881ecd56e",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentBulkImportPage.tsx": {
-    "mtime": 1778658528.217028,
-    "ast_hash": "71a88443492814b9d596dac1f76f7066",
-    "semantic_hash": "71a88443492814b9d596dac1f76f7066"
+    "mtime": 1779220690.9805307,
+    "ast_hash": "915f27fee5d0106b9cad0d1d501523f4",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/student/pages/StudentProfilePage.tsx": {
-    "mtime": 1778854033.1283703,
-    "ast_hash": "5c500a3300ca55d94d2c8d9e269121c0",
+    "mtime": 1779249401.4293592,
+    "ast_hash": "658c0857ebaa12b2448560c0ae70fa71",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/role-portals/types/portal.ts": {
+    "mtime": 1779212432.4731867,
+    "ast_hash": "ec83c18b5f94b56d42f9c47bd4343523",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/role-portals/components/PortalDashboard.tsx": {
+    "mtime": 1779212432.4739044,
+    "ast_hash": "2d746a7a42794f8fdb49564f2eb7bf5c",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/InvestorRoomBuilder.tsx": {
-    "mtime": 1779081976.0513484,
-    "ast_hash": "eb5c2440a3c51f902c17542ae532f56e",
+    "mtime": 1779219541.6120481,
+    "ast_hash": "f4ce874810a80379048c87b80c858584",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/TemplateMarketplaceManager.tsx": {
-    "mtime": 1779088140.7435677,
-    "ast_hash": "88c49714dcfb51ae31667ead1422f04b",
+    "mtime": 1779219568.24908,
+    "ast_hash": "19306f5516207610a17c97a5a7fb09a0",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/MarketingAutomationManager.tsx": {
-    "mtime": 1779088140.743541,
-    "ast_hash": "00f2a5055198a5e0fd641b8463aae4dc",
+    "mtime": 1779219525.555791,
+    "ast_hash": "ef7939c8753622126e4426b3defad5cc",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/RenderProfilePreview.tsx": {
@@ -550,13 +605,13 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/StakeholderJourneyManager.tsx": {
-    "mtime": 1779086657.0268812,
-    "ast_hash": "3e9e19c2f9a2193bad0267be1aa48fe3",
+    "mtime": 1779219556.3895283,
+    "ast_hash": "42b3e186903e2db06ace85aae9495a2d",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/ContentBlockEditor.tsx": {
-    "mtime": 1779081976.0509763,
-    "ast_hash": "ccde33cba672ab2e0b37c85dfb0cf2d4",
+    "mtime": 1779219606.8705518,
+    "ast_hash": "f1c489aef3144a99a92c728fe2941cec",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/DemoScenarioManager.tsx": {
@@ -575,8 +630,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/TrustPlatformManager.tsx": {
-    "mtime": 1779088140.7436113,
-    "ast_hash": "e1b906930be5ba502e8ccc30f902b797",
+    "mtime": 1779219665.9675183,
+    "ast_hash": "00a8e97ac640f40020d0ee42d0e1996a",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/ExperienceControlCenter.tsx": {
@@ -585,13 +640,13 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/BrandingSystemManager.tsx": {
-    "mtime": 1779086657.008538,
-    "ast_hash": "d885ec83d3cea9e11f51d0790eae97c9",
+    "mtime": 1779219583.7596776,
+    "ast_hash": "123fc750e43fbda23e57c04e59ff0f27",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/WebsiteRouteManager.tsx": {
-    "mtime": 1779086657.0085247,
-    "ast_hash": "7c094188452a88d949f5a1f21e9f9ed1",
+    "mtime": 1779219623.1865883,
+    "ast_hash": "159fc185b6ea13845ec73d8fd4548688",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/ExperienceAnalyticsDashboard.tsx": {
@@ -600,18 +655,18 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/PresentationBuilderManager.tsx": {
-    "mtime": 1779088140.7435539,
-    "ast_hash": "537b25e3ea62964fb7bcd893b7afbd5e",
+    "mtime": 1779219640.1626987,
+    "ast_hash": "95a759e78fb6c0396ee1e59516925b11",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/StorytellingManager.tsx": {
-    "mtime": 1779088140.743606,
-    "ast_hash": "3fafd7f41d994f69c3872201f489fe02",
+    "mtime": 1779219652.9330447,
+    "ast_hash": "16869f21b5dcb01d37cac12b6278a8ed",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/experience/AiExperienceManager.tsx": {
-    "mtime": 1779097117.451139,
-    "ast_hash": "9713e64bffe218372ec7e3e8b59a9ac8",
+    "mtime": 1779219681.0281103,
+    "ast_hash": "a78db25919f0c521ec932b5446da6d59",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/types/tenant.ts": {
@@ -620,8 +675,8 @@
     "semantic_hash": "af07c375a9c5abb9ba6281d8a9ffe1d9"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/layouts/SuperAdminLayout.tsx": {
-    "mtime": 1779110990.5300498,
-    "ast_hash": "47f91d8bae21bcd089c990ec7aa6d947",
+    "mtime": 1779356249.8589582,
+    "ast_hash": "ac8dd1451375111bfc08ea04a8c9ef2d",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/api/tenantApi.ts": {
@@ -650,13 +705,13 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/api/aiUsageApi.ts": {
-    "mtime": 1778925914.6810296,
-    "ast_hash": "0563241f93b6643fd5b1d392f0f740c3",
+    "mtime": 1779168759.4256446,
+    "ast_hash": "ec8df3b25651c39fbbc16a37b690f35e",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/types/index.ts": {
-    "mtime": 1779090753.0267289,
-    "ast_hash": "7fc6370d69a3b377cb2b5f4987932e6a",
+    "mtime": 1779133069.7540643,
+    "ast_hash": "7b4c56ef3681075f8411f0b636c98862",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/config/websiteBuilderTemplates.ts": {
@@ -664,39 +719,44 @@
     "ast_hash": "9289d8ed6ac8c90f49114e87ac736894",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/utils/previewValidation.ts": {
+    "mtime": 1779132738.4032495,
+    "ast_hash": "69f8258ff5627516832805c1d90125a2",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/components/PublicWebsiteShell.tsx": {
-    "mtime": 1779112072.9100351,
-    "ast_hash": "312adddf6d27f3909de3ebeb484d052a",
+    "mtime": 1779255572.4665148,
+    "ast_hash": "09fd7c3d47bd261d848dd5344a32084c",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/hooks/usePublicWebsiteQueries.ts": {
-    "mtime": 1779112054.0620027,
-    "ast_hash": "3edf72b9e09caf8c0d48a51ed9054c84",
+    "mtime": 1779133093.9776082,
+    "ast_hash": "f8fe929e965c523ae37031b53cc978d7",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/api/publicWebsiteApi.ts": {
-    "mtime": 1779090753.026743,
-    "ast_hash": "c32ee665476967059923be77c31088bc",
+    "mtime": 1779133075.4907322,
+    "ast_hash": "22be49564ee533ac5ff7d01e5299ee12",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/pages/PublicWebsiteMediaPage.tsx": {
-    "mtime": 1779091024.4899275,
-    "ast_hash": "07445bdc023b9b94f1e81e6ea75f57ae",
+    "mtime": 1779256369.5438778,
+    "ast_hash": "886fc0999c63267f81f0b6d34c36fda4",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/pages/PublicWebsiteAnalyticsPage.tsx": {
-    "mtime": 1779091024.489939,
-    "ast_hash": "4f9201c05d45450402f49b4773116ab9",
+    "mtime": 1779256349.2882514,
+    "ast_hash": "ae3aaacdf9369d26345b1d11934862df",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/pages/PublicWebsitePublishPage.tsx": {
-    "mtime": 1779112270.7378304,
-    "ast_hash": "bdbbb55217d98ce403ce32e19f1d3123",
+    "mtime": 1779133111.9252002,
+    "ast_hash": "e6bf88f1b9c41ee95adc6531a6d91fea",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/pages/PublicWebsitePagesPage.tsx": {
-    "mtime": 1779112345.7875752,
-    "ast_hash": "37e4866be141da561530d801ae36fc95",
+    "mtime": 1779255503.3457043,
+    "ast_hash": "1b695611061946329a26f47b8adbfcca",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/pages/PublicWebsiteBrandingPage.tsx": {
@@ -705,8 +765,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/pages/PublicWebsiteDashboardPage.tsx": {
-    "mtime": 1779112105.7512481,
-    "ast_hash": "36f9382e5763d1236e37f05b238bebac",
+    "mtime": 1779255543.7088041,
+    "ast_hash": "274a122e7b8765a2d6b8da2f8d9ea8f0",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/public-website/pages/PublicWebsiteSeoPage.tsx": {
@@ -720,33 +780,33 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/SuperAdminDashboardPage.tsx": {
-    "mtime": 1778658528.219156,
-    "ast_hash": "e1a48c596618b3600755396ae1d2e40e",
-    "semantic_hash": "e1a48c596618b3600755396ae1d2e40e"
+    "mtime": 1779300975.7156997,
+    "ast_hash": "e9bc7e1bbf937f98574a773bd0f27742",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/SchoolComparisonPage.tsx": {
-    "mtime": 1779112887.6104908,
-    "ast_hash": "0c201fcd32860b81fbc92f9ee6597f69",
+    "mtime": 1779252205.587799,
+    "ast_hash": "8eedf9c8743a68a8eb590cb43cae2bc5",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/KnowledgeBasePage.tsx": {
-    "mtime": 1778925476.6545382,
-    "ast_hash": "0812869eb2bd7cc07c54c934d255f6d6",
+    "mtime": 1779249363.7812014,
+    "ast_hash": "07f450c9203c4b9d067997a387329a9f",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/TenantListPage.tsx": {
-    "mtime": 1779081976.0541036,
-    "ast_hash": "65e383242c6d32d62157e2e13cc14643",
+    "mtime": 1779252205.5885477,
+    "ast_hash": "a15f210a5e361cb78337bbe7390d7e02",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/AiUsagePage.tsx": {
-    "mtime": 1778925947.4583235,
-    "ast_hash": "d67ecd8f9cec4ce040617f3e93804785",
+    "mtime": 1779252205.5871973,
+    "ast_hash": "abc279d94bf3922706947a0eadf47e5e",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/TenantDetailPage.tsx": {
-    "mtime": 1778909254.629381,
-    "ast_hash": "67e51f565d2d993fbced146a5d7f62fb",
+    "mtime": 1779249358.4269273,
+    "ast_hash": "81768fec04a1c2c3b46a054cf9835c63",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/TenantListPage.test.tsx": {
@@ -755,9 +815,9 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/TenantCreatePage.test.tsx": {
-    "mtime": 1778658528.2193685,
-    "ast_hash": "479eb05e05edb85f6e55bfcf90b1e15d",
-    "semantic_hash": "479eb05e05edb85f6e55bfcf90b1e15d"
+    "mtime": 1779339997.9349618,
+    "ast_hash": "f8669e1f9eced0959f93efcf0e3ee1aa",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/TenantAnalyticsPage.tsx": {
     "mtime": 1778820178.5149388,
@@ -765,18 +825,18 @@
     "semantic_hash": "97f3a8d8e685c28a08927c2b4ecc9c1b"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/PromptDetailPage.tsx": {
-    "mtime": 1778910320.0104988,
-    "ast_hash": "1c097fc858c578c2e0685b106f711168",
+    "mtime": 1779249359.482356,
+    "ast_hash": "072557b450315b088fbe243d5b0c6f01",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/PromptListPage.tsx": {
-    "mtime": 1778910367.6037917,
-    "ast_hash": "da922ce824675e676542f6c1182f92fa",
+    "mtime": 1779249361.05469,
+    "ast_hash": "4b7466055e3a2c5eead23b7f391b3e26",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/super-admin/pages/TenantCreatePage.tsx": {
-    "mtime": 1778909550.5616329,
-    "ast_hash": "41915d881e7b473b243d22c44e08de26",
+    "mtime": 1779220738.638831,
+    "ast_hash": "f30d0ba6aecebc316c85c20253939b02",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/homework/types/homework.ts": {
@@ -790,14 +850,14 @@
     "semantic_hash": "5497d61c84ba8b23a1e99947a620301a"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/homework/pages/HomeworkListPage.tsx": {
-    "mtime": 1778658528.209139,
-    "ast_hash": "89b138a60c41386089632ac47d46d9ba",
-    "semantic_hash": "89b138a60c41386089632ac47d46d9ba"
+    "mtime": 1779249234.0254538,
+    "ast_hash": "c354983507ccea898cafdcecadade406",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/homework/pages/HomeworkCreatePage.tsx": {
-    "mtime": 1778658528.2085047,
-    "ast_hash": "202c69990bdc803d8e0a97be199655bf",
-    "semantic_hash": "202c69990bdc803d8e0a97be199655bf"
+    "mtime": 1779220738.6342487,
+    "ast_hash": "9724efb591e55541445138caf5ffc7d5",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/public-site/api/publicSiteApi.ts": {
     "mtime": 1778927982.743299,
@@ -805,19 +865,19 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/public-site/pages/CloudCampusPublicWebsitePage.tsx": {
-    "mtime": 1779110675.1538289,
-    "ast_hash": "71ef4a996b5b1d427654e414086b2c48",
+    "mtime": 1779301639.5851471,
+    "ast_hash": "3935b49dc49ec1b6c144c31ab6c3995f",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/public-site/pages/PublicSitePage.tsx": {
-    "mtime": 1779101133.7095118,
-    "ast_hash": "fa890666b00efe1a269ed611487b0ac0",
+    "mtime": 1779356249.8599577,
+    "ast_hash": "472157aba3db3930ca06e3a0795ae030",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/parent/layouts/ParentLayout.tsx": {
-    "mtime": 1778739608.553269,
-    "ast_hash": "e0967784af5b399ce62740182992625a",
-    "semantic_hash": "e0967784af5b399ce62740182992625a"
+    "mtime": 1779356249.8571324,
+    "ast_hash": "0b2e6ea895fe577ebe8b4942c55ec923",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/parent/api/parentApi.ts": {
     "mtime": 1778740718.7655687,
@@ -825,19 +885,19 @@
     "semantic_hash": "aecf3ddba302b6c1f4e4d16c37607a4d"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/parent/pages/ParentDashboardPage.tsx": {
-    "mtime": 1778698521.3211842,
-    "ast_hash": "07680dec1269e9aa79202419effd3fe8",
-    "semantic_hash": "07680dec1269e9aa79202419effd3fe8"
+    "mtime": 1779356287.8013432,
+    "ast_hash": "7bea015e8ff86067fe248f66ec2362d1",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/parent/pages/ParentChildPage.tsx": {
-    "mtime": 1778855995.7760282,
-    "ast_hash": "6c07bb02bf436e6e8d9e443bbc6f9602",
+    "mtime": 1779303945.440784,
+    "ast_hash": "a3246a8fe5eaf8c66d9bcc2edb155b32",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/parent/pages/ParentNoticesPage.tsx": {
-    "mtime": 1778698575.8704712,
-    "ast_hash": "fbbfafa18c6ead50a60b583a45dd8d8f",
-    "semantic_hash": "fbbfafa18c6ead50a60b583a45dd8d8f"
+    "mtime": 1779252205.583411,
+    "ast_hash": "135b77087e9eca0ddf4c00af32d8c537",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/finance/types/finance.ts": {
     "mtime": 1778658528.2079864,
@@ -850,24 +910,24 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/finance/pages/StudentFeeDetailPage.tsx": {
-    "mtime": 1778854432.4298172,
-    "ast_hash": "952c07e59d54a98107f46ceb291bb013",
+    "mtime": 1779252205.5822184,
+    "ast_hash": "0a54d083c8b290d29293a869d1b32d32",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/finance/pages/FeeCollectionPage.tsx": {
-    "mtime": 1778658528.206761,
-    "ast_hash": "4f6f5cf72b2b5c8ec71a6c3de2ac920d",
-    "semantic_hash": "4f6f5cf72b2b5c8ec71a6c3de2ac920d"
+    "mtime": 1779252205.581847,
+    "ast_hash": "8b4c05fa622152e591c60c94ea91bb0b",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/finance/pages/FeeStructureListPage.tsx": {
-    "mtime": 1778658528.2073147,
-    "ast_hash": "762f30cae01ca2f2600e30572fe361a1",
-    "semantic_hash": "762f30cae01ca2f2600e30572fe361a1"
+    "mtime": 1779249149.0683432,
+    "ast_hash": "8106fb0766908e7e199e1ecab9926574",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/finance/pages/FeeStructureCreatePage.tsx": {
-    "mtime": 1778658528.2070606,
-    "ast_hash": "b308e9e33040cb06961701af83514d21",
-    "semantic_hash": "b308e9e33040cb06961701af83514d21"
+    "mtime": 1779220738.6310573,
+    "ast_hash": "5821dfa2fb8093944de537a7ef0932b8",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/exam/types/result.ts": {
     "mtime": 1778658528.2061212,
@@ -900,39 +960,44 @@
     "semantic_hash": "576418be6148d96ab19ae5989c93023b"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/exam/pages/ReportCardPage.tsx": {
-    "mtime": 1778658528.2051218,
-    "ast_hash": "671d52e3baf92503fc95794915142822",
-    "semantic_hash": "671d52e3baf92503fc95794915142822"
+    "mtime": 1779249354.1381295,
+    "ast_hash": "23c5c4d919a8b321749617c79dffcd1c",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/exam/pages/MarksEntryPage.tsx": {
-    "mtime": 1779112767.7630737,
-    "ast_hash": "b88430dc88bd2180820fdbe2e5cd4969",
+    "mtime": 1779249349.8857853,
+    "ast_hash": "1d51bfc1c7622a1dd5f849eaba7bae89",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/exam/pages/ExamCreatePage.tsx": {
-    "mtime": 1778658528.2042925,
-    "ast_hash": "02c2901514d82e06fbce3e203bb7fbf4",
-    "semantic_hash": "02c2901514d82e06fbce3e203bb7fbf4"
+    "mtime": 1779220738.6292975,
+    "ast_hash": "02c5726f8af218d5d5decefed587a8e6",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/exam/pages/ResultsPage.tsx": {
-    "mtime": 1778658528.2053595,
-    "ast_hash": "c755acc3e798cebd62f0fbd3aaf01b53",
-    "semantic_hash": "c755acc3e798cebd62f0fbd3aaf01b53"
+    "mtime": 1779252205.5815487,
+    "ast_hash": "ee9a2f690502892513bc62440ed325f1",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/exam/pages/ExamListPage.tsx": {
-    "mtime": 1778658528.2046866,
-    "ast_hash": "55a60fafbcc7ab65962c5f0c35e5ef65",
-    "semantic_hash": "55a60fafbcc7ab65962c5f0c35e5ef65"
+    "mtime": 1779252205.581238,
+    "ast_hash": "9413bf234b2084262038a8a1fb532843",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/exam/pages/ExamDetailPage.tsx": {
-    "mtime": 1778658528.20452,
-    "ast_hash": "1443d7005232358cc65c4a1dbd1e0949",
-    "semantic_hash": "1443d7005232358cc65c4a1dbd1e0949"
+    "mtime": 1779252205.5808756,
+    "ast_hash": "2ae0ab0bad2dec41fbcd47ec3521a3b9",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/staff/types/staff.ts": {
     "mtime": 1778658528.2162175,
     "ast_hash": "78c87f5a06801f05a58fadd0cc134edd",
     "semantic_hash": "78c87f5a06801f05a58fadd0cc134edd"
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/staff/api/staffProfile360Api.ts": {
+    "mtime": 1779207519.932105,
+    "ast_hash": "e012d8c98b0d10316d375baa462080e8",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/staff/api/staffApi.ts": {
     "mtime": 1778658528.215286,
@@ -950,38 +1015,38 @@
     "semantic_hash": "c85f3912e80d66d7604a305d714759df"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/staff/pages/StaffListPage.tsx": {
-    "mtime": 1778759380.8111298,
-    "ast_hash": "711a00498e01d1ae88286938129e439f",
-    "semantic_hash": "711a00498e01d1ae88286938129e439f"
+    "mtime": 1779252205.5860078,
+    "ast_hash": "95c4d186927989d61de08d0af45efe7d",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/staff/pages/StaffAttendancePage.tsx": {
-    "mtime": 1779112777.7597063,
-    "ast_hash": "0ad66ee6004c1ae44c810b9396704dbb",
+    "mtime": 1779249355.70216,
+    "ast_hash": "6732c0eb28f55d4e52bbcb168b3dd3ca",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/staff/pages/LeaveManagementPage.tsx": {
-    "mtime": 1778699806.8409681,
-    "ast_hash": "40e1ad0c08aff64939b2a724b5e56c99",
-    "semantic_hash": "40e1ad0c08aff64939b2a724b5e56c99"
+    "mtime": 1779252205.5846796,
+    "ast_hash": "bbab44939a901a42d35545316c54dbd1",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/staff/pages/StaffCreatePage.tsx": {
-    "mtime": 1778658528.2154708,
-    "ast_hash": "85d6dee95fa4270beece40158dac041f",
-    "semantic_hash": "85d6dee95fa4270beece40158dac041f"
+    "mtime": 1779252205.585544,
+    "ast_hash": "69a79f66f34e1decf42a8a2eb23202cd",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/staff/pages/StaffProfilePage.tsx": {
-    "mtime": 1779112817.0120585,
-    "ast_hash": "3d6cbe6389de7cbdc5eab13033b66665",
+    "mtime": 1779252220.6622105,
+    "ast_hash": "de648022a05774582870829d7b17b467",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/layouts/TeacherLayout.tsx": {
-    "mtime": 1778945278.076724,
-    "ast_hash": "ef8f009e79f41d8b895a32ba139923f0",
+    "mtime": 1779356249.8594937,
+    "ast_hash": "c04a52f952cf72b8af06b5860d052cf2",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/api/onlineClassApi.ts": {
-    "mtime": 1778948876.959293,
-    "ast_hash": "786953db219416725593477e5ce9beaf",
+    "mtime": 1779250022.084439,
+    "ast_hash": "a168a6890c1287eec25e21818523c1e0",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/api/teacherDashboardApi.ts": {
@@ -1010,8 +1075,8 @@
     "semantic_hash": "199cb98fc7bd71325d40da164b8f3a0b"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/api/videoApi.ts": {
-    "mtime": 1778948876.9593058,
-    "ast_hash": "c0463f7fdefa01e27e8dc96b43ddd980",
+    "mtime": 1779250026.089079,
+    "ast_hash": "997e2cf72e4baf071d586b906b31d240",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/api/teacherAttendanceApi.ts": {
@@ -1020,64 +1085,64 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/TeacherNoticesPage.tsx": {
-    "mtime": 1778738266.1984086,
-    "ast_hash": "c56df2b68c904c285fdd09d76153764a",
-    "semantic_hash": "c56df2b68c904c285fdd09d76153764a"
+    "mtime": 1779220738.6421561,
+    "ast_hash": "1b09c3d168b68e8e34c3ce9e2f576ef3",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/TeacherAttendancePage.tsx": {
-    "mtime": 1779112805.4447997,
-    "ast_hash": "2d1f766ef53e3f1126a1321465bbe31e",
+    "mtime": 1779220738.640853,
+    "ast_hash": "dfb72ffe8998be1125fd005316ebe838",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/TeacherAssignmentSubmissionsPage.tsx": {
-    "mtime": 1778697162.647786,
-    "ast_hash": "3236cb180f5f244faced5de94b9ae790",
-    "semantic_hash": "3236cb180f5f244faced5de94b9ae790"
+    "mtime": 1779220547.909753,
+    "ast_hash": "e90b012eb5d3fe4977307356d40262fc",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/TeacherHomeworkSubmissionsPage.tsx": {
-    "mtime": 1778696756.3034372,
-    "ast_hash": "bf986faf4dfddaf93d541d614bbf0b79",
-    "semantic_hash": "bf986faf4dfddaf93d541d614bbf0b79"
+    "mtime": 1779220564.0786612,
+    "ast_hash": "0e5897780cfb998903c5c1a4cdea546e",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/TeacherLeavePage.tsx": {
-    "mtime": 1778757594.0493422,
-    "ast_hash": "22105eae72bd62f3b326d73b54c53a00",
-    "semantic_hash": "22105eae72bd62f3b326d73b54c53a00"
+    "mtime": 1779220738.6411703,
+    "ast_hash": "65cc8d1e73b56f8fc42c5a115f5e86be",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/VideoUploadPage.tsx": {
-    "mtime": 1779112914.1330235,
-    "ast_hash": "2a4b722d8e0f8a5cb95a393bf6ea9e2e",
+    "mtime": 1779220738.6419683,
+    "ast_hash": "50fc15027fd1b3cf9ddc0d00e1744d11",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/TeacherDashboardPage.tsx": {
-    "mtime": 1778701551.024515,
-    "ast_hash": "3d7af3c7696a96acd9c16654478eb58a",
-    "semantic_hash": "3d7af3c7696a96acd9c16654478eb58a"
+    "mtime": 1779301047.157882,
+    "ast_hash": "773bec3ade046d680628f290945a6a34",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/LessonPlanPage.tsx": {
-    "mtime": 1779112909.9996796,
-    "ast_hash": "f167894e8bbcd2eb56ebab8fdaf0f0d3",
+    "mtime": 1779220738.6414516,
+    "ast_hash": "467d006d723742c3fa771373058ef586",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/TeacherTimetablePage.tsx": {
-    "mtime": 1778855990.377473,
-    "ast_hash": "2b111bcef902f4a72622d22924474642",
+    "mtime": 1779303925.8000755,
+    "ast_hash": "6679f89d3ec642343d9630dfc90904ee",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/TeacherHomeworkListPage.tsx": {
-    "mtime": 1778696736.1216888,
-    "ast_hash": "6d8714c1e32c7039667bd55f459d4e7d",
-    "semantic_hash": "6d8714c1e32c7039667bd55f459d4e7d"
+    "mtime": 1779220625.0900047,
+    "ast_hash": "b9c15177f60c24c0a7091be6259661b6",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/OnlineClassPage.tsx": {
-    "mtime": 1778945102.10078,
-    "ast_hash": "9509d660065d585447d5c58a4ee49b7c",
+    "mtime": 1779220738.6416821,
+    "ast_hash": "54c3e1e97220d04680b97b3f48ef537a",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/teacher/pages/TeacherAssignmentListPage.tsx": {
-    "mtime": 1778697131.0368717,
-    "ast_hash": "dd6bc0a7e808ce0a17c32e972ea764e0",
-    "semantic_hash": "dd6bc0a7e808ce0a17c32e972ea764e0"
+    "mtime": 1779220626.2395437,
+    "ast_hash": "744ff7ebb8699f34d6b02e4ba8f24c8c",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/whatsapp/api/whatsappApi.ts": {
     "mtime": 1778658528.2228477,
@@ -1085,9 +1150,9 @@
     "semantic_hash": "589cc0670156775072b767203d55a891"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/whatsapp/pages/WhatsAppPage.tsx": {
-    "mtime": 1778658528.223132,
-    "ast_hash": "317f7f5e05a5740e8fb01deea7188836",
-    "semantic_hash": "317f7f5e05a5740e8fb01deea7188836"
+    "mtime": 1779249456.086598,
+    "ast_hash": "b1dd1e0073db9da49ce4577ac73825f9",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/reports/api/reportApi.ts": {
     "mtime": 1778779687.7543173,
@@ -1095,13 +1160,18 @@
     "semantic_hash": "0430056312a4097a3a4541a62ea4989e"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/reports/pages/ReportsPage.tsx": {
-    "mtime": 1778779737.9348826,
-    "ast_hash": "b698684373ab825dbb32237ef2c97d89",
-    "semantic_hash": "b698684373ab825dbb32237ef2c97d89"
+    "mtime": 1779252205.584085,
+    "ast_hash": "e17ad385a97e5bed8852e6281e1d9671",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/timetable/types/timetable.ts": {
     "mtime": 1778855953.1979613,
     "ast_hash": "3e5b35d3a67c74d1a3cbb7a87a1b0289",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/timetable/components/WeeklyTimetableView.tsx": {
+    "mtime": 1779303883.6142397,
+    "ast_hash": "500ddd19785e4a4e3dfdb518a27bf864",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/timetable/api/timetableApi.ts": {
@@ -1110,9 +1180,104 @@
     "semantic_hash": "5cd2819117273018a40035f0745047e3"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/features/timetable/pages/TimetablePage.tsx": {
-    "mtime": 1778658528.2223673,
-    "ast_hash": "404507732281263d6108100a2be43083",
-    "semantic_hash": "404507732281263d6108100a2be43083"
+    "mtime": 1779220738.642782,
+    "ast_hash": "2c057ea021c34d1b1a31f1d6834cf001",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/ConfirmDialog.tsx": {
+    "mtime": 1779217020.3236299,
+    "ast_hash": "df05337cc1841f58546ca1757fee172c",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/InsightCard.tsx": {
+    "mtime": 1779301629.8592427,
+    "ast_hash": "a5d1142af1c1499c248c5723a388f922",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/useToast.ts": {
+    "mtime": 1779356249.854431,
+    "ast_hash": "d1b5429d64612aa5d32f05efaaeb68e2",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/LockedFeature.tsx": {
+    "mtime": 1779257513.375349,
+    "ast_hash": "6a85ad178baf9af0e4edcba69fe12729",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/ToastContext.ts": {
+    "mtime": 1779356249.8541372,
+    "ast_hash": "64ff666ee8680ac4273f064ad48e20a3",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/PageHeader.tsx": {
+    "mtime": 1779217053.5064826,
+    "ast_hash": "d86e9435479d0b0020dc4d852634735b",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/Alert.tsx": {
+    "mtime": 1779216983.249757,
+    "ast_hash": "675ecb0db95c8ff352c3367f515422f2",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/MetricCard.tsx": {
+    "mtime": 1779301629.858722,
+    "ast_hash": "808beae18fdaa07a9e76cc11e6dc3dae",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/DataTable.tsx": {
+    "mtime": 1779217073.8059802,
+    "ast_hash": "a4b1c59f66fdfd190d1fddd074a65c79",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/Badge.tsx": {
+    "mtime": 1779216963.8644254,
+    "ast_hash": "6a2c26b5b2e0cc9505d89ec888dbfded",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/SensitiveField.tsx": {
+    "mtime": 1779301629.8596349,
+    "ast_hash": "9645b3cd4f77687293c9adfe1da0d1ad",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/index.ts": {
+    "mtime": 1779356249.8564408,
+    "ast_hash": "5f37c3d72d04fc808760434c00e201d0",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/Button.tsx": {
+    "mtime": 1779216974.9665122,
+    "ast_hash": "643bddcc8d580d07941df0c8f97dd00e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/Modal.tsx": {
+    "mtime": 1779217013.4381864,
+    "ast_hash": "383316789918be52bb97ace90d7f57d4",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/Toast.tsx": {
+    "mtime": 1779356249.8558779,
+    "ast_hash": "96528c72c7428e1d7497e4f55dab1c77",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/EmptyState.tsx": {
+    "mtime": 1779216997.5305817,
+    "ast_hash": "f021c2f908b3ef67ba95a4a62a71b854",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/Spinner.tsx": {
+    "mtime": 1779216774.2853506,
+    "ast_hash": "e4118424aac0586a7009ab7da044e8f7",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/ui/Skeleton.tsx": {
+    "mtime": 1779216790.8526602,
+    "ast_hash": "620e8b77983eb5427d3f8e4f051cf36f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/types/aiInsight.ts": {
+    "mtime": 1779301629.8580067,
+    "ast_hash": "be117a9e67bc38c56dee875322b0aa6a",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/types/api.ts": {
     "mtime": 1778658528.2254848,
@@ -1129,10 +1294,20 @@
     "ast_hash": "e76ea71b8e601fb47ecd298b4557c0a9",
     "semantic_hash": "e76ea71b8e601fb47ecd298b4557c0a9"
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/hooks/useEntitlement.ts": {
+    "mtime": 1779356287.8038445,
+    "ast_hash": "bb2c07670dc81e9d2ac7c7a1a396759d",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/hooks/useBranding.ts": {
     "mtime": 1778819782.5110495,
     "ast_hash": "450e195353bccf40f5cf012e6ec00237",
     "semantic_hash": "450e195353bccf40f5cf012e6ec00237"
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/hooks/useRouteScopedDisclosure.ts": {
+    "mtime": 1779356249.853719,
+    "ast_hash": "5ddad77d3e4dc3745a8526f1cf7d5bba",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/src/shared/hooks/useFeatureFlag.ts": {
     "mtime": 1778658528.2253528,
@@ -1154,9 +1329,59 @@
     "ast_hash": "6256fbaf83a082755cf4478ab5612c0c",
     "semantic_hash": "6256fbaf83a082755cf4478ab5612c0c"
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/experience/InvestorRoomExpiryValidationTest.java": {
+    "mtime": 1779136077.5776484,
+    "ast_hash": "a3922aee71bc378064cf0d658bdbb38f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/experience/InvestorRoomAccessLogIntegrationTest.java": {
+    "mtime": 1779134170.1705525,
+    "ast_hash": "a76ba773d91e6ed04d26ebf77df3d57d",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/experience/service/WebsiteBuilderSchemaValidationServiceTest.java": {
+    "mtime": 1779133052.9636567,
+    "ast_hash": "99d9603ff2688f0557c625c394364939",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/experience/service/PublishServiceValidationTest.java": {
+    "mtime": 1779133060.892432,
+    "ast_hash": "734c446524f94a5630ffc20fdb19be3e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/experience/service/WebsiteSchemaValidatorTest.java": {
+    "mtime": 1779131794.374164,
+    "ast_hash": "1a3247efd312d642daa825d3e595f665",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/experience/service/WebsiteAuditTimelineServiceIntegrationTest.java": {
+    "mtime": 1779133153.9212449,
+    "ast_hash": "86bbffff687eeca97f3b2fad97d7a523",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/experience/service/WebsitePublishValidationServiceTest.java": {
+    "mtime": 1779132163.5395708,
+    "ast_hash": "35046195e2f0dd3436a9bfc6554ca116",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/tenant/TenantIsolationTest.java": {
     "mtime": 1779084258.0379467,
     "ast_hash": "531a8d84ee9b948cb61b45835c2b96a1",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/rbac/CrossTenantIsolationIntegrationTest.java": {
+    "mtime": 1779116079.5566897,
+    "ast_hash": "00d48b18a04955427fa9c0b090391cf0",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/rbac/SecurityHeadersIntegrationTest.java": {
+    "mtime": 1779116619.6068509,
+    "ast_hash": "9c0fcc304195e7c0afff311a994593e1",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/rbac/RoleMatrixIntegrationTest.java": {
+    "mtime": 1779115006.2684574,
+    "ast_hash": "206c9cbdbc313b754acbabb04499bd36",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/config/DockerApiVersionFixStrategy.java": {
@@ -1164,9 +1389,24 @@
     "ast_hash": "673781136afd6cbd41952a395066525b",
     "semantic_hash": "673781136afd6cbd41952a395066525b"
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/security/SensitiveDataPolicyTest.java": {
+    "mtime": 1779301593.559339,
+    "ast_hash": "82dd5edcf8e61797ef8781645f8422bd",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/auth/mfa/MfaPolicyTest.java": {
+    "mtime": 1779301593.5603845,
+    "ast_hash": "5e206675705d41ef4a22ec28a9374c47",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/auth/service/DeviceSessionServiceImplTest.java": {
+    "mtime": 1779339947.088212,
+    "ast_hash": "041918139e609954fcbe534e2d37cba6",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/auth/service/AuthServiceImplTest.java": {
-    "mtime": 1779081976.0460932,
-    "ast_hash": "528c52e80d53cbe71da29034ec7af229",
+    "mtime": 1779339738.2394028,
+    "ast_hash": "c4c63e78a436d592239c82542573cdef",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/auth/service/AuthLockoutIntegrationTest.java": {
@@ -1179,9 +1419,64 @@
     "ast_hash": "3c5312b06a3c419bd1b011b260b38b14",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/payment/service/PaymentWebhookIdempotencyTest.java": {
+    "mtime": 1779364241.379999,
+    "ast_hash": "d7d6fec79a66b2f9f1804d6bb4075bfb",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/payment/service/PaymentFlowIntegrationTest.java": {
     "mtime": 1779094257.6307487,
     "ast_hash": "6b9b87ac86cfa4a43992ce26493a60e3",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/storage/StorageServiceTest.java": {
+    "mtime": 1779131431.1937902,
+    "ast_hash": "dc7b34e85d405c37acb6dd97ff9888e9",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/storage/UploadAuditLogIntegrationTest.java": {
+    "mtime": 1779130823.1862938,
+    "ast_hash": "465b6d1aec555451f06f28dd0da953a5",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/storage/quarantine/UploadQuarantinePolicyTest.java": {
+    "mtime": 1779301593.5599053,
+    "ast_hash": "22c9721a5455bff8957eaa32a55e220e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/common/web/RequestTraceabilityTest.java": {
+    "mtime": 1779187656.5335987,
+    "ast_hash": "5f9c40c43c2cce11f2561867c7614c65",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/common/usage/UsageLimitEnforcerTest.java": {
+    "mtime": 1779364556.5925126,
+    "ast_hash": "dedbd20c2dda2b9106d0c64e03bea067",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/ai/insights/AiInsightServicesTest.java": {
+    "mtime": 1779301593.5586538,
+    "ast_hash": "2fb5087fe0f58901f2498377942aa560",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/ai/embedding/service/EmbeddingServiceTenantIsolationTest.java": {
+    "mtime": 1779168552.325605,
+    "ast_hash": "dd69dbbce2f3f0bd6630f7e8f81ac8e8",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/ai/prompt/service/PromptInjectionPromptServiceTest.java": {
+    "mtime": 1779168241.1748207,
+    "ast_hash": "5e82fdb3d692879064d3bc7f9371d985",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/ai/knowledge/service/KnowledgeBaseTenantIsolationTest.java": {
+    "mtime": 1779168552.3633807,
+    "ast_hash": "2e974bb19607d48057363e4e2edeacb8",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/ai/knowledge/service/PromptInjectionKnowledgeBaseServiceTest.java": {
+    "mtime": 1779168241.239133,
+    "ast_hash": "6758332fba8766ba4c233225b13a8351",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/java/com/cloudcampus/finance/service/FeeServiceImplTest.java": {
@@ -1208,6 +1503,11 @@
     "mtime": 1778658528.1793275,
     "ast_hash": "5b41f18e2fca4cd90aa6daa693956491",
     "semantic_hash": "5b41f18e2fca4cd90aa6daa693956491"
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V90__jnv_lucknow_academic_activity.sql": {
+    "mtime": 1779347963.0606034,
+    "ast_hash": "b4dcff26fd2de6f47f9a39d7c4c22048",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V78__seed_experience_expansion_domains.sql": {
     "mtime": 1779088140.7168925,
@@ -1269,6 +1569,11 @@
     "ast_hash": "6fa843ad49cfd702b0507c6ad7474188",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V88__device_sessions_allow_platform_users.sql": {
+    "mtime": 1779335633.1334224,
+    "ast_hash": "87d0244a6e3b5bf0c7d01b6e57254ef4",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V25__create_notification_logs.sql": {
     "mtime": 1778658528.1832068,
     "ast_hash": "741e9aa1e642252e39aa3bb6c46acd09",
@@ -1277,6 +1582,11 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V59__greenwood_demo_tenant.sql": {
     "mtime": 1779097800.9000523,
     "ast_hash": "6315abbb54ebd4eff2fae028bfcc43e7",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V93__demo_anonymise_synthetic_aadhaar.sql": {
+    "mtime": 1779363619.6700828,
+    "ast_hash": "df435bdf6affb464a92c6439260b9950",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V42__jnv_lucknow_seed.sql": {
@@ -1374,6 +1684,11 @@
     "ast_hash": "4c914393c8d40fc86c04586e88903e75",
     "semantic_hash": "4c914393c8d40fc86c04586e88903e75"
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V91__jnv_lucknow_profile_and_enrichment_data.sql": {
+    "mtime": 1779361612.6994057,
+    "ast_hash": "6d8c5eff34cf22e0ce44eb9e199c90b5",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V76__seed_experience_studio_full_data.sql": {
     "mtime": 1779087072.0036724,
     "ast_hash": "9d08f1670456647b1dd4389026205606",
@@ -1429,6 +1744,16 @@
     "ast_hash": "5f54f6f0074d91958f171172ed9c9a8e",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V92__demo_admin_anonymise_owner_pii.sql": {
+    "mtime": 1779363607.521399,
+    "ast_hash": "006b3e4ce9f5bb01172c3c83298c5a90",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V84__create_website_rollback_audit_log.sql": {
+    "mtime": 1779132411.5194483,
+    "ast_hash": "ff462981caf696a347425dac3e6663e3",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V66__student_fee_records_tenant_fk.sql": {
     "mtime": 1779081976.043926,
     "ast_hash": "1b4501e80f8b12f4fc9b2a0c44b7ad05",
@@ -1453,6 +1778,21 @@
     "mtime": 1778658528.1886804,
     "ast_hash": "bd5cd007f0c51b89d40cc8c8eecb689a",
     "semantic_hash": "bd5cd007f0c51b89d40cc8c8eecb689a"
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V83__create_upload_audit_log.sql": {
+    "mtime": 1779130423.9967084,
+    "ast_hash": "624b4f8927dc130708d1592a8c29b561",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V87__student_profile_360.sql": {
+    "mtime": 1779191980.1824212,
+    "ast_hash": "9fb2bcb21a7599a5a189fb32c99dc870",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V85__create_website_audit_timeline.sql": {
+    "mtime": 1779132906.8325653,
+    "ast_hash": "1b19bec3d47092eee9f67344a08ad715",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V34__create_school_notices.sql": {
     "mtime": 1778658528.186617,
@@ -1507,6 +1847,11 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V67__content_tables_soft_delete.sql": {
     "mtime": 1779081976.0441167,
     "ast_hash": "5d65acaa8d707fb7ed9751ce5efc2cf7",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V89__jnv_lucknow_students_and_profiles.sql": {
+    "mtime": 1779347784.4396865,
+    "ast_hash": "df864bc1061d2dd0a1915cbbc982163a",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V31__create_timetable.sql": {
@@ -1602,6 +1947,11 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V45__tenant_subscriptions.sql": {
     "mtime": 1778908584.581926,
     "ast_hash": "eb2bc19b1a22268a2871777317ec4957",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/db/migration/V86__create_investor_room_access_log.sql": {
+    "mtime": 1779133648.6681535,
+    "ast_hash": "704b5e108331196c879003fc81fad01b",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/CloudCampusApplication.java": {
@@ -1769,6 +2119,11 @@
     "ast_hash": "ba79f5959f515478a72f5f810fafcd07",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/dto/response/WebsiteRollbackAuditLogResponse.java": {
+    "mtime": 1779132519.5276277,
+    "ast_hash": "f83a631568d2eddb807eea4255373273",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/dto/response/AiContentGenerateResponse.java": {
     "mtime": 1779096977.7563896,
     "ast_hash": "d36b9e877e8183b22e70c7c1155cb1a6",
@@ -1802,6 +2157,11 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/dto/response/PublicWebsiteDashboardResponse.java": {
     "mtime": 1779090753.7882013,
     "ast_hash": "67540d8a9773f9ce08df5405d14a1da7",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/dto/response/WebsiteAuditTimelineEventResponse.java": {
+    "mtime": 1779132886.6787822,
+    "ast_hash": "d8e99c9e91fa51ba8ae4de2fae64f4ad",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/dto/response/WebsiteSeoSettingsResponse.java": {
@@ -2044,6 +2404,11 @@
     "ast_hash": "9bdd486fdd12a94ae938856a2c1fa7fb",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/repository/ExperienceWebsiteRollbackAuditLogRepository.java": {
+    "mtime": 1779132513.9424272,
+    "ast_hash": "e36755f87bbf554d407f3b2b6a1012a7",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/repository/ExperienceEventRepository.java": {
     "mtime": 1779090753.8194733,
     "ast_hash": "55280d7a3a73ad1d982f5a09e11e57e3",
@@ -2057,6 +2422,11 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/repository/MarketingCampaignStepRepository.java": {
     "mtime": 1779088140.7436533,
     "ast_hash": "13fcd7af382d7390b766ae243a5b6234",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/repository/ExperienceWebsiteAuditTimelineRepository.java": {
+    "mtime": 1779132880.1963952,
+    "ast_hash": "7cb4bf74f2db139205981050a615a033",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/repository/ExperienceWebsiteThemeRepository.java": {
@@ -2139,6 +2509,11 @@
     "ast_hash": "b522dfb5a2d0112023e1baefdd15b17c",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/WebsiteRollbackAuditLog.java": {
+    "mtime": 1779132401.2796018,
+    "ast_hash": "3019bec3863f77b2821b3ee6cde34d9c",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/Presentation.java": {
     "mtime": 1779081976.0276227,
     "ast_hash": "792cee3ac5786782d59633180f4b6d79",
@@ -2150,8 +2525,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/WebsiteSeoSettings.java": {
-    "mtime": 1779091890.8725407,
-    "ast_hash": "42a802ee771621d5077c8bf5ec89973b",
+    "mtime": 1779132388.8619254,
+    "ast_hash": "2fb936e1a4b8768fcd925eefb80cca41",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/WebsiteRouteConfig.java": {
@@ -2165,23 +2540,23 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/WebsiteNavigation.java": {
-    "mtime": 1779090753.3445468,
-    "ast_hash": "5f79c5dbbefbc786c01e37fd349b89c6",
+    "mtime": 1779132384.1877553,
+    "ast_hash": "2854bf50d5cae64444ea7bd242f42dd0",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/WebsitePage.java": {
-    "mtime": 1779091890.8725355,
-    "ast_hash": "f49f261bc434f4152fc4954d971e5ff3",
+    "mtime": 1779132371.0235646,
+    "ast_hash": "2d33ecef0a6f3d34a755cfa740644e40",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/WebsiteSection.java": {
-    "mtime": 1779091890.8726492,
-    "ast_hash": "e3b739e4dbf30446c2e7ef0c67ebf96c",
+    "mtime": 1779132375.6910923,
+    "ast_hash": "dd45704d0e4fd5a5f61a4cf59adb9ae2",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/WebsiteTheme.java": {
-    "mtime": 1779090753.2716424,
-    "ast_hash": "6abf65359cffe696bca59dac5a080414",
+    "mtime": 1779132379.9960597,
+    "ast_hash": "bb4bc0e4401a6ff66ac2f1ea09275a5b",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/ExperienceEvent.java": {
@@ -2199,6 +2574,11 @@
     "ast_hash": "b4d6f90355988b174896f17986d0c43c",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/WebsiteAuditTimelineEvent.java": {
+    "mtime": 1779132875.166358,
+    "ast_hash": "beb58b5882479e24544a7ec71668579a",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/entity/MarketingCampaignStep.java": {
     "mtime": 1779088140.7436483,
     "ast_hash": "6e616b696c7e172c48b4866773bcb4a5",
@@ -2210,8 +2590,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/controller/InvestorRoomController.java": {
-    "mtime": 1779094024.4456873,
-    "ast_hash": "59401a814f19afffd52427241705d3ec",
+    "mtime": 1779134049.548374,
+    "ast_hash": "be0bd168180b03fc9a8183fd17742775",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/controller/PublicExperienceController.java": {
@@ -2220,8 +2600,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/controller/SuperAdminPublicWebsiteController.java": {
-    "mtime": 1779090754.0031579,
-    "ast_hash": "4156e095f9b1c949241193609ee0784c",
+    "mtime": 1779133007.4152615,
+    "ast_hash": "db1baa15f1fdf2a519e573db13e1f3c4",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/controller/SuperAdminExperienceController.java": {
@@ -2234,9 +2614,34 @@
     "ast_hash": "80d0479836963d37c943032966d3999e",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/audit/InvestorRoomAccessLogRepository.java": {
+    "mtime": 1779133659.1039379,
+    "ast_hash": "dabea090d1cb16bcd181e1dc91496824",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/audit/InvestorRoomAccessLogService.java": {
+    "mtime": 1779133662.1988297,
+    "ast_hash": "764cc4947bd542f309bd6a2b19d27b24",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/audit/InvestorRoomAccessEvent.java": {
+    "mtime": 1779133650.872076,
+    "ast_hash": "4982834de48828e1746ebdfe292b5e31",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/audit/InvestorRoomAccessLog.java": {
+    "mtime": 1779133657.3995955,
+    "ast_hash": "9ba61b5f0b68a7ff64df1e6791c9a11b",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/WebsiteRouteService.java": {
     "mtime": 1779086345.291212,
     "ast_hash": "5847047228b8a1e8cb946ac697b80825",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/WebsitePublishValidationService.java": {
+    "mtime": 1779132105.329095,
+    "ast_hash": "a0245ae947fa7ed96d987860982cc505",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/PublicWebsiteService.java": {
@@ -2255,18 +2660,18 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/InvestorRoomService.java": {
-    "mtime": 1779094048.609825,
-    "ast_hash": "8a3eb4aef4872e9bfa7498b457e49575",
+    "mtime": 1779133872.3929577,
+    "ast_hash": "adfa326b96eb80f020f70ab0108539f1",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/SeoService.java": {
-    "mtime": 1779091535.7191389,
-    "ast_hash": "283a0e6d2bd930ec164e3e68bd072467",
+    "mtime": 1779132965.210473,
+    "ast_hash": "3397d281a536997561fccf5ad1cceff0",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/PageBuilderService.java": {
-    "mtime": 1779091535.7190871,
-    "ast_hash": "6dd2bb0f8cbe345c139c894290a2caa6",
+    "mtime": 1779132939.209353,
+    "ast_hash": "54c15c5f21b92ac3d144dc06cfc8d07b",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/BrandSystemService.java": {
@@ -2282,6 +2687,16 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/WebsiteTemplateService.java": {
     "mtime": 1779088140.7437713,
     "ast_hash": "6cc05214bbe75be9e7104839b97a2f7f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/WebsiteSchemaValidator.java": {
+    "mtime": 1779131930.0451403,
+    "ast_hash": "238d60c9e20e683008cc1aaf49895a6e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/WebsiteAuditTimelineService.java": {
+    "mtime": 1779132899.0431988,
+    "ast_hash": "cb2f4b09ea38b1010e607c7c72fe21d2",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/PresentationService.java": {
@@ -2300,13 +2715,13 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/BrandingService.java": {
-    "mtime": 1779091535.7189822,
-    "ast_hash": "c6abd6b0c7179a8164091757198e7f46",
+    "mtime": 1779132952.915527,
+    "ast_hash": "d175d8280d139154daae340621925ff6",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/PublishService.java": {
-    "mtime": 1779091535.733529,
-    "ast_hash": "28e53ffa62739e2102bf42e7a514c25d",
+    "mtime": 1779133033.2076616,
+    "ast_hash": "3eafff09caf829ad1259ee74ca1eb4b8",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/experience/service/DemoOrchestrationService.java": {
@@ -2340,8 +2755,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/demo/DemoDataSeeder.java": {
-    "mtime": 1779101323.3033345,
-    "ast_hash": "c7e730eab1f7459e960bb9684e9640f6",
+    "mtime": 1779363596.6409683,
+    "ast_hash": "4a0ee9cc8b046e5432e89a6b3d0d48d5",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/demo/DemoConstants.java": {
@@ -2420,8 +2835,8 @@
     "semantic_hash": "fbc44e56fb979cee41caaa23d235215c"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/tenant/entity/TenantConfigKey.java": {
-    "mtime": 1778925755.654049,
-    "ast_hash": "5e6d42e39a01b6ace940ec08e631c5b1",
+    "mtime": 1779130772.145339,
+    "ast_hash": "11727c45bccbfbd7aec093ce6726d7a3",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/tenant/entity/TenantStatus.java": {
@@ -2500,8 +2915,8 @@
     "semantic_hash": "81f122d4a4911849e8f9d09adbf49a3b"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/tenant/service/TenantConfigServiceImpl.java": {
-    "mtime": 1778925765.2913568,
-    "ast_hash": "ff5a33b746b9a79a134874860e6c5139",
+    "mtime": 1779130772.1913004,
+    "ast_hash": "38f42e940114e255fb54299644bce81b",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/staffattendance/dto/StaffAttendanceResponse.java": {
@@ -2635,8 +3050,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/config/SecurityConfig.java": {
-    "mtime": 1779095731.717491,
-    "ast_hash": "536f25b5866c28166b91b60990f585aa",
+    "mtime": 1779356584.2409284,
+    "ast_hash": "4911a36a69dcaa71d8bf551e9463afbc",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/config/JwtProperties.java": {
@@ -2665,8 +3080,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/config/CacheConfig.java": {
-    "mtime": 1779081976.0222907,
-    "ast_hash": "3e6cc70f95a2cd2a198fc61dcd8cc9e6",
+    "mtime": 1779250808.711291,
+    "ast_hash": "5b7e7a6820fbc9a60df28635f5c2cd60",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/config/RedisConfig.java": {
@@ -2704,15 +3119,20 @@
     "ast_hash": "61310150cf724e5153e97638f4ad57da",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/security/SensitiveDataPolicy.java": {
+    "mtime": 1779301570.776404,
+    "ast_hash": "6f4eb2750c13b67500eb10e7fe54552e",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/dto/ChangePasswordRequest.java": {
     "mtime": 1778755795.2999167,
     "ast_hash": "79def38ce80aae037142e83ef4449557",
     "semantic_hash": "79def38ce80aae037142e83ef4449557"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/dto/RefreshResponse.java": {
-    "mtime": 1778658528.093765,
-    "ast_hash": "286dbc3735e511913efb10becb85fb9e",
-    "semantic_hash": "286dbc3735e511913efb10becb85fb9e"
+    "mtime": 1779343534.4027972,
+    "ast_hash": "42f8c2b3c2152bbb8dcc344c777fb4e5",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/dto/RefreshRequest.java": {
     "mtime": 1778658528.0936296,
@@ -2745,8 +3165,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/repository/DeviceSessionRepository.java": {
-    "mtime": 1778926314.4005806,
-    "ast_hash": "cbde73159a07d0318456a09a31c412f1",
+    "mtime": 1779304608.6736562,
+    "ast_hash": "6510ef0e3651db9274f19d5a649be57c",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/repository/UserRepository.java": {
@@ -2775,8 +3195,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/security/JwtAuthenticationFilter.java": {
-    "mtime": 1779081976.0183365,
-    "ast_hash": "f9bd55bd64bc2e5ae222633248108ed3",
+    "mtime": 1779187621.9785173,
+    "ast_hash": "b015ee3ed5c790c6904c1a0449e446c6",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/entity/UserRole.java": {
@@ -2785,8 +3205,8 @@
     "semantic_hash": "1e002c8c481fac0dccda64f5c49eb0e0"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/entity/DeviceSession.java": {
-    "mtime": 1778926305.710141,
-    "ast_hash": "ee7875ce996b47ccc72a77f17a065f00",
+    "mtime": 1779304602.8366103,
+    "ast_hash": "66398c39c33cf8077e3003ac54531999",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/entity/User.java": {
@@ -2799,19 +3219,24 @@
     "ast_hash": "d4f7e81b37f0a3bd86dca48bf8aa0f88",
     "semantic_hash": "d4f7e81b37f0a3bd86dca48bf8aa0f88"
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/mfa/MfaPolicy.java": {
+    "mtime": 1779301570.7777429,
+    "ast_hash": "b1e65b7b595bc2a8664e6cb772695ea9",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/controller/DeviceController.java": {
     "mtime": 1778929007.9939895,
     "ast_hash": "c5aa05d9e344724255361409e20f4eb4",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/controller/AuthController.java": {
-    "mtime": 1779093857.3443604,
-    "ast_hash": "8e5908eae725ba1fd209bb8353ee10ab",
+    "mtime": 1779343152.9177377,
+    "ast_hash": "1a7759674e5a4be964525b0ed4efe8de",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/service/DeviceSessionService.java": {
-    "mtime": 1778926323.5117722,
-    "ast_hash": "7176ee5b142c68db5fd9c1ef660f9e13",
+    "mtime": 1779304801.6919253,
+    "ast_hash": "bb401bf4fd46ea11de4cb8134d4a98b6",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/service/AuthService.java": {
@@ -2820,13 +3245,13 @@
     "semantic_hash": "2defc41cfcff0931478e3bb7b52f1e94"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/service/DeviceSessionServiceImpl.java": {
-    "mtime": 1778926346.106455,
-    "ast_hash": "9234d763b66aefe78272517ee84aa67b",
+    "mtime": 1779304808.55632,
+    "ast_hash": "53588fb0b1707f72d86f449d5f79aa0f",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/service/AuthServiceImpl.java": {
-    "mtime": 1779093870.1343071,
-    "ast_hash": "23dc95cfe239fd602bb476a56586fd05",
+    "mtime": 1779343136.9801052,
+    "ast_hash": "37649290c1ef396864ce5aebe0bbbadb",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/auth/service/PasswordResetServiceImpl.java": {
@@ -2925,8 +3350,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/notification/queue/NotificationQueueConfig.java": {
-    "mtime": 1779084552.9265459,
-    "ast_hash": "8e775c4d13de54971dfe720d38eeb546",
+    "mtime": 1779377156.6761684,
+    "ast_hash": "c67728b567bfe52a8d293f46327a307b",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/notification/queue/NotificationQueuePublisher.java": {
@@ -3115,8 +3540,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/website/service/WebsiteServiceImpl.java": {
-    "mtime": 1778927563.302901,
-    "ast_hash": "a1a17fcc70449d1344228e90a8a6f06c",
+    "mtime": 1779254348.6159983,
+    "ast_hash": "50f78890369198b6ca17595a5fb7664f",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/dto/ParentLinkRequest.java": {
@@ -3185,13 +3610,13 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/repository/StudentParentLinkRepository.java": {
-    "mtime": 1779095329.5269682,
-    "ast_hash": "782b1819ebfb23fd4708c79079df3a4f",
+    "mtime": 1779192054.2588155,
+    "ast_hash": "4d1bc07256780cd1bd66f51346ca2f7e",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/repository/StudentDocumentRepository.java": {
-    "mtime": 1778853903.4106133,
-    "ast_hash": "6afec62bed0e79fb5f4a35225e104867",
+    "mtime": 1779192054.2191515,
+    "ast_hash": "99ffd303a3ef4572d2608b6431abb279",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/entity/StudentDocument.java": {
@@ -3254,6 +3679,116 @@
     "ast_hash": "9056c02ca2c976efda1c33e3f3590c43",
     "semantic_hash": "9056c02ca2c976efda1c33e3f3590c43"
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/dto/ProfileSectionResponse.java": {
+    "mtime": 1779192081.1478646,
+    "ast_hash": "983b09dbaef7ae67ab7aeccfccbc171a",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/dto/TimelineItemResponse.java": {
+    "mtime": 1779192081.2351482,
+    "ast_hash": "58d416708fafada136f4739e6e446023",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/dto/UpdateProfileSectionRequest.java": {
+    "mtime": 1779192081.2760277,
+    "ast_hash": "2975bcafe570a9a2913377a2b5837fb7",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/dto/StudentProfile360Response.java": {
+    "mtime": 1779206352.9642391,
+    "ast_hash": "59329a7331de60b04a33f83836a84e42",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/repository/StudentCommunicationEventRepository.java": {
+    "mtime": 1779192054.179307,
+    "ast_hash": "bb2a2af1dffab6263c1da14cfec00b0a",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/repository/StudentIdentityProfileRepository.java": {
+    "mtime": 1779192053.9347441,
+    "ast_hash": "fcaeaeb01b115b66df0b4d29a3de15cf",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/repository/StudentMedicalRecordRepository.java": {
+    "mtime": 1779192054.0536325,
+    "ast_hash": "e5593a94fbdb2ae3b6509c7c16fe4d59",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/repository/StudentEnrichmentProfileRepository.java": {
+    "mtime": 1779192054.0130959,
+    "ast_hash": "2caf581ba58012122b9e4df4259d75b2",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/repository/StudentAchievementRecordRepository.java": {
+    "mtime": 1779192054.1334345,
+    "ast_hash": "881cfc077618d3a567c19148e022a802",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/repository/StudentBehaviorRecordRepository.java": {
+    "mtime": 1779192054.0940182,
+    "ast_hash": "d1ae3b76627484d6c26699ed2e35bd99",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/repository/StudentLogisticsProfileRepository.java": {
+    "mtime": 1779192053.9745228,
+    "ast_hash": "3e0033c18b55f9a0468de1cd8a2fb67c",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/entity/StudentIdentityProfile.java": {
+    "mtime": 1779191980.2679868,
+    "ast_hash": "d2ec76a8746cd699f83ae21c4d8fca2c",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/entity/StudentEnrichmentProfile.java": {
+    "mtime": 1779191980.3596187,
+    "ast_hash": "e59f1234eba19d4d4f264280d6665be2",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/entity/StudentLogisticsProfile.java": {
+    "mtime": 1779191980.3137326,
+    "ast_hash": "67709ed1db9a0bdbdd1e566a8d49e9ea",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/entity/StudentBehaviorRecord.java": {
+    "mtime": 1779192030.338025,
+    "ast_hash": "d2f9082fa9573385ff79fc765e491e93",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/entity/StudentMedicalRecord.java": {
+    "mtime": 1779192030.292632,
+    "ast_hash": "e9a093eace9ce134797c29af5d42dc8f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/entity/StudentCommunicationEvent.java": {
+    "mtime": 1779192030.4193213,
+    "ast_hash": "8cfb19f550fbe17dcc1095621ae3e816",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/entity/StudentAchievementRecord.java": {
+    "mtime": 1779192030.3778045,
+    "ast_hash": "005ca932ca3a472d17ae6d3d6a2dc1b4",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/controller/StudentProfile360Controller.java": {
+    "mtime": 1779192081.4072475,
+    "ast_hash": "76eaecf2c0d5ea69a04820201437ecc6",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/controller/StudentSelfProfile360Controller.java": {
+    "mtime": 1779302795.1707218,
+    "ast_hash": "739dc68ecc2dc4ec45a3af14bb541635",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/service/StudentProfile360ServiceImpl.java": {
+    "mtime": 1779206513.9718764,
+    "ast_hash": "004f1d0ed4adcb76734f860db9285f12",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/profile/service/StudentProfile360Service.java": {
+    "mtime": 1779192081.3415642,
+    "ast_hash": "c66b0a06c201b007c93dc2544733ec54",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/service/StudentService.java": {
     "mtime": 1778760906.3620832,
     "ast_hash": "f61677bdf7829de15c145726b3c2cb1a",
@@ -3275,8 +3810,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/service/StudentDocumentServiceImpl.java": {
-    "mtime": 1779093966.4629817,
-    "ast_hash": "a8b9c3a8f573ed7b84528afb19893d22",
+    "mtime": 1779130772.2664342,
+    "ast_hash": "5dcfaf5222f2d5cd326aa8d459392b3a",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/student/service/StudentServiceImpl.java": {
@@ -3360,8 +3895,8 @@
     "semantic_hash": "2b69034fa1513735cdf3c2f5203a7283"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/assignment/repository/SubmissionRepository.java": {
-    "mtime": 1778873898.7674322,
-    "ast_hash": "1362973af1bb1e38095927aa569d3004",
+    "mtime": 1779206358.449387,
+    "ast_hash": "5ee2a286badf7890d75f5e163458e2d2",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/assignment/entity/SubmissionStatus.java": {
@@ -3419,9 +3954,54 @@
     "ast_hash": "281a91d70dac3823d15283ca28c8950f",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/storage/StorageQuotaService.java": {
+    "mtime": 1779130772.3682647,
+    "ast_hash": "47c216245b804346bf431839329a87fa",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/storage/StorageService.java": {
     "mtime": 1779094183.4612389,
     "ast_hash": "12f5c7866fc9859d74427ef40b87f9c6",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/storage/StorageQuotaController.java": {
+    "mtime": 1779130772.4045944,
+    "ast_hash": "09040b904a6fcc66af6705712320c7c3",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/storage/dto/StorageQuotaResponse.java": {
+    "mtime": 1779130772.3313925,
+    "ast_hash": "45285b3c778177f01a3e160dba1fb442",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/storage/quarantine/UploadQuarantinePolicy.java": {
+    "mtime": 1779301570.7773314,
+    "ast_hash": "165815d31fc4bcf8295d559ba2c43810",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/storage/quarantine/UploadQuarantineDecision.java": {
+    "mtime": 1779301570.7770352,
+    "ast_hash": "fcdfa7e05fb8d2b813bdf2625ebd299f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/storage/audit/UploadAuditService.java": {
+    "mtime": 1779130423.9339743,
+    "ast_hash": "42b1617dc3bff831b92ee59a097398ed",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/storage/audit/UploadAuditLog.java": {
+    "mtime": 1779130407.8875046,
+    "ast_hash": "dfdda78a1de066972d4297e9bfdfeeda",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/storage/audit/UploadAuditEvent.java": {
+    "mtime": 1779129915.3862166,
+    "ast_hash": "0113c8605122f692910cfba26958c232",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/storage/audit/UploadAuditLogRepository.java": {
+    "mtime": 1779129928.6686056,
+    "ast_hash": "c968d3bdae0d7351959fe9ef28b79dd8",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/notice/dto/NoticeCreateRequest.java": {
@@ -3484,6 +4064,21 @@
     "ast_hash": "4de114a14bb3b631d80783b0f4d11fcc",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/subscription/dto/InvoiceResponse.java": {
+    "mtime": 1779364328.170537,
+    "ast_hash": "59ab20524f192ff9d681e599f61692d7",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/subscription/dto/PlanChangeRequest.java": {
+    "mtime": 1779364319.8514013,
+    "ast_hash": "d3e8fd003f58beecfbfe0ffe6d0883dc",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/subscription/dto/PlanChangePreviewResponse.java": {
+    "mtime": 1779364312.5314384,
+    "ast_hash": "3325c0760643ffb64abd39471a11fb8c",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/subscription/repository/TenantSubscriptionRepository.java": {
     "mtime": 1778908610.6637309,
     "ast_hash": "752646ba939766e4b89702310de660ea",
@@ -3512,6 +4107,16 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/subscription/controller/SubscriptionController.java": {
     "mtime": 1778909206.0088673,
     "ast_hash": "b11b3dfa969d3a3e4f120701176942e4",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/subscription/controller/TenantSubscriptionController.java": {
+    "mtime": 1779364367.8517659,
+    "ast_hash": "77ea777bba3cc67380a04b5fae5d3ed8",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/subscription/controller/TenantInvoiceController.java": {
+    "mtime": 1779364395.5959876,
+    "ast_hash": "81150a6abdd46100bd7952d6cf9237f5",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/subscription/service/SubscriptionServiceImpl.java": {
@@ -3565,8 +4170,8 @@
     "semantic_hash": "dae05d0502801e2b32de29d058052cae"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/common/web/RequestContextTaskDecorator.java": {
-    "mtime": 1779081976.0213516,
-    "ast_hash": "162d2025e634562c4e60d6e9c9d17be5",
+    "mtime": 1779187597.328348,
+    "ast_hash": "8f289a3695d81b7b030edd155da57fe8",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/common/web/Pagination.java": {
@@ -3590,19 +4195,19 @@
     "semantic_hash": "3ac35f98f8ed6501814f5b36c4866f3e"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/common/web/RequestContext.java": {
-    "mtime": 1779081976.0211806,
-    "ast_hash": "8232fb465c8f96cbcca05981b73259e3",
+    "mtime": 1779187576.026094,
+    "ast_hash": "978d9bf169033213b2c1b08100f76e1e",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/common/web/RestExceptionHandler.java": {
-    "mtime": 1779081976.0216293,
-    "ast_hash": "bcc5f9a713b5eedd7a231c027af44a77",
+    "mtime": 1779114993.458953,
+    "ast_hash": "f3da14fddc0405b714e12cfd19d83352",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/common/web/SecurityHeadersFilter.java": {
-    "mtime": 1778658528.1033363,
-    "ast_hash": "70be8349d5e5fe721e1c9a27141210c9",
-    "semantic_hash": "70be8349d5e5fe721e1c9a27141210c9"
+    "mtime": 1779116560.91507,
+    "ast_hash": "57ca38325bef0ba64fb8d99d0c803b51",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/common/usage/UsageLimitEnforcer.java": {
     "mtime": 1778818737.9392538,
@@ -3710,14 +4315,14 @@
     "semantic_hash": "b477d4b2456d843cb8c19b1b5bd6b3e8"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/audit/entity/AuditAction.java": {
-    "mtime": 1778817776.9247828,
-    "ast_hash": "4540ff05a2bc3744957c3ef403fd36f1",
-    "semantic_hash": "4540ff05a2bc3744957c3ef403fd36f1"
+    "mtime": 1779192081.4478962,
+    "ast_hash": "103e52fb561a00d4d38fd60167b2b260",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/audit/service/AuditLogService.java": {
-    "mtime": 1778817788.5949025,
-    "ast_hash": "ca22f8cf68e0428c5770d10ccaeb755b",
-    "semantic_hash": "ca22f8cf68e0428c5770d10ccaeb755b"
+    "mtime": 1779192081.4875877,
+    "ast_hash": "8f43afbac9d001729ad8542f08fb2a5f",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/homework/dto/HomeworkSubmissionResponse.java": {
     "mtime": 1778658528.1270833,
@@ -3750,8 +4355,8 @@
     "semantic_hash": "4c26c71ba0c5a4312ed876aa70b6d1b1"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/homework/repository/HomeworkSubmissionRepository.java": {
-    "mtime": 1779095506.3183725,
-    "ast_hash": "44617291973576abd0ed2d2f6e9539c0",
+    "mtime": 1779206363.7631974,
+    "ast_hash": "d022f23ce22cb9a15941e07b07c5ccb3",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/homework/entity/HomeworkStatus.java": {
@@ -3805,9 +4410,9 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/mobile/controller/MobileController.java": {
-    "mtime": 1778658528.1294765,
-    "ast_hash": "884a6a1d10f5867f5d2f8e8a8b3cb0b0",
-    "semantic_hash": "884a6a1d10f5867f5d2f8e8a8b3cb0b0"
+    "mtime": 1779343427.4402204,
+    "ast_hash": "4a41a35d4dc32d42745f85ab00d515c9",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/mobile/service/ParentPortalService.java": {
     "mtime": 1779081976.0344062,
@@ -3817,6 +4422,36 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/mobile/service/ParentPortalServiceImpl.java": {
     "mtime": 1779095424.376957,
     "ast_hash": "44f2be97a2e70176fd438d6a39fe0b8d",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/insights/TeacherWorkloadInsightService.java": {
+    "mtime": 1779301570.7746313,
+    "ast_hash": "fbf1146fe9a9921c7b069388590206c8",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/insights/StudentRiskInsightService.java": {
+    "mtime": 1779301570.7742505,
+    "ast_hash": "8f228bbba2f6adccb082694a50098573",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/insights/ParentWeeklySummaryInsightService.java": {
+    "mtime": 1779301570.7754147,
+    "ast_hash": "20f468a1863b7411aab02f9ae54bcf06",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/insights/AiInsightCard.java": {
+    "mtime": 1779301570.7738626,
+    "ast_hash": "5b9edb86fbdac92d2f02b48c85954953",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/insights/AiInsightSeverity.java": {
+    "mtime": 1779301570.772966,
+    "ast_hash": "8504bc8a463814c04b59ccb06c474a2f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/insights/AiInsightAudience.java": {
+    "mtime": 1779301570.7734354,
+    "ast_hash": "a4eea3003d9e2d70efaec9e19604783f",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/copilot/SchoolAdminAiCopilotController.java": {
@@ -3855,13 +4490,13 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/usage/dto/GlobalAiUsageResponse.java": {
-    "mtime": 1778925877.9018779,
-    "ast_hash": "6c6cc0b80ee8c0b158214b3fba339f6f",
+    "mtime": 1779168692.8659465,
+    "ast_hash": "817cdf6475a0fd4090cdaffaffcec0c2",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/usage/repository/AiUsageLogRepository.java": {
-    "mtime": 1778925784.740016,
-    "ast_hash": "9c2436dc296c268aeaf126064216e237",
+    "mtime": 1779169189.6327515,
+    "ast_hash": "4c2757d2c2a606f539299b1c194ec177",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/usage/entity/AiUsageLog.java": {
@@ -3870,8 +4505,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/usage/controller/AiUsageController.java": {
-    "mtime": 1778925898.322397,
-    "ast_hash": "3ef0c9b68ec7388ea1a306787bdc38ea",
+    "mtime": 1779168692.9540808,
+    "ast_hash": "149409cc11b9d8bcebb0ac931042f0e9",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/usage/service/AiBudgetEnforcer.java": {
@@ -3882,6 +4517,11 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/usage/service/UsageLoggingService.java": {
     "mtime": 1779081976.0172362,
     "ast_hash": "be5b2ce0a809fe16d10fe4b2ad74dec0",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/usage/service/AiUsageMetricsPublisher.java": {
+    "mtime": 1779169189.672475,
+    "ast_hash": "a3279e9868b9962f40135b0c28388b0f",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/prompt/dto/CreatePromptRequest.java": {
@@ -3920,8 +4560,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/prompt/service/PromptServiceImpl.java": {
-    "mtime": 1779081976.0165305,
-    "ast_hash": "9b5f99661c94d5e0213db524a2034c1a",
+    "mtime": 1779168241.1086776,
+    "ast_hash": "f3c6d82fa9b3765ae194cd8b7a82ae22",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/prompt/service/PromptService.java": {
@@ -3965,8 +4605,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/knowledge/service/KnowledgeBaseServiceImpl.java": {
-    "mtime": 1779081976.0162961,
-    "ast_hash": "332ec6a1e8c9364f34ec2aecccc7456b",
+    "mtime": 1779168552.2548661,
+    "ast_hash": "f3a336e44d7d5c1604597d469e63bb56",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/ai/knowledge/service/KnowledgeBaseService.java": {
@@ -4304,6 +4944,36 @@
     "ast_hash": "6f1ffe2a28dddb0f0a365cc38640683c",
     "semantic_hash": ""
   },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/staff/profile/dto/StaffProfileSectionResponse.java": {
+    "mtime": 1779207347.9308565,
+    "ast_hash": "f7f3be7eb5657f82c999948dbb013b8a",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/staff/profile/dto/StaffProfile360Response.java": {
+    "mtime": 1779207347.9312918,
+    "ast_hash": "06b0d782156e4358b0ef2a55e0dc3c0c",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/staff/profile/dto/StaffTimelineItemResponse.java": {
+    "mtime": 1779207347.9302764,
+    "ast_hash": "2574d61a081dc24c11c40dd40c7faa0a",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/staff/profile/controller/StaffProfile360Controller.java": {
+    "mtime": 1779207347.931913,
+    "ast_hash": "ef7386f284046b780ee55446d31737a2",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/staff/profile/service/StaffProfile360Service.java": {
+    "mtime": 1779207347.9316235,
+    "ast_hash": "4a6dbd8f58b11355ca3e4f4d25d1fb4b",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/staff/profile/service/StaffProfile360ServiceImpl.java": {
+    "mtime": 1779207498.4621215,
+    "ast_hash": "f427242b510f686755cee58bfb56e52a",
+    "semantic_hash": ""
+  },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/staff/service/StaffService.java": {
     "mtime": 1779099971.4448822,
     "ast_hash": "d3f293d24355d73ea5aa30b99578aa34",
@@ -4475,8 +5145,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/school/repository/ClassRoomRepository.java": {
-    "mtime": 1779095289.7420728,
-    "ast_hash": "674d1127ffaa54ad53691737e520b11e",
+    "mtime": 1779375917.9101105,
+    "ast_hash": "cb9a561ff62a391cf0b61b4858d0fd08",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/school/repository/SchoolRepository.java": {
@@ -4585,9 +5255,9 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/school/controller/ClassRoomController.java": {
-    "mtime": 1778658528.144409,
-    "ast_hash": "fbaf06e0fb0c20a1be3bcce393557de6",
-    "semantic_hash": "fbaf06e0fb0c20a1be3bcce393557de6"
+    "mtime": 1779375917.91109,
+    "ast_hash": "bfd175fbc827d8f7265410a22d20db7b",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/school/controller/SchoolAccessController.java": {
     "mtime": 1778927051.0455935,
@@ -4605,8 +5275,8 @@
     "semantic_hash": "fa639c60e3775b8315075fefe4f94333"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/school/service/SchoolSettingsServiceImpl.java": {
-    "mtime": 1779095474.4848418,
-    "ast_hash": "804801fd0e18498524983dfff2f93087",
+    "mtime": 1779304436.3179722,
+    "ast_hash": "f52c07d19daef29b5631c3f5e6162a3a",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/school/service/AcademicYearService.java": {
@@ -4620,14 +5290,14 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/school/service/ClassRoomServiceImpl.java": {
-    "mtime": 1779095289.9795659,
-    "ast_hash": "785040b6a550eac56e3506b85beabae9",
+    "mtime": 1779375917.9105136,
+    "ast_hash": "759ab615d4a67a8e5d3946b7c20a5464",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/school/service/ClassRoomService.java": {
-    "mtime": 1778658528.154871,
-    "ast_hash": "8b947978082681d3744989a22be1537e",
-    "semantic_hash": "8b947978082681d3744989a22be1537e"
+    "mtime": 1779375917.9095168,
+    "ast_hash": "5cae1fe795ef6e69fd5322b8d4b9fc8f",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/java/com/cloudcampus/school/service/SchoolSettingsService.java": {
     "mtime": 1778658528.1555707,
@@ -4934,404 +5604,79 @@
     "ast_hash": "d606069d1230eb8fbe99ba19177fd534",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app.json": {
-    "mtime": 1779081976.0587308,
-    "ast_hash": "4ccef1e2d96547850226278366fe759c",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/App.tsx": {
+    "mtime": 1779386121.0535724,
+    "ast_hash": "bca3d39247a90d9775b76482a48f10f9",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/babel.config.js": {
-    "mtime": 1778658528.2316778,
-    "ast_hash": "a8d3868da8c2851a5278a30dcd89199f",
-    "semantic_hash": "a8d3868da8c2851a5278a30dcd89199f"
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app.json": {
+    "mtime": 1779393527.4684446,
+    "ast_hash": "a8835e8d8a9bac51a8430ef6f7a2c87f",
+    "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/package.json": {
-    "mtime": 1779084267.5682158,
-    "ast_hash": "6c852534e697678bf51513fb1c690525",
+    "mtime": 1779386333.7442977,
+    "ast_hash": "06da1e4320b5810e8418f78f8798ac79",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/tsconfig.json": {
-    "mtime": 1779081976.0623686,
-    "ast_hash": "d6da44dc913d0c54e8e93bdb1d6c5807",
+    "mtime": 1779386229.0353608,
+    "ast_hash": "f339524c4142bd78de9fd75f3b9a8570",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/_layout.tsx": {
-    "mtime": 1779081976.0590193,
-    "ast_hash": "63b0aa2fb83217392b82e07d504bcd1d",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/src/auth/storage.ts": {
+    "mtime": 1779392908.5791695,
+    "ast_hash": "e0883f3df5b6bfa0b30f95990e8fe0cb",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/admin-notices.tsx": {
-    "mtime": 1778758365.9138017,
-    "ast_hash": "c4344c231d82170ac512bfe9a577454a",
-    "semantic_hash": "c4344c231d82170ac512bfe9a577454a"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/index.tsx": {
-    "mtime": 1778759225.5691836,
-    "ast_hash": "157730ac3a0f16dac63984aa5d7fa4df",
-    "semantic_hash": "157730ac3a0f16dac63984aa5d7fa4df"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/results.tsx": {
-    "mtime": 1778737145.7259834,
-    "ast_hash": "0a55156e617959bcca6b705a25990a96",
-    "semantic_hash": "0a55156e617959bcca6b705a25990a96"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/teacher-homework.tsx": {
-    "mtime": 1778755542.9544435,
-    "ast_hash": "8764c9c402d1073c43c661382443ea58",
-    "semantic_hash": "8764c9c402d1073c43c661382443ea58"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/fees.tsx": {
-    "mtime": 1778737146.7407734,
-    "ast_hash": "8c40c6cd41e060bcc9829ea2be109826",
-    "semantic_hash": "8c40c6cd41e060bcc9829ea2be109826"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/teacher-assignments.tsx": {
-    "mtime": 1778755548.154097,
-    "ast_hash": "fd77a90e7a132bced83f014c1d67191a",
-    "semantic_hash": "fd77a90e7a132bced83f014c1d67191a"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/admin-leave.tsx": {
-    "mtime": 1778757826.9316292,
-    "ast_hash": "4439ddf67f7eed8d70e8ed0e66721aa4",
-    "semantic_hash": "4439ddf67f7eed8d70e8ed0e66721aa4"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/homework.tsx": {
-    "mtime": 1778658528.2303631,
-    "ast_hash": "9d6e8527698d5367bb8a9c857de44cf0",
-    "semantic_hash": "9d6e8527698d5367bb8a9c857de44cf0"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/children.tsx": {
-    "mtime": 1778658528.2301538,
-    "ast_hash": "b6dd870b6959d4d895ded3b17732bebd",
-    "semantic_hash": "b6dd870b6959d4d895ded3b17732bebd"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/student-promotion.tsx": {
-    "mtime": 1779097052.6779368,
-    "ast_hash": "8a183a61ca4ca9efec73ce462bc0e163",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/src/auth/AuthContext.tsx": {
+    "mtime": 1779392908.5818532,
+    "ast_hash": "37b6cbfefa5564d2508371e3cecf427c",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/attendance.tsx": {
-    "mtime": 1778658528.229999,
-    "ast_hash": "133636ed5e696eca626fe3df7d190c6d",
-    "semantic_hash": "133636ed5e696eca626fe3df7d190c6d"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/timetable.tsx": {
-    "mtime": 1778658528.2312746,
-    "ast_hash": "e67d7c86b93571d87c6e719e36e9ad02",
-    "semantic_hash": "e67d7c86b93571d87c6e719e36e9ad02"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/staff-attendance.tsx": {
-    "mtime": 1778758046.198803,
-    "ast_hash": "0562b653867013af7e073241f2290ef8",
-    "semantic_hash": "0562b653867013af7e073241f2290ef8"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/notices.tsx": {
-    "mtime": 1778658528.2308156,
-    "ast_hash": "e113d3cb04cd83d2cab448945708dc2e",
-    "semantic_hash": "e113d3cb04cd83d2cab448945708dc2e"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/assignments.tsx": {
-    "mtime": 1778737144.710618,
-    "ast_hash": "9deff2fb2dddc510cb6ca423db2815ac",
-    "semantic_hash": "9deff2fb2dddc510cb6ca423db2815ac"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/teacher-attendance.tsx": {
-    "mtime": 1778778660.7983801,
-    "ast_hash": "6bc1adf129404e0feb75ed7fe25496a0",
-    "semantic_hash": "6bc1adf129404e0feb75ed7fe25496a0"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/my-attendance.tsx": {
-    "mtime": 1778738014.7740133,
-    "ast_hash": "9a603611b62242f650a75818a8dadf3e",
-    "semantic_hash": "9a603611b62242f650a75818a8dadf3e"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/qr-attendance.tsx": {
-    "mtime": 1779096965.211949,
-    "ast_hash": "df806c3e604e126cf2a436579513edae",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/src/screens/HomeScreen.tsx": {
+    "mtime": 1779393021.3723261,
+    "ast_hash": "0dd4103c1dff7de8d27a378062edcde8",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/_layout.tsx": {
-    "mtime": 1779097065.086595,
-    "ast_hash": "cb976164cdd287b04b3a303216238109",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/src/screens/LoginScreen.tsx": {
+    "mtime": 1779392908.5827246,
+    "ast_hash": "8e8a3e8051f4968748d6943594574c88",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(app)/leave.tsx": {
-    "mtime": 1778757377.36631,
-    "ast_hash": "6ca156692fea7c65d37aaf901408a171",
-    "semantic_hash": "6ca156692fea7c65d37aaf901408a171"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(auth)/login.tsx": {
-    "mtime": 1778757744.9676442,
-    "ast_hash": "12be771c278138e59472ae856b74b2d2",
-    "semantic_hash": "12be771c278138e59472ae856b74b2d2"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/app/(auth)/_layout.tsx": {
-    "mtime": 1778571220.7349656,
-    "ast_hash": "b62a67e87654b73ac72fc44d962807c5",
-    "semantic_hash": "b62a67e87654b73ac72fc44d962807c5"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/plugins/withNetworkSecurity.js": {
-    "mtime": 1779081976.06106,
-    "ast_hash": "bf05dda800ad3eb422cccda274120bd6",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/src/theme/colors.ts": {
+    "mtime": 1779386005.0215843,
+    "ast_hash": "b482f0700c8bd77122b5f3d02df7dd73",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/attendance/screens/AttendanceScreen.tsx": {
-    "mtime": 1778760258.995479,
-    "ast_hash": "93dae3675a8a8a696f967340231f7fac",
-    "semantic_hash": "93dae3675a8a8a696f967340231f7fac"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/attendance/api/attendanceApi.ts": {
-    "mtime": 1779096933.682034,
-    "ast_hash": "725ad8589fc9c024f1474c0c6af9ac17",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/src/api/projectApi.ts": {
+    "mtime": 1779392956.255679,
+    "ast_hash": "3246020ddfc2ab32f44306e64f47647d",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/staffAttendance/screens/StaffAttendanceScreen.tsx": {
-    "mtime": 1778758033.5275984,
-    "ast_hash": "f4261ff639ab68bfdda847bdec58990a",
-    "semantic_hash": "f4261ff639ab68bfdda847bdec58990a"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/staffAttendance/api/staffAttendanceApi.ts": {
-    "mtime": 1778757974.431338,
-    "ast_hash": "d86cf3929483aacee1129bf31c337014",
-    "semantic_hash": "d86cf3929483aacee1129bf31c337014"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/auth/types/auth.ts": {
-    "mtime": 1778757727.2638228,
-    "ast_hash": "2728b1325eea88b57f070392159ba4bb",
-    "semantic_hash": "2728b1325eea88b57f070392159ba4bb"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/auth/screens/ForgotPasswordScreen.tsx": {
-    "mtime": 1778756162.3132775,
-    "ast_hash": "cdd3aaef7d22d3ee91892d78844d99fa",
-    "semantic_hash": "cdd3aaef7d22d3ee91892d78844d99fa"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/auth/screens/ChangePasswordScreen.tsx": {
-    "mtime": 1778740379.4890416,
-    "ast_hash": "174369b268a033c187e83b44ca43b035",
-    "semantic_hash": "174369b268a033c187e83b44ca43b035"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/auth/screens/ResetPasswordScreen.tsx": {
-    "mtime": 1778756185.9251506,
-    "ast_hash": "5cca5752b0b27de6562d343334a1e3b6",
-    "semantic_hash": "5cca5752b0b27de6562d343334a1e3b6"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/auth/api/authApi.ts": {
-    "mtime": 1778757733.081925,
-    "ast_hash": "620f22d0b0e7f6692e3e7752af881e98",
-    "semantic_hash": "620f22d0b0e7f6692e3e7752af881e98"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/auth/store/useAuthStore.ts": {
-    "mtime": 1778658528.2329013,
-    "ast_hash": "2f6d7d865948c816bbc9695002c28530",
-    "semantic_hash": "2f6d7d865948c816bbc9695002c28530"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/student/screens/AttendanceScreen.tsx": {
-    "mtime": 1778737980.2491415,
-    "ast_hash": "72f48c041666ef3360f1c37db92d7d5f",
-    "semantic_hash": "72f48c041666ef3360f1c37db92d7d5f"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/student/screens/ResultsScreen.tsx": {
-    "mtime": 1778736999.1003757,
-    "ast_hash": "987b0b8789bf2778ac47dcd0843eba2a",
-    "semantic_hash": "987b0b8789bf2778ac47dcd0843eba2a"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/student/screens/FeesScreen.tsx": {
-    "mtime": 1778737143.579119,
-    "ast_hash": "ad83292d2e731fb6a0011b4646026821",
-    "semantic_hash": "ad83292d2e731fb6a0011b4646026821"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/student/screens/AssignmentsScreen.tsx": {
-    "mtime": 1778736972.578025,
-    "ast_hash": "793aea0cdf79fd755da7be310982156c",
-    "semantic_hash": "793aea0cdf79fd755da7be310982156c"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/student/api/studentApi.ts": {
-    "mtime": 1778736939.086757,
-    "ast_hash": "f80a88096574cd68a7b2ce10b62a965a",
-    "semantic_hash": "f80a88096574cd68a7b2ce10b62a965a"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/notices/screens/NoticesScreen.tsx": {
-    "mtime": 1778658528.2339368,
-    "ast_hash": "0e6933345587a55e7f8b74fae9825d2a",
-    "semantic_hash": "0e6933345587a55e7f8b74fae9825d2a"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/notices/screens/AdminNoticesScreen.tsx": {
-    "mtime": 1778758407.8855946,
-    "ast_hash": "b0c04e687f134934966e0916a73cc09c",
-    "semantic_hash": "b0c04e687f134934966e0916a73cc09c"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/notices/api/noticeApi.ts": {
-    "mtime": 1778658528.2336895,
-    "ast_hash": "bb5359c297206678fcc406959d55e5ad",
-    "semantic_hash": "bb5359c297206678fcc406959d55e5ad"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/notices/api/adminNoticeApi.ts": {
-    "mtime": 1778758299.4280274,
-    "ast_hash": "451b884b2dd30d13efd84e4da47ff061",
-    "semantic_hash": "451b884b2dd30d13efd84e4da47ff061"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/homework/screens/HomeworkScreen.tsx": {
-    "mtime": 1778658528.2335122,
-    "ast_hash": "f1df3fa9da93c7ff6f267d025da7850d",
-    "semantic_hash": "f1df3fa9da93c7ff6f267d025da7850d"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/homework/api/homeworkApi.ts": {
-    "mtime": 1778658528.2332714,
-    "ast_hash": "531fcaeecf8cc98c37e9a6869f7c1aa1",
-    "semantic_hash": "531fcaeecf8cc98c37e9a6869f7c1aa1"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/parent/screens/ParentDashboardScreen.tsx": {
-    "mtime": 1778756431.0042503,
-    "ast_hash": "13cb3c1f4f83712aac76a12f31917850",
-    "semantic_hash": "13cb3c1f4f83712aac76a12f31917850"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/parent/api/parentApi.ts": {
-    "mtime": 1778756361.2891557,
-    "ast_hash": "942d534f524c436a2e025d388fcb04f9",
-    "semantic_hash": "942d534f524c436a2e025d388fcb04f9"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/teacher/screens/TeacherHomeworkScreen.tsx": {
-    "mtime": 1778755512.5545511,
-    "ast_hash": "d23b1040b8781c1cc90b4e342f0602cd",
-    "semantic_hash": "d23b1040b8781c1cc90b4e342f0602cd"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/teacher/screens/TeacherAssignmentScreen.tsx": {
-    "mtime": 1778755537.2420247,
-    "ast_hash": "1b97890f9667791e4848ecc379c16d0a",
-    "semantic_hash": "1b97890f9667791e4848ecc379c16d0a"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/teacher/screens/TeacherAttendanceScreen.tsx": {
-    "mtime": 1779097369.635327,
-    "ast_hash": "bd9d61c2d20eacb35cf4d838f6a6d72b",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/src/api/client.ts": {
+    "mtime": 1779393527.4675822,
+    "ast_hash": "5f2a6eff6c63c54314b90a7ec7e28127",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/teacher/api/teacherApi.ts": {
-    "mtime": 1779096940.3096094,
-    "ast_hash": "9fe31240d6cbe6e3f824625a5ce5f6c6",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/FULL_PROJECT_PRODUCTION_AUDIT.md": {
+    "mtime": 1779384367.949557,
+    "ast_hash": "6e8f5e02c1212c94309b9d3f31906c76",
     "semantic_hash": ""
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/notifications/hooks/usePushRegistration.ts": {
-    "mtime": 1778658528.2346823,
-    "ast_hash": "423c8abffa5edbdd525093b842e04c76",
-    "semantic_hash": "423c8abffa5edbdd525093b842e04c76"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/notifications/hooks/useNotificationListeners.ts": {
-    "mtime": 1779081976.0596552,
-    "ast_hash": "34b021825b0ba5db5592b7eb4710b981",
-    "semantic_hash": ""
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/notifications/api/deviceApi.ts": {
-    "mtime": 1778658528.2342625,
-    "ast_hash": "fef1caf6757dbce42532a8613ab16a2f",
-    "semantic_hash": "fef1caf6757dbce42532a8613ab16a2f"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/leave/screens/LeaveScreen.tsx": {
-    "mtime": 1778757409.7170413,
-    "ast_hash": "916063151ab8d24cae382332ceb9c7bc",
-    "semantic_hash": "916063151ab8d24cae382332ceb9c7bc"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/leave/screens/AdminLeaveScreen.tsx": {
-    "mtime": 1778757815.1516793,
-    "ast_hash": "e6eaa986b9a309b8f1caf5cf05829d40",
-    "semantic_hash": "e6eaa986b9a309b8f1caf5cf05829d40"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/leave/api/adminLeaveApi.ts": {
-    "mtime": 1778757766.0187564,
-    "ast_hash": "a4f2fc6bddb74ebd12e221f1546d9a0a",
-    "semantic_hash": "a4f2fc6bddb74ebd12e221f1546d9a0a"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/leave/api/leaveApi.ts": {
-    "mtime": 1778757308.9840405,
-    "ast_hash": "25e342fc071b3eb84c2f8436b8630e52",
-    "semantic_hash": "25e342fc071b3eb84c2f8436b8630e52"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/timetable/screens/TimetableScreen.tsx": {
-    "mtime": 1778871360.5380168,
-    "ast_hash": "b88b8bfe0b3dbfacbb16b6396e673dae",
-    "semantic_hash": ""
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/features/timetable/api/timetableApi.ts": {
-    "mtime": 1778871350.1746492,
-    "ast_hash": "f303a95b5f184e92ccb71d5838b6f66e",
-    "semantic_hash": ""
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/shared/types/api.ts": {
-    "mtime": 1778658528.240245,
-    "ast_hash": "5438f29fb3d0800837b4077dfc2d7cc4",
-    "semantic_hash": "5438f29fb3d0800837b4077dfc2d7cc4"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/shared/storage/profileStore.ts": {
-    "mtime": 1779084344.7015667,
-    "ast_hash": "89aa4cba3b5fe8212e4c63c40fe6ca26",
-    "semantic_hash": ""
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/shared/storage/tokenStore.ts": {
-    "mtime": 1778658528.2401094,
-    "ast_hash": "3d3f22f00ee469855399258f6e2e6314",
-    "semantic_hash": "3d3f22f00ee469855399258f6e2e6314"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/shared/hooks/useSessionHydration.ts": {
-    "mtime": 1779084344.7015667,
-    "ast_hash": "d28fe610a297ec39fc5b261a3fb1d8c8",
-    "semantic_hash": ""
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/shared/hooks/useProactiveTokenRefresh.ts": {
-    "mtime": 1779081976.0617638,
-    "ast_hash": "a543419146905e712b7dcc022926102a",
-    "semantic_hash": ""
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/shared/api/authClient.ts": {
-    "mtime": 1778658528.2389402,
-    "ast_hash": "be08c3b51a91ab0b2cd1c4af8be1e828",
-    "semantic_hash": "be08c3b51a91ab0b2cd1c4af8be1e828"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/shared/api/axiosInstance.ts": {
-    "mtime": 1779081976.0613174,
-    "ast_hash": "7a647c74beaac65adbfb2863b8c0fbb3",
-    "semantic_hash": ""
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/offline/database.ts": {
-    "mtime": 1779081976.0598218,
-    "ast_hash": "66db81d0277bf8b8ff6970a3f2502d7e",
-    "semantic_hash": ""
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/offline/models/Student.ts": {
-    "mtime": 1778658528.2363255,
-    "ast_hash": "a67c3b57a00b1d28f3adcf78c22a0446",
-    "semantic_hash": "a67c3b57a00b1d28f3adcf78c22a0446"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/offline/models/AttendanceRecord.ts": {
-    "mtime": 1778658528.235992,
-    "ast_hash": "5ae123f66ad27ffcf0592ad6ec92afa7",
-    "semantic_hash": "5ae123f66ad27ffcf0592ad6ec92afa7"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/offline/schema/schema.ts": {
-    "mtime": 1778658528.236608,
-    "ast_hash": "bf2340fd5b45edebd70fc0ffde63eb86",
-    "semantic_hash": "bf2340fd5b45edebd70fc0ffde63eb86"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/offline/sync/syncQueue.ts": {
-    "mtime": 1778658528.2368789,
-    "ast_hash": "d999a43a368459bcd0339d72ab7d3b3b",
-    "semantic_hash": "d999a43a368459bcd0339d72ab7d3b3b"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/offline/sync/syncEngine.ts": {
-    "mtime": 1778658528.2367637,
-    "ast_hash": "b99424767c7558d138d74e738674b9af",
-    "semantic_hash": "b99424767c7558d138d74e738674b9af"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/offline/sync/useSyncTrigger.ts": {
-    "mtime": 1778658528.23708,
-    "ast_hash": "8d91470b2ce3ee439efffc8b08fb273c",
-    "semantic_hash": "8d91470b2ce3ee439efffc8b08fb273c"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/README.md": {
-    "mtime": 1779111395.7338083,
-    "ast_hash": "32da34fe41b46add610cbb12ae5d4719",
+    "mtime": 1779393844.1806479,
+    "ast_hash": "514844fd866560c1b6a30df6a59c4ada",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docker-compose.yml": {
-    "mtime": 1779081976.047276,
-    "ast_hash": "f954adaa99e4221569a069800549a2da",
+    "mtime": 1779117715.3904653,
+    "ast_hash": "1c3361153b1224eb349aba9c17a8e790",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/SYSTEM_FULL_REBUILD_VALIDATION_REPORT.md": {
+    "mtime": 1779380861.027661,
+    "ast_hash": "7ccd6eb254289d2ed440baa1d9e112ab",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/loki/loki-config.yml": {
@@ -5342,6 +5687,11 @@
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/alertmanager/alertmanager.yml": {
     "mtime": 1779081976.0544875,
     "ast_hash": "e598bde8f89b0b851f21a462bb5971e9",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/k8s/cloudcampus-starter.yaml": {
+    "mtime": 1779301696.464738,
+    "ast_hash": "5692421cea05342409de32b6c2ce174a",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/promtail/promtail-config.yml": {
@@ -5375,13 +5725,13 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/prometheus/alert_rules.yml": {
-    "mtime": 1779081976.0574365,
-    "ast_hash": "cf95d73d66f815e9cf054e0f80e473ce",
+    "mtime": 1779169218.2845588,
+    "ast_hash": "2d17e6362814a88ce71f1207c5b09c38",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/infra/prometheus/prometheus.yml": {
-    "mtime": 1779081976.0576458,
-    "ast_hash": "5764f0578bc52897c2fd986a2ead47db",
+    "mtime": 1779117721.865145,
+    "ast_hash": "35292218e74a8e71e8d3a8c61e99e733",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/frontend/index.html": {
@@ -5390,8 +5740,8 @@
     "semantic_hash": "33bd262affcefea92f1509cda449a19c"
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/test/resources/application.yml": {
-    "mtime": 1779084552.926485,
-    "ast_hash": "4eca80ce1c9f846773ce048fbacbd56a",
+    "mtime": 1779114800.3081477,
+    "ast_hash": "dcf30380748afe9dfef200b0c2f32a12",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/application-prod.yml": {
@@ -5400,8 +5750,8 @@
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/application-dev.yml": {
-    "mtime": 1779094079.3031135,
-    "ast_hash": "a58993e7ea6e4aad2b30cd5e7fdaffa3",
+    "mtime": 1779384307.030892,
+    "ast_hash": "40833a51cb9c4a8b794f2242306f1b83",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/backend/src/main/resources/application-staging.yml": {
@@ -5419,14 +5769,564 @@
     "ast_hash": "93686d0e2b6d7d43f54324db0817ce70",
     "semantic_hash": "93686d0e2b6d7d43f54324db0817ce70"
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/AUDIT_AND_REMEDIATION.md": {
-    "mtime": 1779113086.9867427,
-    "ast_hash": "55468265d8156fbb6c2be16e62bc6143",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/README.md": {
+    "mtime": 1779393844.1808674,
+    "ast_hash": "5d200a786f5756e27eabb766418b937c",
     "semantic_hash": ""
   },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/ARCHITECTURE.md": {
-    "mtime": 1779112319.1775603,
-    "ast_hash": "a96460a31f12c86767fc173520eb207f",
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/06-security/JWT_FLOW.md": {
+    "mtime": 1779392052.222876,
+    "ast_hash": "b761099bd1fc7e85716ff9d38a3503f3",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/06-security/AUDIT_LOGGING.md": {
+    "mtime": 1779392052.2231166,
+    "ast_hash": "f73c1903defb3d08087935c4c44e1949",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/06-security/DATA_PROTECTION.md": {
+    "mtime": 1779392052.223177,
+    "ast_hash": "2966761e6467e75c112d2bb5c2d90105",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/06-security/SECURITY_ARCHITECTURE.md": {
+    "mtime": 1779392052.2228312,
+    "ast_hash": "e379a7dfbd8d73022bb3cb9c39e83d49",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/06-security/RBAC_RULES.md": {
+    "mtime": 1779392052.222926,
+    "ast_hash": "074bbf53f91be0732b3ee9b2ab411165",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/06-security/RATE_LIMITING.md": {
+    "mtime": 1779392052.2230504,
+    "ast_hash": "b08bea7d0af202a2537a7255b6c44947",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/06-security/OWASP_CHECKLIST.md": {
+    "mtime": 1779392052.2229877,
+    "ast_hash": "2253372429f34e8e2077e464d0e51443",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/13-roadmap/FUTURE_SCALING.md": {
+    "mtime": 1779392052.2402287,
+    "ast_hash": "1285cfc22133953ba185f91c118ab669",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/13-roadmap/ROADMAP.md": {
+    "mtime": 1779392052.240108,
+    "ast_hash": "4d9e6f2d1262d556e5ef8b79fc1ac88a",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/13-roadmap/TECH_DEBT.md": {
+    "mtime": 1779393844.1821887,
+    "ast_hash": "7f7b36ec9fe04b31d3c7e15bbae26438",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/13-roadmap/FEATURE_STATUS.md": {
+    "mtime": 1779393844.1819894,
+    "ast_hash": "7d41e2f7e927504544a4c2fe432cba17",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/07-ai/AI_ARCHITECTURE.md": {
+    "mtime": 1779392052.223238,
+    "ast_hash": "3e42e72d99d1b7ec785dc9cadf76c645",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/07-ai/RAG_FLOW.md": {
+    "mtime": 1779392052.223299,
+    "ast_hash": "937c06fc2e790ff4eb9cc19cc92780d0",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/07-ai/AI_ANALYTICS.md": {
+    "mtime": 1779392052.2234204,
+    "ast_hash": "4ae484af41f1bb1e1ab53bb6b7bbf248",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/07-ai/RISK_PREDICTION.md": {
+    "mtime": 1779392052.2234874,
+    "ast_hash": "a1e701bd5dd925f9c7fc685ba11aba7d",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/07-ai/PROMPT_SECURITY.md": {
+    "mtime": 1779392052.2233586,
+    "ast_hash": "0eda0d9de29e5d643975a6e7c793a36a",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/05-devops/ENVIRONMENT_SETUP.md": {
+    "mtime": 1779393844.1816702,
+    "ast_hash": "5ad01df27905aa310adb3c0c7d0e3c72",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/05-devops/DOCKER_GUIDE.md": {
+    "mtime": 1779392052.2224245,
+    "ast_hash": "6ef5050972b3ca92ce0803c2c7f7fbe5",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/05-devops/SCALING_GUIDE.md": {
+    "mtime": 1779392052.2226715,
+    "ast_hash": "88700666aab1aa9de0f667a7ab267841",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/05-devops/DISASTER_RECOVERY.md": {
+    "mtime": 1779392052.2227793,
+    "ast_hash": "c47552d5866b71ed65ce28f8ad1d5ab5",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/05-devops/DEVOPS_ARCHITECTURE.md": {
+    "mtime": 1779392052.2223744,
+    "ast_hash": "d946a5007e0fe1c1936b6657bf4ee157",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/05-devops/BACKUP_RECOVERY.md": {
+    "mtime": 1779392052.2227273,
+    "ast_hash": "e2e3694c363bd11551f380772cf60e40",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/05-devops/CI_CD_PIPELINE.md": {
+    "mtime": 1779393844.181827,
+    "ast_hash": "7af6ff27d3c3fdc5adce5fad69e720dd",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/01-backend/ERROR_HANDLING.md": {
+    "mtime": 1779392052.221334,
+    "ast_hash": "8fa511ee60d88adcbecee68211af9179",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/01-backend/BACKEND_ARCHITECTURE.md": {
+    "mtime": 1779392052.2209914,
+    "ast_hash": "449637821c22372567cf1f06f4bcbfd8",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/01-backend/SCHEDULER_FLOW.md": {
+    "mtime": 1779392052.221279,
+    "ast_hash": "60e367dfddbf271b7fa01c82c9773c3a",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/01-backend/CACHING_STRATEGY.md": {
+    "mtime": 1779392052.2211704,
+    "ast_hash": "e531e939ec7f07e06e96a0cd9f141d48",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/01-backend/QUEUE_ARCHITECTURE.md": {
+    "mtime": 1779392052.2212236,
+    "ast_hash": "5ba22410afc7bf9a1166b27512cb8b71",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/01-backend/MODULE_STRUCTURE.md": {
+    "mtime": 1779392052.2210596,
+    "ast_hash": "9cd0214162faf75b22cb3bdbe4794a23",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/01-backend/EVENT_FLOW.md": {
+    "mtime": 1779392052.2211125,
+    "ast_hash": "d332fc9d7c2b7043a1b75ce4d797a300",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/14-decisions/ADR-005-ai-architecture.md": {
+    "mtime": 1779392052.2405539,
+    "ast_hash": "6aac9f757fd67758eb9fe54ce3f1e466",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/14-decisions/ADR-004-subscription-model.md": {
+    "mtime": 1779392052.2404988,
+    "ast_hash": "4c43399403b691a80b47aa227b16ccd8",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/14-decisions/ADR-003-student-lifecycle.md": {
+    "mtime": 1779392052.2404294,
+    "ast_hash": "b90cf34f9c36b84aba43b51e6ffc251b",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/14-decisions/ADR-002-auth-strategy.md": {
+    "mtime": 1779392052.240356,
+    "ast_hash": "b3016072fe0fdee494995a2eef8ec5cb",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/14-decisions/ADR-001-multi-tenant-strategy.md": {
+    "mtime": 1779392052.240287,
+    "ast_hash": "1f58c82015330107d7e0036450eaf01c",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/04-database/TENANT_ISOLATION.md": {
+    "mtime": 1779392052.222135,
+    "ast_hash": "8da7432afa38ac79577c4857327a93a7",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/04-database/DATABASE_ARCHITECTURE.md": {
+    "mtime": 1779392052.2219138,
+    "ast_hash": "63d8faf7029c25c3fb84d361bd552077",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/04-database/ER_DIAGRAMS.md": {
+    "mtime": 1779392052.2219646,
+    "ast_hash": "c674817cdc16019e4c96232a1a972fd2",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/04-database/INDEXING_STRATEGY.md": {
+    "mtime": 1779392052.2220156,
+    "ast_hash": "e276620c823b9a7179e17dd278b7e234",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/04-database/MIGRATION_STRATEGY.md": {
+    "mtime": 1779392052.222256,
+    "ast_hash": "c00fe041a31304af7ce18e07a6b5ab8f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/04-database/AUDIT_TABLES.md": {
+    "mtime": 1779392052.22232,
+    "ast_hash": "4ba844f3522384c425534f8083590628",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/08-testing/TESTING_STRATEGY.md": {
+    "mtime": 1779392052.2235548,
+    "ast_hash": "30fa4238ca72a5ea407fe46e87267de1",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/08-testing/LOAD_TESTING.md": {
+    "mtime": 1779392052.2238972,
+    "ast_hash": "78c0e28b02517a775b974b305e5bad6e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/08-testing/E2E_TEST_GUIDE.md": {
+    "mtime": 1779392052.2237542,
+    "ast_hash": "caafdd0dc3837f4e2487b9b3878dc638",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/08-testing/INTEGRATION_TEST_GUIDE.md": {
+    "mtime": 1779392052.2236853,
+    "ast_hash": "cd53ffc555d822a893e17dd614e4c280",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/08-testing/UNIT_TEST_GUIDE.md": {
+    "mtime": 1779392052.2236156,
+    "ast_hash": "73a5a555f250941eeb88486e76cf3307",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/08-testing/SECURITY_TESTING.md": {
+    "mtime": 1779392052.223827,
+    "ast_hash": "6cf1aec951a38808f82d4a0acaa57705",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/00-core/BUSINESS_RULES.md": {
+    "mtime": 1779392052.220324,
+    "ast_hash": "e80e81a22d2efa3137b75bfac0c7efa2",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/00-core/PROJECT_OVERVIEW.md": {
+    "mtime": 1779392052.2201376,
+    "ast_hash": "9fe12160712677633c3eb3558b9c5268",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/00-core/CODING_STANDARDS.md": {
+    "mtime": 1779392052.220375,
+    "ast_hash": "a1eac9a5915e34ec96da2c40d11786bf",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/00-core/GLOSSARY.md": {
+    "mtime": 1779392052.2207887,
+    "ast_hash": "dbbcfa6f757eabe07f6492fe84a4030d",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/00-core/README.md": {
+    "mtime": 1779392052.2200084,
+    "ast_hash": "3ed3db27c3a0e9d557a2ffedce7ae6cb",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/00-core/SECURITY_RULES.md": {
+    "mtime": 1779392052.2207296,
+    "ast_hash": "78fa28fc5c89462f1cc6728863bb48dc",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/00-core/DO_NOT_BREAK_RULES.md": {
+    "mtime": 1779392052.2206697,
+    "ast_hash": "40cc828fd24614506353267bb25eaca8",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/00-core/CONTRIBUTING.md": {
+    "mtime": 1779392052.2208471,
+    "ast_hash": "c7d07f95362fa86fca977a1e804c82bc",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/00-core/SYSTEM_ARCHITECTURE.md": {
+    "mtime": 1779392052.220261,
+    "ast_hash": "215c934c13782f09f52662631f2424f4",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/00-core/AGENT_INSTRUCTIONS.md": {
+    "mtime": 1779392052.2204206,
+    "ast_hash": "6b6426527577a7284fbbea3871d77656",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/02-frontend/ROUTING_STRUCTURE.md": {
+    "mtime": 1779392052.2214556,
+    "ast_hash": "d1669ee572076af8f026a510f24d17fe",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/02-frontend/FRONTEND_ARCHITECTURE.md": {
+    "mtime": 1779392052.2213943,
+    "ast_hash": "1405fb7b6130c4f44294fe762be235e3",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/02-frontend/STATE_MANAGEMENT.md": {
+    "mtime": 1779392052.2215123,
+    "ast_hash": "6c21a945c0e144de27bbb9cd08b10be2",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/02-frontend/COMPONENT_GUIDELINES.md": {
+    "mtime": 1779392052.2215667,
+    "ast_hash": "590fb9921407bcfd7935b34f19344947",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/02-frontend/ROLE_BASED_RENDERING.md": {
+    "mtime": 1779392052.2216222,
+    "ast_hash": "bea59442905dcdb29758d64a1658f5a7",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/attendance/README.md": {
+    "mtime": 1779392052.2314248,
+    "ast_hash": "0d66d0927bf9c40569df063434f4fae3",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/transport/README.md": {
+    "mtime": 1779392052.2330022,
+    "ast_hash": "e0f4f6ccd9b5cf0d06758d41bb4b0cb0",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/fee/README.md": {
+    "mtime": 1779392052.232398,
+    "ast_hash": "1ea71e4f6948ead72be1a25492b9a768",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/auth/README.md": {
+    "mtime": 1779392052.2367697,
+    "ast_hash": "16ef28533743da8ef42a4878f4f73158",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/hostel/README.md": {
+    "mtime": 1779392052.2335954,
+    "ast_hash": "912f8ff4493b762d438bba926f837e45",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/website-builder/README.md": {
+    "mtime": 1779392052.238708,
+    "ast_hash": "18cd079d65c153dfda03d0acb5628bdb",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/school-admin/README.md": {
+    "mtime": 1779392052.2287478,
+    "ast_hash": "dc499efababbb603dbc064e870f47041",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/student/README.md": {
+    "mtime": 1779392052.2253983,
+    "ast_hash": "0f1e79318930093f3e1d97cc9b00bd04",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/subscription/README.md": {
+    "mtime": 1779392052.2374918,
+    "ast_hash": "95a4c3c3b2be2f8188ed77008a284163",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/super-admin/README.md": {
+    "mtime": 1779392052.2309127,
+    "ast_hash": "50d0182536428076dad63ea1ba6fe2c5",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/ai/README.md": {
+    "mtime": 1779392052.2363183,
+    "ast_hash": "744b34579cd7073fd2995973e31b9f57",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/parent/README.md": {
+    "mtime": 1779392052.2272096,
+    "ast_hash": "6ac8ef43d163a20d1815c92cd6b333ef",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/exam/README.md": {
+    "mtime": 1779392052.2318227,
+    "ast_hash": "d5c0dbedb98f442d48aec31910ee63b8",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/teacher/README.md": {
+    "mtime": 1779392052.2264526,
+    "ast_hash": "0405a30faa20d823e7bc3aba3afdc068",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/10-modules/analytics/README.md": {
+    "mtime": 1779392052.2354584,
+    "ast_hash": "fe9bf8e4904d02cba4e0072b3a62c455",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/03-mobile/MOBILE_ARCHITECTURE.md": {
+    "mtime": 1779393844.1811252,
+    "ast_hash": "836849cb7f9d0948f5c0d544055e852e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/03-mobile/NAVIGATION_FLOW.md": {
+    "mtime": 1779393844.1813045,
+    "ast_hash": "ab38e75c4f89c6902853462bdb793204",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/03-mobile/OFFLINE_STRATEGY.md": {
+    "mtime": 1779393844.181486,
+    "ast_hash": "98120de87fda2e640b6990eacedbff7f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/03-mobile/PUSH_NOTIFICATION_FLOW.md": {
+    "mtime": 1779392052.2218564,
+    "ast_hash": "7c74b4104de52d52a5a7573ac8934e8e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/attendance/README.md": {
+    "mtime": 1779392110.6924138,
+    "ast_hash": "f853727b3f132064361be086b9fa6444",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/fee/README.md": {
+    "mtime": 1779392110.692554,
+    "ast_hash": "8678e52bcd2200770e03b0a87de12d07",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/auth/refresh.md": {
+    "mtime": 1779392110.6935077,
+    "ast_hash": "a5b39b331d87974fbe244c265d4ddead",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/auth/login.md": {
+    "mtime": 1779392110.6934187,
+    "ast_hash": "d3173a308e1b4984ba5eba7fff8d810e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/auth/README.md": {
+    "mtime": 1779392110.6926675,
+    "ast_hash": "9d12e79bf074de6e66793134220315cb",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/auth/logout.md": {
+    "mtime": 1779392110.6935682,
+    "ast_hash": "67b4a9c993dcd15db16a4bb5b8115a21",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/student/README.md": {
+    "mtime": 1779392110.6927807,
+    "ast_hash": "c4e0485b82b9eefab2e1807345c84d0d",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/ai/README.md": {
+    "mtime": 1779392110.6929047,
+    "ast_hash": "67d7b79d0ba4a77bcf4261c650460655",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/parent/README.md": {
+    "mtime": 1779392110.6929924,
+    "ast_hash": "b357e584be341c006c5f05acabac1e28",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/exams/README.md": {
+    "mtime": 1779392110.6930835,
+    "ast_hash": "a294783e9b52676815058804aded80c9",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/teacher/README.md": {
+    "mtime": 1779392110.693173,
+    "ast_hash": "94158c2e2aea7069287dcd1ea3c7fd1d",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/notifications/README.md": {
+    "mtime": 1779392110.6932588,
+    "ast_hash": "da8254cf0680deef613a016b1f9da37f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/11-apis/analytics/README.md": {
+    "mtime": 1779392110.6933432,
+    "ast_hash": "6d5c793c0b63a381b72b083f9d662901",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/attendance-workflow.md": {
+    "mtime": 1779392052.2243462,
+    "ast_hash": "1bd89b17d5c40cb65cebcca9b02efb8b",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/admission-workflow.md": {
+    "mtime": 1779392052.22397,
+    "ast_hash": "86d6c35aba87d547521e0c9fff60c117",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/fee-workflow.md": {
+    "mtime": 1779392052.2244759,
+    "ast_hash": "4be1e1e6a7efce8d1dd7b33b10e3a721",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/transfer-workflow.md": {
+    "mtime": 1779392052.224162,
+    "ast_hash": "777da2ece7e7d058cb463fc7fa14e6a9",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/rejoin-workflow.md": {
+    "mtime": 1779392052.22425,
+    "ast_hash": "f073b5b3a78c0a7ab775567b4ee1d219",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/website-builder-workflow.md": {
+    "mtime": 1779392052.224658,
+    "ast_hash": "eb3d2f26a3b714bf292f97f4f2d71861",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/suspension-workflow.md": {
+    "mtime": 1779392052.2240984,
+    "ast_hash": "bcf63c9290ab4cbfd01de6e8f18e3656",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/transport-workflow.md": {
+    "mtime": 1779392052.2245429,
+    "ast_hash": "a63caedf2c8db58d6394126ba72ce59d",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/hostel-workflow.md": {
+    "mtime": 1779392052.2245996,
+    "ast_hash": "eadb66415c742bd27d65904f4be244ee",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/exam-workflow.md": {
+    "mtime": 1779392052.224415,
+    "ast_hash": "cdbcf13876a2df6c8612355b67363d9e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/09-workflows/promotion-workflow.md": {
+    "mtime": 1779392052.2240362,
+    "ast_hash": "320447dbd5ff8662cff6a57783bb5b34",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/12-runbooks/QUEUE_FAILURE.md": {
+    "mtime": 1779392052.2399156,
+    "ast_hash": "8abd0c551a02b700db3cab0ce7335e45",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/12-runbooks/INCIDENT_RESPONSE.md": {
+    "mtime": 1779392052.2395525,
+    "ast_hash": "1925d10aa418b8433246a1b7ec85c32e",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/12-runbooks/SERVICE_RECOVERY.md": {
+    "mtime": 1779392052.2399747,
+    "ast_hash": "15f2cdb477a2a128bfe53a14265cfd07",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/12-runbooks/DB_FAILURE.md": {
+    "mtime": 1779392052.2397156,
+    "ast_hash": "e07af4a5e5105e94fdff0af37d52115f",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/12-runbooks/CACHE_FAILURE.md": {
+    "mtime": 1779392052.2398334,
+    "ast_hash": "f260fb7d40bab05927179e89e395f7b9",
+    "semantic_hash": ""
+  },
+  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/docs/12-runbooks/PRODUCTION_ISSUES.md": {
+    "mtime": 1779392052.2396333,
+    "ast_hash": "0b6e0e60f8cd9016374d0726c5000f4a",
     "semantic_hash": ""
   },
   "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/graphify-out/memory/query_20260515_052244_how_login_flow_works.md": {
@@ -5458,25 +6358,5 @@
     "mtime": 1778658528.1970103,
     "ast_hash": "9960a24288958394ac50e57ff638b036",
     "semantic_hash": "9960a24288958394ac50e57ff638b036"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/assets/icon.png": {
-    "mtime": 499162500.0,
-    "ast_hash": "4e3f888fc8475f69fd5fa32f1ad5216a",
-    "semantic_hash": "4e3f888fc8475f69fd5fa32f1ad5216a"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/assets/favicon.png": {
-    "mtime": 499162500.0,
-    "ast_hash": "4f1cb2cac2370cd5050681232e8575a8",
-    "semantic_hash": "4f1cb2cac2370cd5050681232e8575a8"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/assets/adaptive-icon.png": {
-    "mtime": 499162500.0,
-    "ast_hash": "97dae5a0e62ad8551d8a31897b425e63",
-    "semantic_hash": "97dae5a0e62ad8551d8a31897b425e63"
-  },
-  "/Users/uttamkumar/uttam-all-data/01_github-projects/CloudCampus/mobile/assets/splash-icon.png": {
-    "mtime": 499162500.0,
-    "ast_hash": "97dae5a0e62ad8551d8a31897b425e63",
-    "semantic_hash": "97dae5a0e62ad8551d8a31897b425e63"
   }
 }
