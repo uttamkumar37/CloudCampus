@@ -52,4 +52,19 @@ public interface HomeworkRepository extends JpaRepository<HomeworkAssignment, UU
             @Param("schoolId")  UUID schoolId,
             @Param("classId")   UUID classId,
             @Param("sectionId") UUID sectionId);
+
+    /** Paginated published homework targeting a class; section match is inclusive. */
+    @Query("""
+           SELECT h FROM HomeworkAssignment h
+            WHERE h.schoolId = :schoolId
+              AND h.status = 'PUBLISHED'
+              AND h.classId = :classId
+              AND (:sectionId IS NULL OR h.sectionId IS NULL OR h.sectionId = :sectionId)
+            ORDER BY h.dueDate ASC
+           """)
+    Page<HomeworkAssignment> findPublishedForClass(
+            @Param("schoolId")  UUID schoolId,
+            @Param("classId")   UUID classId,
+            @Param("sectionId") UUID sectionId,
+            Pageable pageable);
 }
