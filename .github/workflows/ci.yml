@@ -119,3 +119,20 @@ jobs:
 
       - name: Validate staging compose
         run: docker compose -f infra/docker/local/compose.staging.yml config
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Run dependency audit gates
+        run: sh scripts/ci/security-audit.sh
