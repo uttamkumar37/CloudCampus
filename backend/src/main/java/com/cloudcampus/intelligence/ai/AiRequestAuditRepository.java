@@ -11,6 +11,8 @@ public interface AiRequestAuditRepository extends JpaRepository<AiRequestAudit, 
 
     List<AiRequestAudit> findByTenantIdOrderByCreatedAtDesc(String tenantId);
 
+    List<AiRequestAudit> findAllByOrderByCreatedAtDesc();
+
     @Query("""
             select coalesce(sum(a.estimatedInputUnits + a.estimatedOutputUnits), 0)
             from AiRequestAudit a

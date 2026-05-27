@@ -1,3 +1,5 @@
+import { httpClient } from '../../../shared/api/httpClient';
+
 export type FeeDemandStatus = 'OPEN' | 'PARTIALLY_PAID' | 'PAID';
 
 export type FeeDemandCreateRequest = {
@@ -21,6 +23,50 @@ export type FeePaymentResponse = {
   receiptNumber: string;
   paidAt: string;
   recordedByUserId: string;
+};
+
+export type FinanceReceiptResponse = {
+  id: string;
+  tenantId: string;
+  schoolId: string;
+  demandId: string;
+  studentId: string;
+  studentName: string;
+  admissionNumber: string;
+  amount: number;
+  paymentMethod: string;
+  paymentReference?: string;
+  receiptNumber: string;
+  paidAt: string;
+  recordedByUserId: string;
+  recordedByName: string;
+};
+
+export type PageResponse<T> = {
+  items: T[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+};
+
+export type FinanceReportSummary = {
+  totalDemanded: number;
+  totalCollected: number;
+  totalOutstanding: number;
+  demandCount: number;
+  receiptCount: number;
+  openDemandCount: number;
+  partiallyPaidDemandCount: number;
+  paidDemandCount: number;
+};
+
+export type FinanceCollections = {
+  items: Array<{
+    date: string;
+    totalCollected: number;
+    receiptCount: number;
+  }>;
 };
 
 export type FeeDemandResponse = {
@@ -59,20 +105,7 @@ async function createDemandAt(
   request: FeeDemandCreateRequest,
   accessToken: string,
 ): Promise<FeeDemandResponse> {
-  const response = await fetch(path, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    throw new Error('Fee demand creation failed.');
-  }
-
-  return response.json() as Promise<FeeDemandResponse>;
+  return httpClient.post<FeeDemandResponse>(path, request, { accessToken });
 }
 
 export async function recordFeePayment(
@@ -96,18 +129,17 @@ async function recordPaymentAt(
   request: FeePaymentCreateRequest,
   accessToken: string,
 ): Promise<FeeDemandResponse> {
-  const response = await fetch(path, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
+  return httpClient.post<FeeDemandResponse>(path, request, { accessToken });
+}
 
-  if (!response.ok) {
-    throw new Error('Fee payment recording failed.');
-  }
+export function listFinanceReceipts(accessToken: string) {
+  return httpClient.get<PageResponse<FinanceReceiptResponse>>('/v1/finance/receipts?size=50', { accessToken });
+}
 
-  return response.json() as Promise<FeeDemandResponse>;
+export function getFinanceReportSummary(accessToken: string) {
+  return httpClient.get<FinanceReportSummary>('/v1/finance/reports/summary', { accessToken });
+}
+
+export function getFinanceCollections(accessToken: string) {
+  return httpClient.get<FinanceCollections>('/v1/finance/reports/collections', { accessToken });
 }

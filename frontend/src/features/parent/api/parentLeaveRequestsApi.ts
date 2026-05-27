@@ -1,3 +1,5 @@
+import { httpClient } from '../../../shared/api/httpClient';
+
 export type ParentLeaveRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export type ParentLeaveRequestCreatePayload = {
@@ -34,53 +36,27 @@ export async function createParentLeaveRequest(
   payload: ParentLeaveRequestCreatePayload,
   accessToken: string,
 ): Promise<ParentLeaveRequestResponse> {
-  const response = await fetch(`/v1/parent/children/${encodeURIComponent(studentId)}/leave-requests`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Leave request failed.');
-  }
-
-  return response.json() as Promise<ParentLeaveRequestResponse>;
+  return httpClient.post<ParentLeaveRequestResponse>(
+    `/v1/parent/children/${encodeURIComponent(studentId)}/leave-requests`,
+    payload,
+    { accessToken },
+  );
 }
 
 export async function listParentLeaveRequests(
   studentId: string,
   accessToken: string,
 ): Promise<ParentLeaveRequestResponse[]> {
-  const response = await fetch(`/v1/parent/children/${encodeURIComponent(studentId)}/leave-requests`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Leave request lookup failed.');
-  }
-
-  return response.json() as Promise<ParentLeaveRequestResponse[]>;
+  return httpClient.get<ParentLeaveRequestResponse[]>(
+    `/v1/parent/children/${encodeURIComponent(studentId)}/leave-requests`,
+    { accessToken },
+  );
 }
 
 export async function listSchoolParentLeaveRequests(
   accessToken: string,
 ): Promise<ParentLeaveRequestResponse[]> {
-  const response = await fetch('/v1/school-admin/parent-leave-requests', {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('School leave request lookup failed.');
-  }
-
-  return response.json() as Promise<ParentLeaveRequestResponse[]>;
+  return httpClient.get<ParentLeaveRequestResponse[]>('/v1/school-admin/parent-leave-requests', { accessToken });
 }
 
 export async function decideSchoolParentLeaveRequest(
@@ -88,18 +64,9 @@ export async function decideSchoolParentLeaveRequest(
   payload: ParentLeaveDecisionPayload,
   accessToken: string,
 ): Promise<ParentLeaveRequestResponse> {
-  const response = await fetch(`/v1/school-admin/parent-leave-requests/${encodeURIComponent(leaveRequestId)}`, {
-    method: 'PATCH',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Leave request decision failed.');
-  }
-
-  return response.json() as Promise<ParentLeaveRequestResponse>;
+  return httpClient.patch<ParentLeaveRequestResponse>(
+    `/v1/school-admin/parent-leave-requests/${encodeURIComponent(leaveRequestId)}`,
+    payload,
+    { accessToken },
+  );
 }

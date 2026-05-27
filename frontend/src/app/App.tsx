@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -34,13 +34,6 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Tooltip,
-  XAxis,
-} from 'recharts';
 
 import { AcademicAssignmentsPage } from '../features/academic/pages/AcademicAssignmentsPage';
 import { AcademicSetupPage } from '../features/academic/pages/AcademicSetupPage';
@@ -50,18 +43,47 @@ import { InvitationAcceptPage } from '../features/auth/pages/InvitationAcceptPag
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { createFinanceFeeDemand, recordFinanceFeePayment } from '../features/finance/api/feeApi';
 import { FeeLifecyclePage } from '../features/finance/pages/FeeLifecyclePage';
+import { FinanceReportsPage } from '../features/finance/pages/FinanceReportsPage';
 import { BulkJobsPage } from '../features/operations/pages/BulkJobsPage';
 import { ParentLeaveRequestsPage } from '../features/parent/pages/ParentLeaveRequestsPage';
 import { SchoolAdminLeaveRequestsPage } from '../features/parent/pages/SchoolAdminLeaveRequestsPage';
 import { SchoolAdminParentLinkPage } from '../features/parent/pages/SchoolAdminParentLinkPage';
+import {
+  listParentChildAttendance,
+  listParentChildFees,
+  listParentChildHomework,
+  listParentChildNotices,
+  listParentChildResults,
+  listParentChildTimetable,
+  listParentChildren,
+  type ParentChild,
+} from '../features/parent/api/parentPortalApi';
+import { getDashboardSummary, type DashboardSummary } from '../features/portal/api/dashboardApi';
 import { ReportExportsPage } from '../features/reports/pages/ReportExportsPage';
+import { SchoolAdminResourcePanel } from '../features/school-admin/pages/SchoolAdminResourcePanel';
+import { SchoolSettingsPage } from '../features/school-admin/pages/SchoolSettingsPage';
+import type { SchoolAdminResourceKey } from '../features/school-admin/api/schoolAdminResourcesApi';
+import { httpClient } from '../shared/api/httpClient';
 import { StaffProvisioningPage } from '../features/staff/pages/StaffProvisioningPage';
 import { StudentImportPage } from '../features/student/pages/StudentImportPage';
+import { SuperAdminPlatformPage } from '../features/super-admin/pages/SuperAdminPlatformPage';
 import { TenantOnboardingPage } from '../features/super-admin/pages/TenantOnboardingPage';
 import { TenantReportsPage } from '../features/tenant-admin/pages/TenantReportsPage';
 import { TenantSchoolCreationPage } from '../features/tenant-admin/pages/TenantSchoolCreationPage';
 import { TenantSchoolManagementPage } from '../features/tenant-admin/pages/TenantSchoolManagementPage';
 import { TenantSettingsPage } from '../features/tenant-admin/pages/TenantSettingsPage';
+import {
+  listTeacherAssignments,
+  listTeacherAttendance,
+  listTeacherExamRoster,
+  listTeacherExams,
+  listTeacherHomework,
+  listTeacherTimetable,
+  recordTeacherExamMarks,
+  type TeacherAssignment,
+  type TeacherExam,
+  type TeacherExamRosterStudent,
+} from '../features/teacher/api/teacherPortalApi';
 import type { AuthSession, CurrentUser, UserRole } from '../features/auth/api/authApi';
 
 type AppProps = {
@@ -72,27 +94,17 @@ type AppProps = {
 type NavItem = {
   id: string;
   label: string;
+  status: ConnectionStatus;
   badge?: string;
 };
 
-type Metric = {
-  label: string;
-  value: string;
-  delta: string;
-  tone: 'blue' | 'emerald' | 'amber' | 'violet' | 'rose';
-};
-
-type AnalyticsPoint = {
-  label: string;
-  attendance: number;
-  collection: number;
-  engagement: number;
-};
+type ConnectionStatus = 'CONNECTED_REAL_API';
 
 type QuickAction = {
   label: string;
   detail: string;
   icon: LucideIcon;
+  navId: string;
 };
 
 type RoleInfoItem = {
@@ -100,7 +112,7 @@ type RoleInfoItem = {
   value: string;
   detail: string;
   icon: LucideIcon;
-  tone: Metric['tone'];
+  tone: 'blue' | 'emerald' | 'amber' | 'violet' | 'rose';
 };
 
 const ROLE_HOME: Record<UserRole, string> = {
@@ -116,250 +128,127 @@ const ROLE_HOME: Record<UserRole, string> = {
 
 const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   SUPER_ADMIN: [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'tenants', label: 'Tenants' },
-    { id: 'schools', label: 'Schools' },
-    { id: 'subscriptions', label: 'Subscription Plans' },
-    { id: 'revenue', label: 'Revenue' },
-    { id: 'ai-usage', label: 'AI Usage' },
-    { id: 'reports', label: 'Reports' },
-    { id: 'audit', label: 'Audit Logs' },
-    { id: 'health', label: 'Platform Health' },
-    { id: 'notifications', label: 'Notifications' },
-    { id: 'settings', label: 'Settings' },
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+    { id: 'tenants', label: 'Tenants', status: 'CONNECTED_REAL_API' },
+    { id: 'schools', label: 'Schools', status: 'CONNECTED_REAL_API' },
+    { id: 'subscriptions', label: 'Subscription Plans', status: 'CONNECTED_REAL_API' },
+    { id: 'revenue', label: 'Revenue', status: 'CONNECTED_REAL_API' },
+    { id: 'ai-usage', label: 'AI Usage', status: 'CONNECTED_REAL_API' },
+    { id: 'reports', label: 'Reports', status: 'CONNECTED_REAL_API' },
+    { id: 'audit', label: 'Audit Logs', status: 'CONNECTED_REAL_API' },
+    { id: 'health', label: 'Platform Health', status: 'CONNECTED_REAL_API' },
+    { id: 'notifications', label: 'Notifications', status: 'CONNECTED_REAL_API' },
+    { id: 'settings', label: 'Settings', status: 'CONNECTED_REAL_API' },
   ],
   TENANT_ADMIN: [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'schools', label: 'Schools' },
-    { id: 'admins', label: 'School Admins' },
-    { id: 'usage', label: 'Subscription Usage' },
-    { id: 'reports', label: 'Reports' },
-    { id: 'branding', label: 'Branding' },
-    { id: 'settings', label: 'Settings' },
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+    { id: 'schools', label: 'Schools', status: 'CONNECTED_REAL_API' },
+    { id: 'admins', label: 'School Admins', status: 'CONNECTED_REAL_API' },
+    { id: 'reports', label: 'Reports', status: 'CONNECTED_REAL_API' },
+    { id: 'usage', label: 'Subscription Usage', status: 'CONNECTED_REAL_API' },
+    { id: 'settings', label: 'Settings', status: 'CONNECTED_REAL_API' },
   ],
   SCHOOL_ADMIN: [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'students', label: 'Students' },
-    { id: 'parents', label: 'Parents' },
-    { id: 'teachers', label: 'Teachers' },
-    { id: 'staff', label: 'Staff' },
-    { id: 'attendance', label: 'Attendance' },
-    { id: 'homework', label: 'Homework' },
-    { id: 'exams', label: 'Exams & Results' },
-    { id: 'fees', label: 'Fees' },
-    { id: 'timetable', label: 'Timetable' },
-    { id: 'notices', label: 'Notices' },
-    { id: 'reports', label: 'Reports' },
-    { id: 'website', label: 'Website Builder' },
-    { id: 'settings', label: 'Settings' },
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+    { id: 'students', label: 'Students', status: 'CONNECTED_REAL_API' },
+    { id: 'parents', label: 'Parents', status: 'CONNECTED_REAL_API' },
+    { id: 'teachers', label: 'Teachers', status: 'CONNECTED_REAL_API' },
+    { id: 'staff', label: 'Staff', status: 'CONNECTED_REAL_API' },
+    { id: 'academic', label: 'Academic Setup', status: 'CONNECTED_REAL_API' },
+    { id: 'attendance', label: 'Attendance', status: 'CONNECTED_REAL_API' },
+    { id: 'homework', label: 'Homework', status: 'CONNECTED_REAL_API' },
+    { id: 'exams', label: 'Exams & Results', status: 'CONNECTED_REAL_API' },
+    { id: 'fees', label: 'Fees', status: 'CONNECTED_REAL_API' },
+    { id: 'timetable', label: 'Timetable', status: 'CONNECTED_REAL_API' },
+    { id: 'notices', label: 'Notices', status: 'CONNECTED_REAL_API' },
+    { id: 'reports', label: 'Reports', status: 'CONNECTED_REAL_API' },
+    { id: 'documents', label: 'Documents', status: 'CONNECTED_REAL_API' },
+    { id: 'website', label: 'Website Builder', status: 'CONNECTED_REAL_API' },
+    { id: 'settings', label: 'Settings', status: 'CONNECTED_REAL_API' },
   ],
   TEACHER: [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'classes', label: 'My Classes' },
-    { id: 'attendance', label: 'Attendance' },
-    { id: 'homework', label: 'Homework' },
-    { id: 'exams', label: 'Exams' },
-    { id: 'marks', label: 'Marks' },
-    { id: 'timetable', label: 'Timetable' },
-    { id: 'resources', label: 'Resources' },
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+    { id: 'classes', label: 'My Classes', status: 'CONNECTED_REAL_API' },
+    { id: 'attendance', label: 'Attendance', status: 'CONNECTED_REAL_API' },
+    { id: 'homework', label: 'Homework', status: 'CONNECTED_REAL_API' },
+    { id: 'exams', label: 'Exams', status: 'CONNECTED_REAL_API' },
+    { id: 'marks', label: 'Marks', status: 'CONNECTED_REAL_API' },
+    { id: 'notices', label: 'Notices', status: 'CONNECTED_REAL_API' },
+    { id: 'timetable', label: 'Timetable', status: 'CONNECTED_REAL_API' },
   ],
   FINANCE_STAFF: [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'fees', label: 'Fee Demands' },
-    { id: 'payments', label: 'Payments' },
-    { id: 'receipts', label: 'Receipts' },
-    { id: 'reports', label: 'Reports' },
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+    { id: 'fees', label: 'Fee Demands', status: 'CONNECTED_REAL_API' },
+    { id: 'payments', label: 'Payments', status: 'CONNECTED_REAL_API' },
+    { id: 'receipts', label: 'Receipts', status: 'CONNECTED_REAL_API' },
+    { id: 'reports', label: 'Reports', status: 'CONNECTED_REAL_API' },
   ],
   STAFF: [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'tasks', label: 'Tasks' },
-    { id: 'attendance', label: 'Attendance' },
-    { id: 'notices', label: 'Notices' },
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
   ],
   PARENT: [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'children', label: 'My Children' },
-    { id: 'attendance', label: 'Attendance' },
-    { id: 'homework', label: 'Homework' },
-    { id: 'results', label: 'Results' },
-    { id: 'fees', label: 'Fees' },
-    { id: 'notices', label: 'Notices' },
-    { id: 'leave', label: 'Leave Requests' },
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+    { id: 'children', label: 'My Children', status: 'CONNECTED_REAL_API' },
+    { id: 'attendance', label: 'Attendance', status: 'CONNECTED_REAL_API' },
+    { id: 'homework', label: 'Homework', status: 'CONNECTED_REAL_API' },
+    { id: 'results', label: 'Results', status: 'CONNECTED_REAL_API' },
+    { id: 'fees', label: 'Fees', status: 'CONNECTED_REAL_API' },
+    { id: 'notices', label: 'Notices', status: 'CONNECTED_REAL_API' },
+    { id: 'timetable', label: 'Timetable', status: 'CONNECTED_REAL_API' },
+    { id: 'leave', label: 'Leave Requests', status: 'CONNECTED_REAL_API' },
   ],
   STUDENT: [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'homework', label: 'Homework' },
-    { id: 'attendance', label: 'Attendance' },
-    { id: 'results', label: 'Results' },
-    { id: 'timetable', label: 'Timetable' },
-    { id: 'notices', label: 'Notices' },
-    { id: 'resources', label: 'Resources' },
-    { id: 'assistant', label: 'AI Study Assistant' },
-  ],
-};
-
-const METRICS_BY_ROLE: Record<UserRole, Metric[]> = {
-  SUPER_ADMIN: [
-    { label: 'Active tenants', value: '1,284', delta: '+18 this month', tone: 'blue' },
-    { label: 'Schools online', value: '8,940', delta: '99.98% uptime', tone: 'emerald' },
-    { label: 'Monthly revenue', value: '$428k', delta: '+12.4%', tone: 'violet' },
-    { label: 'Pending invoices', value: '34', delta: '8 high value', tone: 'amber' },
-  ],
-  TENANT_ADMIN: [
-    { label: 'Schools', value: '12', delta: '2 near limit', tone: 'blue' },
-    { label: 'Active users', value: '18.2k', delta: '+6.1%', tone: 'emerald' },
-    { label: 'Fee collection', value: '92%', delta: '+4.8%', tone: 'violet' },
-    { label: 'Attendance', value: '94.6%', delta: '3 schools flagged', tone: 'amber' },
-  ],
-  SCHOOL_ADMIN: [
-    { label: "Today's attendance", value: '94.8%', delta: '312 present', tone: 'emerald' },
-    { label: 'Fee collection today', value: '$18.4k', delta: '78% cycle progress', tone: 'blue' },
-    { label: 'Upcoming exams', value: '6', delta: 'Next 14 days', tone: 'violet' },
-    { label: 'Approvals', value: '18', delta: 'Parent links & imports', tone: 'amber' },
-  ],
-  TEACHER: [
-    { label: "Today's classes", value: '5', delta: '2 pending attendance', tone: 'blue' },
-    { label: 'Homework review', value: '38', delta: 'Due today', tone: 'amber' },
-    { label: 'Marks pending', value: '2', delta: 'Exam sheets', tone: 'violet' },
-    { label: 'Class average', value: '82%', delta: '+3%', tone: 'emerald' },
-  ],
-  FINANCE_STAFF: [
-    { label: 'Fee collection', value: '78%', delta: '42 pending', tone: 'blue' },
-    { label: 'Payments today', value: '24', delta: '+9 online', tone: 'emerald' },
-    { label: 'Receipts issued', value: '312', delta: 'This month', tone: 'violet' },
-    { label: 'Overdue demands', value: '18', delta: 'Needs follow-up', tone: 'amber' },
-  ],
-  STAFF: [
-    { label: 'Open tasks', value: '14', delta: '4 urgent', tone: 'amber' },
-    { label: 'Notices', value: '6', delta: '2 unread', tone: 'blue' },
-    { label: 'Requests', value: '9', delta: 'Operations queue', tone: 'violet' },
-    { label: 'SLA', value: '96%', delta: '+2%', tone: 'emerald' },
-  ],
-  PARENT: [
-    { label: 'Attendance', value: '96%', delta: 'This month', tone: 'emerald' },
-    { label: 'Homework due', value: '3', delta: 'Next 48 hours', tone: 'amber' },
-    { label: 'Fee reminders', value: '1', delta: 'Due Friday', tone: 'rose' },
-    { label: 'Performance', value: 'A-', delta: '+5%', tone: 'violet' },
-  ],
-  STUDENT: [
-    { label: 'Homework due', value: '4', delta: '2 due today', tone: 'amber' },
-    { label: 'Attendance', value: '93%', delta: 'Above target', tone: 'emerald' },
-    { label: 'Exam prep', value: '7d', delta: 'Mathematics', tone: 'violet' },
-    { label: 'Study streak', value: '12', delta: 'days', tone: 'blue' },
-  ],
-};
-
-const TABLE_COLUMNS = ['Name', 'Scope', 'Status', 'Owner'];
-const TABLE_ROWS = [
-  ['Aarav Sharma', 'Grade 8 / A', 'Active', 'School Admin'],
-  ['Quarterly fee cycle', 'Finance', 'In progress', 'Accounts'],
-  ['Midterm mathematics', 'Exams', 'Published', 'Academics'],
-  ['Attendance risk cohort', 'AI insight', 'Review', 'Counsellor'],
-];
-
-const ANALYTICS_BY_ROLE: Record<UserRole, AnalyticsPoint[]> = {
-  SUPER_ADMIN: [
-    { label: 'Jan', attendance: 86, collection: 72, engagement: 64 },
-    { label: 'Feb', attendance: 88, collection: 76, engagement: 69 },
-    { label: 'Mar', attendance: 91, collection: 79, engagement: 73 },
-    { label: 'Apr', attendance: 93, collection: 83, engagement: 78 },
-    { label: 'May', attendance: 95, collection: 88, engagement: 82 },
-  ],
-  TENANT_ADMIN: [
-    { label: 'Mon', attendance: 91, collection: 82, engagement: 74 },
-    { label: 'Tue', attendance: 93, collection: 84, engagement: 79 },
-    { label: 'Wed', attendance: 92, collection: 86, engagement: 81 },
-    { label: 'Thu', attendance: 95, collection: 89, engagement: 83 },
-    { label: 'Fri', attendance: 94, collection: 92, engagement: 86 },
-  ],
-  SCHOOL_ADMIN: [
-    { label: 'Mon', attendance: 88, collection: 62, engagement: 72 },
-    { label: 'Tue', attendance: 91, collection: 68, engagement: 76 },
-    { label: 'Wed', attendance: 93, collection: 71, engagement: 78 },
-    { label: 'Thu', attendance: 94, collection: 76, engagement: 83 },
-    { label: 'Fri', attendance: 95, collection: 81, engagement: 86 },
-  ],
-  TEACHER: [
-    { label: 'P1', attendance: 86, collection: 68, engagement: 74 },
-    { label: 'P2', attendance: 92, collection: 72, engagement: 81 },
-    { label: 'P3', attendance: 89, collection: 78, engagement: 84 },
-    { label: 'P4', attendance: 94, collection: 80, engagement: 88 },
-    { label: 'P5', attendance: 93, collection: 82, engagement: 87 },
-  ],
-  FINANCE_STAFF: [
-    { label: 'W1', attendance: 72, collection: 58, engagement: 66 },
-    { label: 'W2', attendance: 74, collection: 64, engagement: 70 },
-    { label: 'W3', attendance: 78, collection: 71, engagement: 75 },
-    { label: 'W4', attendance: 81, collection: 76, engagement: 78 },
-    { label: 'W5', attendance: 86, collection: 83, engagement: 84 },
-  ],
-  STAFF: [
-    { label: 'Mon', attendance: 84, collection: 68, engagement: 72 },
-    { label: 'Tue', attendance: 86, collection: 70, engagement: 74 },
-    { label: 'Wed', attendance: 88, collection: 73, engagement: 79 },
-    { label: 'Thu', attendance: 90, collection: 76, engagement: 82 },
-    { label: 'Fri', attendance: 92, collection: 78, engagement: 84 },
-  ],
-  PARENT: [
-    { label: 'W1', attendance: 94, collection: 76, engagement: 70 },
-    { label: 'W2', attendance: 92, collection: 78, engagement: 75 },
-    { label: 'W3', attendance: 95, collection: 81, engagement: 82 },
-    { label: 'W4', attendance: 96, collection: 86, engagement: 88 },
-    { label: 'W5', attendance: 96, collection: 91, engagement: 90 },
-  ],
-  STUDENT: [
-    { label: 'Mon', attendance: 84, collection: 70, engagement: 76 },
-    { label: 'Tue', attendance: 89, collection: 72, engagement: 80 },
-    { label: 'Wed', attendance: 91, collection: 75, engagement: 84 },
-    { label: 'Thu', attendance: 93, collection: 76, engagement: 88 },
-    { label: 'Fri', attendance: 94, collection: 78, engagement: 91 },
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+    { id: 'homework', label: 'Homework', status: 'CONNECTED_REAL_API' },
+    { id: 'results', label: 'Results', status: 'CONNECTED_REAL_API' },
+    { id: 'fees', label: 'Fees', status: 'CONNECTED_REAL_API' },
+    { id: 'notices', label: 'Notices', status: 'CONNECTED_REAL_API' },
+    { id: 'attendance', label: 'Attendance', status: 'CONNECTED_REAL_API' },
+    { id: 'timetable', label: 'Timetable', status: 'CONNECTED_REAL_API' },
   ],
 };
 
 const QUICK_ACTIONS_BY_ROLE: Record<UserRole, QuickAction[]> = {
   SUPER_ADMIN: [
-    { label: 'Create tenant', detail: 'Create trust, first school and admin', icon: Building2 },
-    { label: 'Create plan', detail: 'Prepare subscription package', icon: ReceiptText },
-    { label: 'View audit logs', detail: 'Review privileged events', icon: FileText },
-    { label: 'System health', detail: 'Check platform readiness', icon: LineChart },
+    { label: 'Create tenant', detail: 'Create trust, first school and admin', icon: Building2, navId: 'tenants' },
+    { label: 'Create plan', detail: 'Prepare subscription package', icon: ReceiptText, navId: 'subscriptions' },
+    { label: 'System health', detail: 'Check platform readiness', icon: LineChart, navId: 'health' },
   ],
   TENANT_ADMIN: [
-    { label: 'Add school', detail: 'Add a new campus safely', icon: School },
-    { label: 'Invite School Admin', detail: 'Grant school access', icon: Users },
-    { label: 'View reports', detail: 'Compare school performance', icon: FileText },
-    { label: 'Subscription usage', detail: 'Review plan limits', icon: ReceiptText },
+    { label: 'Add school', detail: 'Add a new campus safely', icon: School, navId: 'schools' },
+    { label: 'Invite School Admin', detail: 'Grant school access', icon: Users, navId: 'admins' },
+    { label: 'View reports', detail: 'Compare school performance', icon: FileText, navId: 'reports' },
+    { label: 'Subscription usage', detail: 'Review plan limits', icon: ReceiptText, navId: 'usage' },
   ],
   SCHOOL_ADMIN: [
-    { label: 'Add student', detail: 'Validate and queue roster updates', icon: Users },
-    { label: 'Add teacher', detail: 'Provision portal access', icon: GraduationCap },
-    { label: 'Take attendance', detail: 'Open today’s classes', icon: CalendarCheck },
-    { label: 'Create notice', detail: 'Publish school update', icon: Newspaper },
-    { label: 'Create exam', detail: 'Prepare assessment flow', icon: ClipboardCheck },
+    { label: 'Add student', detail: 'Validate and queue roster updates', icon: Users, navId: 'students' },
+    { label: 'Add teacher', detail: 'Provision portal access', icon: GraduationCap, navId: 'teachers' },
+    { label: 'Take attendance', detail: 'Open today’s classes', icon: CalendarCheck, navId: 'attendance' },
+    { label: 'Create notice', detail: 'Publish school update', icon: Newspaper, navId: 'notices' },
+    { label: 'Create exam', detail: 'Prepare assessment flow', icon: ClipboardCheck, navId: 'exams' },
   ],
   TEACHER: [
-    { label: 'Mark attendance', detail: 'Open assigned classes', icon: CalendarCheck },
-    { label: 'Create homework', detail: 'Prepare class work', icon: BookOpen },
-    { label: 'Enter marks', detail: 'Update exam scores', icon: ClipboardCheck },
+    { label: 'Mark attendance', detail: 'Open assigned classes', icon: CalendarCheck, navId: 'attendance' },
+    { label: 'Create homework', detail: 'Prepare class work', icon: BookOpen, navId: 'homework' },
+    { label: 'Enter marks', detail: 'Update exam scores', icon: ClipboardCheck, navId: 'marks' },
   ],
   FINANCE_STAFF: [
-    { label: 'Record payment', detail: 'Issue receipt', icon: CircleDollarSign },
-    { label: 'Generate receipt', detail: 'Share payment proof', icon: ReceiptText },
-    { label: 'Export report', detail: 'Share collection view', icon: FileText },
+    { label: 'Record payment', detail: 'Issue receipt', icon: CircleDollarSign, navId: 'payments' },
+    { label: 'Generate receipt', detail: 'Share payment proof', icon: ReceiptText, navId: 'receipts' },
+    { label: 'Export report', detail: 'Share collection view', icon: FileText, navId: 'reports' },
   ],
   STAFF: [
-    { label: 'Open tasks', detail: 'Review school operations', icon: ClipboardCheck },
-    { label: 'Read notices', detail: 'Catch up on updates', icon: Newspaper },
-    { label: 'Support queue', detail: 'Follow assigned work', icon: MessageSquareText },
+    { label: 'Open tasks', detail: 'Review school operations', icon: ClipboardCheck, navId: 'tasks' },
+    { label: 'Read notices', detail: 'Catch up on updates', icon: Newspaper, navId: 'notices' },
   ],
   PARENT: [
-    { label: 'Pay fees', detail: 'Review reminders', icon: CircleDollarSign },
-    { label: 'Apply leave', detail: 'Submit linked-child leave', icon: CalendarCheck },
-    { label: 'View results', detail: 'Review published marks', icon: GraduationCap },
+    { label: 'Pay fees', detail: 'Review reminders', icon: CircleDollarSign, navId: 'fees' },
+    { label: 'Apply leave', detail: 'Submit linked-child leave', icon: CalendarCheck, navId: 'leave' },
+    { label: 'View results', detail: 'Review published marks', icon: GraduationCap, navId: 'results' },
   ],
   STUDENT: [
-    { label: 'Submit homework', detail: 'Track what is due', icon: BookOpen },
-    { label: 'View timetable', detail: 'Plan today’s classes', icon: CalendarCheck },
-    { label: 'View results', detail: 'Review published marks', icon: GraduationCap },
+    { label: 'Submit homework', detail: 'Track what is due', icon: BookOpen, navId: 'homework' },
+    { label: 'View results', detail: 'Review published marks', icon: GraduationCap, navId: 'results' },
   ],
 };
 
@@ -849,8 +738,14 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
   const [activeNav, setActiveNav] = useState('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const navItems = NAV_BY_ROLE[user.role];
+  const navItems = useMemo(() => visibleNavItems(user.role), [user.role]);
   const portalTitle = roleTitle(user.role);
+
+  useEffect(() => {
+    if (!navItems.some((item) => item.id === activeNav)) {
+      setActiveNav(navItems[0]?.id ?? 'dashboard');
+    }
+  }, [activeNav, navItems]);
 
   return (
     <main className="enterprise-shell" data-testid="cloudcampus-shell" data-theme={theme}>
@@ -889,7 +784,7 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
           user={user}
         />
         <div className="content-grid">
-          <PortalDashboard user={user} />
+          <PortalDashboard navItems={navItems} onSelectNav={setActiveNav} user={user} />
           <RoleWorkspace activeNav={activeNav} user={user} />
         </div>
       </section>
@@ -900,6 +795,10 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
       <button className="ai-fab" aria-label="Open CloudCampus AI assistant" type="button">AI</button>
     </main>
   );
+}
+
+function visibleNavItems(role: UserRole) {
+  return NAV_BY_ROLE[role].filter((item) => item.status === 'CONNECTED_REAL_API');
 }
 
 function SidebarNavButton({
@@ -1077,28 +976,64 @@ function NotificationPopover() {
     <div className="notification-popover" role="status" aria-label="Notification center">
       <div>
         <strong>Notification center</strong>
-        <span>Live delivery health</span>
+        <span>Live delivery status appears in each portal module</span>
       </div>
-      {[
-        ['Invitation delivered', 'School Admin invite logged safely'],
-        ['Report export ready', 'Student directory CSV completed'],
-        ['AI insight', 'Attendance risk changed for Grade 8'],
-      ].map(([title, detail]) => (
-        <article key={title}>
-          <i aria-hidden="true" />
-          <span>
-            <strong>{title}</strong>
-            <small>{detail}</small>
-          </span>
-        </article>
-      ))}
+      <article>
+        <i aria-hidden="true" />
+        <span>
+          <strong>No new alerts</strong>
+          <small>Your active workspace will show module-specific delivery, report, and approval updates.</small>
+        </span>
+      </article>
     </div>
   );
 }
 
-function PortalDashboard({ user }: { user: CurrentUser }) {
-  const metrics = METRICS_BY_ROLE[user.role];
-  const chartData = ANALYTICS_BY_ROLE[user.role];
+function PortalDashboard({
+  navItems,
+  onSelectNav,
+  user,
+}: {
+  navItems: NavItem[];
+  onSelectNav: (navId: string) => void;
+  user: CurrentUser;
+}) {
+  const { accessToken } = useAuthState();
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSummary() {
+      if (!accessToken) {
+        setStatus('unavailable');
+        setError('Login is required to load dashboard summary.');
+        return;
+      }
+
+      setStatus('loading');
+      try {
+        const response = await getDashboardSummary(user.role, accessToken);
+        if (!mounted) return;
+        setSummary(response);
+        setError(null);
+        setStatus('ready');
+      } catch (caught) {
+        if (!mounted) return;
+        setSummary(null);
+        setError(caught instanceof Error ? caught.message : 'Dashboard summary API is unavailable.');
+        setStatus('unavailable');
+      }
+    }
+
+    void loadSummary();
+
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken, user.role]);
 
   return (
     <section className="dashboard-region" aria-labelledby={`${ROLE_HOME[user.role]}-dashboard`}>
@@ -1112,18 +1047,10 @@ function PortalDashboard({ user }: { user: CurrentUser }) {
 
       <SessionSummaryPanel user={user} />
       <RoleInfoGrid user={user} />
-
-      <div className="metric-grid">
-        {metrics.map((metric) => (
-          <MetricCard key={metric.label} metric={metric} />
-        ))}
-      </div>
-
+      <DashboardSummaryPanel error={error} status={status} summary={summary} user={user} />
       <div className="insight-grid">
-        <AnalyticsPanel data={chartData} role={user.role} />
-        <QuickActionsPanel role={user.role} />
-        <AIInsightPanel role={user.role} />
-        <NotificationCenter />
+        <QuickActionsPanel navItems={navItems} onSelectNav={onSelectNav} role={user.role} />
+        <ApiCoveragePanel navItems={navItems} role={user.role} />
       </div>
     </section>
   );
@@ -1249,48 +1176,51 @@ function RoleWorkspace({ activeNav, user }: { activeNav: string; user: CurrentUs
 }
 
 function FinanceStaffModule({ activeNav }: { activeNav: string }) {
+  if (activeNav === 'dashboard') {
+    return <DashboardWorkspacePanel role="FINANCE_STAFF" />;
+  }
+
+  if (activeNav === 'reports') {
+    return <FinanceReportsPage />;
+  }
+
   if (activeNav === 'fees' || activeNav === 'payments' || activeNav === 'receipts') {
     return (
-      <FeeLifecyclePage
-        onCreateDemand={createFinanceFeeDemand}
-        onRecordPayment={recordFinanceFeePayment}
-      />
-    );
-  }
-
-  return (
-    <div className="workspace-grid">
-      <ModernTable title={activeNav === 'dashboard' ? 'Finance operations' : moduleTitle(activeNav)} />
-      <TimelinePanel role="FINANCE_STAFF" />
-      <EmptyState title={`${moduleTitle(activeNav)} ready`} detail="Finance access is limited to fee, payment, receipt and finance report workflows." />
-    </div>
-  );
-}
-
-function SuperAdminModule({ activeNav }: { activeNav: string }) {
-  if (activeNav === 'tenants') {
-    return <TenantOnboardingPage />;
-  }
-
-  if (activeNav === 'dashboard') {
-    return (
       <div className="workspace-grid">
-        <ModernTable title="Tenant operations" />
-        <WizardPreview />
+        <EndpointListPanel title="Finance fee demands" path="/v1/finance/fees/demands" />
+        {activeNav === 'receipts' ? (
+          <EndpointListPanel title="Finance receipts" path="/v1/finance/receipts?size=50" />
+        ) : (
+          <FeeLifecyclePage
+            onCreateDemand={createFinanceFeeDemand}
+            onRecordPayment={recordFinanceFeePayment}
+          />
+        )}
       </div>
     );
   }
 
-  return (
-    <div className="workspace-grid">
-      <ModernTable title={moduleTitle(activeNav)} />
-      <TimelinePanel role="SUPER_ADMIN" />
-      <EmptyState title={`${moduleTitle(activeNav)} ready`} detail="This premium shell is prepared for the verified backend module." />
-    </div>
-  );
+  return <ComingSoonPanel activeNav={activeNav} role="FINANCE_STAFF" />;
+}
+
+function SuperAdminModule({ activeNav }: { activeNav: string }) {
+  if (activeNav === 'tenants') {
+    return (
+      <div className="workspace-grid">
+        <TenantOnboardingPage />
+        <SuperAdminPlatformPage section={activeNav} />
+      </div>
+    );
+  }
+
+  return <SuperAdminPlatformPage section={activeNav} />;
 }
 
 function TenantAdminModule({ activeNav }: { activeNav: string }) {
+  if (activeNav === 'dashboard') {
+    return <DashboardWorkspacePanel role="TENANT_ADMIN" />;
+  }
+
   if (activeNav === 'schools') {
     return (
       <div className="workspace-grid">
@@ -1308,20 +1238,23 @@ function TenantAdminModule({ activeNav }: { activeNav: string }) {
     return <TenantReportsPage />;
   }
 
-  return (
-    <div className="workspace-grid">
-      <ModernTable title={activeNav === 'admins' ? 'School admin directory' : 'Tenant operations'} />
-      <TimelinePanel role="TENANT_ADMIN" />
-      <EmptyState title={`${moduleTitle(activeNav)} workspace`} detail="Cross-school controls are staged for the next verified workflow." />
-    </div>
-  );
+  if (activeNav === 'admins') {
+    return (
+      <div className="workspace-grid">
+        <TenantSchoolManagementPage />
+        <EmptyState title="School Admins are school-scoped" detail="Select a school in School Management to list, invite, resend or revoke School Admin access through the real backend API." />
+      </div>
+    );
+  }
+
+  return <ComingSoonPanel activeNav={activeNav} role="TENANT_ADMIN" />;
 }
 
 function SchoolAdminModule({ activeNav }: { activeNav: string }) {
   if (activeNav === 'students') {
     return (
       <div className="workspace-grid">
-        <ModernTable title="Student management" />
+        <SchoolAdminResourcePanel resource="students" />
         <StudentImportPage />
       </div>
     );
@@ -1330,116 +1263,819 @@ function SchoolAdminModule({ activeNav }: { activeNav: string }) {
   if (activeNav === 'parents') {
     return (
       <div className="workspace-grid">
+        <SchoolAdminResourcePanel resource="parents" />
         <SchoolAdminParentLinkPage />
         <SchoolAdminLeaveRequestsPage />
       </div>
     );
   }
-  if (activeNav === 'teachers' || activeNav === 'staff') return <StaffProvisioningPage />;
-  if (activeNav === 'fees') return <FeeLifecyclePage />;
-  if (activeNav === 'reports') return <ReportExportsPage />;
-  if (activeNav === 'settings') return <BulkJobsPage />;
-  if (activeNav === 'dashboard') {
+  if (activeNav === 'teachers' || activeNav === 'staff') {
     return (
       <div className="workspace-grid">
-        <ModernTable title="School operations" />
-        <TimelinePanel role="SCHOOL_ADMIN" />
-        <EmptyState title="Approvals queue" detail="Parent links, staff invitations and student imports are ready from the sidebar." />
+        <SchoolAdminResourcePanel resource={activeNav} />
+        <StaffProvisioningPage />
       </div>
     );
   }
-
-  if (activeNav === 'attendance' || activeNav === 'homework' || activeNav === 'exams' || activeNav === 'timetable') {
+  if (activeNav === 'fees') {
+    return (
+      <div className="workspace-grid">
+        <SchoolAdminResourcePanel resource="fees" />
+        <FeeLifecyclePage />
+      </div>
+    );
+  }
+  if (activeNav === 'reports') return <ReportExportsPage />;
+  if (activeNav === 'settings') {
+    return (
+      <div className="workspace-grid">
+        <SchoolSettingsPage />
+        <BulkJobsPage />
+      </div>
+    );
+  }
+  if (activeNav === 'academic') {
     return (
       <div className="workspace-grid">
         <AcademicSetupPage />
         <AcademicAssignmentsPage />
-        <ModernTable title={moduleTitle(activeNav)} />
       </div>
     );
   }
 
-  return (
-    <div className="workspace-grid">
-      <ModernTable title={moduleTitle(activeNav)} />
-      <EmptyState title={`${moduleTitle(activeNav)} module`} detail="The role-safe shell is ready for this school-scoped workflow." />
-    </div>
-  );
+  if (isSchoolAdminResource(activeNav)) {
+    return <SchoolAdminResourcePanel resource={activeNav} />;
+  }
+
+  if (activeNav === 'dashboard') {
+    return (
+      <div className="workspace-grid">
+        <SchoolAdminResourcePanel resource="students" />
+        <EmptyState title="School Admin workspace" detail="Use the connected sidebar modules for student import, academic setup, attendance, homework, exams, fees, notices, documents and website pages." />
+      </div>
+    );
+  }
+
+  return <ComingSoonPanel activeNav={activeNav} role="SCHOOL_ADMIN" />;
 }
 
 function LearnerStaffModule({ activeNav, role }: { activeNav: string; role: UserRole }) {
+  if (activeNav === 'dashboard') {
+    return <DashboardWorkspacePanel role={role} />;
+  }
+
+  if (role === 'TEACHER') {
+    if (activeNav === 'marks') {
+      return <TeacherMarksEntryPanel />;
+    }
+    return <TeacherScopedPortalPanel activeNav={activeNav} />;
+  }
+
+  if (role === 'PARENT' && activeNav !== 'leave') {
+    return <ParentChildPortalPanel activeNav={activeNav} />;
+  }
+
   if (role === 'PARENT' && activeNav === 'leave') {
     return <ParentLeaveRequestsPage />;
   }
 
+  const endpoint = roleEndpoint(role, activeNav);
+  if (endpoint) {
+    return <EndpointListPanel title={activeNav === 'dashboard' ? roleTableTitle(role) : moduleTitle(activeNav)} path={endpoint} />;
+  }
+
+  return <ComingSoonPanel activeNav={activeNav} role={role} />;
+}
+
+function DashboardWorkspacePanel({ role }: { role: UserRole }) {
+  const endpoint = dashboardEndpoint(role);
+
   return (
     <div className="workspace-grid">
-      <ModernTable title={activeNav === 'dashboard' ? roleTableTitle(role) : moduleTitle(activeNav)} />
-      <TimelinePanel role={role} />
-      <EmptyState title={`${moduleTitle(activeNav)} ready`} detail="This portal area is isolated to the authenticated role context." />
+      <EndpointListPanel title={`${roleTitle(role)} live summary`} path={endpoint} />
+      <EmptyState
+        title="Production workspace"
+        detail="This dashboard is backed by the authenticated summary API above. Use the sidebar to open the verified operational modules for this role."
+      />
     </div>
   );
 }
 
-function MetricCard({ metric }: { metric: Metric }) {
-  return (
-    <motion.article
-      className={`metric-card tone-${metric.tone}`}
-      whileHover={{ y: -4 }}
-      transition={{ type: 'spring', stiffness: 240, damping: 18 }}
-    >
-      <span className="metric-dot" aria-hidden="true" />
-      <p>{metric.label}</p>
-      <strong>{metric.value}</strong>
-      <em>{metric.delta}</em>
-    </motion.article>
-  );
-}
+function TeacherScopedPortalPanel({ activeNav }: { activeNav: string }) {
+  const { accessToken } = useAuthState();
+  const [assignments, setAssignments] = useState<TeacherAssignment[]>([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [items, setItems] = useState<unknown[]>([]);
+  const [status, setStatus] = useState<'loading' | 'idle'>('loading');
+  const [error, setError] = useState<string | null>(null);
 
-function AnalyticsPanel({ data, role }: { data: AnalyticsPoint[]; role: UserRole }) {
+  const selected = assignments.find((assignment) => assignment.id === selectedId) ?? assignments[0] ?? null;
+  const needsAssignment = ['attendance', 'homework', 'exams'].includes(activeNav);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadAssignments() {
+      if (!accessToken) {
+        setError('Teacher login is required.');
+        setStatus('idle');
+        return;
+      }
+      setStatus('loading');
+      try {
+        const loaded = await listTeacherAssignments(accessToken);
+        if (!mounted) return;
+        setAssignments(loaded);
+        setSelectedId((current) => current || loaded[0]?.id || '');
+        setError(null);
+      } catch (caught) {
+        if (!mounted) return;
+        setAssignments([]);
+        setError(caught instanceof Error ? caught.message : 'Teacher assignments could not be loaded.');
+      } finally {
+        if (mounted) setStatus('idle');
+      }
+    }
+
+    void loadAssignments();
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadItems() {
+      if (!accessToken) return;
+      if (activeNav === 'classes' || activeNav === 'dashboard') {
+        setItems(assignments);
+        return;
+      }
+      if (activeNav === 'timetable') {
+        setStatus('loading');
+        try {
+          const timetable = await listTeacherTimetable(accessToken);
+          if (mounted) {
+            setItems(timetable);
+            setError(null);
+          }
+        } catch (caught) {
+          if (mounted) setError(caught instanceof Error ? caught.message : 'Teacher timetable could not be loaded.');
+        } finally {
+          if (mounted) setStatus('idle');
+        }
+        return;
+      }
+      if (!selected && needsAssignment) {
+        setItems([]);
+        return;
+      }
+      if (!selected) return;
+
+      setStatus('loading');
+      try {
+        const loader = activeNav === 'attendance'
+          ? listTeacherAttendance
+          : activeNav === 'homework'
+            ? listTeacherHomework
+            : listTeacherExams;
+        const loaded = await loader(selected.classLevelId, selected.subjectId, accessToken);
+        if (mounted) {
+          setItems(loaded);
+          setError(null);
+        }
+      } catch (caught) {
+        if (mounted) {
+          setItems([]);
+          setError(caught instanceof Error ? caught.message : `${moduleTitle(activeNav)} could not be loaded.`);
+        }
+      } finally {
+        if (mounted) setStatus('idle');
+      }
+    }
+
+    void loadItems();
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken, activeNav, assignments, needsAssignment, selected]);
+
   return (
-    <section className="analytics-panel" aria-labelledby={`${ROLE_HOME[role]}-analytics`}>
-      <div className="panel-heading">
+    <section className="data-surface" aria-labelledby={`teacher-${activeNav}-title`}>
+      <div className="surface-toolbar">
         <div>
-          <p className="eyebrow">Analytics</p>
-          <h3 id={`${ROLE_HOME[role]}-analytics`}>{analyticsTitle(role)}</h3>
+          <p className="eyebrow">Connected real API</p>
+          <h3 id={`teacher-${activeNav}-title`}>{activeNav === 'classes' ? 'My Classes' : moduleTitle(activeNav)}</h3>
         </div>
-        <span className="status-chip info">Live model</span>
+        {needsAssignment ? (
+          <label className="inline-select">
+            Assignment
+            <select value={selected?.id ?? ''} onChange={(event) => setSelectedId(event.target.value)}>
+              {assignments.map((assignment) => (
+                <option key={assignment.id} value={assignment.id}>
+                  {assignment.className} - {assignment.subjectName}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </div>
-      <div className="chart-shell" aria-label={`${roleTitle(role)} analytics trend`}>
-        <AreaChart width={560} height={230} data={data} margin={{ top: 10, right: 16, left: -20, bottom: 0 }}>
-          <defs>
-            <linearGradient id={`${ROLE_HOME[role]}-attendance`} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.32} />
-              <stop offset="95%" stopColor="#2563eb" stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" tickLine={false} axisLine={false} />
-          <Tooltip />
-          <Area type="monotone" dataKey="attendance" stroke="#2563eb" strokeWidth={3} fill={`url(#${ROLE_HOME[role]}-attendance)`} />
-          <Area type="monotone" dataKey="engagement" stroke="#7c3aed" strokeWidth={2} fill="transparent" dot={false} />
-        </AreaChart>
+      {status === 'loading' ? <div className="api-skeleton"><span /><span /><span /></div> : null}
+      {error ? <p className="form-error" role="alert">{error}</p> : null}
+      {!error && status !== 'loading' && assignments.length === 0 ? (
+        <div className="api-empty-state">
+          <strong>No assigned classes</strong>
+          <span>Ask your School Admin to assign a class and subject before using teacher workflows.</span>
+        </div>
+      ) : null}
+      {!error && status !== 'loading' && assignments.length > 0 && items.length === 0 ? (
+        <div className="api-empty-state">
+          <strong>No records yet</strong>
+          <span>The backend returned an empty list for this teacher scope.</span>
+        </div>
+      ) : null}
+      <div className="api-record-list">
+        {items.slice(0, 12).map((item, index) => (
+          <article key={recordKey(item, index)}>
+            <strong>{recordTitle(item, index)}</strong>
+            <span>{recordDetail(item)}</span>
+            <code>{recordId(item)}</code>
+          </article>
+        ))}
       </div>
     </section>
   );
 }
 
-function QuickActionsPanel({ role }: { role: UserRole }) {
+function TeacherMarksEntryPanel() {
+  const { accessToken } = useAuthState();
+  const [assignments, setAssignments] = useState<TeacherAssignment[]>([]);
+  const [classLevelId, setClassLevelId] = useState('');
+  const [subjectId, setSubjectId] = useState('');
+  const [exams, setExams] = useState<TeacherExam[]>([]);
+  const [examId, setExamId] = useState('');
+  const [roster, setRoster] = useState<TeacherExamRosterStudent[]>([]);
+  const [marksByStudent, setMarksByStudent] = useState<Record<string, string>>({});
+  const [initialMarksByStudent, setInitialMarksByStudent] = useState<Record<string, string>>({});
+  const [status, setStatus] = useState<'loading' | 'idle' | 'submitting'>('loading');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const selectedExam = exams.find((exam) => exam.id === examId) ?? null;
+  const classOptions = useMemo(() => uniqueBy(assignments, 'classLevelId'), [assignments]);
+  const subjectOptions = useMemo(
+    () => assignments.filter((assignment) => assignment.classLevelId === classLevelId),
+    [assignments, classLevelId],
+  );
+  const hasUnsavedChanges = useMemo(
+    () => roster.some((student) => (marksByStudent[student.studentId] ?? '') !== (initialMarksByStudent[student.studentId] ?? '')),
+    [initialMarksByStudent, marksByStudent, roster],
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadAssignments() {
+      if (!accessToken) {
+        setError('Teacher login is required.');
+        setStatus('idle');
+        return;
+      }
+      setStatus('loading');
+      try {
+        const loaded = await listTeacherAssignments(accessToken);
+        if (!mounted) return;
+        setAssignments(loaded);
+        setClassLevelId((current) => current || loaded[0]?.classLevelId || '');
+        setSubjectId((current) => current || loaded[0]?.subjectId || '');
+        setError(null);
+      } catch (caught) {
+        if (!mounted) return;
+        setError(caught instanceof Error ? caught.message : 'Teacher assignments could not be loaded.');
+      } finally {
+        if (mounted) setStatus('idle');
+      }
+    }
+
+    void loadAssignments();
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (!classLevelId || subjectOptions.some((assignment) => assignment.subjectId === subjectId)) {
+      return;
+    }
+    setSubjectId(subjectOptions[0]?.subjectId ?? '');
+  }, [classLevelId, subjectId, subjectOptions]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadExams() {
+      if (!accessToken || !classLevelId || !subjectId) {
+        setExams([]);
+        setExamId('');
+        return;
+      }
+      setStatus('loading');
+      try {
+        const loaded = await listTeacherExams(classLevelId, subjectId, accessToken);
+        if (!mounted) return;
+        setExams(loaded);
+        setExamId((current) => loaded.some((exam) => exam.id === current) ? current : loaded[0]?.id ?? '');
+        setError(null);
+      } catch (caught) {
+        if (!mounted) return;
+        setExams([]);
+        setExamId('');
+        setError(caught instanceof Error ? caught.message : 'Assigned exams could not be loaded.');
+      } finally {
+        if (mounted) setStatus('idle');
+      }
+    }
+
+    void loadExams();
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken, classLevelId, subjectId]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadRoster() {
+      if (!accessToken || !examId) {
+        setRoster([]);
+        setMarksByStudent({});
+        setInitialMarksByStudent({});
+        return;
+      }
+      setStatus('loading');
+      try {
+        const loaded = await listTeacherExamRoster(examId, accessToken);
+        if (!mounted) return;
+        const nextMarks = Object.fromEntries(
+          loaded.map((student) => [student.studentId, student.marksObtained == null ? '' : String(student.marksObtained)]),
+        );
+        setRoster(loaded);
+        setMarksByStudent(nextMarks);
+        setInitialMarksByStudent(nextMarks);
+        setError(null);
+        setSuccess(null);
+      } catch (caught) {
+        if (!mounted) return;
+        setRoster([]);
+        setError(caught instanceof Error ? caught.message : 'Exam roster could not be loaded.');
+      } finally {
+        if (mounted) setStatus('idle');
+      }
+    }
+
+    void loadRoster();
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken, examId]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return undefined;
+    }
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  function changeClass(nextClassLevelId: string) {
+    if (!confirmDiscardChanges()) return;
+    const nextAssignment = assignments.find((assignment) => assignment.classLevelId === nextClassLevelId);
+    setClassLevelId(nextClassLevelId);
+    setSubjectId(nextAssignment?.subjectId ?? '');
+    resetMarks();
+  }
+
+  function changeSubject(nextSubjectId: string) {
+    if (!confirmDiscardChanges()) return;
+    setSubjectId(nextSubjectId);
+    resetMarks();
+  }
+
+  function changeExam(nextExamId: string) {
+    if (!confirmDiscardChanges()) return;
+    setExamId(nextExamId);
+  }
+
+  function confirmDiscardChanges() {
+    return !hasUnsavedChanges || window.confirm('You have unsaved marks. Discard changes?');
+  }
+
+  function resetMarks() {
+    setRoster([]);
+    setMarksByStudent({});
+    setInitialMarksByStudent({});
+    setSuccess(null);
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!accessToken || !selectedExam) {
+      setError('Teacher login and selected exam are required.');
+      return;
+    }
+    const validationError = validateMarks(selectedExam, roster, marksByStudent);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    const changedEntries = roster
+      .map((student) => ({
+        studentId: student.studentId,
+        marks: marksByStudent[student.studentId] ?? '',
+        initialMarks: initialMarksByStudent[student.studentId] ?? '',
+      }))
+      .filter((entry) => entry.marks !== '' && entry.marks !== entry.initialMarks);
+    if (changedEntries.length === 0) {
+      setError('Enter or change marks before submitting.');
+      return;
+    }
+
+    setStatus('submitting');
+    setError(null);
+    setSuccess(null);
+    try {
+      await Promise.all(
+        changedEntries.map((entry) => recordTeacherExamMarks(
+          selectedExam.id,
+          entry.studentId,
+          Number(entry.marks),
+          accessToken,
+        )),
+      );
+      const refreshed = await listTeacherExamRoster(selectedExam.id, accessToken);
+      const nextMarks = Object.fromEntries(
+        refreshed.map((student) => [student.studentId, student.marksObtained == null ? '' : String(student.marksObtained)]),
+      );
+      setRoster(refreshed);
+      setMarksByStudent(nextMarks);
+      setInitialMarksByStudent(nextMarks);
+      setSuccess(`${changedEntries.length} mark ${changedEntries.length === 1 ? 'entry' : 'entries'} saved.`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Marks could not be saved.');
+    } finally {
+      setStatus('idle');
+    }
+  }
+
+  return (
+    <section className="data-surface marks-entry-panel" aria-labelledby="teacher-marks-title">
+      <div className="surface-toolbar">
+        <div>
+          <p className="eyebrow">Connected real API</p>
+          <h3 id="teacher-marks-title">Teacher Marks Entry</h3>
+        </div>
+        {hasUnsavedChanges ? <span className="status-chip warning">Unsaved changes</span> : <span className="status-chip info">Saved</span>}
+      </div>
+
+      <div className="marks-selector-grid">
+        <label className="inline-select">
+          Class
+          <select value={classLevelId} onChange={(event) => changeClass(event.target.value)}>
+            {classOptions.map((assignment) => (
+              <option key={assignment.classLevelId} value={assignment.classLevelId}>
+                {assignment.className}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="inline-select">
+          Subject
+          <select value={subjectId} onChange={(event) => changeSubject(event.target.value)}>
+            {subjectOptions.map((assignment) => (
+              <option key={assignment.subjectId} value={assignment.subjectId}>
+                {assignment.subjectName} ({assignment.subjectCode})
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="inline-select">
+          Exam
+          <select value={examId} onChange={(event) => changeExam(event.target.value)}>
+            {exams.map((exam) => (
+              <option key={exam.id} value={exam.id}>
+                {exam.title} - {exam.sectionName ? `Section ${exam.sectionName}` : 'All sections'}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {selectedExam ? (
+        <div className="marks-context">
+          <span>{selectedExam.className}</span>
+          <span>{selectedExam.subjectName}</span>
+          <span>Max marks: {selectedExam.maxMarks}</span>
+          <span>Status: {selectedExam.status}</span>
+        </div>
+      ) : null}
+
+      {status === 'loading' ? <div className="api-skeleton"><span /><span /><span /></div> : null}
+      {error ? <p className="form-error" role="alert">{error}</p> : null}
+      {success ? <p className="toast-message" role="status">{success}</p> : null}
+      {!error && status !== 'loading' && assignments.length === 0 ? (
+        <div className="api-empty-state">
+          <strong>No assigned classes</strong>
+          <span>Ask your School Admin to assign a class and subject before entering marks.</span>
+        </div>
+      ) : null}
+      {!error && status !== 'loading' && assignments.length > 0 && exams.length === 0 ? (
+        <div className="api-empty-state">
+          <strong>No assigned exams</strong>
+          <span>No exams exist yet for the selected class and subject.</span>
+        </div>
+      ) : null}
+      {!error && status !== 'loading' && selectedExam && roster.length === 0 ? (
+        <div className="api-empty-state">
+          <strong>No students in exam scope</strong>
+          <span>The selected exam class/section does not currently have active students.</span>
+        </div>
+      ) : null}
+
+      {selectedExam && roster.length > 0 ? (
+        <form className="marks-entry-form" noValidate onSubmit={handleSubmit}>
+          <div className="marks-table" role="table" aria-label="Teacher marks roster">
+            <div className="marks-row marks-header" role="row">
+              <span>Student</span>
+              <span>Admission</span>
+              <span>Roll</span>
+              <span>Marks</span>
+            </div>
+            {roster.map((student) => (
+              <div className="marks-row" role="row" key={student.studentId}>
+                <strong>{student.fullName}</strong>
+                <span>{student.admissionNumber}</span>
+                <span>{student.rollNumber ?? 'Not set'}</span>
+                <label>
+                  <span className="sr-only">Marks for {student.fullName}</span>
+                  <input
+                    aria-label={`Marks for ${student.fullName}`}
+                    inputMode="decimal"
+                    min="0"
+                    max={selectedExam.maxMarks}
+                    step="0.01"
+                    type="number"
+                    value={marksByStudent[student.studentId] ?? ''}
+                    onChange={(event) => {
+                      setMarksByStudent((current) => ({
+                        ...current,
+                        [student.studentId]: event.target.value,
+                      }));
+                      setSuccess(null);
+                    }}
+                  />
+                </label>
+              </div>
+            ))}
+          </div>
+          <p className="form-hint">Absent marking is not enabled by the current backend exam API, so only numeric marks are submitted.</p>
+          <button type="submit" disabled={status === 'submitting'}>
+            {status === 'submitting' ? 'Saving marks...' : 'Save marks'}
+          </button>
+        </form>
+      ) : null}
+    </section>
+  );
+}
+
+function ParentChildPortalPanel({ activeNav }: { activeNav: string }) {
+  const { accessToken } = useAuthState();
+  const [children, setChildren] = useState<ParentChild[]>([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [items, setItems] = useState<unknown[]>([]);
+  const [status, setStatus] = useState<'loading' | 'idle'>('loading');
+  const [error, setError] = useState<string | null>(null);
+
+  const selected = children.find((child) => child.studentId === selectedId) ?? children[0] ?? null;
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadChildren() {
+      if (!accessToken) {
+        setError('Parent login is required.');
+        setStatus('idle');
+        return;
+      }
+      setStatus('loading');
+      try {
+        const loaded = await listParentChildren(accessToken);
+        if (!mounted) return;
+        setChildren(loaded);
+        setSelectedId((current) => current || loaded[0]?.studentId || '');
+        setError(null);
+      } catch (caught) {
+        if (!mounted) return;
+        setChildren([]);
+        setError(caught instanceof Error ? caught.message : 'Linked children could not be loaded.');
+      } finally {
+        if (mounted) setStatus('idle');
+      }
+    }
+
+    void loadChildren();
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadItems() {
+      if (!accessToken) return;
+      if (activeNav === 'children' || activeNav === 'dashboard') {
+        setItems(children);
+        return;
+      }
+      if (!selected) {
+        setItems([]);
+        return;
+      }
+
+      setStatus('loading');
+      try {
+        const loader = activeNav === 'attendance'
+          ? listParentChildAttendance
+          : activeNav === 'homework'
+            ? listParentChildHomework
+            : activeNav === 'results'
+              ? listParentChildResults
+              : activeNav === 'fees'
+                ? listParentChildFees
+                : activeNav === 'timetable'
+                  ? listParentChildTimetable
+                  : listParentChildNotices;
+        const loaded = await loader(selected.studentId, accessToken);
+        if (mounted) {
+          setItems(loaded);
+          setError(null);
+        }
+      } catch (caught) {
+        if (mounted) {
+          setItems([]);
+          setError(caught instanceof Error ? caught.message : `${moduleTitle(activeNav)} could not be loaded.`);
+        }
+      } finally {
+        if (mounted) setStatus('idle');
+      }
+    }
+
+    void loadItems();
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken, activeNav, children, selected]);
+
+  return (
+    <section className="data-surface" aria-labelledby={`parent-${activeNav}-title`}>
+      <div className="surface-toolbar">
+        <div>
+          <p className="eyebrow">Connected child-scoped API</p>
+          <h3 id={`parent-${activeNav}-title`}>{activeNav === 'children' ? 'My Children' : moduleTitle(activeNav)}</h3>
+        </div>
+        {activeNav !== 'children' && activeNav !== 'dashboard' ? (
+          <label className="inline-select">
+            Child
+            <select value={selected?.studentId ?? ''} onChange={(event) => setSelectedId(event.target.value)}>
+              {children.map((child) => (
+                <option key={child.studentId} value={child.studentId}>
+                  {child.studentName} - {child.admissionNumber}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+      </div>
+      {status === 'loading' ? <div className="api-skeleton"><span /><span /><span /></div> : null}
+      {error ? <p className="form-error" role="alert">{error}</p> : null}
+      {!error && status !== 'loading' && children.length === 0 ? (
+        <div className="api-empty-state">
+          <strong>No linked children</strong>
+          <span>Ask the school to link your parent account to a student.</span>
+        </div>
+      ) : null}
+      {!error && status !== 'loading' && children.length > 0 && items.length === 0 ? (
+        <div className="api-empty-state">
+          <strong>No records yet</strong>
+          <span>The backend returned an empty list for this child.</span>
+        </div>
+      ) : null}
+      <div className="api-record-list">
+        {items.slice(0, 12).map((item, index) => (
+          <article key={recordKey(item, index)}>
+            <strong>{recordTitle(item, index)}</strong>
+            <span>{recordDetail(item)}</span>
+            <code>{recordId(item)}</code>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function isSchoolAdminResource(navId: string): navId is SchoolAdminResourceKey {
+  return ['attendance', 'homework', 'exams', 'notices', 'timetable', 'documents', 'website'].includes(navId);
+}
+
+function DashboardSummaryPanel({
+  error,
+  status,
+  summary,
+  user,
+}: {
+  error: string | null;
+  status: 'loading' | 'ready' | 'unavailable';
+  summary: DashboardSummary | null;
+  user: CurrentUser;
+}) {
+  if (status === 'loading') {
+    return (
+      <section className="data-surface" aria-label="Loading dashboard summary">
+        <div className="api-skeleton"><span /><span /><span /></div>
+      </section>
+    );
+  }
+
+  if (status === 'unavailable') {
+    return (
+      <section className="data-surface api-contract-state" aria-labelledby={`${ROLE_HOME[user.role]}-summary-unavailable`}>
+        <p className="eyebrow">Live dashboard API</p>
+        <h3 id={`${ROLE_HOME[user.role]}-summary-unavailable`}>Dashboard summary is not connected yet</h3>
+        <p>
+          No demo numbers are displayed. The frontend attempted the {roleTitle(user.role)} summary API and received:
+        </p>
+        <code>{error ?? 'Summary endpoint unavailable'}</code>
+      </section>
+    );
+  }
+
+  const metrics = summary?.metrics ?? [];
+
+  if (metrics.length === 0) {
+    return (
+      <section className="data-surface api-contract-state" aria-label="Empty dashboard summary">
+        <p className="eyebrow">Live dashboard API</p>
+        <h3>No summary metrics returned</h3>
+        <p>The backend summary endpoint responded, but returned no metrics for this role.</p>
+      </section>
+    );
+  }
+
+  return (
+    <div className="metric-grid">
+      {metrics.map((metric) => (
+        <article className="metric-card tone-blue" key={metric.label}>
+          <span className="metric-dot" aria-hidden="true" />
+          <p>{metric.label}</p>
+          <strong>{metric.value}</strong>
+          {metric.detail ? <em>{metric.detail}</em> : null}
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function QuickActionsPanel({
+  navItems,
+  onSelectNav,
+  role,
+}: {
+  navItems: NavItem[];
+  onSelectNav: (navId: string) => void;
+  role: UserRole;
+}) {
+  const availableNavIds = new Set(navItems.map((item) => item.id));
+  const actions = QUICK_ACTIONS_BY_ROLE[role].filter((action) => availableNavIds.has(action.navId));
+
   return (
     <section className="quick-actions-panel" aria-labelledby={`${ROLE_HOME[role]}-quick-actions`}>
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Quick actions</p>
-          <h3 id={`${ROLE_HOME[role]}-quick-actions`}>Next best actions</h3>
+          <p className="eyebrow">Connected actions</p>
+          <h3 id={`${ROLE_HOME[role]}-quick-actions`}>Open live modules</h3>
         </div>
         <Sparkles size={18} aria-hidden="true" />
       </div>
       <div className="quick-action-list">
-        {QUICK_ACTIONS_BY_ROLE[role].map((action) => {
+        {actions.map((action) => {
           const Icon = action.icon;
           return (
-            <button key={action.label} type="button">
+            <button key={action.label} onClick={() => onSelectNav(action.navId)} type="button">
               <span aria-hidden="true"><Icon size={18} /></span>
               <strong>{action.label}<small>{action.detail}</small></strong>
               <ArrowRight size={16} aria-hidden="true" />
@@ -1451,122 +2087,104 @@ function QuickActionsPanel({ role }: { role: UserRole }) {
   );
 }
 
-function ModernTable({ title }: { title: string }) {
-  const [query, setQuery] = useState('');
-  const rows = useMemo(
-    () => TABLE_ROWS.filter((row) => row.join(' ').toLowerCase().includes(query.toLowerCase())),
-    [query],
+function ApiCoveragePanel({ navItems, role }: { navItems: NavItem[]; role: UserRole }) {
+  return (
+    <section className="notification-center" aria-labelledby={`${ROLE_HOME[role]}-api-coverage`}>
+      <p className="eyebrow">API coverage</p>
+      <h3 id={`${ROLE_HOME[role]}-api-coverage`}>Visible modules</h3>
+      <ul>
+        {navItems.map((item) => (
+          <li key={item.id}>
+            <span className={`status-chip ${statusTone(item.status)}`}>{statusLabel(item.status)}</span>
+            {item.label}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
+}
+
+function EndpointListPanel({ path, title }: { path: string | null; title: string }) {
+  const { accessToken } = useAuthState();
+  const [items, setItems] = useState<unknown[]>([]);
+  const [status, setStatus] = useState<'idle' | 'loading'>('loading');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function load() {
+      if (!path) {
+        setStatus('idle');
+        setError('No backend list endpoint exists for this visible section yet.');
+        return;
+      }
+      if (!accessToken) {
+        setStatus('idle');
+        setError('Login is required.');
+        return;
+      }
+
+      setStatus('loading');
+      try {
+        const response = await httpClient.get<unknown>(path, { accessToken });
+        if (!mounted) return;
+        setItems(toListItems(response));
+        setError(null);
+      } catch (caught) {
+        if (!mounted) return;
+        setItems([]);
+        setError(caught instanceof Error ? caught.message : 'API request failed.');
+      } finally {
+        if (mounted) {
+          setStatus('idle');
+        }
+      }
+    }
+
+    void load();
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken, path]);
 
   return (
     <section className="data-surface" aria-labelledby={`${slug(title)}-title`}>
       <div className="surface-toolbar">
         <div>
-          <p className="eyebrow">Data</p>
+          <p className="eyebrow">{path ? 'Connected real API' : 'Missing backend API'}</p>
           <h3 id={`${slug(title)}-title`}>{title}</h3>
         </div>
-        <div className="table-actions">
-          <input aria-label={`${title} search`} onChange={(event) => setQuery(event.target.value)} placeholder="Search" value={query} />
-          <button type="button">Filters</button>
-          <button type="button">Columns</button>
-          <button type="button">Export</button>
-        </div>
+        {path ? <code>{path}</code> : null}
       </div>
-      <div className="mobile-record-list" aria-label={`${title} mobile records`}>
-        {rows.map((row) => (
-          <article key={`mobile-${row.join('-')}`}>
-            <strong>{row[0]}</strong>
-            <span>{row[1]}</span>
-            <em>{row[2]}</em>
+
+      {status === 'loading' ? <div className="api-skeleton"><span /><span /><span /></div> : null}
+      {error ? <p className="form-error" role="alert">{error}</p> : null}
+      {status !== 'loading' && !error && items.length === 0 ? (
+        <div className="api-empty-state">
+          <strong>No records yet</strong>
+          <span>The backend returned an empty list.</span>
+        </div>
+      ) : null}
+      <div className="api-record-list">
+        {items.slice(0, 12).map((item, index) => (
+          <article key={recordKey(item, index)}>
+            <strong>{recordTitle(item, index)}</strong>
+            <span>{recordDetail(item)}</span>
+            <code>{recordId(item)}</code>
           </article>
         ))}
       </div>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              {TABLE_COLUMNS.map((column) => <th key={column}>{column}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.join('-')}>
-                {row.map((cell, index) => (
-                  <td key={cell}>
-                    {index === 2 ? <span className="status-chip">{cell}</span> : cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="table-footer">
-        <span>{rows.length} records</span>
-        <span>Page 1 of 1</span>
-        <span>Bulk actions ready</span>
-      </div>
     </section>
   );
 }
 
-function AIInsightPanel({ role }: { role: UserRole }) {
+function ComingSoonPanel({ activeNav, role }: { activeNav: string; role: UserRole }) {
   return (
-    <section className="insight-panel" aria-labelledby="ai-insight-title">
-      <p className="eyebrow">AI insights</p>
-      <h3 id="ai-insight-title">{aiInsightTitle(role)}</h3>
-      <div className="prediction-bar" aria-label="Prediction confidence">
-        <span style={{ width: `${role === 'PARENT' || role === 'STUDENT' ? 72 : 84}%` }} />
-      </div>
-      <ul>
-        <li>Attendance risk cluster identified</li>
-        <li>Fee reminder timing optimized</li>
-        <li>Exam trend anomaly ready for review</li>
-      </ul>
-    </section>
-  );
-}
-
-function NotificationCenter() {
-  return (
-    <section className="notification-center" aria-labelledby="notification-title">
-      <p className="eyebrow">Notifications</p>
-      <h3 id="notification-title">Delivery center</h3>
-      <ul>
-        <li><span className="status-chip">Sent</span> Invitation email queued</li>
-        <li><span className="status-chip warning">Review</span> Fee reminder draft</li>
-        <li><span className="status-chip info">Info</span> Report export completed</li>
-      </ul>
-    </section>
-  );
-}
-
-function TimelinePanel({ role }: { role: UserRole }) {
-  return (
-    <section className="timeline-panel" aria-labelledby="timeline-title">
-      <p className="eyebrow">Today</p>
-      <h3 id="timeline-title">{roleTitle(role)} timeline</h3>
-      <ol>
-        <li><strong>08:30</strong><span>Morning attendance</span></li>
-        <li><strong>11:00</strong><span>Homework review</span></li>
-        <li><strong>14:15</strong><span>Notice acknowledgement</span></li>
-      </ol>
-    </section>
-  );
-}
-
-function WizardPreview() {
-  return (
-    <section className="wizard-preview" aria-labelledby="wizard-title">
-      <p className="eyebrow">Wizard</p>
-      <h3 id="wizard-title">Tenant onboarding flow</h3>
-      <div className="wizard-steps" aria-label="Onboarding progress">
-        <span className="is-complete">Tenant</span>
-        <span className="is-active">School</span>
-        <span>Admin</span>
-        <span>Invite</span>
-      </div>
-    </section>
+    <EmptyState
+      title={`${moduleTitle(activeNav)} is unavailable`}
+      detail={`${roleTitle(role)} ${moduleTitle(activeNav)} is hidden from navigation until a verified backend/UI integration exists.`}
+    />
   );
 }
 
@@ -1578,6 +2196,107 @@ function EmptyState({ detail, title }: { detail: string; title: string }) {
       <p>{detail}</p>
     </section>
   );
+}
+
+function toListItems(response: unknown) {
+  if (Array.isArray(response)) {
+    return response;
+  }
+  if (typeof response === 'object' && response !== null && 'items' in response) {
+    const items = (response as { items?: unknown }).items;
+    if (Array.isArray(items)) {
+      return items;
+    }
+  }
+  return response == null ? [] : [response];
+}
+
+function recordKey(item: unknown, index: number) {
+  const id = recordId(item);
+  return id === 'No ID' ? `record-${index}` : id;
+}
+
+function recordId(item: unknown) {
+  if (typeof item === 'object' && item !== null && 'id' in item) {
+    return String((item as { id?: unknown }).id ?? 'No ID');
+  }
+  if (typeof item === 'object' && item !== null && 'studentId' in item) {
+    return String((item as { studentId?: unknown }).studentId ?? 'No ID');
+  }
+  return 'No ID';
+}
+
+function recordTitle(item: unknown, index: number) {
+  if (typeof item !== 'object' || item === null) {
+    return `Record ${index + 1}`;
+  }
+
+  const record = item as Record<string, unknown>;
+  return String(
+    record.fullName
+      ?? record.studentName
+      ?? record.title
+      ?? record.name
+      ?? record.className
+      ?? record.subjectName
+      ?? record.description
+      ?? record.email
+      ?? `Record ${index + 1}`,
+  );
+}
+
+function recordDetail(item: unknown) {
+  if (typeof item !== 'object' || item === null) {
+    return String(item);
+  }
+
+  const record = item as Record<string, unknown>;
+  const detail = record.status
+    ?? record.role
+    ?? record.subjectCode
+    ?? record.code
+    ?? record.admissionNumber
+    ?? record.attendanceDate
+    ?? record.weekday
+    ?? record.dueDate
+    ?? record.createdAt;
+  return detail ? String(detail) : 'Live backend record';
+}
+
+function uniqueBy<T>(items: T[], key: keyof T) {
+  const seen = new Set<unknown>();
+  return items.filter((item) => {
+    const value = item[key];
+    if (seen.has(value)) {
+      return false;
+    }
+    seen.add(value);
+    return true;
+  });
+}
+
+function validateMarks(
+  exam: TeacherExam,
+  roster: TeacherExamRosterStudent[],
+  marksByStudent: Record<string, string>,
+) {
+  for (const student of roster) {
+    const rawMarks = marksByStudent[student.studentId] ?? '';
+    if (rawMarks === '') {
+      continue;
+    }
+    const marks = Number(rawMarks);
+    if (!Number.isFinite(marks)) {
+      return `Marks for ${student.fullName} must be a valid number.`;
+    }
+    if (marks < 0) {
+      return `Marks for ${student.fullName} cannot be negative.`;
+    }
+    if (marks > exam.maxMarks) {
+      return `Marks for ${student.fullName} cannot exceed ${exam.maxMarks}.`;
+    }
+  }
+  return null;
 }
 
 function LoadingScreen() {
@@ -1672,102 +2391,13 @@ function navIcon(navId: string): LucideIcon {
   return Sparkles;
 }
 
-function analyticsTitle(role: UserRole) {
-  if (role === 'SUPER_ADMIN') return 'Platform growth and reliability';
-  if (role === 'TENANT_ADMIN') return 'Organisation performance trend';
-  if (role === 'SCHOOL_ADMIN') return 'School operating rhythm';
-  if (role === 'FINANCE_STAFF') return 'Collection momentum';
-  if (role === 'TEACHER') return 'Class engagement trend';
-  if (role === 'PARENT') return 'Child progress pulse';
-  if (role === 'STUDENT') return 'Learning momentum';
-  return 'Operational throughput';
-}
-
 function roleInfoItems(user: CurrentUser): RoleInfoItem[] {
-  const schoolCount = String(user.allowedSchools.length);
-  const activeSchool = user.activeSchool?.name ?? 'Platform scope';
-
-  if (user.role === 'SUPER_ADMIN') {
-    return [
-      { label: 'Total users', value: '2.4M', detail: 'Across tenant schools', icon: Users, tone: 'blue' },
-      { label: 'API health', value: 'Normal', detail: '99.98% platform uptime', icon: ShieldCheck, tone: 'emerald' },
-      { label: 'Recent onboarding', value: '18', detail: 'New tenants this month', icon: Building2, tone: 'violet' },
-      { label: 'Audit alerts', value: '4', detail: 'Review privileged events', icon: FileText, tone: 'amber' },
-      { label: 'Notification delivery', value: '99.2%', detail: 'SMTP queue healthy', icon: Bell, tone: 'emerald' },
-    ];
-  }
-
-  if (user.role === 'TENANT_ADMIN') {
-    return [
-      { label: 'Organisation', value: user.tenantId, detail: 'Tenant workspace', icon: Building2, tone: 'blue' },
-      { label: 'Subscription plan', value: 'Growth', detail: 'School usage tracked', icon: ReceiptText, tone: 'violet' },
-      { label: 'School usage limit', value: `${schoolCount || '0'} / 15`, detail: 'Active schools in plan', icon: School, tone: 'emerald' },
-      { label: 'Students / teachers', value: '12.4k / 740', detail: 'Combined tenant roster', icon: Users, tone: 'blue' },
-      { label: 'Recent notices', value: '12', detail: 'Across connected schools', icon: Newspaper, tone: 'amber' },
-    ];
-  }
-
-  if (user.role === 'SCHOOL_ADMIN') {
-    return [
-      { label: 'School', value: activeSchool, detail: 'Active operating scope', icon: School, tone: 'blue' },
-      { label: 'Academic year', value: '2026-27', detail: 'Current planning cycle', icon: GraduationCap, tone: 'violet' },
-      { label: 'Students / teachers', value: '1,248 / 86', detail: 'Active roster count', icon: Users, tone: 'emerald' },
-      { label: 'Pending approvals', value: '18', detail: 'Parent links and imports', icon: ClipboardCheck, tone: 'amber' },
-      { label: 'Homework activity', value: '42', detail: 'Submissions pending review', icon: BookOpen, tone: 'blue' },
-      { label: 'Notices published', value: '7', detail: 'This week', icon: Newspaper, tone: 'emerald' },
-    ];
-  }
-
-  if (user.role === 'TEACHER') {
-    return [
-      { label: "Today's schedule", value: '5 classes', detail: '2 need attendance', icon: CalendarCheck, tone: 'blue' },
-      { label: 'Assigned classes', value: '4', detail: 'Server-scoped by assignment', icon: GraduationCap, tone: 'emerald' },
-      { label: 'Pending attendance', value: '2', detail: 'Needs marking today', icon: ClipboardCheck, tone: 'amber' },
-      { label: 'Homework review', value: '38', detail: 'Submissions pending', icon: BookOpen, tone: 'amber' },
-      { label: 'Upcoming exams', value: '2', detail: 'Marks workflow ready', icon: ClipboardCheck, tone: 'violet' },
-      { label: 'Recent notices', value: '6', detail: 'Class updates unread', icon: Newspaper, tone: 'blue' },
-    ];
-  }
-
-  if (user.role === 'FINANCE_STAFF') {
-    return [
-      { label: "Today's collection", value: '$18.4k', detail: '24 payments recorded', icon: CircleDollarSign, tone: 'emerald' },
-      { label: 'Pending dues', value: '42', detail: 'Needs follow-up', icon: ReceiptText, tone: 'amber' },
-      { label: 'Recent payments', value: '24', detail: 'Online and counter payments', icon: CircleDollarSign, tone: 'emerald' },
-      { label: 'Receipt count', value: '312', detail: 'This month', icon: FileText, tone: 'blue' },
-      { label: 'Failed payments', value: '3', detail: 'Review manually', icon: Bell, tone: 'rose' },
-      { label: 'Monthly collection', value: '$312k', detail: 'Collection graph below', icon: LineChart, tone: 'violet' },
-    ];
-  }
-
-  if (user.role === 'PARENT') {
-    return [
-      { label: 'Child selector', value: '1 child', detail: 'Linked by school access', icon: Users, tone: 'blue' },
-      { label: 'Attendance', value: '96%', detail: 'Current month', icon: CalendarCheck, tone: 'emerald' },
-      { label: 'Homework pending', value: '3', detail: 'Due within 48 hours', icon: BookOpen, tone: 'amber' },
-      { label: 'Fee due', value: '1 reminder', detail: 'Due this week', icon: CircleDollarSign, tone: 'amber' },
-      { label: 'Notices / exams', value: '4 / 2', detail: 'Recent notices and upcoming exams', icon: Newspaper, tone: 'blue' },
-      { label: 'Leave status', value: 'Open', detail: 'Request workflow ready', icon: ClipboardCheck, tone: 'violet' },
-    ];
-  }
-
-  if (user.role === 'STUDENT') {
-    return [
-      { label: 'Class / section', value: 'Grade 8 / A', detail: 'Student portal scope', icon: GraduationCap, tone: 'blue' },
-      { label: 'Attendance', value: '93%', detail: 'Above target', icon: CalendarCheck, tone: 'emerald' },
-      { label: 'Homework due', value: '4', detail: '2 due today', icon: BookOpen, tone: 'amber' },
-      { label: 'Upcoming exams', value: '3', detail: 'Next 14 days', icon: ClipboardCheck, tone: 'violet' },
-      { label: 'Recent results', value: 'A-', detail: 'Latest published marks', icon: LineChart, tone: 'blue' },
-      { label: 'Notices', value: '5', detail: 'School updates', icon: Newspaper, tone: 'amber' },
-      { label: 'AI study insights', value: 'Ready', detail: 'Placeholder enabled', icon: BrainCircuit, tone: 'emerald' },
-    ];
-  }
-
+  const activeSchool = user.activeSchool?.name ?? (user.role === 'SUPER_ADMIN' ? 'Platform scope' : 'No active school');
   return [
-    { label: 'Assigned school', value: activeSchool, detail: 'Operational context', icon: School, tone: 'blue' },
-    { label: 'Open tasks', value: '14', detail: 'Staff operations queue', icon: ClipboardCheck, tone: 'amber' },
-    { label: 'Recent notices', value: '6', detail: '2 unread', icon: Newspaper, tone: 'violet' },
-    { label: 'Session scope', value: 'Active', detail: 'Role-safe workspace', icon: ShieldCheck, tone: 'emerald' },
+    { label: 'Authenticated role', value: roleTitle(user.role), detail: 'Server-derived from /v1/me', icon: ShieldCheck, tone: 'blue' },
+    { label: 'Tenant', value: user.tenantId || 'Platform', detail: 'Not accepted from frontend input', icon: Building2, tone: 'emerald' },
+    { label: 'Active school', value: activeSchool, detail: 'Resolved from authenticated session', icon: School, tone: 'violet' },
+    { label: 'Allowed schools', value: String(user.allowedSchools.length), detail: 'Loaded from /v1/me/schools', icon: Users, tone: 'amber' },
   ];
 }
 
@@ -1801,14 +2431,51 @@ function roleTableTitle(role: UserRole) {
   return 'Operations queue';
 }
 
-function aiInsightTitle(role: UserRole) {
-  if (role === 'SUPER_ADMIN') return 'Platform growth signals';
-  if (role === 'TENANT_ADMIN') return 'Cross-school risk signals';
-  if (role === 'SCHOOL_ADMIN') return 'School performance signals';
-  if (role === 'FINANCE_STAFF') return 'Collection and payment signals';
-  if (role === 'STUDENT') return 'Learning recommendations';
-  if (role === 'PARENT') return 'Child support recommendations';
-  return 'Classroom recommendations';
+function roleEndpoint(role: UserRole, activeNav: string) {
+  if (role === 'TEACHER') {
+    if (activeNav === 'classes' || activeNav === 'dashboard') return '/v1/teacher/assignments';
+    if (activeNav === 'notices') return '/v1/teacher/notices';
+    return null;
+  }
+
+  if (role === 'PARENT') {
+    if (activeNav === 'children' || activeNav === 'dashboard') return '/v1/parent/children';
+    return null;
+  }
+
+  if (role === 'STUDENT') {
+    if (activeNav === 'dashboard') return '/v1/student/profile';
+    if (activeNav === 'homework') return '/v1/student/homework';
+    if (activeNav === 'results') return '/v1/student/results';
+    if (activeNav === 'fees') return '/v1/student/fees';
+    if (activeNav === 'notices') return '/v1/student/notices';
+    if (activeNav === 'attendance') return '/v1/student/attendance';
+    if (activeNav === 'timetable') return '/v1/student/timetable';
+    return null;
+  }
+
+  return null;
+}
+
+function dashboardEndpoint(role: UserRole) {
+  if (role === 'SUPER_ADMIN') return '/v1/super-admin/dashboard/summary';
+  if (role === 'TENANT_ADMIN') return '/v1/tenant-admin/dashboard/summary';
+  if (role === 'SCHOOL_ADMIN') return '/v1/school-admin/dashboard/summary';
+  if (role === 'TEACHER') return '/v1/teacher/dashboard/summary';
+  if (role === 'FINANCE_STAFF') return '/v1/finance/dashboard/summary';
+  if (role === 'STAFF') return '/v1/staff/dashboard/summary';
+  if (role === 'PARENT') return '/v1/parent/dashboard/summary';
+  return '/v1/student/dashboard/summary';
+}
+
+function statusLabel(status: ConnectionStatus) {
+  if (status === 'CONNECTED_REAL_API') return 'Live API';
+  return 'Live API';
+}
+
+function statusTone(status: ConnectionStatus) {
+  if (status === 'CONNECTED_REAL_API') return 'info';
+  return 'info';
 }
 
 function slug(value: string) {

@@ -1,3 +1,5 @@
+import { httpClient } from '../../../shared/api/httpClient';
+
 export type StudentImportRow = {
   admissionNumber: string;
   fullName: string;
@@ -74,61 +76,21 @@ export async function validateStudentImport(
   rows: StudentImportRow[],
   accessToken: string,
 ): Promise<StudentImportValidationResponse> {
-  const response = await fetch('/v1/school-admin/students/import/validate', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ rows }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Student import validation failed.');
-  }
-
-  return response.json() as Promise<StudentImportValidationResponse>;
+  return httpClient.post<StudentImportValidationResponse>('/v1/school-admin/students/import/validate', { rows }, { accessToken });
 }
 
 export async function importStudents(
   rows: StudentImportRow[],
   accessToken: string,
 ): Promise<StudentImportResponse> {
-  const response = await fetch('/v1/school-admin/students/import', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ rows }),
-  });
-
-  if (!response.ok) {
-    const body = (await response.json()) as StudentImportResponse;
-    return body;
-  }
-
-  return response.json() as Promise<StudentImportResponse>;
+  return httpClient.post<StudentImportResponse>('/v1/school-admin/students/import', { rows }, { accessToken });
 }
 
 export async function queueStudentImport(
   rows: StudentImportRow[],
   accessToken: string,
 ): Promise<StudentImportJobResponse> {
-  const response = await fetch('/v1/school-admin/students/import/jobs', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ rows }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Student import job creation failed.');
-  }
-
-  return response.json() as Promise<StudentImportJobResponse>;
+  return httpClient.post<StudentImportJobResponse>('/v1/school-admin/students/import/jobs', { rows }, { accessToken });
 }
 
 export async function inviteStudentLogin(
@@ -136,18 +98,9 @@ export async function inviteStudentLogin(
   email: string,
   accessToken: string,
 ): Promise<StudentLoginInvitationResponse> {
-  const response = await fetch(`/v1/school-admin/students/${studentId}/login-invitation`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Student login invitation failed.');
-  }
-
-  return response.json() as Promise<StudentLoginInvitationResponse>;
+  return httpClient.post<StudentLoginInvitationResponse>(
+    `/v1/school-admin/students/${studentId}/login-invitation`,
+    { email },
+    { accessToken },
+  );
 }

@@ -7,4 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TimetableEntryRepository extends JpaRepository<TimetableEntry, String> {
 
     List<TimetableEntry> findBySchoolIdOrderByWeekdayAscStartTimeAsc(String schoolId);
+
+    List<TimetableEntry> findBySchoolIdAndClassLevelIdOrderByWeekdayAscStartTimeAsc(
+            String schoolId,
+            String classLevelId
+    );
 }

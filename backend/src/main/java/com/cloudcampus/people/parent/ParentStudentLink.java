@@ -131,4 +131,8 @@ public class ParentStudentLink {
     public boolean isPrimaryContact() {
         return primaryContact;
     }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

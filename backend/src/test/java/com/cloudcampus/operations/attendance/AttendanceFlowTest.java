@@ -19,6 +19,8 @@ import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.JwtAccessTokenService;
+import com.cloudcampus.people.parent.ParentStudentLink;
+import com.cloudcampus.people.parent.ParentStudentLinkRepository;
 import com.cloudcampus.people.student.Student;
 import com.cloudcampus.people.student.StudentRepository;
 import com.cloudcampus.platform.tenant.Tenant;
@@ -62,6 +64,9 @@ class AttendanceFlowTest {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private ParentStudentLinkRepository parentStudentLinkRepository;
 
     @Autowired
     private AttendanceSessionRepository attendanceSessionRepository;
@@ -356,6 +361,87 @@ class AttendanceFlowTest {
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
+    @Test
+    void parentAndStudentCanReadOnlyTheirOwnAttendanceRecords() throws Exception {
+        JsonNode onboarding = onboard("att-life-d", "att-school-d", "att-admin-d@example.com");
+        String schoolAdminToken = activateSchoolAdmin(onboarding);
+        Tenant tenant = tenantRepository.findById(onboarding.at("/tenant/id").asText()).orElseThrow();
+        School school = schoolRepository.findById(onboarding.at("/school/id").asText()).orElseThrow();
+        AcademicSetup setup = academicSetup(schoolAdminToken, "2026-2027", "Class 3");
+        JsonNode subject = createSubject(schoolAdminToken, "hist", "History");
+        assignSubjectToClass(schoolAdminToken, setup.classLevelId(), subject.at("/id").asText());
+        Student linkedStudent = studentRepository.save(new Student(
+                tenant,
+                school,
+                "ATT-400",
+                "Linked Attendance Student",
+                setup.classLevel(),
+                setup.section(),
+                "1",
+                null,
+                null,
+                null,
+                null,
+                null,
+                Instant.now()
+        ));
+        Student unlinkedStudent = studentRepository.save(new Student(
+                tenant,
+                school,
+                "ATT-401",
+                "Unlinked Attendance Student",
+                setup.classLevel(),
+                setup.section(),
+                "2",
+                null,
+                null,
+                null,
+                null,
+                null,
+                Instant.now()
+        ));
+        UserAccount parent = createParent(tenant, "attendance-parent@example.com", "Attendance Parent");
+        parentStudentLinkRepository.save(new ParentStudentLink(
+                tenant,
+                school,
+                linkedStudent,
+                parent,
+                "Guardian",
+                parent.getEmail(),
+                null,
+                true
+        ));
+        UserAccount studentUser = createStudentUser(tenant, "attendance-student@example.com", "Attendance Student");
+        linkedStudent.attachUser(studentUser);
+        studentRepository.save(linkedStudent);
+        String parentToken = jwtAccessTokenService.issueToken(parent.getId(), tenant.getId(), UserRole.PARENT, null);
+        String studentToken = jwtAccessTokenService.issueToken(studentUser.getId(), tenant.getId(), UserRole.STUDENT, school.getId());
+
+        createAttendance(
+                schoolAdminToken,
+                setup.classLevelId(),
+                setup.sectionId(),
+                subject.at("/id").asText(),
+                linkedStudent.getId(),
+                "2026-06-06"
+        );
+
+        mockMvc.perform(get("/v1/parent/children/{studentId}/attendance", linkedStudent.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].studentId").value(linkedStudent.getId()))
+                .andExpect(jsonPath("$[0].status").value("PRESENT"));
+        mockMvc.perform(get("/v1/parent/children/{studentId}/attendance", unlinkedStudent.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/student/attendance")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].studentId").value(linkedStudent.getId()))
+                .andExpect(jsonPath("$[0].studentName").value("Linked Attendance Student"));
+    }
+
     private JsonNode createAttendance(
             String token,
             String classLevelId,
@@ -474,6 +560,18 @@ class AttendanceFlowTest {
         UserAccount teacher = new UserAccount(tenant, email, displayName, UserRole.TEACHER);
         teacher.activate(passwordEncoder.encode("TeacherStrong123!"), displayName, Instant.now());
         return userAccountRepository.save(teacher);
+    }
+
+    private UserAccount createParent(Tenant tenant, String email, String displayName) {
+        UserAccount parent = new UserAccount(tenant, email, displayName, UserRole.PARENT);
+        parent.activate(passwordEncoder.encode("ParentStrong123!"), displayName, Instant.now());
+        return userAccountRepository.save(parent);
+    }
+
+    private UserAccount createStudentUser(Tenant tenant, String email, String displayName) {
+        UserAccount student = new UserAccount(tenant, email, displayName, UserRole.STUDENT);
+        student.activate(passwordEncoder.encode("StudentStrong123!"), displayName, Instant.now());
+        return userAccountRepository.save(student);
     }
 
     private JsonNode onboard(String tenantCode, String schoolCode, String email) throws Exception {

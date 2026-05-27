@@ -57,6 +57,15 @@ class AuditCoverageMatrixTest {
                     )
             ),
             Map.entry(
+                    "com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java",
+                    evidence(
+                            "com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java",
+                            "TENANT_STATUS_UPDATED",
+                            "TENANT_SETTINGS_UPDATED",
+                            "PLATFORM_SETTINGS_UPDATED"
+                    )
+            ),
+            Map.entry(
                     "com/cloudcampus/intelligence/ai/SuperAdminAiEntitlementController.java",
                     evidence(
                             "com/cloudcampus/intelligence/ai/AiGovernanceService.java",
@@ -130,6 +139,10 @@ class AuditCoverageMatrixTest {
                             "STAFF_PROFILE_CREATED",
                             "SCHOOL_ACCESS_GRANTED"
                     )
+            ),
+            Map.entry(
+                    "com/cloudcampus/school/SchoolSettingsController.java",
+                    evidence("com/cloudcampus/school/SchoolSettingsService.java", "SCHOOL_UPDATED")
             ),
             Map.entry(
                     "com/cloudcampus/people/student/StudentImportController.java",

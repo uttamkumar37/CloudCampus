@@ -112,8 +112,10 @@ class SchoolScopedControllerGuardCoverageTest {
                 "com/cloudcampus/academic/TeacherAssignmentController.java",
                 "com/cloudcampus/academic/TeacherAssignmentPortalController.java",
                 "com/cloudcampus/intelligence/ai/SchoolAdminAiKnowledgeController.java",
+                "com/cloudcampus/people/parent/ParentDirectoryController.java",
                 "com/cloudcampus/people/parent/ParentLeaveRequestController.java",
                 "com/cloudcampus/people/parent/ParentPortalController.java",
+                "com/cloudcampus/people/staff/StaffDirectoryController.java",
                 "com/cloudcampus/people/staff/StaffProvisioningController.java",
                 "com/cloudcampus/people/student/StudentImportController.java",
                 "com/cloudcampus/people/student/StudentLoginController.java",
@@ -125,7 +127,10 @@ class SchoolScopedControllerGuardCoverageTest {
                 "com/cloudcampus/operations/document/SchoolDocumentController.java",
                 "com/cloudcampus/operations/report/ReportExportController.java",
                 "com/cloudcampus/operations/website/WebsiteController.java",
+                "com/cloudcampus/portal/dashboard/DashboardSummaryController.java",
+                "com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java",
                 "com/cloudcampus/platform/tenantadmin/report/TenantAdminReportController.java",
+                "com/cloudcampus/school/SchoolSettingsController.java",
                 "com/cloudcampus/operations/bulk/BulkJobController.java",
                 "com/cloudcampus/operations/finance/FeeController.java"
         ).contains(relative(path));

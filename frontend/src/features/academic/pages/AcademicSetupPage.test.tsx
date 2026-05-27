@@ -81,7 +81,7 @@ describe('AcademicSetupPage', () => {
       name: 'A',
       capacity: 40,
     }, 'signed-school-admin-token');
-    expect(screen.getByText(/A section created/i)).toBeInTheDocument();
+    expect(await screen.findByText(/A section created/i)).toBeInTheDocument();
   });
 });
 

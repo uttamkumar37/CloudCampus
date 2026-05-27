@@ -1,3 +1,5 @@
+import { httpClient } from '../../../shared/api/httpClient';
+
 export type AcademicYearStatus = 'UPCOMING' | 'ACTIVE' | 'CLOSED';
 
 export type AcademicYearRequest = {
@@ -53,58 +55,19 @@ export async function createAcademicYear(
   payload: AcademicYearRequest,
   accessToken: string,
 ): Promise<AcademicYearResponse> {
-  const response = await fetch('/v1/school-admin/academic-years', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Academic year creation failed.');
-  }
-
-  return response.json() as Promise<AcademicYearResponse>;
+  return httpClient.post<AcademicYearResponse>('/v1/school-admin/academic-years', payload, { accessToken });
 }
 
 export async function createClassLevel(
   payload: ClassLevelRequest,
   accessToken: string,
 ): Promise<ClassLevelResponse> {
-  const response = await fetch('/v1/school-admin/classes', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Class creation failed.');
-  }
-
-  return response.json() as Promise<ClassLevelResponse>;
+  return httpClient.post<ClassLevelResponse>('/v1/school-admin/classes', payload, { accessToken });
 }
 
 export async function createSection(
   payload: SectionRequest,
   accessToken: string,
 ): Promise<SectionResponse> {
-  const response = await fetch('/v1/school-admin/sections', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Section creation failed.');
-  }
-
-  return response.json() as Promise<SectionResponse>;
+  return httpClient.post<SectionResponse>('/v1/school-admin/sections', payload, { accessToken });
 }

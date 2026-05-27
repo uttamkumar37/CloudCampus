@@ -94,4 +94,20 @@ public class AttendanceController {
                 sessionId
         ));
     }
+
+    @GetMapping("/v1/parent/children/{studentId}/attendance")
+    ResponseEntity<List<StudentAttendanceResponse>> parentChildAttendance(
+            @PathVariable String studentId,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.ok(attendanceService.parentChildAttendance(
+                authenticatedUserResolver.requireUser(request),
+                studentId
+        ));
+    }
+
+    @GetMapping("/v1/student/attendance")
+    ResponseEntity<List<StudentAttendanceResponse>> studentAttendance(HttpServletRequest request) {
+        return ResponseEntity.ok(attendanceService.studentAttendance(authenticatedUserResolver.requireUser(request)));
+    }
 }

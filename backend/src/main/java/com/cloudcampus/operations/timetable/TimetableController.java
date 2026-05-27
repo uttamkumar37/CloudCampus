@@ -57,4 +57,25 @@ public class TimetableController {
                 timetableEntryId
         ));
     }
+
+    @GetMapping("/v1/teacher/timetable")
+    ResponseEntity<List<TimetableEntryResponse>> teacherTimetable(HttpServletRequest request) {
+        return ResponseEntity.ok(timetableService.teacherTimetable(authenticatedUserResolver.requireUser(request)));
+    }
+
+    @GetMapping("/v1/parent/children/{studentId}/timetable")
+    ResponseEntity<List<TimetableEntryResponse>> parentChildTimetable(
+            @PathVariable String studentId,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.ok(timetableService.parentChildTimetable(
+                authenticatedUserResolver.requireUser(request),
+                studentId
+        ));
+    }
+
+    @GetMapping("/v1/student/timetable")
+    ResponseEntity<List<TimetableEntryResponse>> studentTimetable(HttpServletRequest request) {
+        return ResponseEntity.ok(timetableService.studentTimetable(authenticatedUserResolver.requireUser(request)));
+    }
 }

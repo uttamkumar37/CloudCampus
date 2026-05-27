@@ -96,6 +96,17 @@ public class ExamController {
         ));
     }
 
+    @GetMapping("/v1/teacher/exams/{examId}/roster")
+    ResponseEntity<List<ExamRosterStudentResponse>> teacherExamRoster(
+            @PathVariable String examId,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.ok(examService.teacherExamRoster(
+                authenticatedUserResolver.requireUser(request),
+                examId
+        ));
+    }
+
     @PostMapping("/v1/teacher/exams/{examId}/results")
     ResponseEntity<ExamResponse> recordTeacherMarks(
             @PathVariable String examId,

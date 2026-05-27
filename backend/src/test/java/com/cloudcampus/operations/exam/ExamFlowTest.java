@@ -108,6 +108,22 @@ class ExamFlowTest {
                 null,
                 Instant.now()
         ));
+        Section otherSection = sectionRepository.save(new Section(setup.classLevel(), "B", 40));
+        Student otherSectionStudent = studentRepository.save(new Student(
+                tenant,
+                school,
+                "EXAM-101",
+                "Other Section Student",
+                setup.classLevel(),
+                otherSection,
+                "2",
+                null,
+                null,
+                null,
+                null,
+                null,
+                Instant.now()
+        ));
 
         JsonNode exam = createExam(
                 schoolAdminToken,
@@ -128,6 +144,14 @@ class ExamFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(examId));
 
+        mockMvc.perform(get("/v1/teacher/exams/{examId}/roster", examId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].studentId").value(student.getId()))
+                .andExpect(jsonPath("$[0].fullName").value("Exam Student"))
+                .andExpect(jsonPath("$[0].admissionNumber").value("EXAM-100"));
+
         mockMvc.perform(post("/v1/teacher/exams/{examId}/results", examId)
                         .header(HttpHeaders.AUTHORIZATION, bearer(teacherToken))
                         .contentType("application/json")
@@ -142,6 +166,13 @@ class ExamFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.results[0].studentId").value(student.getId()))
                 .andExpect(jsonPath("$.results[0].marksObtained").value(92.5));
+
+        mockMvc.perform(get("/v1/teacher/exams/{examId}/roster", examId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].studentId").value(student.getId()))
+                .andExpect(jsonPath("$[0].marksObtained").value(92.5));
 
         JsonNode parentLink = linkParent(schoolAdminToken, student.getId(), "exam-parent-a@example.com");
         acceptInvitation(parentLink.at("/invitationToken").asText(), "ParentExamStrong123!", "Exam Parent");
@@ -178,6 +209,7 @@ class ExamFlowTest {
 
         assertThat(examRepository.findById(examId)).isPresent();
         assertThat(examResultRepository.findByExamIdOrderByStudentAdmissionNumberAsc(examId)).hasSize(1);
+        assertThat(examResultRepository.findByExamIdAndStudentId(examId, otherSectionStudent.getId())).isEmpty();
         assertThat(auditLogRepository.findByTenantId(tenant.getId()))
                 .extracting(auditLog -> auditLog.getAction())
                 .contains(AuditAction.EXAM_CREATED, AuditAction.EXAM_MARKS_RECORDED, AuditAction.EXAM_RESULTS_PUBLISHED);
@@ -322,6 +354,10 @@ class ExamFlowTest {
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/v1/teacher/exams/{examId}", unassignedExamId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/teacher/exams/{examId}/roster", unassignedExamId)
                         .header(HttpHeaders.AUTHORIZATION, bearer(teacherToken)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));

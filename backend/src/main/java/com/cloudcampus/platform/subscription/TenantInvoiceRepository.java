@@ -9,4 +9,6 @@ public interface TenantInvoiceRepository extends JpaRepository<TenantInvoice, St
     long countByTenantId(String tenantId);
 
     List<TenantInvoice> findByTenantIdOrderByIssuedAtDesc(String tenantId);
+
+    List<TenantInvoice> findAllByOrderByIssuedAtDesc();
 }
