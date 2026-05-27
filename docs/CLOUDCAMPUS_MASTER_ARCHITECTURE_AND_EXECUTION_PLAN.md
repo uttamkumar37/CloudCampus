@@ -531,6 +531,134 @@ Guidance:
 - Required now: keep tenant IDs stable, avoid tenant-specific code paths, and do not assume all tenants live in one permanent database.
 - Future scale/AI enhancement: implement tenant registry and routing only when operational scale demands it.
 
+### SCALE-001 Cell Migration ADR
+
+Decision status: documented for future use; not implemented in the first-version product.
+
+Architecture decision:
+
+- CloudCampus starts as a modular monolith using pooled tenant tables with stable `tenant_id` and `school_id` columns.
+- The platform must not introduce tenant-specific application branches, tenant-specific schemas, or tenant-specific role names in first-version product code.
+- Future cell routing will be controlled by a global control plane, not by browser headers or customer-supplied tenant fields.
+- Every tenant-moving operation must be platform-admin-only, audited, rehearsed in staging, and reversible until cutover is confirmed.
+
+Target cell model:
+
+| Cell Type | Purpose | Typical Tenants | Isolation | Notes |
+|---|---|---|---|---|
+| Shared regional cell | Default multi-tenant runtime | Starter/Growth/Premium tenants | Pooled database with row-level tenant scope | First scaling step; horizontally repeatable. |
+| Dedicated enterprise cell | High-scale or regulated customer | Enterprise trust or national group | Dedicated database/object store/queues | Optional paid isolation; stricter operations. |
+| Migration cell | Temporary move/rebalance area | Tenants being moved | Restricted operational access | Used only during controlled migration windows. |
+
+Future routing flow:
+
+```text
+Request
+-> Authenticate user
+-> Derive tenant from signed token/session
+-> Lookup tenant registry by tenant_id
+-> Route to assigned cell
+-> Enforce tenant/school/object authorization inside the cell
+```
+
+Routing rules:
+
+- The authenticated token may contain `tenantId`, but the authoritative cell lookup is the server-side tenant registry.
+- `X-Tenant-ID`, `X-School-ID`, query/body tenant ids, and frontend-selected tenant ids must never influence cell routing.
+- Tenant registry cache entries must have short TTLs and be invalidated before tenant migration cutover.
+- If registry lookup fails, the request fails closed.
+- Cross-cell support access requires explicit audited support session policy in a later task.
+
+Future tenant registry minimum fields:
+
+```text
+tenant_registry
+- tenant_id
+- tenant_code
+- current_cell_id
+- target_cell_id
+- routing_status
+- isolation_type
+- primary_region
+- data_residency_region
+- migration_started_at
+- migration_completed_at
+- version
+- created_at
+- updated_at
+```
+
+Future cell registry minimum fields:
+
+```text
+platform_cells
+- cell_id
+- cell_code
+- region
+- status
+- api_base_url
+- database_cluster_ref
+- object_store_ref
+- queue_ref
+- monitoring_ref
+- created_at
+- updated_at
+```
+
+Migration states:
+
+- `ACTIVE`: tenant serves from `current_cell_id`.
+- `PREPARING`: target cell exists and is being prepared.
+- `DUAL_WRITE_BLOCKED`: high-risk writes are paused or moved to maintenance mode if needed.
+- `COPYING`: data copy/export/import is running.
+- `VERIFYING`: row counts, checksums, object references, and smoke tests are being verified.
+- `CUTTING_OVER`: registry points new traffic to target cell.
+- `OBSERVING`: target cell is live; source cell retained for rollback window.
+- `COMPLETED`: rollback window closed.
+- `FAILED`: migration stopped; tenant remains on source cell.
+
+Migration playbook:
+
+1. Freeze deployment versions for source and target cells.
+2. Create target cell infrastructure and empty schema at the same migration version.
+3. Pause or queue tenant-specific async workers for the tenant being moved.
+4. Export tenant-scoped relational rows, object references, outbox state, and audit logs.
+5. Import data into target cell with original IDs preserved.
+6. Verify record counts, tenant/school object counts, checksums, and critical auth/onboarding/reporting smoke flows.
+7. Invalidate tenant-registry caches.
+8. Switch `tenant_registry.current_cell_id` to the target cell.
+9. Run live smoke tests as platform admin and tenant admin.
+10. Observe metrics and error rates through the rollback window.
+11. Mark migration completed and archive source data according to retention policy.
+
+Data invariants:
+
+- IDs must be globally unique enough to move between cells without remapping.
+- Audit rows move with the tenant and preserve original actor ids, timestamps, entity ids, and correlation ids.
+- Outbox events must be idempotent; unpublished tenant events are copied or intentionally replayed with dedupe keys.
+- Object-storage keys must be namespaced by tenant id or otherwise remappable during migration.
+- Payment and notification integrations need idempotency keys before live migration is allowed.
+- AI usage/retrieval audits move with tenant data; model/provider secrets stay cell/platform scoped.
+
+First-version constraints:
+
+- Do not add tenant registry tables now.
+- Do not add routing middleware now.
+- Do not add schema-per-tenant or database-per-tenant code paths now.
+- Keep current security posture: tenant/school is derived from authenticated backend state, not frontend context.
+- Keep migrations linear and portable so a future cell can be bootstrapped from the same Flyway history.
+
+Operational readiness required before implementing `SCALE-002`:
+
+- Hosted staging exists with managed database and object storage.
+- Backup/restore drill passes with measured RTO/RPO.
+- Image publishing and deploy promotion pipeline exists.
+- Security/dependency scans run in CI.
+- Outbox dispatcher and worker idempotency are production-hardened.
+- Payment, notification, report export, and AI provider integrations have tenant-safe idempotency and retry policy.
+
+Status decision: `SCALE-001` is documentation-only and VERIFIED when this ADR is present in the master plan. `SCALE-002` remains DEFERRED until real operational scale or enterprise isolation requirements justify implementation.
+
 ## 10. Recommended Domain Modules
 
 Backend should be modular monolith first, not premature microservices.
@@ -3132,7 +3260,7 @@ Status decision: `MUL-007` is VERIFIED for the current scaffold Tenant Admin ten
 | SUB-001 | PHASE 5 | Add Super Admin subscription plan catalog and tenant assignment foundation | P1 | AUTH-005, MUL-007 | Yes | No | No | Yes | Subscription plan/assignment authorization and audit tests | VERIFIED | Added V23 `subscription_plans`, `tenant_subscriptions`, and `tenant_invoices`; added Super Admin plan list/create/update APIs, tenant subscription read/assign APIs, and tenant invoice listing; assigning a plan updates `tenant_school_limits` so Tenant Admin school creation enforces the assigned plan's school limit; Tenant Admin usage returns the assigned plan code. Tests verify Super Admin create/assign/invoice flow, Tenant Admin usage reflection, school-limit enforcement, unauthenticated/non-super denial, spoofed tenant-header rejection, body role/tenant spoof resistance, unsafe plan-limit downgrade rejection, and audit rows for plan/assignment/invoice actions. Frontend, payment collection, invoice PDFs, feature entitlements, and student/staff limit enforcement remain follow-ups. |
 | AI-001 | PHASE 7 | Define AI entitlement and audit model | P2 | EVT-001, SEC-006 | Yes | No | No | Yes | AI scope/usage tests | VERIFIED | Added V25 `ai_tenant_entitlements` and `ai_request_audits`; added Super Admin tenant AI entitlement read/update APIs and authenticated current-tenant entitlement plus usage-audit APIs; server derives tenant/user/role/active school from Bearer identity; request body tenant/school spoofing is ignored; disabled tenant/feature and budget overage are denied and audited; raw prompts are hashed and never stored in AI audit/audit-log metadata. Frontend/mobile AI workflows and live model gateway remain future work. |
 | AI-002 | PHASE 7 | Enforce scoped AI/RAG retrieval by role and school | P2 | AI-001 | Yes | No | No | Yes | Prompt injection and scope tests | VERIFIED | First-version backend AI is verified for scoped school knowledge retrieval without live LLM/vector RAG. Added V26 `ai_knowledge_documents` and `ai_retrieval_audits`, School Admin knowledge document create/list APIs, and authenticated `POST /v1/ai/knowledge/search`. Tenant/school/role scope is derived server-side from active school grants, teacher grant, linked child, or student profile; request body `schoolId` cannot expand scope; disabled AI entitlement is denied and audited; raw retrieval queries and raw knowledge content are not stored in audit logs. Live model gateway, vector embeddings/RAG, prompt templates, provider secrets, feedback, and UI/mobile AI are deferred to next AI version. |
-| SCALE-001 | PHASE 8 | Document cell migration architecture | P2 | EVT-001 | Yes | No | No | No | ADR review | NOT_STARTED | Future scale/AI enhancement. |
+| SCALE-001 | PHASE 8 | Document cell migration architecture | P2 | EVT-001 | Yes | No | No | No | ADR review | VERIFIED | Added SCALE-001 cell migration ADR to Section 9: cell types, server-side tenant-registry routing model, migration states, migration playbook, data invariants, first-version constraints, and operational prerequisites. No runtime tenant registry, routing middleware, schema-per-tenant, or database-per-tenant implementation was added. |
 | SCALE-002 | PHASE 8 | Add tenant registry/cell assignment design | P3 | SCALE-001 | Yes | No | No | Yes | Migration tests later | DEFERRED | Do not implement too early. |
 | CI-001 | PHASE 6 | Recreate CI for backend/frontend/mobile scaffold | P0 | STRUCT-002, FRONT-AUTH-001 | Yes | Yes | Yes | No | CI workflow plus local command validation | VERIFIED | Added `.github/workflows/ci.yml` with backend Maven tests, frontend npm install/tests/typecheck/build, and mobile npm install/typecheck/tests. OPS-001 added lint gates and OPS-002 added ops scaffold validation/compose config validation. Security scans, image publish, OpenAPI publish, DR drills, and hosted staging deploy remain separate follow-ups. |
 | OPS-001 | PHASE 6 | Add lint/static-analysis policy to CI | P2 | CI-001 | No | Yes | Yes | No | CI lint/typecheck | VERIFIED | Added ESLint flat configs for frontend and mobile, `npm run lint` scripts, lockfile-pinned lint dependencies, and CI lint steps before typecheck/build. Local frontend/mobile lint, tests, typecheck, frontend build, and CI YAML parse pass. Backend static analysis remains future hardening. |
@@ -3254,6 +3382,7 @@ Recommended next implementation task: keep moving on first-version backend/produ
 | Backend Build | `cd backend && mvn -q test` | PASS | 2026-05-27 | Spring Boot 3.5.14 scaffold compiles and tests with Flyway V1-V23 and env-configurable H2 datasource defaults. |
 | Backend Tests | `cd backend && mvn -q test` | PASS | 2026-05-27 | Surefire reports 132 tests, 0 failures, 0 errors, 0 skipped: context/readiness plus onboarding, invitation acceptance, invitation email delivery, subscription plan/assignment/invoice foundation, AI entitlement/usage-audit governance, first-version scoped AI knowledge retrieval, `MAIN` rejection, school-access grant, token reuse, invalid token rejection, expired token rejection without activation, authenticated onboarding audit assertions, tenant context spoofing, Tenant Admin school creation with school-limit guardrails, Tenant Admin school list/update/deactivate and School Admin invite/grant/list/resend/revoke authorization coverage, Tenant Admin settings/update/subscription usage authorization coverage, Tenant Admin combined report/drilldown authorization coverage, secure multi-school activation, malformed cross-tenant grant filtering, School Admin cross-school denial coverage, hard-coded `MAIN` school-resolution regression coverage, SEC-006 school-scoped controller guard coverage, AUD-001 mutation audit coverage matrix, EVT-001 transactional outbox coverage, BULK-001 durable bulk job coverage, STU-002 queued student import job coverage, STU-003 student login provisioning/self-profile coverage, FEE-001 fee demand/payment/receipt lifecycle coverage, FEE-002 finance staff provisioning/fee access/isolation coverage, ATT-001 attendance route isolation/teacher-assignment coverage, HOME-001 homework route isolation/teacher-assignment/parent-student visibility coverage, EXAM-001 exam/result publish/isolation/parent-student visibility coverage, NOTE-001 notice targeting/isolation/parent-student visibility coverage, REP-001 durable report export/job/file coverage, AUTH-002 login/current-user/school activation security coverage, AUTH-003 refresh/logout/password lifecycle coverage, AUTH-004 MFA/rate-limit coverage, AUTH-005/SEC-004 Super Admin onboarding authorization coverage, SEC-001 Tenant A to Tenant B object-spoofing coverage, PAR-001 parent-child linking/invitation/access coverage, STAFF-001 staff/teacher/finance provisioning coverage, ACA-001 academic lifecycle coverage, ACA-002 academic assignment/teacher assignment coverage, and STU-001 student import validation coverage. |
 | AI Governance and First-Version Retrieval Tests | `cd backend && mvn -q -Dtest=AiGovernanceFlowTest,AiScopedRetrievalFlowTest,AuditCoverageMatrixTest test`; `cd backend && mvn -q test` | PASS | 2026-05-27 | AI-001 and AI-002 verified for first-version backend scope. V25 creates tenant entitlement and request-audit tables; V26 creates school knowledge document and retrieval-audit tables. Super Admin entitlement APIs are protected; unauthenticated/non-super callers are rejected; spoofed tenant headers are blocked; body tenant/school spoofing does not influence persisted AI entitlement, usage audit, or retrieval scope; disabled AI, disabled features, budget overage, and disabled retrieval entitlement are denied and audited; scoped retrieval returns only the authenticated user's active school, teacher grant, linked child school, or own student school; raw prompt/query text and raw knowledge content are not stored in AI audit rows or audit-log metadata. |
+| Cell Migration Architecture ADR | `rg -n "SCALE-001 Cell Migration ADR|Migration playbook|SCALE-001 .* VERIFIED|SCALE-002 .* DEFERRED" docs/CLOUDCAMPUS_MASTER_ARCHITECTURE_AND_EXECUTION_PLAN.md` | PASS | 2026-05-27 | SCALE-001 verified as documentation-only: Section 9 now defines future cell types, server-side tenant-registry routing, migration states, controlled migration playbook, tenant data invariants, first-version non-implementation constraints, and prerequisites before SCALE-002. No backend/frontend/mobile code or database migration was added. |
 | Frontend Build | `cd frontend && npm run build` | PASS | 2026-05-27 | React/Vite shell builds successfully with premium public SaaS homepage, slide-over universal login/invitation access, auth state provider, current-user/school hydration, protected Super Admin/Tenant Admin/School Admin/Finance Staff panels, premium authenticated app shell, sticky dashboard header, global search/command palette, notification/profile popovers, school context chip, live session/date/time panels, Recharts role analytics, role-specific information cards, mobile record-card tables, school selector with single-school auto-activation/multi-school activation handling, authenticated Super Admin onboarding, Tenant Admin school creation/admin-invite/management/report/settings scaffolds, invitation acceptance, login/MFA panel, School Admin parent-link/staff/academic/student/bulk/fee/report scaffolds, and Finance Staff fee lifecycle scaffold. Vite reports a large chunk warning after bundling Recharts/framer; code splitting remains a future optimization. |
 | Frontend Lint | `cd frontend && npm run lint` | PASS | 2026-05-27 | OPS-001 verified: ESLint flat config exists for the frontend scaffold, lint dependencies are lockfile-pinned, `npm run lint` passes locally, and CI now runs frontend lint before typecheck/build. |
 | Frontend Typecheck | `cd frontend && npm run typecheck` | PASS | 2026-05-27 | TypeScript no-emit check passes with premium public homepage components, authenticated app shell, live-clock dashboard header, command palette, role-specific Recharts analytics/info panels, slide-over access panel, auth state provider, role guards, school selector, Tenant Admin school creation/admin-invite/management/report/settings scaffolds, Finance Staff route/fee API clients, bulk jobs scaffold, queued student import/student-login invitation actions, fee lifecycle scaffold, and report export scaffold. |
