@@ -1,0 +1,11 @@
+package com.cloudcampus.intelligence.ai;
+
+public enum AiFeature {
+    NOTICE_DRAFTING,
+    HOMEWORK_DRAFTING,
+    LESSON_PLAN_DRAFTING,
+    REPORT_EXPLANATION,
+    NOTICE_TRANSLATION,
+    ADMISSION_ENQUIRY_ASSISTANT,
+    SCHOOL_POLICY_QA
+}

@@ -111,6 +111,7 @@ class SchoolScopedControllerGuardCoverageTest {
                 "com/cloudcampus/academic/SubjectController.java",
                 "com/cloudcampus/academic/TeacherAssignmentController.java",
                 "com/cloudcampus/academic/TeacherAssignmentPortalController.java",
+                "com/cloudcampus/intelligence/ai/SchoolAdminAiKnowledgeController.java",
                 "com/cloudcampus/people/parent/ParentLeaveRequestController.java",
                 "com/cloudcampus/people/parent/ParentPortalController.java",
                 "com/cloudcampus/people/staff/StaffProvisioningController.java",

@@ -119,6 +119,18 @@ describe('App', () => {
     render(<App authClient={authClientFor(user, [])} storage={storageWithToken('super-token')} />);
 
     expect(await screen.findByRole('heading', { name: /super admin dashboard/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/breadcrumbs/i)).toHaveTextContent(/cloudcampus/i);
+    expect(screen.getByText(/session active/i)).toBeInTheDocument();
+    expect(screen.getByText(/platform owner scope/i)).toBeInTheDocument();
+    expect(screen.getByText(/total users/i)).toBeInTheDocument();
+    expect(screen.getByText(/recent onboarding/i)).toBeInTheDocument();
+    expect(screen.getByText(/api health/i)).toBeInTheDocument();
+    expect(screen.getByText(/99.98% platform uptime/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /actions/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /platform scope/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /open profile menu/i }));
+    expect(screen.getByRole('menu', { name: /profile menu/i })).toHaveTextContent(/last login: current session/i);
+    expect(screen.getByRole('menu', { name: /profile menu/i })).toHaveTextContent(/super@example.com/i);
     expect(screen.getByRole('region', { name: /super admin area/i })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: /super admin navigation/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /tenants/i }));
@@ -143,6 +155,9 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: /school admin dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: /school admin navigation/i })).toBeInTheDocument();
+    expect(screen.getByText(/academic year/i)).toBeInTheDocument();
+    expect(screen.getByText(/pending approvals/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/school a/i).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: /^parents$/i }));
     expect(screen.getByRole('heading', { name: /link parent to student/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /^staff$/i }));

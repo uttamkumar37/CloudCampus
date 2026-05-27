@@ -57,6 +57,36 @@ class AuditCoverageMatrixTest {
                     )
             ),
             Map.entry(
+                    "com/cloudcampus/intelligence/ai/SuperAdminAiEntitlementController.java",
+                    evidence(
+                            "com/cloudcampus/intelligence/ai/AiGovernanceService.java",
+                            "AI_ENTITLEMENT_UPDATED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/intelligence/ai/AiUsageController.java",
+                    evidence(
+                            "com/cloudcampus/intelligence/ai/AiGovernanceService.java",
+                            "AI_USAGE_AUDITED",
+                            "AI_USAGE_DENIED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/intelligence/ai/SchoolAdminAiKnowledgeController.java",
+                    evidence(
+                            "com/cloudcampus/intelligence/ai/AiKnowledgeRetrievalService.java",
+                            "AI_KNOWLEDGE_DOCUMENT_CREATED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/intelligence/ai/AiRetrievalController.java",
+                    evidence(
+                            "com/cloudcampus/intelligence/ai/AiKnowledgeRetrievalService.java",
+                            "AI_RETRIEVAL_AUDITED",
+                            "AI_RETRIEVAL_DENIED"
+                    )
+            ),
+            Map.entry(
                     "com/cloudcampus/identity/auth/invitation/InvitationController.java",
                     evidence("com/cloudcampus/identity/auth/invitation/InvitationAcceptanceService.java", "INVITATION_ACCEPTED")
             ),

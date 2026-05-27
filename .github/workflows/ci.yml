@@ -104,3 +104,18 @@ jobs:
       - name: Run mobile tests
         working-directory: mobile
         run: npm test
+
+  ops:
+    name: Ops
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate ops scaffold
+        run: sh scripts/ci/validate-ops.sh
+
+      - name: Validate staging compose
+        run: docker compose -f infra/docker/local/compose.staging.yml config
