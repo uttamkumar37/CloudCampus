@@ -1,4 +1,4 @@
-export type StaffProvisioningRole = 'TEACHER' | 'STAFF';
+export type StaffProvisioningRole = 'TEACHER' | 'FINANCE_STAFF' | 'STAFF';
 
 export type StaffProvisioningRequest = {
   fullName: string;

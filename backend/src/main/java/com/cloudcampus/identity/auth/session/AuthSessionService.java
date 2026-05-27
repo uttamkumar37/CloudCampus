@@ -35,7 +35,8 @@ public class AuthSessionService {
     private static final EnumSet<UserRole> MFA_REQUIRED_ROLES = EnumSet.of(
             UserRole.SUPER_ADMIN,
             UserRole.TENANT_ADMIN,
-            UserRole.SCHOOL_ADMIN
+            UserRole.SCHOOL_ADMIN,
+            UserRole.FINANCE_STAFF
     );
 
     private final UserAccountRepository userAccountRepository;

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 
 import { App } from './App';
@@ -57,24 +57,36 @@ function authClientFor(user: CurrentUser, schools: SchoolAccess[] = user.allowed
 }
 
 describe('App', () => {
-  it('renders public login/invitation panels and blocks protected routes when unauthenticated', async () => {
+  it('renders only public login and invitation panels when unauthenticated', async () => {
     render(<App storage={storageWithToken()} />);
 
-    expect(
-      screen.getByRole('heading', {
-        name: /clean single-school onboarding/i,
-      }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /run your school/i })).toBeInTheDocument();
     expect(screen.getByTestId('cloudcampus-shell')).toBeInTheDocument();
-    expect(screen.getByText(/backend api shell/i)).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /accept school admin invitation/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /school admin login/i })).toBeInTheDocument();
-    expect(await screen.findAllByText(/sign in to access this protected route/i)).toHaveLength(3);
+    expect(screen.getByText(/#1 modern school erp platform/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/cloudcampus dashboard and mobile preview/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /everything a modern school needs/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /ready to transform your school/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /cloudcampus login/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /accept school admin invitation/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /school admin login/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/sign in to access this protected route/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /super admin onboarding/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /tenant admin portal/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /school admin scaffold/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /link parent to student/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    expect(screen.getByRole('dialog', { name: /cloudcampus account access/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: /welcome back/i })).toHaveLength(2);
+    expect(screen.getByText(/one login works for super admin/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /forgot password/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /accept invitation/i }));
+    expect(screen.getByRole('heading', { name: /accept school admin invitation/i })).toBeInTheDocument();
   });
 
-  it('clears an invalid stored token and returns to login-required protected routes', async () => {
+  it('clears an invalid stored token and returns to the public login screen', async () => {
     const storage = storageWithToken('expired-token');
     const authClient: Partial<AuthClient> = {
       activateSchool: vi.fn(),
@@ -85,12 +97,15 @@ describe('App', () => {
 
     render(<App authClient={authClient} storage={storage} />);
 
-    expect(await screen.findAllByText(/sign in to access this protected route/i)).toHaveLength(3);
+    expect(await screen.findByRole('heading', { name: /run your school/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /cloudcampus login/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /accept school admin invitation/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/sign in to access this protected route/i)).not.toBeInTheDocument();
     expect(storage.removeItem).toHaveBeenCalledWith('cloudcampus.auth.accessToken');
     expect(storage.removeItem).toHaveBeenCalledWith('cloudcampus.auth.refreshToken');
   });
 
-  it('allows a Super Admin to access onboarding', async () => {
+  it('shows only the Super Admin area to a Super Admin', async () => {
     const user: CurrentUser = {
       userId: 'super-1',
       email: 'super@example.com',
@@ -103,8 +118,14 @@ describe('App', () => {
 
     render(<App authClient={authClientFor(user, [])} storage={storageWithToken('super-token')} />);
 
-    expect(await screen.findByRole('heading', { name: /create tenant with first real school/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/your role cannot access this route/i)).toHaveLength(2);
+    expect(await screen.findByRole('heading', { name: /super admin dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /super admin area/i })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: /super admin navigation/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /tenants/i }));
+    expect(screen.getByRole('heading', { name: /create tenant with first real school/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create tenant school/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /link parent to student/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
   });
 
   it('allows a School Admin to access the active-school scaffold', async () => {
@@ -120,18 +141,27 @@ describe('App', () => {
 
     render(<App authClient={authClientFor(user)} storage={storageWithToken('school-admin-token')} />);
 
-    expect(await screen.findByRole('heading', { name: /link parent to student/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /school admin dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: /school admin navigation/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^parents$/i }));
+    expect(screen.getByRole('heading', { name: /link parent to student/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^staff$/i }));
     expect(screen.getByRole('heading', { name: /provision staff portal login/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^attendance$/i }));
     expect(screen.getByRole('heading', { name: /academic setup/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /academic assignments/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^students$/i }));
     expect(screen.getByRole('heading', { name: /student import/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^settings$/i }));
     expect(screen.getByRole('heading', { name: /bulk jobs/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^fees$/i }));
     expect(screen.getByRole('heading', { name: /fee lifecycle/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^reports$/i }));
     expect(screen.getByRole('heading', { name: /report exports/i })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
   });
 
-  it('does not allow a School Admin to access Super Admin onboarding', async () => {
+  it('shows only the School Admin area to a School Admin', async () => {
     const user: CurrentUser = {
       userId: 'school-admin-2',
       email: 'admin2@example.com',
@@ -144,14 +174,15 @@ describe('App', () => {
 
     render(<App authClient={authClientFor(user)} storage={storageWithToken('school-admin-token')} />);
 
-    await screen.findByRole('heading', { name: /link parent to student/i });
-    const superAdminPanel = screen.getByRole('heading', { name: /super admin onboarding/i }).closest('section');
-    expect(superAdminPanel).not.toBeNull();
-    expect(within(superAdminPanel as HTMLElement).getByText(/your role cannot access this route/i)).toBeInTheDocument();
+    await screen.findByRole('heading', { name: /school admin dashboard/i });
+    expect(screen.getByRole('region', { name: /school admin area/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create tenant school/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
   });
 
-  it.each(['TEACHER', 'PARENT', 'STUDENT', 'STAFF'] as const)(
-    'does not allow %s to access admin-only panels',
+  it.each(['TEACHER', 'FINANCE_STAFF', 'PARENT', 'STUDENT', 'STAFF'] as const)(
+    'shows only the %s portal shell for non-admin roles',
     async (role) => {
       const user: CurrentUser = {
         userId: `${role.toLowerCase()}-1`,
@@ -165,13 +196,41 @@ describe('App', () => {
 
       render(<App authClient={authClientFor(user)} storage={storageWithToken(`${role.toLowerCase()}-token`)} />);
 
-      expect(await screen.findAllByText(/your role cannot access this route/i)).toHaveLength(3);
+      const title = role
+        .split('_')
+        .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+        .join(' ');
+      expect(await screen.findByRole('heading', { name: new RegExp(`${title} dashboard`, 'i') })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: new RegExp(`${title} area`, 'i') })).toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: /create tenant school/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: /link parent to student/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
     },
   );
 
-  it('allows a Tenant Admin to access tenant school creation', async () => {
+  it('shows a fee-focused workspace to Finance Staff', async () => {
+    const user: CurrentUser = {
+      userId: 'finance-1',
+      email: 'finance@example.com',
+      displayName: 'Finance Staff',
+      role: 'FINANCE_STAFF',
+      tenantId: 'tenant-1',
+      activeSchool: schoolA,
+      allowedSchools: [schoolA],
+    };
+
+    render(<App authClient={authClientFor(user)} storage={storageWithToken('finance-token')} />);
+
+    expect(await screen.findByRole('heading', { name: /finance staff dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /finance staff area/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /fee demands/i }));
+    expect(screen.getByRole('heading', { name: /fee lifecycle/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /academic setup/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
+  });
+
+  it('shows only the Tenant Admin area to a Tenant Admin', async () => {
     const user: CurrentUser = {
       userId: 'tenant-admin-1',
       email: 'tenant@example.com',
@@ -184,9 +243,17 @@ describe('App', () => {
 
     render(<App authClient={authClientFor(user, [])} storage={storageWithToken('tenant-admin-token')} />);
 
-    expect(await screen.findByRole('heading', { name: /create tenant school/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /tenant admin dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /tenant admin area/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^schools$/i }));
+    expect(screen.getByRole('heading', { name: /create tenant school/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^settings$/i }));
     expect(screen.getByRole('heading', { name: /tenant settings and usage/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^reports$/i }));
     expect(screen.getByRole('heading', { name: /tenant reports/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /link parent to student/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
   });
 
   it('activates a selected school through the current-user school API', async () => {
@@ -204,7 +271,7 @@ describe('App', () => {
 
     render(<App authClient={authClient} storage={storage} />);
 
-    expect(await screen.findByRole('heading', { name: /active school/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^active school$/i })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/^school$/i), { target: { value: 'school-b' } });
     fireEvent.click(screen.getByRole('button', { name: /activate school/i }));
 
@@ -233,7 +300,8 @@ describe('App', () => {
 
     await waitFor(() => expect(authClient.activateSchool).toHaveBeenCalledTimes(1));
     expect(authClient.activateSchool).toHaveBeenCalledWith('school-admin-token', 'school-a');
-    expect(await screen.findByRole('heading', { name: /link parent to student/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /school admin dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /school operations/i })).toBeInTheDocument();
   });
 
   it('shows a clear error when school activation is denied', async () => {
@@ -254,7 +322,7 @@ describe('App', () => {
 
     render(<App authClient={authClient} storage={storage} />);
 
-    expect(await screen.findByRole('heading', { name: /active school/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^active school$/i })).toBeInTheDocument();
     expect(screen.getByText(/2 assigned schools/i)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/^school$/i), { target: { value: 'school-b' } });
     fireEvent.click(screen.getByRole('button', { name: /activate school/i }));

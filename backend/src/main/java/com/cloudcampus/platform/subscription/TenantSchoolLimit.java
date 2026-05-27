@@ -6,6 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
@@ -35,6 +36,15 @@ public class TenantSchoolLimit {
         if (updatedAt == null) {
             updatedAt = Instant.now();
         }
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = Instant.now();
+    }
+
+    public void updateMaxSchools(int maxSchools) {
+        this.maxSchools = maxSchools;
     }
 
     public String getTenantId() {

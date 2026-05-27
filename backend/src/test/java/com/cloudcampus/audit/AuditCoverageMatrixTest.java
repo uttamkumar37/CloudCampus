@@ -47,6 +47,16 @@ class AuditCoverageMatrixTest {
                     )
             ),
             Map.entry(
+                    "com/cloudcampus/platform/subscription/SuperAdminSubscriptionController.java",
+                    evidence(
+                            "com/cloudcampus/platform/subscription/SuperAdminSubscriptionService.java",
+                            "SUBSCRIPTION_PLAN_CREATED",
+                            "SUBSCRIPTION_PLAN_UPDATED",
+                            "TENANT_SUBSCRIPTION_ASSIGNED",
+                            "TENANT_INVOICE_ISSUED"
+                    )
+            ),
+            Map.entry(
                     "com/cloudcampus/identity/auth/invitation/InvitationController.java",
                     evidence("com/cloudcampus/identity/auth/invitation/InvitationAcceptanceService.java", "INVITATION_ACCEPTED")
             ),
@@ -73,6 +83,14 @@ class AuditCoverageMatrixTest {
             Map.entry(
                     "com/cloudcampus/people/parent/ParentLinkController.java",
                     evidence("com/cloudcampus/people/parent/ParentLinkService.java", "PARENT_INVITED", "PARENT_LINKED")
+            ),
+            Map.entry(
+                    "com/cloudcampus/people/parent/ParentLeaveRequestController.java",
+                    evidence(
+                            "com/cloudcampus/people/parent/ParentLeaveRequestService.java",
+                            "PARENT_LEAVE_REQUESTED",
+                            "PARENT_LEAVE_DECIDED"
+                    )
             ),
             Map.entry(
                     "com/cloudcampus/people/staff/StaffProvisioningController.java",

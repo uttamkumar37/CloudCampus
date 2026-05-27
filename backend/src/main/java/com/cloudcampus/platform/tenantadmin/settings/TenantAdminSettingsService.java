@@ -12,6 +12,7 @@ import com.cloudcampus.identity.auth.session.AuthenticatedUser;
 import com.cloudcampus.people.staff.StaffProfileRepository;
 import com.cloudcampus.people.student.StudentRepository;
 import com.cloudcampus.platform.subscription.TenantSchoolLimitRepository;
+import com.cloudcampus.platform.subscription.TenantSubscriptionRepository;
 import com.cloudcampus.platform.tenant.Tenant;
 import com.cloudcampus.platform.tenant.TenantRepository;
 import com.cloudcampus.school.SchoolRepository;
@@ -28,6 +29,7 @@ public class TenantAdminSettingsService {
     private final TenantSettingsRepository tenantSettingsRepository;
     private final TenantRepository tenantRepository;
     private final TenantSchoolLimitRepository tenantSchoolLimitRepository;
+    private final TenantSubscriptionRepository tenantSubscriptionRepository;
     private final SchoolRepository schoolRepository;
     private final UserAccountRepository userAccountRepository;
     private final StudentRepository studentRepository;
@@ -38,6 +40,7 @@ public class TenantAdminSettingsService {
             TenantSettingsRepository tenantSettingsRepository,
             TenantRepository tenantRepository,
             TenantSchoolLimitRepository tenantSchoolLimitRepository,
+            TenantSubscriptionRepository tenantSubscriptionRepository,
             SchoolRepository schoolRepository,
             UserAccountRepository userAccountRepository,
             StudentRepository studentRepository,
@@ -47,6 +50,7 @@ public class TenantAdminSettingsService {
         this.tenantSettingsRepository = tenantSettingsRepository;
         this.tenantRepository = tenantRepository;
         this.tenantSchoolLimitRepository = tenantSchoolLimitRepository;
+        this.tenantSubscriptionRepository = tenantSubscriptionRepository;
         this.schoolRepository = schoolRepository;
         this.userAccountRepository = userAccountRepository;
         this.studentRepository = studentRepository;
@@ -88,13 +92,16 @@ public class TenantAdminSettingsService {
         int maxSchools = tenantSchoolLimitRepository.findById(tenant.getId())
                 .map(limit -> limit.getMaxSchools())
                 .orElse(DEFAULT_MAX_SCHOOLS);
+        String planCode = tenantSubscriptionRepository.findById(tenant.getId())
+                .map(subscription -> subscription.getPlan().getCode())
+                .orElse(SCAFFOLD_PLAN_CODE);
         long schoolsUsed = schoolRepository.countByTenantId(tenant.getId());
         return new TenantUsageResponse(
                 tenant.getId(),
                 tenant.getCode(),
                 tenant.getName(),
                 tenant.getStatus().name(),
-                SCAFFOLD_PLAN_CODE,
+                planCode,
                 maxSchools,
                 schoolsUsed,
                 schoolRepository.countByTenantIdAndActiveTrue(tenant.getId()),

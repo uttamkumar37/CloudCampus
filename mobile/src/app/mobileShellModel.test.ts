@@ -13,6 +13,7 @@ describe('mobileShellModel', () => {
       'TENANT_ADMIN',
       'SCHOOL_ADMIN',
       'TEACHER',
+      'FINANCE_STAFF',
       'STAFF',
       'PARENT',
       'STUDENT',
@@ -24,11 +25,12 @@ describe('mobileShellModel', () => {
       'TENANT_ADMIN',
       'SCHOOL_ADMIN',
       'TEACHER',
+      'FINANCE_STAFF',
       'STAFF',
       'PARENT',
       'STUDENT',
     ]);
     expect(mobileShellPortals.filter((portal) => portal.requiresSchoolContext).map((portal) => portal.backendRole))
-      .toEqual(['SCHOOL_ADMIN', 'TEACHER', 'STAFF', 'PARENT', 'STUDENT']);
+      .toEqual(['SCHOOL_ADMIN', 'TEACHER', 'FINANCE_STAFF', 'STAFF', 'PARENT', 'STUDENT']);
   });
 });

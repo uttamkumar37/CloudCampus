@@ -6,17 +6,23 @@ const ACCESS_TOKEN_STORAGE_KEY = 'cloudcampus.auth.accessToken';
 const REFRESH_TOKEN_STORAGE_KEY = 'cloudcampus.auth.refreshToken';
 
 type LoginPageProps = {
+  className?: string;
   onSubmit?: (payload: LoginRequest) => Promise<AuthSession>;
   onAuthenticated?: (session: AuthSession) => Promise<void> | void;
   onVerifyMfa?: (challengeId: string, code: string) => Promise<AuthSession>;
   storage?: Pick<Storage, 'setItem'>;
+  summary?: string;
+  title?: string;
 };
 
 export function LoginPage({
+  className = '',
   onAuthenticated,
   onSubmit = login,
   onVerifyMfa = verifyMfa,
   storage = globalThis.sessionStorage,
+  summary = 'Use your CloudCampus account. You will see your portal based on your role.',
+  title = 'CloudCampus Login',
 }: LoginPageProps) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [mfaChallenge, setMfaChallenge] = useState<{
@@ -90,9 +96,10 @@ export function LoginPage({
   }
 
   return (
-    <section className="workflow-panel" aria-labelledby="login-title">
+    <section className={`workflow-panel ${className}`.trim()} aria-labelledby="login-title">
       <p className="eyebrow">AUTH-004</p>
-      <h2 id="login-title">School Admin login</h2>
+      <h2 id="login-title">{title}</h2>
+      <p className="summary compact-summary">{summary}</p>
       <form className="workflow-form" onSubmit={handleSubmit}>
         <label>
           Email
@@ -106,6 +113,14 @@ export function LoginPage({
           {submitting ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
+
+      {import.meta.env.DEV ? (
+        <div className="dev-login-hint" aria-label="Local development login hint">
+          <strong>Dev Super Admin:</strong>
+          <span>Email: superadmin@cloudcampus.dev</span>
+          <span>Password: SuperAdmin123!</span>
+        </div>
+      ) : null}
 
       {mfaChallenge ? (
         <form className="workflow-form" onSubmit={handleMfaSubmit}>

@@ -21,6 +21,7 @@ import com.cloudcampus.identity.auth.invitation.Invitation;
 import com.cloudcampus.identity.auth.invitation.InvitationRepository;
 import com.cloudcampus.identity.auth.invitation.InvitationTokenService;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
+import com.cloudcampus.notification.InvitationEmailDeliveryService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +36,7 @@ public class StudentLoginService {
     private final InvitationTokenService invitationTokenService;
     private final SchoolAccessService schoolAccessService;
     private final AuditLogService auditLogService;
+    private final InvitationEmailDeliveryService invitationEmailDeliveryService;
 
     public StudentLoginService(
             StudentRepository studentRepository,
@@ -43,7 +45,8 @@ public class StudentLoginService {
             InvitationRepository invitationRepository,
             InvitationTokenService invitationTokenService,
             SchoolAccessService schoolAccessService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            InvitationEmailDeliveryService invitationEmailDeliveryService
     ) {
         this.studentRepository = studentRepository;
         this.userAccountRepository = userAccountRepository;
@@ -52,6 +55,7 @@ public class StudentLoginService {
         this.invitationTokenService = invitationTokenService;
         this.schoolAccessService = schoolAccessService;
         this.auditLogService = auditLogService;
+        this.invitationEmailDeliveryService = invitationEmailDeliveryService;
     }
 
     @Transactional
@@ -160,6 +164,7 @@ public class StudentLoginService {
                 invitationTokenService.hash(rawToken),
                 Instant.now().plus(7, ChronoUnit.DAYS)
         ));
+        invitationEmailDeliveryService.queueInvitation(invitation, "/invitations/accept?token=" + rawToken);
         return new IssuedInvitation(invitation, rawToken);
     }
 

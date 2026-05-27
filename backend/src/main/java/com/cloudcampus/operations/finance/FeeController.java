@@ -38,8 +38,24 @@ public class FeeController {
         ));
     }
 
+    @PostMapping("/v1/finance/fees/demands")
+    ResponseEntity<FeeDemandResponse> createFinanceDemand(
+            @Valid @RequestBody FeeDemandRequest requestBody,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(feeService.createDemand(
+                authenticatedUserResolver.requireUser(request),
+                requestBody
+        ));
+    }
+
     @GetMapping("/v1/school-admin/fees/demands")
     ResponseEntity<List<FeeDemandResponse>> schoolDemands(HttpServletRequest request) {
+        return ResponseEntity.ok(feeService.schoolDemands(authenticatedUserResolver.requireUser(request)));
+    }
+
+    @GetMapping("/v1/finance/fees/demands")
+    ResponseEntity<List<FeeDemandResponse>> financeDemands(HttpServletRequest request) {
         return ResponseEntity.ok(feeService.schoolDemands(authenticatedUserResolver.requireUser(request)));
     }
 
@@ -48,8 +64,26 @@ public class FeeController {
         return ResponseEntity.ok(feeService.schoolDemand(authenticatedUserResolver.requireUser(request), demandId));
     }
 
+    @GetMapping("/v1/finance/fees/demands/{demandId}")
+    ResponseEntity<FeeDemandResponse> financeDemand(@PathVariable String demandId, HttpServletRequest request) {
+        return ResponseEntity.ok(feeService.schoolDemand(authenticatedUserResolver.requireUser(request), demandId));
+    }
+
     @PostMapping("/v1/school-admin/fees/demands/{demandId}/payments")
     ResponseEntity<FeeDemandResponse> recordSchoolPayment(
+            @PathVariable String demandId,
+            @Valid @RequestBody FeePaymentRequest requestBody,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(feeService.recordSchoolPayment(
+                authenticatedUserResolver.requireUser(request),
+                demandId,
+                requestBody
+        ));
+    }
+
+    @PostMapping("/v1/finance/fees/demands/{demandId}/payments")
+    ResponseEntity<FeeDemandResponse> recordFinancePayment(
             @PathVariable String demandId,
             @Valid @RequestBody FeePaymentRequest requestBody,
             HttpServletRequest request

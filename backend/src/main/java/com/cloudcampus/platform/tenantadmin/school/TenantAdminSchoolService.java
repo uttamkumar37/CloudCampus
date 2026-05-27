@@ -22,6 +22,7 @@ import com.cloudcampus.identity.auth.invitation.Invitation;
 import com.cloudcampus.identity.auth.invitation.InvitationRepository;
 import com.cloudcampus.identity.auth.invitation.InvitationTokenService;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
+import com.cloudcampus.notification.InvitationEmailDeliveryService;
 import com.cloudcampus.platform.subscription.TenantSchoolLimitRepository;
 import com.cloudcampus.platform.tenant.Tenant;
 import com.cloudcampus.school.School;
@@ -43,6 +44,7 @@ public class TenantAdminSchoolService {
     private final InvitationRepository invitationRepository;
     private final InvitationTokenService invitationTokenService;
     private final AuditLogService auditLogService;
+    private final InvitationEmailDeliveryService invitationEmailDeliveryService;
 
     public TenantAdminSchoolService(
             SchoolRepository schoolRepository,
@@ -51,7 +53,8 @@ public class TenantAdminSchoolService {
             UserSchoolAccessRepository userSchoolAccessRepository,
             InvitationRepository invitationRepository,
             InvitationTokenService invitationTokenService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            InvitationEmailDeliveryService invitationEmailDeliveryService
     ) {
         this.schoolRepository = schoolRepository;
         this.tenantSchoolLimitRepository = tenantSchoolLimitRepository;
@@ -60,6 +63,7 @@ public class TenantAdminSchoolService {
         this.invitationRepository = invitationRepository;
         this.invitationTokenService = invitationTokenService;
         this.auditLogService = auditLogService;
+        this.invitationEmailDeliveryService = invitationEmailDeliveryService;
     }
 
     @Transactional
@@ -347,6 +351,7 @@ public class TenantAdminSchoolService {
                 invitationTokenService.hash(rawToken),
                 Instant.now().plus(7, ChronoUnit.DAYS)
         ));
+        invitationEmailDeliveryService.queueInvitation(invitation, "/invitations/accept?token=" + rawToken);
         return new IssuedInvitation(invitation, rawToken);
     }
 

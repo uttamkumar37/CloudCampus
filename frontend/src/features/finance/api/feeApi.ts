@@ -44,7 +44,22 @@ export async function createFeeDemand(
   request: FeeDemandCreateRequest,
   accessToken: string,
 ): Promise<FeeDemandResponse> {
-  const response = await fetch('/v1/school-admin/fees/demands', {
+  return createDemandAt('/v1/school-admin/fees/demands', request, accessToken);
+}
+
+export async function createFinanceFeeDemand(
+  request: FeeDemandCreateRequest,
+  accessToken: string,
+): Promise<FeeDemandResponse> {
+  return createDemandAt('/v1/finance/fees/demands', request, accessToken);
+}
+
+async function createDemandAt(
+  path: string,
+  request: FeeDemandCreateRequest,
+  accessToken: string,
+): Promise<FeeDemandResponse> {
+  const response = await fetch(path, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -65,7 +80,23 @@ export async function recordFeePayment(
   request: FeePaymentCreateRequest,
   accessToken: string,
 ): Promise<FeeDemandResponse> {
-  const response = await fetch(`/v1/school-admin/fees/demands/${demandId}/payments`, {
+  return recordPaymentAt(`/v1/school-admin/fees/demands/${demandId}/payments`, request, accessToken);
+}
+
+export async function recordFinanceFeePayment(
+  demandId: string,
+  request: FeePaymentCreateRequest,
+  accessToken: string,
+): Promise<FeeDemandResponse> {
+  return recordPaymentAt(`/v1/finance/fees/demands/${demandId}/payments`, request, accessToken);
+}
+
+async function recordPaymentAt(
+  path: string,
+  request: FeePaymentCreateRequest,
+  accessToken: string,
+): Promise<FeeDemandResponse> {
+  const response = await fetch(path, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,

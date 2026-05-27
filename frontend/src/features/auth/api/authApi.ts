@@ -3,6 +3,7 @@ export const BACKEND_USER_ROLES = [
   'TENANT_ADMIN',
   'SCHOOL_ADMIN',
   'TEACHER',
+  'FINANCE_STAFF',
   'STAFF',
   'PARENT',
   'STUDENT',

@@ -80,6 +80,7 @@ class TransactionalOutboxFlowTest {
 
         assertThat(auditLogs).hasSize(4);
         assertThat(outboxEvents)
+                .filteredOn(event -> "AuditLogRecorded".equals(event.getEventType()))
                 .hasSize(4)
                 .allSatisfy(event -> {
                     assertThat(event.getStatus()).isEqualTo(OutboxEventStatus.PENDING);
@@ -99,6 +100,13 @@ class TransactionalOutboxFlowTest {
                 .anySatisfy(payload -> assertThat(payload).contains("\"action\":\"SCHOOL_CREATED\""))
                 .anySatisfy(payload -> assertThat(payload).contains("\"action\":\"SCHOOL_ADMIN_INVITED\""))
                 .anySatisfy(payload -> assertThat(payload).contains("\"action\":\"SCHOOL_ACCESS_GRANTED\""));
+        assertThat(outboxEvents)
+                .filteredOn(event -> "InvitationEmailDeliveryRequested".equals(event.getEventType()))
+                .singleElement()
+                .satisfies(event -> assertThat(event.getPayloadJson())
+                        .contains("\"template\":\"ACCOUNT_INVITATION\"")
+                        .doesNotContain(rawInvitationToken)
+                        .doesNotContain("/invitations/accept?token="));
     }
 
     @Test

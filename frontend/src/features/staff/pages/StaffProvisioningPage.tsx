@@ -47,7 +47,7 @@ export function StaffProvisioningPage({
     setError(null);
     try {
       const result = await onProvisionStaff(payload, accessToken);
-      setMessage(`${result.fullName} ${result.role.toLowerCase()} invited`);
+      setMessage(`${result.fullName} ${roleLabel(result.role)} invited`);
     } catch {
       setError('Staff provisioning failed.');
       setMessage(null);
@@ -72,6 +72,7 @@ export function StaffProvisioningPage({
           Role
           <select name="role" defaultValue="TEACHER">
             <option value="TEACHER">Teacher</option>
+            <option value="FINANCE_STAFF">Finance staff</option>
             <option value="STAFF">Staff</option>
           </select>
         </label>
@@ -99,4 +100,8 @@ export function StaffProvisioningPage({
 function optionalString(value: FormDataEntryValue | null) {
   const text = String(value ?? '').trim();
   return text.length > 0 ? text : undefined;
+}
+
+function roleLabel(role: StaffProvisioningRole) {
+  return role.toLowerCase().replace('_', ' ');
 }
