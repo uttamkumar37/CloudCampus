@@ -6,7 +6,7 @@ CREATE TABLE outbox_events (
     aggregate_id VARCHAR(36) NOT NULL,
     event_type VARCHAR(120) NOT NULL,
     event_key VARCHAR(160) UNIQUE,
-    payload_json CLOB NOT NULL,
+    payload_json TEXT NOT NULL,
     status VARCHAR(24) NOT NULL,
     attempts INTEGER NOT NULL DEFAULT 0,
     next_attempt_at TIMESTAMP,

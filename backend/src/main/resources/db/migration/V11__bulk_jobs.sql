@@ -11,7 +11,7 @@ CREATE TABLE bulk_jobs (
     failed_records INTEGER NOT NULL DEFAULT 0,
     input_file_reference VARCHAR(500),
     error_file_reference VARCHAR(500),
-    metadata_json CLOB NOT NULL,
+    metadata_json TEXT NOT NULL,
     last_error VARCHAR(1000),
     requested_at TIMESTAMP NOT NULL,
     started_at TIMESTAMP,
