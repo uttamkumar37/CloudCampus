@@ -1,6 +1,6 @@
 export type MobileShellPortal = {
-  backendRole: 'TENANT_ADMIN' | 'SCHOOL_ADMIN' | 'TEACHER' | 'STAFF' | 'PARENT' | 'STUDENT';
-  role: 'Tenant Admin' | 'School Admin' | 'Teacher' | 'Staff' | 'Parent' | 'Student';
+  backendRole: 'TENANT_ADMIN' | 'SCHOOL_ADMIN' | 'TEACHER' | 'FINANCE_STAFF' | 'STAFF' | 'PARENT' | 'STUDENT';
+  role: 'Tenant Admin' | 'School Admin' | 'Teacher' | 'Finance Staff' | 'Staff' | 'Parent' | 'Student';
   initialScope: string;
   requiresSchoolContext: boolean;
   supportsSchoolSwitching: boolean;
@@ -25,6 +25,13 @@ export const mobileShellPortals: MobileShellPortal[] = [
     backendRole: 'TEACHER',
     role: 'Teacher',
     initialScope: 'Assigned classes, attendance, homework, timetable, and marks.',
+    requiresSchoolContext: true,
+    supportsSchoolSwitching: true,
+  },
+  {
+    backendRole: 'FINANCE_STAFF',
+    role: 'Finance Staff',
+    initialScope: 'Assigned school fee demands, payments, receipts, and finance reports.',
     requiresSchoolContext: true,
     supportsSchoolSwitching: true,
   },

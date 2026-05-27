@@ -5,6 +5,7 @@ public enum UserRole {
     TENANT_ADMIN,
     SCHOOL_ADMIN,
     TEACHER,
+    FINANCE_STAFF,
     STAFF,
     PARENT,
     STUDENT

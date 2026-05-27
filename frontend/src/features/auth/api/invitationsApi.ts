@@ -8,7 +8,7 @@ export type AcceptInvitationResponse = {
   userId: string;
   tenantId: string;
   schoolId: string;
-  role: 'SCHOOL_ADMIN' | 'TENANT_ADMIN' | 'TEACHER' | 'STAFF' | 'PARENT' | 'STUDENT';
+  role: 'SCHOOL_ADMIN' | 'TENANT_ADMIN' | 'TEACHER' | 'FINANCE_STAFF' | 'STAFF' | 'PARENT' | 'STUDENT';
   status: 'ACTIVE';
   schoolAccessGranted: boolean;
 };

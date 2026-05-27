@@ -8,6 +8,17 @@ spring:
     password: ${CLOUDCAMPUS_JDBC_PASSWORD:}
   flyway:
     enabled: true
+  mail:
+    host: ${CLOUDCAMPUS_SMTP_HOST:}
+    port: ${CLOUDCAMPUS_SMTP_PORT:587}
+    username: ${CLOUDCAMPUS_SMTP_USERNAME:}
+    password: ${CLOUDCAMPUS_SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${CLOUDCAMPUS_SMTP_AUTH:true}
+          starttls:
+            enable: ${CLOUDCAMPUS_SMTP_STARTTLS:true}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -21,6 +32,9 @@ server:
   port: 8080
 
 management:
+  health:
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
@@ -29,3 +43,10 @@ management:
     health:
       probes:
         enabled: true
+
+cloudcampus:
+  notifications:
+    email:
+      mode: ${CLOUDCAMPUS_EMAIL_MODE:log}
+      from: ${CLOUDCAMPUS_EMAIL_FROM:no-reply@cloudcampus.local}
+      app-base-url: ${CLOUDCAMPUS_APP_BASE_URL:http://localhost:5173}

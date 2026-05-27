@@ -22,6 +22,7 @@ import com.cloudcampus.identity.auth.invitation.Invitation;
 import com.cloudcampus.identity.auth.invitation.InvitationRepository;
 import com.cloudcampus.identity.auth.invitation.InvitationTokenService;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
+import com.cloudcampus.notification.InvitationEmailDeliveryService;
 import com.cloudcampus.school.School;
 import com.cloudcampus.school.SchoolRepository;
 
@@ -39,6 +40,7 @@ public class StaffProvisioningService {
     private final SchoolRepository schoolRepository;
     private final SchoolAccessService schoolAccessService;
     private final AuditLogService auditLogService;
+    private final InvitationEmailDeliveryService invitationEmailDeliveryService;
 
     public StaffProvisioningService(
             StaffProfileRepository staffProfileRepository,
@@ -48,7 +50,8 @@ public class StaffProvisioningService {
             InvitationTokenService invitationTokenService,
             SchoolRepository schoolRepository,
             SchoolAccessService schoolAccessService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            InvitationEmailDeliveryService invitationEmailDeliveryService
     ) {
         this.staffProfileRepository = staffProfileRepository;
         this.userAccountRepository = userAccountRepository;
@@ -58,6 +61,7 @@ public class StaffProvisioningService {
         this.schoolRepository = schoolRepository;
         this.schoolAccessService = schoolAccessService;
         this.auditLogService = auditLogService;
+        this.invitationEmailDeliveryService = invitationEmailDeliveryService;
     }
 
     @Transactional
@@ -65,8 +69,10 @@ public class StaffProvisioningService {
         if (!Boolean.TRUE.equals(request.portalLoginRequired())) {
             throw new BadRequestException("STAFF-001 provisions only portal-login-required staff accounts.");
         }
-        if (request.role() != UserRole.TEACHER && request.role() != UserRole.STAFF) {
-            throw new BadRequestException("Only TEACHER or STAFF users can be provisioned from this endpoint.");
+        if (request.role() != UserRole.TEACHER
+                && request.role() != UserRole.FINANCE_STAFF
+                && request.role() != UserRole.STAFF) {
+            throw new BadRequestException("Only TEACHER, FINANCE_STAFF or STAFF users can be provisioned from this endpoint.");
         }
 
         School school = requireActiveSchoolAdminSchool(actor);
@@ -168,6 +174,7 @@ public class StaffProvisioningService {
                 invitationTokenService.hash(rawToken),
                 Instant.now().plus(7, ChronoUnit.DAYS)
         ));
+        invitationEmailDeliveryService.queueInvitation(invitation, "/invitations/accept?token=" + rawToken);
         return new IssuedInvitation(invitation, rawToken);
     }
 

@@ -9,6 +9,7 @@ describe('auth role model', () => {
       'TENANT_ADMIN',
       'SCHOOL_ADMIN',
       'TEACHER',
+      'FINANCE_STAFF',
       'STAFF',
       'PARENT',
       'STUDENT',

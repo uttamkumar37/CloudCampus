@@ -250,6 +250,122 @@ class FeeLifecycleFlowTest {
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
     }
 
+    @Test
+    void financeStaffCanManageFeesWithoutAcademicAdminAccess() throws Exception {
+        JsonNode onboarding = onboard("fee-life-d", "fee-school-d", "fee-admin-d@example.com");
+        String schoolAdminToken = activateSchoolAdmin(onboarding, "FeeAdminStrong123!");
+        Tenant tenant = tenantRepository.findById(onboarding.at("/tenant/id").asText()).orElseThrow();
+        School school = schoolRepository.findById(onboarding.at("/school/id").asText()).orElseThrow();
+        Student student = studentRepository.save(new Student(tenant, school, "FEE-400", "Finance Student"));
+
+        JsonNode financeStaff = provisionStaff(schoolAdminToken, """
+                {
+                  "fullName": "Finance One",
+                  "email": "finance-one@example.com",
+                  "role": "FINANCE_STAFF",
+                  "employeeNumber": "F-100",
+                  "department": "Finance",
+                  "designation": "Accountant",
+                  "portalLoginRequired": true
+                }
+                """);
+        assertThat(financeStaff.at("/role").asText()).isEqualTo("FINANCE_STAFF");
+        acceptInvitation(financeStaff.at("/invitationToken").asText(), "FinanceStrong123!", "Finance One");
+        JsonNode financeLogin = login("finance-one@example.com", "FinanceStrong123!");
+        assertThat(financeLogin.at("/user/role").asText()).isEqualTo("FINANCE_STAFF");
+        assertThat(financeLogin.at("/user/activeSchool/schoolId").asText()).isEqualTo(school.getId());
+        String financeToken = financeLogin.at("/accessToken").asText();
+
+        JsonNode demand = jsonBody(createFinanceDemand(financeToken, student.getId(), "Finance staff demand", "900.00"));
+        String demandId = demand.at("/id").asText();
+        mockMvc.perform(get("/v1/finance/fees/demands")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(demandId));
+
+        mockMvc.perform(post("/v1/finance/fees/demands/{demandId}/payments", demandId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "amount": 900.00,
+                                  "paymentMethod": "bank transfer",
+                                  "paymentReference": "finance-counter-ref"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("PAID"))
+                .andExpect(jsonPath("$.payments[0].receiptNumber").isNotEmpty());
+
+        mockMvc.perform(post("/v1/school-admin/academic-years")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "name": "2030-2031",
+                                  "startDate": "2030-04-01",
+                                  "endDate": "2031-03-31",
+                                  "activate": true
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        assertThat(auditLogRepository.findByTenantId(tenant.getId()))
+                .filteredOn(auditLog -> auditLog.getAction() == AuditAction.FEE_PAYMENT_RECORDED)
+                .anySatisfy(auditLog -> {
+                    assertThat(auditLog.getActorType()).isEqualTo("FINANCE_STAFF");
+                    assertThat(auditLog.getMetadataJson()).contains("\"actorRole\":\"FINANCE_STAFF\"");
+                    assertThat(auditLog.getMetadataJson()).doesNotContain("finance-counter-ref");
+                });
+    }
+
+    @Test
+    void financeStaffCannotAccessAnotherSchoolsFeeDemand() throws Exception {
+        JsonNode first = onboard("fee-life-e1", "fee-school-e1", "fee-admin-e1@example.com");
+        JsonNode second = onboard("fee-life-e2", "fee-school-e2", "fee-admin-e2@example.com");
+        String firstAdminToken = activateSchoolAdmin(first, "FeeAdminStrong123!");
+        String secondAdminToken = activateSchoolAdmin(second, "FeeAdminStrong123!");
+        String firstFinanceToken = financeStaffToken(firstAdminToken, "finance-e1@example.com");
+        Tenant secondTenant = tenantRepository.findById(second.at("/tenant/id").asText()).orElseThrow();
+        School secondSchool = schoolRepository.findById(second.at("/school/id").asText()).orElseThrow();
+        Student secondStudent = studentRepository.save(new Student(secondTenant, secondSchool, "FEE-500", "Other Finance Student"));
+        String secondDemandId = jsonBody(createDemand(secondAdminToken, secondStudent.getId(), "Other finance fee", "700.00"))
+                .at("/id")
+                .asText();
+
+        mockMvc.perform(get("/v1/finance/fees/demands/{demandId}", secondDemandId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(firstFinanceToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(post("/v1/finance/fees/demands/{demandId}/payments", secondDemandId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(firstFinanceToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "amount": 50.00,
+                                  "paymentMethod": "cash"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(post("/v1/finance/fees/demands")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(firstFinanceToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "studentId": "%s",
+                                  "description": "Blocked finance fee",
+                                  "amount": 50.00,
+                                  "dueDate": "2026-06-30"
+                                }
+                                """.formatted(secondStudent.getId())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
     private MvcResult createDemand(String token, String studentId, String description, String amount) throws Exception {
         return mockMvc.perform(post("/v1/school-admin/fees/demands")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -264,6 +380,44 @@ class FeeLifecycleFlowTest {
                         """.formatted(studentId, description, amount)))
                 .andExpect(status().isCreated())
                 .andReturn();
+    }
+
+    private MvcResult createFinanceDemand(String token, String studentId, String description, String amount) throws Exception {
+        return mockMvc.perform(post("/v1/finance/fees/demands")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "studentId": "%s",
+                                  "description": "%s",
+                                  "amount": %s,
+                                  "dueDate": "2026-06-30"
+                                }
+                                """.formatted(studentId, description, amount)))
+                .andExpect(status().isCreated())
+                .andReturn();
+    }
+
+    private String financeStaffToken(String schoolAdminToken, String email) throws Exception {
+        JsonNode financeStaff = provisionStaff(schoolAdminToken, """
+                {
+                  "fullName": "Finance Staff",
+                  "email": "%s",
+                  "role": "FINANCE_STAFF",
+                  "portalLoginRequired": true
+                }
+                """.formatted(email));
+        acceptInvitation(financeStaff.at("/invitationToken").asText(), "FinanceStrong123!", "Finance Staff");
+        return login(email, "FinanceStrong123!").at("/accessToken").asText();
+    }
+
+    private JsonNode provisionStaff(String token, String body) throws Exception {
+        return jsonBody(mockMvc.perform(post("/v1/school-admin/staff/provision")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType("application/json")
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andReturn());
     }
 
     private JsonNode linkParent(String token, String studentId, String parentEmail) throws Exception {

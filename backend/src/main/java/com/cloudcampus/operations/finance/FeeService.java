@@ -56,7 +56,7 @@ public class FeeService {
 
     @Transactional
     public FeeDemandResponse createDemand(AuthenticatedUser actor, FeeDemandRequest request) {
-        School school = requireActiveSchoolAdminSchool(actor);
+        School school = requireActiveFinanceSchool(actor);
         Student student = studentRepository.findById(request.studentId())
                 .orElseThrow(() -> new NotFoundException("Student was not found."));
         requireStudentInSchool(student, school.getId());
@@ -75,7 +75,7 @@ public class FeeService {
 
     @Transactional(readOnly = true)
     public List<FeeDemandResponse> schoolDemands(AuthenticatedUser actor) {
-        School school = requireActiveSchoolAdminSchool(actor);
+        School school = requireActiveFinanceSchool(actor);
         return feeDemandRepository.findBySchoolIdOrderByDueDateAscCreatedAtAsc(school.getId())
                 .stream()
                 .map(this::toResponse)
@@ -85,14 +85,14 @@ public class FeeService {
     @Transactional(readOnly = true)
     public FeeDemandResponse schoolDemand(AuthenticatedUser actor, String demandId) {
         FeeDemand demand = requireDemand(demandId);
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), demand.getSchool().getId());
+        schoolAccessService.requireSchoolFinanceAccess(actor.user().getId(), demand.getSchool().getId());
         return toResponse(demand);
     }
 
     @Transactional
     public FeeDemandResponse recordSchoolPayment(AuthenticatedUser actor, String demandId, FeePaymentRequest request) {
         FeeDemand demand = requireDemand(demandId);
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), demand.getSchool().getId());
+        schoolAccessService.requireSchoolFinanceAccess(actor.user().getId(), demand.getSchool().getId());
         recordPayment(actor.user(), demand, request);
         return toResponse(demand);
     }
@@ -156,12 +156,12 @@ public class FeeService {
         return payment;
     }
 
-    private School requireActiveSchoolAdminSchool(AuthenticatedUser actor) {
+    private School requireActiveFinanceSchool(AuthenticatedUser actor) {
         String activeSchoolId = actor.activeSchoolId();
         if (activeSchoolId == null || activeSchoolId.isBlank()) {
             throw new ForbiddenException("An active school is required.");
         }
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), activeSchoolId);
+        schoolAccessService.requireSchoolFinanceAccess(actor.user().getId(), activeSchoolId);
         return schoolRepository.findById(activeSchoolId)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }

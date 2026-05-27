@@ -4,6 +4,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { LoginPage } from './LoginPage';
 
 describe('LoginPage', () => {
+  it('labels the shared role login clearly', () => {
+    render(<LoginPage onSubmit={vi.fn()} storage={{ setItem: vi.fn() }} />);
+
+    expect(screen.getByRole('heading', { name: /cloudcampus login/i })).toBeInTheDocument();
+    expect(screen.getByText(/you will see your portal based on your role/i)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /school admin login/i })).not.toBeInTheDocument();
+  });
+
   it('submits credentials and stores the access token in session storage', async () => {
     const storage = { setItem: vi.fn() };
     const onSubmit = vi.fn().mockResolvedValue({

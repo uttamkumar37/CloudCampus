@@ -21,6 +21,7 @@ import com.cloudcampus.identity.auth.invitation.Invitation;
 import com.cloudcampus.identity.auth.invitation.InvitationRepository;
 import com.cloudcampus.identity.auth.invitation.InvitationTokenService;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
+import com.cloudcampus.notification.InvitationEmailDeliveryService;
 import com.cloudcampus.people.student.Student;
 import com.cloudcampus.people.student.StudentRepository;
 
@@ -37,6 +38,7 @@ public class ParentLinkService {
     private final InvitationTokenService invitationTokenService;
     private final SchoolAccessService schoolAccessService;
     private final AuditLogService auditLogService;
+    private final InvitationEmailDeliveryService invitationEmailDeliveryService;
 
     public ParentLinkService(
             StudentRepository studentRepository,
@@ -45,7 +47,8 @@ public class ParentLinkService {
             InvitationRepository invitationRepository,
             InvitationTokenService invitationTokenService,
             SchoolAccessService schoolAccessService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            InvitationEmailDeliveryService invitationEmailDeliveryService
     ) {
         this.studentRepository = studentRepository;
         this.parentStudentLinkRepository = parentStudentLinkRepository;
@@ -54,6 +57,7 @@ public class ParentLinkService {
         this.invitationTokenService = invitationTokenService;
         this.schoolAccessService = schoolAccessService;
         this.auditLogService = auditLogService;
+        this.invitationEmailDeliveryService = invitationEmailDeliveryService;
     }
 
     @Transactional
@@ -136,6 +140,7 @@ public class ParentLinkService {
                 invitationTokenService.hash(rawToken),
                 Instant.now().plus(7, ChronoUnit.DAYS)
         ));
+        invitationEmailDeliveryService.queueInvitation(invitation, "/invitations/accept?token=" + rawToken);
         return new IssuedInvitation(invitation, rawToken);
     }
 
