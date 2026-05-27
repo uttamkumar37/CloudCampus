@@ -1,14 +1,15 @@
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${CLOUDCAMPUS_DB_NAME:-cloudcampus}
       POSTGRES_USER: ${CLOUDCAMPUS_DB_USERNAME:-cloudcampus}
       POSTGRES_PASSWORD: ${CLOUDCAMPUS_DB_PASSWORD:-cloudcampus_local_password}
     ports:
-      - "${CLOUDCAMPUS_POSTGRES_PORT:-15432}:5432"
+      - "127.0.0.1:${CLOUDCAMPUS_POSTGRES_PORT:-15432}:5432"
     volumes:
-      - cloudcampus-postgres-data:/var/lib/postgresql/data
+      - cloudcampus-local-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${CLOUDCAMPUS_DB_USERNAME:-cloudcampus} -d ${CLOUDCAMPUS_DB_NAME:-cloudcampus}"]
       interval: 10s
@@ -16,38 +17,48 @@ services:
       retries: 12
 
   backend:
+    image: ${CLOUDCAMPUS_BACKEND_IMAGE:-cloudcampus-backend:local}
     build:
-      context: ../../..
+      context: .
       dockerfile: backend/Dockerfile
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-    env_file:
-      - ../../env/staging.example.env
     environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
       CLOUDCAMPUS_JDBC_URL: ${CLOUDCAMPUS_JDBC_URL:-jdbc:postgresql://postgres:5432/cloudcampus}
       CLOUDCAMPUS_JDBC_DRIVER: ${CLOUDCAMPUS_JDBC_DRIVER:-org.postgresql.Driver}
       CLOUDCAMPUS_JDBC_USERNAME: ${CLOUDCAMPUS_JDBC_USERNAME:-cloudcampus}
       CLOUDCAMPUS_JDBC_PASSWORD: ${CLOUDCAMPUS_JDBC_PASSWORD:-cloudcampus_local_password}
+      CLOUDCAMPUS_AUTH_JWT_SECRET: ${CLOUDCAMPUS_AUTH_JWT_SECRET:-local-only-change-me-cloudcampus-auth-token-secret-64-bytes}
       CLOUDCAMPUS_EMAIL_MODE: ${CLOUDCAMPUS_EMAIL_MODE:-log}
+      CLOUDCAMPUS_EMAIL_FROM: ${CLOUDCAMPUS_EMAIL_FROM:-no-reply@cloudcampus.local}
       CLOUDCAMPUS_APP_BASE_URL: ${CLOUDCAMPUS_APP_BASE_URL:-http://localhost:8088}
+      CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED: ${CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED:-false}
+      CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_EMAIL: ${CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_EMAIL:-}
+      CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD: ${CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD:-}
+      CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_DISPLAY_NAME: ${CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_DISPLAY_NAME:-CloudCampus Super Admin}
     ports:
-      - "${CLOUDCAMPUS_BACKEND_PORT:-18080}:8080"
+      - "127.0.0.1:${CLOUDCAMPUS_BACKEND_PORT:-18080}:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 12
+      start_period: 45s
 
   frontend:
+    image: ${CLOUDCAMPUS_FRONTEND_IMAGE:-cloudcampus-frontend:local}
     build:
-      context: ../../..
+      context: .
       dockerfile: frontend/Dockerfile
+    restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "${CLOUDCAMPUS_FRONTEND_PORT:-18088}:80"
+      - "127.0.0.1:${CLOUDCAMPUS_FRONTEND_PORT:-18088}:80"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null || exit 1"]
       interval: 15s
@@ -55,4 +66,4 @@ services:
       retries: 12
 
 volumes:
-  cloudcampus-postgres-data:
+  cloudcampus-local-postgres-data:
