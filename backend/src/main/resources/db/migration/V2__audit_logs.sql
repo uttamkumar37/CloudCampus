@@ -8,7 +8,7 @@ CREATE TABLE audit_logs (
     entity_type VARCHAR(80) NOT NULL,
     entity_id VARCHAR(36) NOT NULL,
     summary VARCHAR(500) NOT NULL,
-    metadata_json CLOB,
+    metadata_json TEXT,
     correlation_id VARCHAR(80),
     created_at TIMESTAMP NOT NULL,
     CONSTRAINT fk_audit_logs_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),

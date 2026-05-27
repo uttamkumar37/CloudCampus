@@ -17,6 +17,9 @@ yarn-error.log*
 target/
 *.class
 *.log
+infra/backup/local/
+*.dump
+*.dump.manifest
 
 .idea/
 .vscode/

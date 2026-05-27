@@ -8,7 +8,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -45,8 +44,7 @@ public class AuditLog {
     @Column(nullable = false, length = 500)
     private String summary;
 
-    @Lob
-    @Column(name = "metadata_json")
+    @Column(name = "metadata_json", columnDefinition = "TEXT")
     private String metadataJson;
 
     @Column(name = "correlation_id", length = 80)

@@ -10,6 +10,8 @@ infra/docker/frontend/nginx.conf
 infra/docker/local/compose.staging.yml
 infra/env/staging.example.env
 infra/monitoring/prometheus/cloudcampus-alerts.yml
+scripts/ops/backup-local-postgres.sh
+scripts/ops/restore-local-postgres-drill.sh
 scripts/ops/smoke-staging.sh
 "
 
@@ -26,6 +28,8 @@ if grep -R "[S]uperAdmin123!" infra/env .github/workflows scripts/ops scripts/ci
 fi
 
 sh -n scripts/ops/smoke-staging.sh
+sh -n scripts/ops/backup-local-postgres.sh
+sh -n scripts/ops/restore-local-postgres-drill.sh
 sh -n scripts/ci/validate-ops.sh
 
 if command -v docker >/dev/null 2>&1; then
