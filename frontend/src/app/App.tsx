@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -7,19 +7,40 @@ import {
   BrainCircuit,
   Building2,
   CalendarCheck,
+  ChevronDown,
   CircleDollarSign,
+  ClipboardCheck,
   Cloud,
+  Command,
+  FileText,
   GraduationCap,
+  Home,
   LineChart,
   LockKeyhole,
+  LogOut,
   MessageSquareText,
+  Moon,
   Newspaper,
+  PanelLeft,
+  ReceiptText,
+  School,
+  Search,
+  Settings,
   ShieldCheck,
   Sparkles,
   Star,
+  Sun,
+  UserCircle,
   Users,
   type LucideIcon,
 } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Tooltip,
+  XAxis,
+} from 'recharts';
 
 import { AcademicAssignmentsPage } from '../features/academic/pages/AcademicAssignmentsPage';
 import { AcademicSetupPage } from '../features/academic/pages/AcademicSetupPage';
@@ -59,6 +80,27 @@ type Metric = {
   value: string;
   delta: string;
   tone: 'blue' | 'emerald' | 'amber' | 'violet' | 'rose';
+};
+
+type AnalyticsPoint = {
+  label: string;
+  attendance: number;
+  collection: number;
+  engagement: number;
+};
+
+type QuickAction = {
+  label: string;
+  detail: string;
+  icon: LucideIcon;
+};
+
+type RoleInfoItem = {
+  label: string;
+  value: string;
+  detail: string;
+  icon: LucideIcon;
+  tone: Metric['tone'];
 };
 
 const ROLE_HOME: Record<UserRole, string> = {
@@ -160,7 +202,7 @@ const METRICS_BY_ROLE: Record<UserRole, Metric[]> = {
   SUPER_ADMIN: [
     { label: 'Active tenants', value: '1,284', delta: '+18 this month', tone: 'blue' },
     { label: 'Schools online', value: '8,940', delta: '99.98% uptime', tone: 'emerald' },
-    { label: 'MRR', value: '$428k', delta: '+12.4%', tone: 'violet' },
+    { label: 'Monthly revenue', value: '$428k', delta: '+12.4%', tone: 'violet' },
     { label: 'Pending invoices', value: '34', delta: '8 high value', tone: 'amber' },
   ],
   TENANT_ADMIN: [
@@ -171,7 +213,7 @@ const METRICS_BY_ROLE: Record<UserRole, Metric[]> = {
   ],
   SCHOOL_ADMIN: [
     { label: "Today's attendance", value: '94.8%', delta: '312 present', tone: 'emerald' },
-    { label: 'Fee collection', value: '78%', delta: '42 pending', tone: 'blue' },
+    { label: 'Fee collection today', value: '$18.4k', delta: '78% cycle progress', tone: 'blue' },
     { label: 'Upcoming exams', value: '6', delta: 'Next 14 days', tone: 'violet' },
     { label: 'Approvals', value: '18', delta: 'Parent links & imports', tone: 'amber' },
   ],
@@ -214,6 +256,112 @@ const TABLE_ROWS = [
   ['Midterm mathematics', 'Exams', 'Published', 'Academics'],
   ['Attendance risk cohort', 'AI insight', 'Review', 'Counsellor'],
 ];
+
+const ANALYTICS_BY_ROLE: Record<UserRole, AnalyticsPoint[]> = {
+  SUPER_ADMIN: [
+    { label: 'Jan', attendance: 86, collection: 72, engagement: 64 },
+    { label: 'Feb', attendance: 88, collection: 76, engagement: 69 },
+    { label: 'Mar', attendance: 91, collection: 79, engagement: 73 },
+    { label: 'Apr', attendance: 93, collection: 83, engagement: 78 },
+    { label: 'May', attendance: 95, collection: 88, engagement: 82 },
+  ],
+  TENANT_ADMIN: [
+    { label: 'Mon', attendance: 91, collection: 82, engagement: 74 },
+    { label: 'Tue', attendance: 93, collection: 84, engagement: 79 },
+    { label: 'Wed', attendance: 92, collection: 86, engagement: 81 },
+    { label: 'Thu', attendance: 95, collection: 89, engagement: 83 },
+    { label: 'Fri', attendance: 94, collection: 92, engagement: 86 },
+  ],
+  SCHOOL_ADMIN: [
+    { label: 'Mon', attendance: 88, collection: 62, engagement: 72 },
+    { label: 'Tue', attendance: 91, collection: 68, engagement: 76 },
+    { label: 'Wed', attendance: 93, collection: 71, engagement: 78 },
+    { label: 'Thu', attendance: 94, collection: 76, engagement: 83 },
+    { label: 'Fri', attendance: 95, collection: 81, engagement: 86 },
+  ],
+  TEACHER: [
+    { label: 'P1', attendance: 86, collection: 68, engagement: 74 },
+    { label: 'P2', attendance: 92, collection: 72, engagement: 81 },
+    { label: 'P3', attendance: 89, collection: 78, engagement: 84 },
+    { label: 'P4', attendance: 94, collection: 80, engagement: 88 },
+    { label: 'P5', attendance: 93, collection: 82, engagement: 87 },
+  ],
+  FINANCE_STAFF: [
+    { label: 'W1', attendance: 72, collection: 58, engagement: 66 },
+    { label: 'W2', attendance: 74, collection: 64, engagement: 70 },
+    { label: 'W3', attendance: 78, collection: 71, engagement: 75 },
+    { label: 'W4', attendance: 81, collection: 76, engagement: 78 },
+    { label: 'W5', attendance: 86, collection: 83, engagement: 84 },
+  ],
+  STAFF: [
+    { label: 'Mon', attendance: 84, collection: 68, engagement: 72 },
+    { label: 'Tue', attendance: 86, collection: 70, engagement: 74 },
+    { label: 'Wed', attendance: 88, collection: 73, engagement: 79 },
+    { label: 'Thu', attendance: 90, collection: 76, engagement: 82 },
+    { label: 'Fri', attendance: 92, collection: 78, engagement: 84 },
+  ],
+  PARENT: [
+    { label: 'W1', attendance: 94, collection: 76, engagement: 70 },
+    { label: 'W2', attendance: 92, collection: 78, engagement: 75 },
+    { label: 'W3', attendance: 95, collection: 81, engagement: 82 },
+    { label: 'W4', attendance: 96, collection: 86, engagement: 88 },
+    { label: 'W5', attendance: 96, collection: 91, engagement: 90 },
+  ],
+  STUDENT: [
+    { label: 'Mon', attendance: 84, collection: 70, engagement: 76 },
+    { label: 'Tue', attendance: 89, collection: 72, engagement: 80 },
+    { label: 'Wed', attendance: 91, collection: 75, engagement: 84 },
+    { label: 'Thu', attendance: 93, collection: 76, engagement: 88 },
+    { label: 'Fri', attendance: 94, collection: 78, engagement: 91 },
+  ],
+};
+
+const QUICK_ACTIONS_BY_ROLE: Record<UserRole, QuickAction[]> = {
+  SUPER_ADMIN: [
+    { label: 'Create tenant', detail: 'Create trust, first school and admin', icon: Building2 },
+    { label: 'Create plan', detail: 'Prepare subscription package', icon: ReceiptText },
+    { label: 'View audit logs', detail: 'Review privileged events', icon: FileText },
+    { label: 'System health', detail: 'Check platform readiness', icon: LineChart },
+  ],
+  TENANT_ADMIN: [
+    { label: 'Add school', detail: 'Add a new campus safely', icon: School },
+    { label: 'Invite School Admin', detail: 'Grant school access', icon: Users },
+    { label: 'View reports', detail: 'Compare school performance', icon: FileText },
+    { label: 'Subscription usage', detail: 'Review plan limits', icon: ReceiptText },
+  ],
+  SCHOOL_ADMIN: [
+    { label: 'Add student', detail: 'Validate and queue roster updates', icon: Users },
+    { label: 'Add teacher', detail: 'Provision portal access', icon: GraduationCap },
+    { label: 'Take attendance', detail: 'Open today’s classes', icon: CalendarCheck },
+    { label: 'Create notice', detail: 'Publish school update', icon: Newspaper },
+    { label: 'Create exam', detail: 'Prepare assessment flow', icon: ClipboardCheck },
+  ],
+  TEACHER: [
+    { label: 'Mark attendance', detail: 'Open assigned classes', icon: CalendarCheck },
+    { label: 'Create homework', detail: 'Prepare class work', icon: BookOpen },
+    { label: 'Enter marks', detail: 'Update exam scores', icon: ClipboardCheck },
+  ],
+  FINANCE_STAFF: [
+    { label: 'Record payment', detail: 'Issue receipt', icon: CircleDollarSign },
+    { label: 'Generate receipt', detail: 'Share payment proof', icon: ReceiptText },
+    { label: 'Export report', detail: 'Share collection view', icon: FileText },
+  ],
+  STAFF: [
+    { label: 'Open tasks', detail: 'Review school operations', icon: ClipboardCheck },
+    { label: 'Read notices', detail: 'Catch up on updates', icon: Newspaper },
+    { label: 'Support queue', detail: 'Follow assigned work', icon: MessageSquareText },
+  ],
+  PARENT: [
+    { label: 'Pay fees', detail: 'Review reminders', icon: CircleDollarSign },
+    { label: 'Apply leave', detail: 'Submit linked-child leave', icon: CalendarCheck },
+    { label: 'View results', detail: 'Review published marks', icon: GraduationCap },
+  ],
+  STUDENT: [
+    { label: 'Submit homework', detail: 'Track what is due', icon: BookOpen },
+    { label: 'View timetable', detail: 'Plan today’s classes', icon: CalendarCheck },
+    { label: 'View results', detail: 'Review published marks', icon: GraduationCap },
+  ],
+};
 
 export function App({ authClient, storage }: AppProps = {}) {
   return (
@@ -716,19 +864,15 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
         </div>
         <nav className="sidebar-nav" aria-label={`${portalTitle} navigation`}>
           {navItems.map((item) => (
-            <button
-              className={activeNav === item.id ? 'is-active' : ''}
+            <SidebarNavButton
+              isActive={activeNav === item.id}
+              item={item}
               key={item.id}
-              onClick={() => {
+              onSelect={() => {
                 setActiveNav(item.id);
                 setMobileOpen(false);
               }}
-              type="button"
-            >
-              <span className="nav-glyph" aria-hidden="true" />
-              <span>{item.label}</span>
-              {item.badge ? <em>{item.badge}</em> : null}
-            </button>
+            />
           ))}
         </nav>
         <AIAssistCard role={user.role} />
@@ -736,7 +880,10 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
 
       <section className="enterprise-main">
         <TopBar
+          activeNav={activeNav}
+          navItems={navItems}
           onOpenMenu={() => setMobileOpen(true)}
+          onSelectNav={setActiveNav}
           onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
           theme={theme}
           user={user}
@@ -755,57 +902,216 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
   );
 }
 
+function SidebarNavButton({
+  isActive,
+  item,
+  onSelect,
+}: {
+  isActive: boolean;
+  item: NavItem;
+  onSelect: () => void;
+}) {
+  const Icon = navIcon(item.id);
+
+  return (
+    <button
+      className={isActive ? 'is-active' : ''}
+      onClick={onSelect}
+      type="button"
+    >
+      <span className="nav-icon" aria-hidden="true"><Icon size={17} /></span>
+      <span>{item.label}</span>
+      {item.badge ? <em>{item.badge}</em> : null}
+    </button>
+  );
+}
+
 function TopBar({
+  activeNav,
+  navItems,
   onOpenMenu,
+  onSelectNav,
   onToggleTheme,
   theme,
   user,
 }: {
+  activeNav: string;
+  navItems: NavItem[];
   onOpenMenu: () => void;
+  onSelectNav: (navId: string) => void;
   onToggleTheme: () => void;
   theme: 'light' | 'dark';
   user: CurrentUser;
 }) {
   const { error, logout } = useAuthState();
+  const { date, time } = useLiveClock();
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const pageTitle = activeNav === 'dashboard' ? `${roleTitle(user.role)} Dashboard` : moduleTitle(activeNav);
+  const schoolLabel = user.activeSchool?.name ?? (user.role === 'SUPER_ADMIN' ? 'Platform scope' : 'No active school');
 
   return (
     <header className="topbar">
       <button className="icon-button mobile-menu-button" onClick={onOpenMenu} type="button" aria-label="Open navigation">
-        <span aria-hidden="true" />
+        <PanelLeft size={18} aria-hidden="true" />
       </button>
+      <div className="topbar-context">
+        <nav aria-label="Breadcrumbs">
+          <span>CloudCampus</span>
+          <span>{roleTitle(user.role)}</span>
+          <strong>{moduleTitle(activeNav)}</strong>
+        </nav>
+        <div>
+          <h1>{pageTitle}</h1>
+          <p><CalendarCheck size={15} aria-hidden="true" />{date}<span>{time}</span></p>
+        </div>
+      </div>
       <label className="global-search">
-        <span>Search</span>
-        <input placeholder="Search students, invoices, reports..." />
+        <Search size={17} aria-hidden="true" />
+        <input onFocus={() => setCommandOpen(true)} placeholder="Search students, invoices, reports..." />
+        <button onClick={() => setCommandOpen(true)} type="button" aria-label="Open command palette">
+          <Command size={14} aria-hidden="true" />
+          K
+        </button>
       </label>
       <div className="topbar-actions">
+        <button className="quick-action-button" onClick={() => setCommandOpen(true)} type="button">
+          <Sparkles size={16} aria-hidden="true" />
+          Actions
+        </button>
+        <button className="school-switcher-chip" onClick={() => setCommandOpen(true)} type="button">
+          <School size={16} aria-hidden="true" />
+          <span>{schoolLabel}</span>
+          <ChevronDown size={14} aria-hidden="true" />
+        </button>
         <ThemeToggle onToggle={onToggleTheme} theme={theme} />
-        <NotificationButton />
-        <div className="profile-menu">
+        <div className="topbar-popover-wrap">
+          <NotificationButton onClick={() => setNotificationsOpen((open) => !open)} />
+          {notificationsOpen ? <NotificationPopover /> : null}
+        </div>
+        <div className="profile-menu topbar-popover-wrap">
           <div className="avatar" aria-hidden="true">{user.email.charAt(0).toUpperCase()}</div>
           <div>
             <strong>{user.displayName ?? user.email}</strong>
             <span>{user.role.replace('_', ' ')}</span>
           </div>
-          <button onClick={() => void logout()} type="button">Log out</button>
+          <button className="profile-trigger" onClick={() => setProfileOpen((open) => !open)} type="button" aria-label="Open profile menu">
+            <ChevronDown size={16} aria-hidden="true" />
+          </button>
+          {profileOpen ? (
+            <div className="profile-popover" role="menu" aria-label="Profile menu">
+              <div className="profile-summary">
+                <strong>{user.displayName ?? user.email}</strong>
+                <span>{user.email}</span>
+                <em>{roleTitle(user.role)} · {schoolLabel}</em>
+                <small>Last login: Current session</small>
+              </div>
+              <button type="button"><UserCircle size={16} aria-hidden="true" />Profile</button>
+              <button type="button"><Settings size={16} aria-hidden="true" />Preferences</button>
+              <button onClick={() => void logout()} type="button"><LogOut size={16} aria-hidden="true" />Log out</button>
+            </div>
+          ) : null}
         </div>
       </div>
       {error ? <p className="topbar-error">{error}</p> : null}
+      {commandOpen ? (
+        <CommandPalette
+          navItems={navItems}
+          onClose={() => setCommandOpen(false)}
+          onSelect={(navId) => {
+            onSelectNav(navId);
+            setCommandOpen(false);
+          }}
+          role={user.role}
+        />
+      ) : null}
     </header>
+  );
+}
+
+function CommandPalette({
+  navItems,
+  onClose,
+  onSelect,
+  role,
+}: {
+  navItems: NavItem[];
+  onClose: () => void;
+  onSelect: (navId: string) => void;
+  role: UserRole;
+}) {
+  return (
+    <div className="command-overlay" role="dialog" aria-modal="true" aria-label="Command palette">
+      <button className="command-scrim" onClick={onClose} type="button" aria-label="Close command palette" />
+      <motion.section
+        className="command-panel"
+        initial={{ opacity: 0, y: -12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.18 }}
+      >
+        <div className="command-search-row">
+          <Search size={18} aria-hidden="true" />
+          <input autoFocus placeholder={`Search ${roleTitle(role)} workspace...`} />
+          <kbd>Esc</kbd>
+        </div>
+        <div className="command-list">
+          {navItems.slice(0, 8).map((item) => {
+            const Icon = navIcon(item.id);
+            return (
+              <button key={item.id} onClick={() => onSelect(item.id)} type="button">
+                <span><Icon size={17} aria-hidden="true" /></span>
+                <strong>{item.label}</strong>
+                <em>Open</em>
+              </button>
+            );
+          })}
+        </div>
+      </motion.section>
+    </div>
+  );
+}
+
+function NotificationPopover() {
+  return (
+    <div className="notification-popover" role="status" aria-label="Notification center">
+      <div>
+        <strong>Notification center</strong>
+        <span>Live delivery health</span>
+      </div>
+      {[
+        ['Invitation delivered', 'School Admin invite logged safely'],
+        ['Report export ready', 'Student directory CSV completed'],
+        ['AI insight', 'Attendance risk changed for Grade 8'],
+      ].map(([title, detail]) => (
+        <article key={title}>
+          <i aria-hidden="true" />
+          <span>
+            <strong>{title}</strong>
+            <small>{detail}</small>
+          </span>
+        </article>
+      ))}
+    </div>
   );
 }
 
 function PortalDashboard({ user }: { user: CurrentUser }) {
   const metrics = METRICS_BY_ROLE[user.role];
+  const chartData = ANALYTICS_BY_ROLE[user.role];
 
   return (
     <section className="dashboard-region" aria-labelledby={`${ROLE_HOME[user.role]}-dashboard`}>
       <div className="section-heading">
         <div>
           <p className="eyebrow">{user.role.replace('_', ' ')}</p>
-          <h2 id={`${ROLE_HOME[user.role]}-dashboard`}>{roleTitle(user.role)} Dashboard</h2>
+          <h2 id={`${ROLE_HOME[user.role]}-dashboard`}>{roleTitle(user.role)} Overview</h2>
         </div>
         <span className="context-pill">{user.activeSchool?.name ?? 'Platform scope'}</span>
       </div>
+
+      <SessionSummaryPanel user={user} />
+      <RoleInfoGrid user={user} />
 
       <div className="metric-grid">
         {metrics.map((metric) => (
@@ -814,10 +1120,76 @@ function PortalDashboard({ user }: { user: CurrentUser }) {
       </div>
 
       <div className="insight-grid">
+        <AnalyticsPanel data={chartData} role={user.role} />
+        <QuickActionsPanel role={user.role} />
         <AIInsightPanel role={user.role} />
         <NotificationCenter />
       </div>
     </section>
+  );
+}
+
+function SessionSummaryPanel({ user }: { user: CurrentUser }) {
+  const { date, time } = useLiveClock();
+  const activeSchool = user.activeSchool?.name ?? (user.role === 'SUPER_ADMIN' ? 'Platform owner scope' : 'No active school selected');
+
+  return (
+    <motion.section
+      className="session-summary-panel"
+      aria-labelledby={`${ROLE_HOME[user.role]}-session-summary`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28 }}
+    >
+      <div className="session-welcome">
+        <span className="status-chip info"><span className="live-dot" aria-hidden="true" />Session active</span>
+        <h3 id={`${ROLE_HOME[user.role]}-session-summary`}>Welcome, {user.displayName ?? user.email}</h3>
+        <p>{activeSchool}</p>
+      </div>
+      <dl className="session-facts">
+        <div>
+          <dt>Date</dt>
+          <dd>{date}</dd>
+        </div>
+        <div>
+          <dt>Time</dt>
+          <dd>{time}</dd>
+        </div>
+        <div>
+          <dt>Role</dt>
+          <dd>{roleTitle(user.role)}</dd>
+        </div>
+        <div>
+          <dt>Last login</dt>
+          <dd>Current session</dd>
+        </div>
+      </dl>
+    </motion.section>
+  );
+}
+
+function RoleInfoGrid({ user }: { user: CurrentUser }) {
+  return (
+    <div className="role-info-grid" aria-label={`${roleTitle(user.role)} dashboard information`}>
+      {roleInfoItems(user).map((item) => {
+        const Icon = item.icon;
+        return (
+          <motion.article
+            className={`role-info-card tone-${item.tone}`}
+            key={`${item.label}-${item.value}`}
+            whileHover={{ y: -3 }}
+            transition={{ type: 'spring', stiffness: 240, damping: 20 }}
+          >
+            <span className="role-info-icon" aria-hidden="true"><Icon size={18} /></span>
+            <div>
+              <p>{item.label}</p>
+              <strong>{item.value}</strong>
+              <em>{item.detail}</em>
+            </div>
+          </motion.article>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1011,12 +1383,71 @@ function LearnerStaffModule({ activeNav, role }: { activeNav: string; role: User
 
 function MetricCard({ metric }: { metric: Metric }) {
   return (
-    <article className={`metric-card tone-${metric.tone}`}>
+    <motion.article
+      className={`metric-card tone-${metric.tone}`}
+      whileHover={{ y: -4 }}
+      transition={{ type: 'spring', stiffness: 240, damping: 18 }}
+    >
       <span className="metric-dot" aria-hidden="true" />
       <p>{metric.label}</p>
       <strong>{metric.value}</strong>
       <em>{metric.delta}</em>
-    </article>
+    </motion.article>
+  );
+}
+
+function AnalyticsPanel({ data, role }: { data: AnalyticsPoint[]; role: UserRole }) {
+  return (
+    <section className="analytics-panel" aria-labelledby={`${ROLE_HOME[role]}-analytics`}>
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">Analytics</p>
+          <h3 id={`${ROLE_HOME[role]}-analytics`}>{analyticsTitle(role)}</h3>
+        </div>
+        <span className="status-chip info">Live model</span>
+      </div>
+      <div className="chart-shell" aria-label={`${roleTitle(role)} analytics trend`}>
+        <AreaChart width={560} height={230} data={data} margin={{ top: 10, right: 16, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id={`${ROLE_HOME[role]}-attendance`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.32} />
+              <stop offset="95%" stopColor="#2563eb" stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="label" tickLine={false} axisLine={false} />
+          <Tooltip />
+          <Area type="monotone" dataKey="attendance" stroke="#2563eb" strokeWidth={3} fill={`url(#${ROLE_HOME[role]}-attendance)`} />
+          <Area type="monotone" dataKey="engagement" stroke="#7c3aed" strokeWidth={2} fill="transparent" dot={false} />
+        </AreaChart>
+      </div>
+    </section>
+  );
+}
+
+function QuickActionsPanel({ role }: { role: UserRole }) {
+  return (
+    <section className="quick-actions-panel" aria-labelledby={`${ROLE_HOME[role]}-quick-actions`}>
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">Quick actions</p>
+          <h3 id={`${ROLE_HOME[role]}-quick-actions`}>Next best actions</h3>
+        </div>
+        <Sparkles size={18} aria-hidden="true" />
+      </div>
+      <div className="quick-action-list">
+        {QUICK_ACTIONS_BY_ROLE[role].map((action) => {
+          const Icon = action.icon;
+          return (
+            <button key={action.label} type="button">
+              <span aria-hidden="true"><Icon size={18} /></span>
+              <strong>{action.label}<small>{action.detail}</small></strong>
+              <ArrowRight size={16} aria-hidden="true" />
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -1036,8 +1467,19 @@ function ModernTable({ title }: { title: string }) {
         </div>
         <div className="table-actions">
           <input aria-label={`${title} search`} onChange={(event) => setQuery(event.target.value)} placeholder="Search" value={query} />
+          <button type="button">Filters</button>
+          <button type="button">Columns</button>
           <button type="button">Export</button>
         </div>
+      </div>
+      <div className="mobile-record-list" aria-label={`${title} mobile records`}>
+        {rows.map((row) => (
+          <article key={`mobile-${row.join('-')}`}>
+            <strong>{row[0]}</strong>
+            <span>{row[1]}</span>
+            <em>{row[2]}</em>
+          </article>
+        ))}
       </div>
       <div className="table-wrap">
         <table>
@@ -1061,9 +1503,8 @@ function ModernTable({ title }: { title: string }) {
       </div>
       <div className="table-footer">
         <span>{rows.length} records</span>
-        <span>Columns</span>
-        <span>Filters</span>
-        <span>Bulk actions</span>
+        <span>Page 1 of 1</span>
+        <span>Bulk actions ready</span>
       </div>
     </section>
   );
@@ -1191,10 +1632,10 @@ function AIAssistCard({ role }: { role: UserRole }) {
   );
 }
 
-function NotificationButton() {
+function NotificationButton({ onClick }: { onClick: () => void }) {
   return (
-    <button className="icon-button notification-dot" aria-label="Open notifications" type="button">
-      <span aria-hidden="true" />
+    <button className="icon-button notification-dot" aria-label="Open notifications" onClick={onClick} type="button">
+      <Bell size={17} aria-hidden="true" />
     </button>
   );
 }
@@ -1202,7 +1643,7 @@ function NotificationButton() {
 function ThemeToggle({ onToggle, theme }: { onToggle: () => void; theme: 'light' | 'dark' }) {
   return (
     <button className="theme-toggle" aria-label="Toggle theme" onClick={onToggle} type="button">
-      <span aria-hidden="true" />
+      {theme === 'light' ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
       <em>{theme === 'light' ? 'Light' : 'Dark'}</em>
     </button>
   );
@@ -1213,6 +1654,143 @@ function roleTitle(role: UserRole) {
     .split('_')
     .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
     .join(' ');
+}
+
+function navIcon(navId: string): LucideIcon {
+  if (navId.includes('dashboard')) return Home;
+  if (navId.includes('tenant') || navId.includes('school') || navId.includes('branding')) return Building2;
+  if (navId.includes('student') || navId.includes('parent') || navId.includes('teacher') || navId.includes('staff') || navId.includes('admin')) return Users;
+  if (navId.includes('attendance') || navId.includes('timetable') || navId.includes('leave')) return CalendarCheck;
+  if (navId.includes('homework') || navId.includes('resource')) return BookOpen;
+  if (navId.includes('exam') || navId.includes('result') || navId.includes('marks')) return GraduationCap;
+  if (navId.includes('fee') || navId.includes('payment') || navId.includes('receipt') || navId.includes('revenue') || navId.includes('subscription') || navId.includes('usage')) return CircleDollarSign;
+  if (navId.includes('notice') || navId.includes('notification')) return Bell;
+  if (navId.includes('report') || navId.includes('audit')) return FileText;
+  if (navId.includes('ai') || navId.includes('assistant')) return BrainCircuit;
+  if (navId.includes('health')) return LineChart;
+  if (navId.includes('setting')) return Settings;
+  return Sparkles;
+}
+
+function analyticsTitle(role: UserRole) {
+  if (role === 'SUPER_ADMIN') return 'Platform growth and reliability';
+  if (role === 'TENANT_ADMIN') return 'Organisation performance trend';
+  if (role === 'SCHOOL_ADMIN') return 'School operating rhythm';
+  if (role === 'FINANCE_STAFF') return 'Collection momentum';
+  if (role === 'TEACHER') return 'Class engagement trend';
+  if (role === 'PARENT') return 'Child progress pulse';
+  if (role === 'STUDENT') return 'Learning momentum';
+  return 'Operational throughput';
+}
+
+function roleInfoItems(user: CurrentUser): RoleInfoItem[] {
+  const schoolCount = String(user.allowedSchools.length);
+  const activeSchool = user.activeSchool?.name ?? 'Platform scope';
+
+  if (user.role === 'SUPER_ADMIN') {
+    return [
+      { label: 'Total users', value: '2.4M', detail: 'Across tenant schools', icon: Users, tone: 'blue' },
+      { label: 'API health', value: 'Normal', detail: '99.98% platform uptime', icon: ShieldCheck, tone: 'emerald' },
+      { label: 'Recent onboarding', value: '18', detail: 'New tenants this month', icon: Building2, tone: 'violet' },
+      { label: 'Audit alerts', value: '4', detail: 'Review privileged events', icon: FileText, tone: 'amber' },
+      { label: 'Notification delivery', value: '99.2%', detail: 'SMTP queue healthy', icon: Bell, tone: 'emerald' },
+    ];
+  }
+
+  if (user.role === 'TENANT_ADMIN') {
+    return [
+      { label: 'Organisation', value: user.tenantId, detail: 'Tenant workspace', icon: Building2, tone: 'blue' },
+      { label: 'Subscription plan', value: 'Growth', detail: 'School usage tracked', icon: ReceiptText, tone: 'violet' },
+      { label: 'School usage limit', value: `${schoolCount || '0'} / 15`, detail: 'Active schools in plan', icon: School, tone: 'emerald' },
+      { label: 'Students / teachers', value: '12.4k / 740', detail: 'Combined tenant roster', icon: Users, tone: 'blue' },
+      { label: 'Recent notices', value: '12', detail: 'Across connected schools', icon: Newspaper, tone: 'amber' },
+    ];
+  }
+
+  if (user.role === 'SCHOOL_ADMIN') {
+    return [
+      { label: 'School', value: activeSchool, detail: 'Active operating scope', icon: School, tone: 'blue' },
+      { label: 'Academic year', value: '2026-27', detail: 'Current planning cycle', icon: GraduationCap, tone: 'violet' },
+      { label: 'Students / teachers', value: '1,248 / 86', detail: 'Active roster count', icon: Users, tone: 'emerald' },
+      { label: 'Pending approvals', value: '18', detail: 'Parent links and imports', icon: ClipboardCheck, tone: 'amber' },
+      { label: 'Homework activity', value: '42', detail: 'Submissions pending review', icon: BookOpen, tone: 'blue' },
+      { label: 'Notices published', value: '7', detail: 'This week', icon: Newspaper, tone: 'emerald' },
+    ];
+  }
+
+  if (user.role === 'TEACHER') {
+    return [
+      { label: "Today's schedule", value: '5 classes', detail: '2 need attendance', icon: CalendarCheck, tone: 'blue' },
+      { label: 'Assigned classes', value: '4', detail: 'Server-scoped by assignment', icon: GraduationCap, tone: 'emerald' },
+      { label: 'Pending attendance', value: '2', detail: 'Needs marking today', icon: ClipboardCheck, tone: 'amber' },
+      { label: 'Homework review', value: '38', detail: 'Submissions pending', icon: BookOpen, tone: 'amber' },
+      { label: 'Upcoming exams', value: '2', detail: 'Marks workflow ready', icon: ClipboardCheck, tone: 'violet' },
+      { label: 'Recent notices', value: '6', detail: 'Class updates unread', icon: Newspaper, tone: 'blue' },
+    ];
+  }
+
+  if (user.role === 'FINANCE_STAFF') {
+    return [
+      { label: "Today's collection", value: '$18.4k', detail: '24 payments recorded', icon: CircleDollarSign, tone: 'emerald' },
+      { label: 'Pending dues', value: '42', detail: 'Needs follow-up', icon: ReceiptText, tone: 'amber' },
+      { label: 'Recent payments', value: '24', detail: 'Online and counter payments', icon: CircleDollarSign, tone: 'emerald' },
+      { label: 'Receipt count', value: '312', detail: 'This month', icon: FileText, tone: 'blue' },
+      { label: 'Failed payments', value: '3', detail: 'Review manually', icon: Bell, tone: 'rose' },
+      { label: 'Monthly collection', value: '$312k', detail: 'Collection graph below', icon: LineChart, tone: 'violet' },
+    ];
+  }
+
+  if (user.role === 'PARENT') {
+    return [
+      { label: 'Child selector', value: '1 child', detail: 'Linked by school access', icon: Users, tone: 'blue' },
+      { label: 'Attendance', value: '96%', detail: 'Current month', icon: CalendarCheck, tone: 'emerald' },
+      { label: 'Homework pending', value: '3', detail: 'Due within 48 hours', icon: BookOpen, tone: 'amber' },
+      { label: 'Fee due', value: '1 reminder', detail: 'Due this week', icon: CircleDollarSign, tone: 'amber' },
+      { label: 'Notices / exams', value: '4 / 2', detail: 'Recent notices and upcoming exams', icon: Newspaper, tone: 'blue' },
+      { label: 'Leave status', value: 'Open', detail: 'Request workflow ready', icon: ClipboardCheck, tone: 'violet' },
+    ];
+  }
+
+  if (user.role === 'STUDENT') {
+    return [
+      { label: 'Class / section', value: 'Grade 8 / A', detail: 'Student portal scope', icon: GraduationCap, tone: 'blue' },
+      { label: 'Attendance', value: '93%', detail: 'Above target', icon: CalendarCheck, tone: 'emerald' },
+      { label: 'Homework due', value: '4', detail: '2 due today', icon: BookOpen, tone: 'amber' },
+      { label: 'Upcoming exams', value: '3', detail: 'Next 14 days', icon: ClipboardCheck, tone: 'violet' },
+      { label: 'Recent results', value: 'A-', detail: 'Latest published marks', icon: LineChart, tone: 'blue' },
+      { label: 'Notices', value: '5', detail: 'School updates', icon: Newspaper, tone: 'amber' },
+      { label: 'AI study insights', value: 'Ready', detail: 'Placeholder enabled', icon: BrainCircuit, tone: 'emerald' },
+    ];
+  }
+
+  return [
+    { label: 'Assigned school', value: activeSchool, detail: 'Operational context', icon: School, tone: 'blue' },
+    { label: 'Open tasks', value: '14', detail: 'Staff operations queue', icon: ClipboardCheck, tone: 'amber' },
+    { label: 'Recent notices', value: '6', detail: '2 unread', icon: Newspaper, tone: 'violet' },
+    { label: 'Session scope', value: 'Active', detail: 'Role-safe workspace', icon: ShieldCheck, tone: 'emerald' },
+  ];
+}
+
+function useLiveClock() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  return useMemo(() => ({
+    date: new Intl.DateTimeFormat(undefined, {
+      day: '2-digit',
+      month: 'long',
+      weekday: 'long',
+      year: 'numeric',
+    }).format(now),
+    time: new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(now),
+  }), [now]);
 }
 
 function roleTableTitle(role: UserRole) {

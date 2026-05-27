@@ -1,0 +1,38 @@
+groups:
+  - name: cloudcampus-staging
+    rules:
+      - alert: CloudCampusBackendDown
+        expr: up{job="cloudcampus-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: CloudCampus backend is unavailable
+          description: The backend health scrape has failed for more than two minutes.
+
+      - alert: CloudCampusFrontendDown
+        expr: up{job="cloudcampus-frontend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: CloudCampus frontend is unavailable
+          description: The frontend health scrape has failed for more than two minutes.
+
+      - alert: CloudCampusBackendHighErrorRate
+        expr: sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count[5m])), 1) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: CloudCampus backend 5xx rate is elevated
+          description: More than five percent of backend requests are failing with 5xx responses.
+
+      - alert: CloudCampusBackendSlowRequests
+        expr: histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le)) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: CloudCampus backend latency is elevated
+          description: Backend p95 request latency is above two seconds.
