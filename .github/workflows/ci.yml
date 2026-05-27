@@ -120,6 +120,12 @@ jobs:
       - name: Validate staging compose
         run: docker compose -f infra/docker/local/compose.staging.yml config
 
+      - name: Validate deployment compose files
+        run: |
+          docker compose --env-file .env.example -f docker-compose.local.yml config
+          docker compose --env-file .env.staging.example -f docker-compose.staging.yml config
+          docker compose --env-file .env.production.example -f docker-compose.prod.yml config
+
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest

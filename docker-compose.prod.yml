@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${CLOUDCAMPUS_DB_NAME:?Set CLOUDCAMPUS_DB_NAME}
+      POSTGRES_USER: ${CLOUDCAMPUS_DB_USERNAME:?Set CLOUDCAMPUS_DB_USERNAME}
+      POSTGRES_PASSWORD: ${CLOUDCAMPUS_DB_PASSWORD:?Set CLOUDCAMPUS_DB_PASSWORD}
+    volumes:
+      - cloudcampus-prod-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CLOUDCAMPUS_DB_USERNAME:?Set CLOUDCAMPUS_DB_USERNAME} -d ${CLOUDCAMPUS_DB_NAME:?Set CLOUDCAMPUS_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    image: ${CLOUDCAMPUS_BACKEND_IMAGE:?Set CLOUDCAMPUS_BACKEND_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      CLOUDCAMPUS_JDBC_URL: ${CLOUDCAMPUS_JDBC_URL:?Set CLOUDCAMPUS_JDBC_URL}
+      CLOUDCAMPUS_JDBC_DRIVER: ${CLOUDCAMPUS_JDBC_DRIVER:-org.postgresql.Driver}
+      CLOUDCAMPUS_JDBC_USERNAME: ${CLOUDCAMPUS_JDBC_USERNAME:?Set CLOUDCAMPUS_JDBC_USERNAME}
+      CLOUDCAMPUS_JDBC_PASSWORD: ${CLOUDCAMPUS_JDBC_PASSWORD:?Set CLOUDCAMPUS_JDBC_PASSWORD}
+      CLOUDCAMPUS_AUTH_JWT_SECRET: ${CLOUDCAMPUS_AUTH_JWT_SECRET:?Set CLOUDCAMPUS_AUTH_JWT_SECRET}
+      CLOUDCAMPUS_EMAIL_MODE: ${CLOUDCAMPUS_EMAIL_MODE:?Set CLOUDCAMPUS_EMAIL_MODE}
+      CLOUDCAMPUS_EMAIL_FROM: ${CLOUDCAMPUS_EMAIL_FROM:?Set CLOUDCAMPUS_EMAIL_FROM}
+      CLOUDCAMPUS_APP_BASE_URL: ${CLOUDCAMPUS_APP_BASE_URL:?Set CLOUDCAMPUS_APP_BASE_URL}
+      CLOUDCAMPUS_SMTP_HOST: ${CLOUDCAMPUS_SMTP_HOST:?Set CLOUDCAMPUS_SMTP_HOST}
+      CLOUDCAMPUS_SMTP_PORT: ${CLOUDCAMPUS_SMTP_PORT:-587}
+      CLOUDCAMPUS_SMTP_USERNAME: ${CLOUDCAMPUS_SMTP_USERNAME:?Set CLOUDCAMPUS_SMTP_USERNAME}
+      CLOUDCAMPUS_SMTP_PASSWORD: ${CLOUDCAMPUS_SMTP_PASSWORD:?Set CLOUDCAMPUS_SMTP_PASSWORD}
+      CLOUDCAMPUS_SMTP_AUTH: ${CLOUDCAMPUS_SMTP_AUTH:-true}
+      CLOUDCAMPUS_SMTP_STARTTLS: ${CLOUDCAMPUS_SMTP_STARTTLS:-true}
+      CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED: "false"
+      CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_EMAIL: ""
+      CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD: ""
+      CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_DISPLAY_NAME: ${CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_DISPLAY_NAME:-CloudCampus Super Admin}
+    ports:
+      - "127.0.0.1:${CLOUDCAMPUS_BACKEND_PORT:-18080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+
+  frontend:
+    image: ${CLOUDCAMPUS_FRONTEND_IMAGE:?Set CLOUDCAMPUS_FRONTEND_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${CLOUDCAMPUS_FRONTEND_PORT:-18088}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  cloudcampus-prod-postgres-data:

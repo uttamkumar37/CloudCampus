@@ -226,6 +226,22 @@ class AuditCoverageMatrixTest {
                     )
             ),
             Map.entry(
+                    "com/cloudcampus/operations/timetable/TimetableController.java",
+                    evidence("com/cloudcampus/operations/timetable/TimetableService.java", "TIMETABLE_ENTRY_CREATED")
+            ),
+            Map.entry(
+                    "com/cloudcampus/operations/document/SchoolDocumentController.java",
+                    evidence("com/cloudcampus/operations/document/SchoolDocumentService.java", "DOCUMENT_CREATED")
+            ),
+            Map.entry(
+                    "com/cloudcampus/operations/website/WebsiteController.java",
+                    evidence(
+                            "com/cloudcampus/operations/website/WebsiteService.java",
+                            "WEBSITE_PAGE_CREATED",
+                            "WEBSITE_PAGE_PUBLISHED"
+                    )
+            ),
+            Map.entry(
                     "com/cloudcampus/operations/report/ReportExportController.java",
                     evidence(
                             "com/cloudcampus/operations/report/ReportExportService.java",
