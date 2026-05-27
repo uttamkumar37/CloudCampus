@@ -1,3 +1,5 @@
+import { httpClient } from '../../../shared/api/httpClient';
+
 export const BACKEND_USER_ROLES = [
   'SUPER_ADMIN',
   'TENANT_ADMIN',
@@ -57,100 +59,27 @@ export type ForgotPasswordResponse = {
 };
 
 export async function login(payload: LoginRequest): Promise<AuthSession> {
-  const response = await fetch('/v1/auth/login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Login failed.');
-  }
-
-  return response.json() as Promise<AuthSession>;
+  return httpClient.post<AuthSession>('/v1/auth/login', payload, { accessToken: null, retryOnUnauthorized: false });
 }
 
 export async function verifyMfa(challengeId: string, code: string): Promise<AuthSession> {
-  const response = await fetch('/v1/auth/mfa/verify', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ challengeId, code }),
-  });
-
-  if (!response.ok) {
-    throw new Error('MFA verification failed.');
-  }
-
-  return response.json() as Promise<AuthSession>;
+  return httpClient.post<AuthSession>('/v1/auth/mfa/verify', { challengeId, code }, { accessToken: null, retryOnUnauthorized: false });
 }
 
 export async function refreshSession(refreshToken: string): Promise<AuthSession> {
-  const response = await fetch('/v1/auth/refresh', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ refreshToken }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Session refresh failed.');
-  }
-
-  return response.json() as Promise<AuthSession>;
+  return httpClient.post<AuthSession>('/v1/auth/refresh', { refreshToken }, { accessToken: null, retryOnUnauthorized: false });
 }
 
 export async function logout(accessToken: string, refreshToken?: string): Promise<AuthMessage> {
-  const response = await fetch('/v1/me/logout', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ refreshToken }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Logout failed.');
-  }
-
-  return response.json() as Promise<AuthMessage>;
+  return httpClient.post<AuthMessage>('/v1/me/logout', { refreshToken }, { accessToken });
 }
 
 export async function forgotPassword(email: string): Promise<ForgotPasswordResponse> {
-  const response = await fetch('/v1/auth/forgot-password', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Password reset request failed.');
-  }
-
-  return response.json() as Promise<ForgotPasswordResponse>;
+  return httpClient.post<ForgotPasswordResponse>('/v1/auth/forgot-password', { email }, { accessToken: null, retryOnUnauthorized: false });
 }
 
 export async function resetPassword(token: string, password: string): Promise<AuthMessage> {
-  const response = await fetch('/v1/auth/reset-password', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ token, password }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Password reset failed.');
-  }
-
-  return response.json() as Promise<AuthMessage>;
+  return httpClient.post<AuthMessage>('/v1/auth/reset-password', { token, password }, { accessToken: null, retryOnUnauthorized: false });
 }
 
 export async function changePassword(
@@ -158,61 +87,17 @@ export async function changePassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<AuthMessage> {
-  const response = await fetch('/v1/me/change-password', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ currentPassword, newPassword }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Password change failed.');
-  }
-
-  return response.json() as Promise<AuthMessage>;
+  return httpClient.post<AuthMessage>('/v1/me/change-password', { currentPassword, newPassword }, { accessToken });
 }
 
 export async function getCurrentUser(accessToken: string): Promise<CurrentUser> {
-  const response = await fetch('/v1/me', {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Current user lookup failed.');
-  }
-
-  return response.json() as Promise<CurrentUser>;
+  return httpClient.get<CurrentUser>('/v1/me', { accessToken });
 }
 
 export async function getMySchools(accessToken: string): Promise<SchoolAccess[]> {
-  const response = await fetch('/v1/me/schools', {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('School access lookup failed.');
-  }
-
-  return response.json() as Promise<SchoolAccess[]>;
+  return httpClient.get<SchoolAccess[]>('/v1/me/schools', { accessToken });
 }
 
 export async function activateSchool(accessToken: string, schoolId: string): Promise<AuthSession> {
-  const response = await fetch(`/v1/me/schools/${schoolId}/activate`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('School activation failed.');
-  }
-
-  return response.json() as Promise<AuthSession>;
+  return httpClient.post<AuthSession>(`/v1/me/schools/${schoolId}/activate`, undefined, { accessToken });
 }

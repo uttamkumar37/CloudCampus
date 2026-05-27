@@ -12,4 +12,6 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, String
     List<UserAccount> findByEmailIgnoreCase(String email);
 
     long countByTenantIdAndRole(String tenantId, UserRole role);
+
+    List<UserAccount> findByTenantIdOrderByCreatedAtDesc(String tenantId);
 }

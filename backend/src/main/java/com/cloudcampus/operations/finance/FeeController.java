@@ -2,6 +2,7 @@ package com.cloudcampus.operations.finance;
 
 import java.util.List;
 
+import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -67,6 +69,25 @@ public class FeeController {
     @GetMapping("/v1/finance/fees/demands/{demandId}")
     ResponseEntity<FeeDemandResponse> financeDemand(@PathVariable String demandId, HttpServletRequest request) {
         return ResponseEntity.ok(feeService.schoolDemand(authenticatedUserResolver.requireUser(request), demandId));
+    }
+
+    @GetMapping("/v1/finance/receipts")
+    ResponseEntity<PageResponse<FinanceReceiptResponse>> financeReceipts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.ok(feeService.financeReceipts(authenticatedUserResolver.requireUser(request), page, size));
+    }
+
+    @GetMapping("/v1/finance/reports/summary")
+    ResponseEntity<FinanceReportSummaryResponse> financeReportSummary(HttpServletRequest request) {
+        return ResponseEntity.ok(feeService.financeReportSummary(authenticatedUserResolver.requireUser(request)));
+    }
+
+    @GetMapping("/v1/finance/reports/collections")
+    ResponseEntity<FinanceCollectionResponse> financeCollections(HttpServletRequest request) {
+        return ResponseEntity.ok(feeService.financeCollections(authenticatedUserResolver.requireUser(request)));
     }
 
     @PostMapping("/v1/school-admin/fees/demands/{demandId}/payments")

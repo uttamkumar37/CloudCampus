@@ -99,6 +99,17 @@ class StaffProvisioningFlowTest {
                 .extracting(StaffProfile::isPortalLoginRequired)
                 .isEqualTo(true);
 
+        mockMvc.perform(get("/v1/school-admin/teachers")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(schoolAdminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].userId").value(teacherUserId))
+                .andExpect(jsonPath("$.items[0].role").value("TEACHER"));
+
+        mockMvc.perform(get("/v1/school-admin/staff")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(schoolAdminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].userId").value(teacherUserId));
+
         acceptInvitation(
                 provisionedTeacher.at("/invitationToken").asText(),
                 "TeacherProvisioned123!",

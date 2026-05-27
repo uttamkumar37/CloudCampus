@@ -1,3 +1,5 @@
+import { httpClient } from '../../../shared/api/httpClient';
+
 export type StaffProvisioningRole = 'TEACHER' | 'FINANCE_STAFF' | 'STAFF';
 
 export type StaffProvisioningRequest = {
@@ -35,18 +37,5 @@ export async function provisionStaff(
   payload: StaffProvisioningRequest,
   accessToken: string,
 ): Promise<StaffProvisioningResponse> {
-  const response = await fetch('/v1/school-admin/staff/provision', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Staff provisioning failed.');
-  }
-
-  return response.json() as Promise<StaffProvisioningResponse>;
+  return httpClient.post<StaffProvisioningResponse>('/v1/school-admin/staff/provision', payload, { accessToken });
 }

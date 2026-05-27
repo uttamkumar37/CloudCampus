@@ -10,7 +10,11 @@ public interface SchoolRepository extends JpaRepository<School, String> {
 
     long countByTenantId(String tenantId);
 
+    long countByActiveTrue();
+
     long countByTenantIdAndActiveTrue(String tenantId);
 
     List<School> findByTenantIdOrderByNameAsc(String tenantId);
+
+    List<School> findAllByOrderByCreatedAtDesc();
 }

@@ -9,4 +9,6 @@ public interface NotificationDeliveryRepository extends JpaRepository<Notificati
     List<NotificationDelivery> findByInvitationId(String invitationId);
 
     List<NotificationDelivery> findByTenantId(String tenantId);
+
+    List<NotificationDelivery> findAllByOrderByCreatedAtDesc();
 }

@@ -9,5 +9,7 @@ public interface ReportExportJobRepository extends JpaRepository<ReportExportJob
 
     List<ReportExportJob> findBySchoolIdOrderByRequestedAtDesc(String schoolId);
 
+    List<ReportExportJob> findAllByOrderByRequestedAtDesc();
+
     Optional<ReportExportJob> findByBulkJobId(String bulkJobId);
 }

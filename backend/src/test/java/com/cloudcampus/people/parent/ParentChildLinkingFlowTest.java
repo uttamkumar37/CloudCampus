@@ -112,6 +112,13 @@ class ParentChildLinkingFlowTest {
         assertThat(parent.getStatus()).isEqualTo(UserStatus.INVITED);
         assertThat(invitationRepository.findById(link.at("/invitationId").asText())).isPresent();
 
+        mockMvc.perform(get("/v1/school-admin/parents")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(schoolAdminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].parentEmail").value("riya.parent@example.com"))
+                .andExpect(jsonPath("$.items[0].studentId").value(linkedStudent.getId()))
+                .andExpect(jsonPath("$.items[0].relationship").value("Mother"));
+
         Map<AuditAction, AuditLog> auditByAction = auditLogRepository.findByTenantId(tenant.getId())
                 .stream()
                 .filter(auditLog -> auditLog.getEntityId().equals(link.at("/linkId").asText())

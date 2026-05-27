@@ -17,5 +17,15 @@ public interface StudentRepository extends JpaRepository<Student, String> {
 
     List<Student> findBySchoolIdOrderByAdmissionNumberAsc(String schoolId);
 
+    List<Student> findBySchoolIdAndClassLevelIdAndActiveTrueOrderByAdmissionNumberAsc(String schoolId, String classLevelId);
+
+    List<Student> findBySchoolIdAndClassLevelIdAndSectionIdAndActiveTrueOrderByAdmissionNumberAsc(
+            String schoolId,
+            String classLevelId,
+            String sectionId
+    );
+
     long countByTenantId(String tenantId);
+
+    long countBySchoolIdAndActiveTrue(String schoolId);
 }

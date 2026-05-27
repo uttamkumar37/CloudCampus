@@ -24,7 +24,9 @@ import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
 import com.cloudcampus.identity.auth.UserAccount;
+import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
+import com.cloudcampus.people.parent.ParentStudentLinkRepository;
 import com.cloudcampus.people.student.Student;
 import com.cloudcampus.people.student.StudentRepository;
 import com.cloudcampus.school.School;
@@ -42,6 +44,7 @@ public class AttendanceService {
     private final SectionRepository sectionRepository;
     private final ClassSubjectAssignmentRepository classSubjectAssignmentRepository;
     private final StudentRepository studentRepository;
+    private final ParentStudentLinkRepository parentStudentLinkRepository;
     private final SchoolRepository schoolRepository;
     private final SchoolAccessService schoolAccessService;
     private final AcademicAssignmentService academicAssignmentService;
@@ -54,6 +57,7 @@ public class AttendanceService {
             SectionRepository sectionRepository,
             ClassSubjectAssignmentRepository classSubjectAssignmentRepository,
             StudentRepository studentRepository,
+            ParentStudentLinkRepository parentStudentLinkRepository,
             SchoolRepository schoolRepository,
             SchoolAccessService schoolAccessService,
             AcademicAssignmentService academicAssignmentService,
@@ -65,6 +69,7 @@ public class AttendanceService {
         this.sectionRepository = sectionRepository;
         this.classSubjectAssignmentRepository = classSubjectAssignmentRepository;
         this.studentRepository = studentRepository;
+        this.parentStudentLinkRepository = parentStudentLinkRepository;
         this.schoolRepository = schoolRepository;
         this.schoolAccessService = schoolAccessService;
         this.academicAssignmentService = academicAssignmentService;
@@ -137,6 +142,24 @@ public class AttendanceService {
                 session.getSubject().getId()
         );
         return toResponse(session);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudentAttendanceResponse> parentChildAttendance(AuthenticatedUser parent, String studentId) {
+        Student student = requireParentLinkedStudent(parent, studentId);
+        return attendanceRecordRepository.findByStudentIdOrderBySessionAttendanceDateDesc(student.getId())
+                .stream()
+                .map(this::toStudentAttendanceResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudentAttendanceResponse> studentAttendance(AuthenticatedUser actor) {
+        Student student = requireStudentProfile(actor);
+        return attendanceRecordRepository.findByStudentIdOrderBySessionAttendanceDateDesc(student.getId())
+                .stream()
+                .map(this::toStudentAttendanceResponse)
+                .toList();
     }
 
     private AttendanceSessionResponse createSession(
@@ -319,6 +342,51 @@ public class AttendanceService {
                 record.getStatus(),
                 record.getRemark()
         );
+    }
+
+    private StudentAttendanceResponse toStudentAttendanceResponse(AttendanceRecord record) {
+        AttendanceSession session = record.getSession();
+        Student student = record.getStudent();
+        return new StudentAttendanceResponse(
+                record.getId(),
+                record.getTenant().getId(),
+                record.getSchool().getId(),
+                session.getId(),
+                student.getId(),
+                student.getFullName(),
+                student.getAdmissionNumber(),
+                session.getClassLevel().getId(),
+                session.getClassLevel().getName(),
+                session.getSection() == null ? null : session.getSection().getId(),
+                session.getSection() == null ? null : session.getSection().getName(),
+                session.getSubject().getId(),
+                session.getSubject().getCode(),
+                session.getSubject().getName(),
+                session.getAttendanceDate(),
+                record.getStatus(),
+                record.getRemark(),
+                session.getCreatedAt()
+        );
+    }
+
+    private Student requireParentLinkedStudent(AuthenticatedUser actor, String studentId) {
+        if (actor.user().getRole() != UserRole.PARENT) {
+            throw new ForbiddenException("Parent access is required.");
+        }
+        return parentStudentLinkRepository.findByParentUserIdAndStudentId(actor.user().getId(), studentId)
+                .filter(link -> link.getTenant().getId().equals(actor.user().getTenant().getId()))
+                .filter(link -> link.getStudent().getTenant().getId().equals(actor.user().getTenant().getId()))
+                .map(link -> link.getStudent())
+                .orElseThrow(() -> new ForbiddenException("Parent is not linked to this child."));
+    }
+
+    private Student requireStudentProfile(AuthenticatedUser actor) {
+        if (actor.user().getRole() != UserRole.STUDENT) {
+            throw new ForbiddenException("Student access is required.");
+        }
+        return studentRepository.findByUserId(actor.user().getId())
+                .filter(student -> student.getTenant().getId().equals(actor.user().getTenant().getId()))
+                .orElseThrow(() -> new ForbiddenException("Student profile is not linked to this user."));
     }
 
     private long count(List<AttendanceRecordResponse> records, AttendanceStatus status) {

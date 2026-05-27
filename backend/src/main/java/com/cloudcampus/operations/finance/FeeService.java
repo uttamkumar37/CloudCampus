@@ -3,15 +3,19 @@ package com.cloudcampus.operations.finance;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.PageResponse;
+import com.cloudcampus.common.web.PageResponses;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserRole;
@@ -80,6 +84,61 @@ public class FeeService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<FinanceReceiptResponse> financeReceipts(AuthenticatedUser actor, int page, int size) {
+        School school = requireActiveFinanceSchool(actor);
+        return PageResponses.of(feePaymentRepository.findBySchoolIdOrderByPaidAtDesc(school.getId())
+                .stream()
+                .map(this::toReceiptResponse)
+                .toList(), page, size);
+    }
+
+    @Transactional(readOnly = true)
+    public FinanceReportSummaryResponse financeReportSummary(AuthenticatedUser actor) {
+        School school = requireActiveFinanceSchool(actor);
+        List<FeeDemand> demands = feeDemandRepository.findBySchoolIdOrderByDueDateAscCreatedAtAsc(school.getId());
+        List<FeePayment> payments = feePaymentRepository.findBySchoolIdOrderByPaidAtDesc(school.getId());
+        BigDecimal totalDemanded = demands.stream()
+                .map(FeeDemand::getAmountDue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalCollected = payments.stream()
+                .map(FeePayment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        long openCount = demands.stream().filter(demand -> demand.getStatus() == FeeDemandStatus.OPEN).count();
+        long partialCount = demands.stream().filter(demand -> demand.getStatus() == FeeDemandStatus.PARTIALLY_PAID).count();
+        long paidCount = demands.stream().filter(demand -> demand.getStatus() == FeeDemandStatus.PAID).count();
+        return new FinanceReportSummaryResponse(
+                totalDemanded,
+                totalCollected,
+                totalDemanded.subtract(totalCollected).max(BigDecimal.ZERO),
+                demands.size(),
+                payments.size(),
+                openCount,
+                partialCount,
+                paidCount
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public FinanceCollectionResponse financeCollections(AuthenticatedUser actor) {
+        School school = requireActiveFinanceSchool(actor);
+        Map<LocalDate, List<FeePayment>> byDate = feePaymentRepository.findBySchoolIdOrderByPaidAtDesc(school.getId())
+                .stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        payment -> payment.getPaidAt().atZone(java.time.ZoneOffset.UTC).toLocalDate(),
+                        () -> new TreeMap<LocalDate, List<FeePayment>>().descendingMap(),
+                        java.util.stream.Collectors.toList()
+                ));
+        return new FinanceCollectionResponse(byDate.entrySet()
+                .stream()
+                .map(entry -> new FinanceCollectionRowResponse(
+                        entry.getKey(),
+                        entry.getValue().stream().map(FeePayment::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add),
+                        entry.getValue().size()
+                ))
+                .toList());
     }
 
     @Transactional(readOnly = true)
@@ -236,6 +295,25 @@ public class FeeService {
                 payment.getPaymentReference(),
                 payment.getReceiptNumber(),
                 payment.getPaidAt()
+        );
+    }
+
+    private FinanceReceiptResponse toReceiptResponse(FeePayment payment) {
+        return new FinanceReceiptResponse(
+                payment.getId(),
+                payment.getTenant().getId(),
+                payment.getSchool().getId(),
+                payment.getDemand().getId(),
+                payment.getStudent().getId(),
+                payment.getStudent().getFullName(),
+                payment.getStudent().getAdmissionNumber(),
+                payment.getAmount(),
+                payment.getPaymentMethod(),
+                payment.getPaymentReference(),
+                payment.getReceiptNumber(),
+                payment.getPaidAt(),
+                payment.getRecordedBy().getId(),
+                payment.getRecordedBy().getDisplayName()
         );
     }
 

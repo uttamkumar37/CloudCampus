@@ -1,3 +1,5 @@
+import { httpClient } from '../../../shared/api/httpClient';
+
 export type ParentLinkRequest = {
   studentId: string;
   parentFullName: string;
@@ -28,18 +30,5 @@ export async function linkParentToStudent(
   payload: ParentLinkRequest,
   accessToken: string,
 ): Promise<ParentLinkResponse> {
-  const response = await fetch('/v1/school-admin/parent-links', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Parent link failed.');
-  }
-
-  return response.json() as Promise<ParentLinkResponse>;
+  return httpClient.post<ParentLinkResponse>('/v1/school-admin/parent-links', payload, { accessToken });
 }

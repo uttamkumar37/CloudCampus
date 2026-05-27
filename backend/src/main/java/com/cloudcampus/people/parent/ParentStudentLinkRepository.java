@@ -11,5 +11,9 @@ public interface ParentStudentLinkRepository extends JpaRepository<ParentStudent
 
     List<ParentStudentLink> findByParentUserId(String parentUserId);
 
+    List<ParentStudentLink> findBySchoolIdOrderByCreatedAtDesc(String schoolId);
+
+    long countBySchoolId(String schoolId);
+
     Optional<ParentStudentLink> findByParentUserIdAndStudentId(String parentUserId, String studentId);
 }

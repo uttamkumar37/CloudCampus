@@ -158,4 +158,8 @@ public class StaffProfile {
     public boolean isActive() {
         return active;
     }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 }

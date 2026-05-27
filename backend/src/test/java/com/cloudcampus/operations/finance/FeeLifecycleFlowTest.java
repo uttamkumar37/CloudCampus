@@ -297,6 +297,25 @@ class FeeLifecycleFlowTest {
                 .andExpect(jsonPath("$.status").value("PAID"))
                 .andExpect(jsonPath("$.payments[0].receiptNumber").isNotEmpty());
 
+        mockMvc.perform(get("/v1/finance/receipts")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].studentName").value("Finance Student"))
+                .andExpect(jsonPath("$.items[0].amount").value(900.00))
+                .andExpect(jsonPath("$.items[0].receiptNumber").isNotEmpty());
+
+        mockMvc.perform(get("/v1/finance/reports/summary")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalDemanded").value(900.00))
+                .andExpect(jsonPath("$.totalCollected").value(900.00))
+                .andExpect(jsonPath("$.receiptCount").value(1));
+
+        mockMvc.perform(get("/v1/finance/reports/collections")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].receiptCount").value(1));
+
         mockMvc.perform(post("/v1/school-admin/academic-years")
                         .header(HttpHeaders.AUTHORIZATION, bearer(financeToken))
                         .contentType("application/json")

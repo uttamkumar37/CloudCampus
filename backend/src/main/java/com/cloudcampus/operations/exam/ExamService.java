@@ -151,6 +151,24 @@ public class ExamService {
         return toResponseWithResults(exam);
     }
 
+    @Transactional(readOnly = true)
+    public List<ExamRosterStudentResponse> teacherExamRoster(AuthenticatedUser teacher, String examId) {
+        Exam exam = requireExam(examId);
+        academicAssignmentService.requireTeacherAssignment(
+                teacher,
+                exam.getClassLevel().getId(),
+                exam.getSubject().getId()
+        );
+        Map<String, ExamResult> resultsByStudentId = examResultRepository
+                .findByExamIdOrderByStudentAdmissionNumberAsc(exam.getId())
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(result -> result.getStudent().getId(), result -> result));
+        return studentsForExam(exam)
+                .stream()
+                .map(student -> toRosterStudentResponse(exam, student, resultsByStudentId.get(student.getId())))
+                .toList();
+    }
+
     @Transactional
     public ExamResponse recordTeacherMarks(AuthenticatedUser teacher, String examId, ExamMarksRequest request) {
         Exam exam = requireExam(examId);
@@ -251,6 +269,20 @@ public class ExamService {
         return student;
     }
 
+    private List<Student> studentsForExam(Exam exam) {
+        if (exam.getSection() == null) {
+            return studentRepository.findBySchoolIdAndClassLevelIdAndActiveTrueOrderByAdmissionNumberAsc(
+                    exam.getSchool().getId(),
+                    exam.getClassLevel().getId()
+            );
+        }
+        return studentRepository.findBySchoolIdAndClassLevelIdAndSectionIdAndActiveTrueOrderByAdmissionNumberAsc(
+                exam.getSchool().getId(),
+                exam.getClassLevel().getId(),
+                exam.getSection().getId()
+        );
+    }
+
     private void requireMarksWithinRange(Exam exam, BigDecimal marksObtained) {
         if (marksObtained.compareTo(BigDecimal.ZERO) < 0 || marksObtained.compareTo(exam.getMaxMarks()) > 0) {
             throw new BadRequestException("Marks must be between zero and the exam maximum.");
@@ -329,6 +361,23 @@ public class ExamService {
                 result.getRecordedByUser().getId(),
                 result.getMarksObtained(),
                 result.getRecordedAt()
+        );
+    }
+
+    private ExamRosterStudentResponse toRosterStudentResponse(Exam exam, Student student, ExamResult result) {
+        Section section = student.getSection();
+        return new ExamRosterStudentResponse(
+                student.getId(),
+                student.getAdmissionNumber(),
+                student.getFullName(),
+                exam.getClassLevel().getId(),
+                exam.getClassLevel().getName(),
+                section == null ? null : section.getId(),
+                section == null ? null : section.getName(),
+                student.getRollNumber(),
+                result == null ? null : result.getId(),
+                result == null ? null : result.getMarksObtained(),
+                result == null ? null : result.getRecordedAt()
         );
     }
 

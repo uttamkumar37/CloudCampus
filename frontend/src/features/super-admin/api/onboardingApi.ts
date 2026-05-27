@@ -1,3 +1,5 @@
+import { httpClient } from '../../../shared/api/httpClient';
+
 export type TenantOnboardingRequest = {
   tenant: {
     code: string;
@@ -47,18 +49,5 @@ export async function onboardTenant(
   payload: TenantOnboardingRequest,
   accessToken: string,
 ): Promise<TenantOnboardingResponse> {
-  const response = await fetch('/v1/super-admin/tenants/onboard', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Tenant onboarding failed.');
-  }
-
-  return response.json() as Promise<TenantOnboardingResponse>;
+  return httpClient.post<TenantOnboardingResponse>('/v1/super-admin/tenants/onboard', payload, { accessToken });
 }

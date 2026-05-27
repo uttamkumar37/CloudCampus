@@ -40,6 +40,14 @@ public class Tenant {
         this.name = name;
     }
 
+    public void updateStatus(TenantStatus status) {
+        this.status = status;
+    }
+
+    public void rename(String name) {
+        this.name = name.trim();
+    }
+
     @PrePersist
     void prePersist() {
         if (id == null) {

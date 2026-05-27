@@ -1,3 +1,5 @@
+import { httpClient } from '../../../shared/api/httpClient';
+
 export type SubjectRequest = {
   code: string;
   name: string;
@@ -53,58 +55,19 @@ export async function createSubject(
   payload: SubjectRequest,
   accessToken: string,
 ): Promise<SubjectResponse> {
-  const response = await fetch('/v1/school-admin/subjects', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Subject creation failed.');
-  }
-
-  return response.json() as Promise<SubjectResponse>;
+  return httpClient.post<SubjectResponse>('/v1/school-admin/subjects', payload, { accessToken });
 }
 
 export async function assignSubjectToClass(
   payload: ClassSubjectAssignmentRequest,
   accessToken: string,
 ): Promise<ClassSubjectAssignmentResponse> {
-  const response = await fetch('/v1/school-admin/class-subjects', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Class subject assignment failed.');
-  }
-
-  return response.json() as Promise<ClassSubjectAssignmentResponse>;
+  return httpClient.post<ClassSubjectAssignmentResponse>('/v1/school-admin/class-subjects', payload, { accessToken });
 }
 
 export async function assignTeacher(
   payload: TeacherAssignmentRequest,
   accessToken: string,
 ): Promise<TeacherAssignmentResponse> {
-  const response = await fetch('/v1/school-admin/teacher-assignments', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error('Teacher assignment failed.');
-  }
-
-  return response.json() as Promise<TeacherAssignmentResponse>;
+  return httpClient.post<TeacherAssignmentResponse>('/v1/school-admin/teacher-assignments', payload, { accessToken });
 }

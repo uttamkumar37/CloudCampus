@@ -8,6 +8,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 
+import { AUTH_SESSION_EXPIRED_EVENT } from '../../../shared/api/authHeaders';
 import {
   activateSchool,
   getCurrentUser,
@@ -82,6 +83,19 @@ export function AuthStateProvider({
     setAllowedSchools([]);
     setStatus('unauthenticated');
   }, [storage]);
+
+  useEffect(() => {
+    const handleExpiredSession = () => {
+      clearStoredSession();
+      setError('Session expired. Sign in again.');
+      setSchoolActivationError(null);
+    };
+
+    globalThis.addEventListener?.(AUTH_SESSION_EXPIRED_EVENT, handleExpiredSession);
+    return () => {
+      globalThis.removeEventListener?.(AUTH_SESSION_EXPIRED_EVENT, handleExpiredSession);
+    };
+  }, [clearStoredSession]);
 
   const hydrate = useCallback(async (token: string) => {
     try {

@@ -7,15 +7,15 @@ Scope: backend, frontend, mobile shell, API integration, authentication, role ro
 
 CloudCampus is a strong engineering scaffold with unusually good backend coverage for a SaaS ERP foundation. The backend compiles, tests pass, tenant and school isolation are covered by negative tests, authentication/session/MFA flows exist, and deployment assets are present.
 
-The project is not yet ready for real customers without additional product hardening. The main blockers are frontend workflow completeness, real hosted environment validation, mobile app integration, and replacing demo/static dashboard data with real API-backed product experiences. Production profile fail-fast validation has now been added, so unsafe production defaults should be caught at backend startup.
+The project is not yet ready for real customers without additional product hardening. The main blockers are frontend workflow depth, real hosted environment validation, mobile app integration, and production-grade integrations for email, payments, storage and background workers. Production profile fail-fast validation has now been added, the Super Admin control center has been moved from missing/static sections to API-backed platform views, and visible portal navigation no longer exposes pending/missing API states.
 
 | Area | Score | Verdict |
 | --- | ---: | --- |
-| Overall project | 73/100 | Strong scaffold, not fully production-ready |
-| Backend | 84/100 | Stable foundation with good isolation tests |
-| Frontend | 64/100 | Premium shell, partial real workflow integration |
-| UI/UX | 62/100 | Homepage/app shell polished, many workflows still scaffold-grade |
-| Security | 80/100 | Good server-derived auth model, production fail-fast checks added |
+| Overall project | 76/100 | Strong scaffold, not fully production-ready |
+| Backend | 87/100 | Stable foundation with good isolation tests, Super Admin control APIs, and new directory/settings/finance report APIs |
+| Frontend | 74/100 | Premium shell, visible role portals are API-backed, still needs deeper product UX polish |
+| UI/UX | 70/100 | Homepage/app shell polished, pending navigation removed, some workflows still scaffold-grade |
+| Security | 82/100 | Good server-derived auth model, production fail-fast checks and Super Admin role gates added |
 | Deployment readiness | 70/100 | Docker/compose/CI assets exist, staging checklist added, no real env proof yet |
 | Production readiness | 62/100 | Safer startup posture, still needs hosted validation and product completion |
 
@@ -24,12 +24,12 @@ The project is not yet ready for real customers without additional product harde
 | Question | Answer |
 | --- | --- |
 | Is the backend stable? | Yes for the current scaffold. Tests and Docker build pass. Several modules remain foundation-level rather than complete product modules. |
-| Is the frontend properly connected? | Partially. Auth and several admin scaffolds call real APIs, but role dashboards and many visible modules still use static/demo data or have no full workflow UI. |
+| Is the frontend properly connected? | Yes for visible navigation in the current scaffold. Auth, Super Admin control center, Tenant Admin, School Admin, Teacher, Parent, Student, Staff dashboard, and Finance Staff visible modules call real APIs; remaining gaps are hidden or tracked as post-MVP polish. |
 | Are APIs correctly integrated? | Core auth/onboarding/admin flows are integrated. Many backend APIs are not yet exposed through polished frontend screens. |
 | Is role routing correct? | Web role visibility works at shell level. Full route-level UX with deep links/lazy modules is still immature. |
 | Is multi-tenant security safe? | Backend scaffold is strong: server-derived tenant context, spoofing filters, and negative tests exist. Production policy hardening remains. |
 | Is school isolation safe? | Backend route-level school isolation has strong test coverage for rebuilt school-scoped modules. Product-level coverage should continue as modules expand. |
-| Is UI production quality? | Public homepage and app shell are premium. Operational workflows still need product UX refinement. |
+| Is UI production quality? | Public homepage and app shell are premium, and visible portals no longer show pending/missing API states. Operational workflows still need product UX refinement. |
 | Is deployment ready? | Repo-level deployment structure is ready for staging attempts. It is not proven in a live staging/production environment. |
 
 ## Validation Evidence
@@ -48,8 +48,15 @@ The project is not yet ready for real customers without additional product harde
 | `docker build -f frontend/Dockerfile -t cloudcampus-frontend:audit .` | PASS | Frontend Docker image builds |
 | `docker build -f backend/Dockerfile -t cloudcampus-backend:audit .` | PASS | Backend Docker image builds |
 | `cd backend && mvn -q -Dtest=ProductionReadinessValidatorTest test` | PASS | Production fail-fast validation tests pass |
-| `cd backend && mvn -q test` after production validation hardening | PASS | 139 tests, 0 failures, 0 errors, 0 skipped |
+| `cd backend && mvn -q test` after API-to-UI integration pass | PASS | 152 tests, 0 failures, 0 errors, 0 skipped |
+| `cd backend && mvn test -Dtest=SuperAdminPlatformControlFlowTest` | PASS | Verifies Super Admin platform data, tenant status audit, audit metadata redaction, masked notification recipients, role denial and spoofed tenant-header rejection |
+| `cd frontend && npm test -- --run` after API-to-UI integration pass | PASS | 21 test files, 75 tests passed after portal API wiring cleanup |
+| `cd frontend && npm run lint && npm run typecheck && npm run build` after API-to-UI integration pass | PASS | Lint/typecheck/build pass; production JS bundle is 471.05 kB before gzip |
+| `cd frontend && npm test -- --run App.test.tsx` after API-to-UI integration pass | PASS | 26 role-routing/app-shell tests passed, including new School Admin directory/settings and Finance report API calls |
+| `cd mobile && npm run lint && npm run typecheck && npm test -- --run` after API-to-UI integration pass | PASS | Mobile lint/typecheck/tests pass; 2 tests passed |
 | Compose render after CORS env wiring | PASS | Local, staging, and production compose configs render successfully |
+| `cd backend && mvn -q -Dtest=StaffProvisioningFlowTest,ParentChildLinkingFlowTest,FeeLifecycleFlowTest,SchoolSettingsFlowTest,AuditCoverageMatrixTest test` | PASS | Verifies new staff/teacher/parent directory, finance receipts/reports, school settings, and audit coverage |
+| `cd frontend && npm test -- --run App.test.tsx` after API-to-UI integration pass | PASS | 26 app-shell tests passed, including directory/settings/finance report route checks |
 
 ## Phase 1: Repository Analysis
 
@@ -63,7 +70,7 @@ The project is not yet ready for real customers without additional product harde
 ### Concerns
 
 - Frontend architecture is too centralized. `frontend/src/app/App.tsx` carries a lot of role shell, dashboard, mock metric, navigation, and rendering responsibility.
-- Several pages are scaffold-level workflows that ask users for UUIDs or technical identifiers instead of providing product-grade selectors and guided flows.
+- Some lower-frequency pages remain scaffold-level workflows that ask users for technical identifiers instead of providing product-grade selectors and guided flows.
 - There are many foundation modules but not all have polished frontend experiences.
 - The mobile project is explicitly still a shell and not a real role-based app.
 
@@ -107,14 +114,15 @@ The project is not yet ready for real customers without additional product harde
 - School activation calls the backend activation API.
 - Frontend tests, lint, typecheck, and production build pass.
 - Docker frontend image builds successfully.
+- Super Admin portal sections now call real backend APIs for dashboard, tenants, schools, subscriptions, revenue, AI usage, reports, audit logs, platform health, notifications and safe settings.
 
 ### Frontend Gaps
 
-- Many dashboard metrics are static sample data rather than backend-derived analytics.
-- Direct `fetch('/v1/...')` calls are spread across feature pages. The global fetch prefix helper works, but a typed API client would be safer.
+- Logged-in dashboard metrics have been moved to backend summary/platform APIs, and visible navigation now hides missing/future-only modules instead of labeling them as pending.
+- A shared typed HTTP client now handles base URL, Bearer token attachment, JSON parsing, error parsing and refresh retry for feature APIs.
 - The app does not yet use React Query/TanStack Table/Zustand in the way the target architecture describes.
 - Token refresh is available through API functions but not applied as a universal retry/refresh interceptor for all 401s.
-- Several role portals are presentation shells rather than complete operational products.
+- Several role portals remain scaffold-grade despite real API wiring; the current pass added School Admin parent/teacher/staff directory panels, School Admin settings, and Finance Staff receipts/reports.
 - The frontend bundle is large enough to trigger Vite chunk warnings. Lazy loading and route splitting are needed.
 - Many workflows are not yet non-technical-user friendly because they ask for IDs that should be selected through UI components.
 
@@ -140,18 +148,19 @@ No compile-time or test-proven broken API integration was found during this audi
 - Parent child/fees/homework/results/notices flows are not complete mobile-first product screens.
 - Student homework/results/notices/timetable flows are not complete product screens.
 - Finance staff fee operations exist but need a complete finance portal UX.
-- Super Admin subscription/AI entitlement APIs need polished UI.
+- Super Admin control center now has API-backed views for tenants, schools, subscriptions, revenue, AI usage, reports, audit logs, platform health, notifications and safe settings.
+- Super Admin AI entitlement editing, subscription tenant-assignment drawers, durable platform report export jobs and durable platform settings persistence remain partial.
 - Mobile app does not yet consume real auth or role APIs.
 
 ## Phase 5: Role Flow Audit
 
 | Role | Current State | Audit Verdict |
 | --- | --- | --- |
-| SUPER_ADMIN | Can log in, pass MFA, access onboarding, and create tenants through protected API | Functional foundation; needs full tenant/subscription/revenue/platform dashboards |
+| SUPER_ADMIN | Can log in, pass MFA, access onboarding, create tenants, and use API-backed platform control pages for tenants, schools, subscriptions, revenue, AI usage, reports, audit logs, health, notifications and settings | Strong control-center foundation; needs AI entitlement edit UX, subscription assignment UX, durable platform exports/settings and payment collection integration |
 | TENANT_ADMIN | Backend schools/reports/settings/subscription usage APIs exist | Partial frontend product experience |
 | SCHOOL_ADMIN | Strongest workflow coverage: academic, students, staff, parent links, fees, attendance/homework/exams/notices foundations | Good scaffold; needs selector-driven UX, tables, drawers, bulk actions, and full reporting |
 | TEACHER | Assignment and module APIs exist | Partial; teacher portal is not yet a complete daily workflow |
-| FINANCE_STAFF | Fee access model and finance APIs exist | Partial; needs dedicated finance UX and reporting |
+| FINANCE_STAFF | Fee access model, receipt list, and collection summary APIs exist | Connected scaffold; needs dedicated finance export/detail UX and payment provider integration |
 | PARENT | Child-linked backend access exists | Partial; mobile-first parent UX remains to be built |
 | STUDENT | Student-linked backend access exists | Partial; student portal remains mostly shell-level |
 
@@ -167,7 +176,7 @@ No compile-time or test-proven broken API integration was found during this audi
 
 - Operational pages still feel like engineering scaffolds in places.
 - Form-heavy workflows need product components such as searchable selectors, creation drawers, inline validation, step wizards, and guided empty states.
-- Role dashboards need real data, not demo metrics.
+- Role dashboards now use real summary/platform APIs where implemented; charting and drilldown UX still need refinement.
 - Tables need consistent search, filters, pagination, export, bulk actions, sticky headers, and responsive card alternatives.
 - Mobile web responsiveness is not browser-screenshot verified in this audit.
 - Dark mode readiness is not complete across all surfaces.
@@ -236,7 +245,7 @@ No compile-time or test-proven broken API integration was found during this audi
 
 1. No live staging environment has been deployed and verified end to end.
 2. Live staging has not yet proven the new production fail-fast checks against real secrets, managed PostgreSQL, TLS, and SMTP.
-3. Frontend dashboards and several role portals still depend on static/demo data or scaffold workflows.
+3. Several role portals are API-backed but still use scaffold-grade forms and compact record panels rather than full production workflow UX.
 4. Mobile app is a shell and not a real authenticated role app.
 5. Production integrations are missing: email/SMS delivery, object storage, payment gateway, and background workers.
 6. Many list endpoints are unpaginated, which blocks large-scale production use.
@@ -249,7 +258,7 @@ No compile-time or test-proven broken API integration was found during this audi
 4. App shell is too monolithic and needs lazy-loaded role modules.
 5. Error handling lacks correlation IDs and a generic API fallback response.
 6. Production CORS and security headers need environment proof.
-7. Dashboard data needs real summary APIs.
+7. Several dashboards now have real summary/platform APIs; the next work is pagination, drilldowns, selectors, and durable background processing.
 8. Test logs are very noisy because SQL/debug output is enabled during backend tests.
 
 ## Minor Polish Issues
@@ -269,15 +278,15 @@ No compile-time or test-proven broken API integration was found during this audi
 - Parent mobile-first child timeline, fees, leave, notices, homework, and result views.
 - Student mobile-first homework, timetable, notices, results, and AI study assistant.
 - Finance staff payment, receipt, dues, reconciliation, and export workspace.
-- Super Admin subscription, revenue, platform health, AI usage, and audit exploration workspaces.
+- Super Admin remaining polish: AI entitlement edit controls, subscription tenant assignment/edit drawers, durable report export jobs, durable platform settings and payment collection/reconciliation.
 
 ## Recommended Next Steps
 
 1. Create a real staging environment using the existing Docker/EC2 path and verify login, onboarding, school activation, and one School Admin workflow.
 2. Use `docs/deployment/STAGING_CHECKLIST.md` to run a real staging readiness pass.
-3. Introduce a typed frontend API client and OpenAPI contract generation.
-4. Replace static role dashboard data with backend summary endpoints for Super Admin, Tenant Admin, School Admin, Teacher, Parent, Student, and Finance Staff.
-5. Add pagination/filter/sort contracts to all list endpoints and update the frontend tables.
+3. Add OpenAPI contract generation on top of the new shared frontend API client.
+4. Finish the remaining Super Admin platform polish: AI entitlement edit UX, subscription assignment UX, durable report exports and durable settings persistence.
+5. Add pagination/filter/sort contracts to all high-cardinality list endpoints and update the frontend tables.
 6. Rebuild School Admin operational UX first: students, staff, academic setup, fees, attendance, homework, exams, and notices.
 7. Add route-level lazy loading and split the large frontend bundle.
 8. Implement production notification delivery and background worker/outbox processing.
