@@ -25,6 +25,7 @@ import com.cloudcampus.platform.subscription.SubscriptionPlan;
 import com.cloudcampus.platform.subscription.SubscriptionPlanRepository;
 import com.cloudcampus.platform.subscription.TenantInvoice;
 import com.cloudcampus.platform.subscription.TenantInvoiceRepository;
+import com.cloudcampus.platform.subscription.TenantSubscriptionRepository;
 import com.cloudcampus.platform.tenant.Tenant;
 import com.cloudcampus.platform.tenant.TenantRepository;
 import com.cloudcampus.platform.tenant.TenantStatus;
@@ -32,6 +33,7 @@ import com.cloudcampus.school.School;
 import com.cloudcampus.school.SchoolRepository;
 import com.cloudcampus.testsupport.AuthTestSupport;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -66,6 +68,9 @@ class SuperAdminPlatformControlFlowTest {
     private TenantInvoiceRepository tenantInvoiceRepository;
 
     @Autowired
+    private TenantSubscriptionRepository tenantSubscriptionRepository;
+
+    @Autowired
     private NotificationDeliveryRepository notificationDeliveryRepository;
 
     @Autowired
@@ -79,6 +84,12 @@ class SuperAdminPlatformControlFlowTest {
 
     @Autowired
     private JwtAccessTokenService jwtAccessTokenService;
+
+    @BeforeEach
+    void clearGlobalRevenueState() {
+        tenantInvoiceRepository.deleteAll();
+        tenantSubscriptionRepository.deleteAll();
+    }
 
     @Test
     void superAdminControlCenterReturnsRealPlatformDataAndAuditsTenantStatusMutation() throws Exception {
