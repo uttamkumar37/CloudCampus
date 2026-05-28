@@ -209,6 +209,7 @@ Every connected panel now has:
 - Finance standalone reports are now visible and connected to real summary, collection and receipt endpoints.
 - Parent/student attendance and timetable endpoints now exist.
 - Generic JSON payload panels are functional but not yet premium business forms for every low-frequency admin module.
+- `UX-STU-IMPORT-001` is complete in the web frontend: School Admin student import now loads active academic years, classes and sections through backend APIs; hides raw IDs; supports editable manual rows and CSV upload; calls validation before import/queue; shows row-level validation summary, loading, empty, error and success states; and keeps student login invitation behind a student selector rather than a raw Student ID field. This should be re-smoked in the next live staging environment.
 
 ## Super Admin Files Changed
 

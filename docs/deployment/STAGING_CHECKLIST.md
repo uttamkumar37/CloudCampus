@@ -7,12 +7,19 @@ Use this checklist before promoting any build beyond local development. Staging 
 - `SPRING_PROFILES_ACTIVE=staging`.
 - `CLOUDCAMPUS_JDBC_URL` points to PostgreSQL, not H2.
 - `CLOUDCAMPUS_AUTH_JWT_SECRET` is unique to staging, at least 64 characters, and not a placeholder.
+- `CLOUDCAMPUS_AUTH_JWT_SECRET` is not the local `.env.example` secret and is not reused from production.
 - `CLOUDCAMPUS_APP_BASE_URL` is the HTTPS staging frontend URL.
 - `CLOUDCAMPUS_CORS_ALLOWED_ORIGINS` is explicitly set to the HTTPS staging frontend origin.
 - `CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED=false` for shared staging.
 - `CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD` is blank for shared staging.
 - `CLOUDCAMPUS_EMAIL_MODE=log` is allowed only for dry-run staging. Use `smtp` for invitation delivery tests.
 - No real production secrets are used in staging.
+- No local-only credentials are used in staging: `SuperAdmin123!`, `cloudcampus_local_password`, local JWT secrets, `jdbc:h2:*`, localhost-only app URLs, and wildcard CORS are all forbidden.
+
+Local development exception:
+
+- `.env.example` and `docker-compose.local.yml` may contain clearly marked local-only placeholders for developer convenience.
+- Those values are never valid for shared staging, production, CI secrets, or a secret manager.
 
 ## 2. Compose and Container Checks
 
@@ -75,6 +82,7 @@ Do not promote staging to production until:
 - Backend tests pass.
 - Frontend tests, lint, typecheck, and build pass.
 - Mobile lint/typecheck pass if mobile was touched.
+- `sh scripts/ci/validate-ops.sh` passes.
 - Docker images are built from immutable commit SHA tags.
 - Staging smoke checks pass.
 - Rollback image tags are documented.

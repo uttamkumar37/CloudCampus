@@ -58,6 +58,10 @@ export async function createAcademicYear(
   return httpClient.post<AcademicYearResponse>('/v1/school-admin/academic-years', payload, { accessToken });
 }
 
+export async function listAcademicYears(accessToken: string): Promise<AcademicYearResponse[]> {
+  return httpClient.get<AcademicYearResponse[]>('/v1/school-admin/academic-years', { accessToken });
+}
+
 export async function createClassLevel(
   payload: ClassLevelRequest,
   accessToken: string,
@@ -65,9 +69,29 @@ export async function createClassLevel(
   return httpClient.post<ClassLevelResponse>('/v1/school-admin/classes', payload, { accessToken });
 }
 
+export async function listClassLevels(
+  academicYearId: string,
+  accessToken: string,
+): Promise<ClassLevelResponse[]> {
+  return httpClient.get<ClassLevelResponse[]>(
+    `/v1/school-admin/classes?academicYearId=${encodeURIComponent(academicYearId)}`,
+    { accessToken },
+  );
+}
+
 export async function createSection(
   payload: SectionRequest,
   accessToken: string,
 ): Promise<SectionResponse> {
   return httpClient.post<SectionResponse>('/v1/school-admin/sections', payload, { accessToken });
+}
+
+export async function listSections(
+  classLevelId: string,
+  accessToken: string,
+): Promise<SectionResponse[]> {
+  return httpClient.get<SectionResponse[]>(
+    `/v1/school-admin/sections?classLevelId=${encodeURIComponent(classLevelId)}`,
+    { accessToken },
+  );
 }

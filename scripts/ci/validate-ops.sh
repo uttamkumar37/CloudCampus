@@ -36,10 +36,71 @@ for file in $required_files; do
   fi
 done
 
-if grep -R "[S]uperAdmin123!" .env.example .env.staging.example .env.production.example docker-compose.local.yml docker-compose.staging.yml docker-compose.prod.yml infra/env infra/nginx .github/workflows scripts/ops scripts/ci docs/deployment 2>/dev/null; then
-  echo "Unsafe default Super Admin password found in ops/deploy files." >&2
+fail() {
+  echo "$1" >&2
   exit 1
-fi
+}
+
+assert_not_contains() {
+  pattern="$1"
+  message="$2"
+  shift 2
+  if grep -R "$pattern" "$@" 2>/dev/null; then
+    fail "$message"
+  fi
+}
+
+assert_contains() {
+  pattern="$1"
+  file="$2"
+  message="$3"
+  if ! grep -Eq "$pattern" "$file"; then
+    fail "$message"
+  fi
+}
+
+# Local development may keep clearly marked local-only placeholders in
+# .env.example and docker-compose.local.yml. Staging/production deploy assets
+# must never carry those convenient local credentials or local-only secrets.
+shared_deploy_files="
+.env.staging.example
+.env.production.example
+docker-compose.staging.yml
+docker-compose.prod.yml
+infra/env
+infra/nginx
+.github/workflows
+scripts/ops
+"
+
+assert_not_contains "[S]uperAdmin123!" "Unsafe local Super Admin password found outside local-only files." $shared_deploy_files
+assert_not_contains "cloudcampus_local_password" "Unsafe local database password found outside local-only files." $shared_deploy_files
+assert_not_contains "local-only-change-me-cloudcampus-auth-token-secret" "Unsafe local JWT secret found outside local-only files." $shared_deploy_files
+assert_not_contains "dev-only-cloudcampus-auth-token-secret" "Unsafe dev JWT secret found in deploy assets." $shared_deploy_files
+assert_not_contains "jdbc:h2:" "H2 database URL found in deploy assets." .env.staging.example .env.production.example docker-compose.staging.yml docker-compose.prod.yml infra/env
+
+assert_contains "^# LOCAL ONLY:" ".env.example" ".env.example must clearly mark local-only placeholders."
+assert_contains "LOCAL ONLY bootstrap account" ".env.example" ".env.example must mark bootstrap credentials as local-only."
+assert_contains "LOCAL ONLY bootstrap account" "docker-compose.local.yml" "docker-compose.local.yml must mark bootstrap defaults as local-only."
+
+assert_contains "^SPRING_PROFILES_ACTIVE=staging$" ".env.staging.example" "Staging template must use the staging profile."
+assert_contains "^CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED=false$" ".env.staging.example" "Staging template must disable Super Admin bootstrap."
+assert_contains "^CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD=$" ".env.staging.example" "Staging template must leave bootstrap password blank."
+assert_contains "^CLOUDCAMPUS_CORS_ALLOWED_ORIGINS=https://staging\\." ".env.staging.example" "Staging template must use an explicit HTTPS staging CORS origin."
+assert_contains "^CLOUDCAMPUS_AUTH_JWT_SECRET=replace-with-staging-64-byte-random-secret$" ".env.staging.example" "Staging template must require a replaced strong JWT secret."
+
+assert_contains "^SPRING_PROFILES_ACTIVE=prod$" ".env.production.example" "Production template must use the prod profile."
+assert_contains "^CLOUDCAMPUS_EMAIL_MODE=smtp$" ".env.production.example" "Production template must require SMTP mail mode."
+assert_contains "^CLOUDCAMPUS_ALLOW_LOG_EMAIL_IN_PRODUCTION=false$" ".env.production.example" "Production template must disallow log-only mail mode."
+assert_contains "^CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED=false$" ".env.production.example" "Production template must disable Super Admin bootstrap."
+assert_contains "^CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD=$" ".env.production.example" "Production template must leave bootstrap password blank."
+assert_contains "^CLOUDCAMPUS_CORS_ALLOWED_ORIGINS=https://app\\." ".env.production.example" "Production template must use an explicit HTTPS production CORS origin."
+assert_contains "^CLOUDCAMPUS_AUTH_JWT_SECRET=replace-with-production-64-byte-random-secret$" ".env.production.example" "Production template must require a replaced strong JWT secret."
+
+assert_contains "CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED: .*:-false" "docker-compose.staging.yml" "Staging compose must default bootstrap to false."
+assert_contains "CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD: .*:-}" "docker-compose.staging.yml" "Staging compose must default bootstrap password to blank."
+assert_contains "CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED: \"false\"" "docker-compose.prod.yml" "Production compose must force bootstrap disabled."
+assert_contains "CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD: \"\"" "docker-compose.prod.yml" "Production compose must force bootstrap password blank."
 
 sh -n scripts/ops/smoke-staging.sh
 sh -n scripts/ops/backup-local-postgres.sh

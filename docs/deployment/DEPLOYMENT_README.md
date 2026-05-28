@@ -20,6 +20,17 @@ This guide describes the EC2 Docker MVP deployment path. For production scale, m
 
 ## Local Docker Run
 
+Local development is allowed to use clearly marked placeholder credentials from `.env.example`, including the local-only bootstrap Super Admin account. These values are for developer machines only.
+
+Local-only account:
+
+```text
+Email: superadmin@cloudcampus.dev
+Password: SuperAdmin123!
+```
+
+Do not copy the local database password, local JWT secret, or local bootstrap credentials into `.env.staging`, `.env.production`, GitHub Actions secrets, EC2 user data, or a secret manager.
+
 ```bash
 cp .env.example .env
 docker compose -f docker-compose.local.yml up -d --build
@@ -89,17 +100,30 @@ sudo certbot --nginx -d staging.cloudcampus.example
 
 15. Run health checks from `docs/deployment/HEALTH_CHECK_GUIDE.md`.
 
+Staging secret policy:
+
+- Use `SPRING_PROFILES_ACTIVE=staging`.
+- Use a staging-only PostgreSQL password.
+- Use a staging-only JWT secret of at least 64 random characters.
+- Use explicit HTTPS CORS origins for the staging frontend only.
+- Keep `CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED=false` on shared staging.
+- Keep `CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD` blank on shared staging.
+- `CLOUDCAMPUS_EMAIL_MODE=log` is allowed only for dry-run staging. Use `smtp` for real invitation/password-reset delivery tests.
+- Never use `SuperAdmin123!`, local DB passwords, local JWT secrets, production secrets, H2 URLs, wildcard CORS, or localhost-only URLs in shared staging.
+
 ## EC2 Production Deployment
 
 Production is the same shape as staging, with stronger controls:
 
 - Use `.env.production` from a secret manager or server-only file.
 - Keep `CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED=false`.
+- Keep `CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD` blank.
 - Use a strong unique `CLOUDCAMPUS_AUTH_JWT_SECRET`.
 - Use SMTP mode with real provider credentials.
 - Use a production domain and HTTPS.
 - Enable backups before deployment.
 - Prefer RDS PostgreSQL. If using embedded EC2 PostgreSQL for MVP, schedule backups and restore drills.
+- Never use local placeholders, local-only bootstrap credentials, H2/local database URLs, wildcard CORS, empty secrets, or log-only mail mode in production.
 
 Start production:
 
