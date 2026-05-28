@@ -17,7 +17,7 @@ on:
       push_images:
         description: Push images to GitHub Container Registry
         required: true
-        default: true
+        default: false
         type: boolean
       deploy:
         description: Deploy after image build. Requires target environment secrets.
