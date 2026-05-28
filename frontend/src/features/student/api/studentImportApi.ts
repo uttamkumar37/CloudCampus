@@ -28,17 +28,25 @@ export type StudentImportValidationResponse = {
 export type StudentImportResponse = {
   imported: boolean;
   importedCount: number;
-  students: Array<{
-    id: string;
-    tenantId: string;
-    schoolId: string;
-    admissionNumber: string;
-    fullName: string;
-    classLevelId: string;
-    sectionId: string;
-    active: boolean;
-  }>;
+  students: StudentSummary[];
   errors: StudentImportError[];
+};
+
+export type StudentSummary = {
+  id: string;
+  tenantId: string;
+  schoolId: string;
+  admissionNumber: string;
+  fullName: string;
+  classLevelId: string;
+  sectionId: string;
+  rollNumber?: string | null;
+  dateOfBirth?: string | null;
+  gender?: string | null;
+  guardianName?: string | null;
+  guardianEmail?: string | null;
+  guardianMobile?: string | null;
+  active: boolean;
 };
 
 export type StudentImportJobResponse = {
@@ -91,6 +99,10 @@ export async function queueStudentImport(
   accessToken: string,
 ): Promise<StudentImportJobResponse> {
   return httpClient.post<StudentImportJobResponse>('/v1/school-admin/students/import/jobs', { rows }, { accessToken });
+}
+
+export async function listStudents(accessToken: string): Promise<StudentSummary[]> {
+  return httpClient.get<StudentSummary[]>('/v1/school-admin/students', { accessToken });
 }
 
 export async function inviteStudentLogin(

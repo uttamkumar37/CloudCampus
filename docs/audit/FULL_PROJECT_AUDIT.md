@@ -21,7 +21,7 @@ Latest validation deltas:
 | `cd mobile && npm run lint` | PASS | No lint errors reported |
 | `cd mobile && npm run typecheck` | PASS | No TypeScript errors |
 | `cd mobile && npm test -- --run` | PASS | 1 file, 2 tests |
-| `sh scripts/ci/validate-ops.sh` | FAIL | Flags local Super Admin example password in `.env.example`/local compose fallback; fix ops policy before claiming clean production readiness |
+| `sh scripts/ci/validate-ops.sh` | PASS | Local-only bootstrap placeholders are allowed only in local files; staging/prod deploy assets reject unsafe defaults |
 | `sh scripts/ci/security-audit.sh` | PASS gate | No high/critical advisories; mobile has moderate Expo transitive advisories |
 | Compose config render for local/staging/prod | PASS | All three compose files render with their env templates |
 

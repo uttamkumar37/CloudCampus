@@ -6,24 +6,24 @@ Scope: backend, frontend, mobile shell, API integration, security, data safety, 
 
 ## Part 1: Executive Summary
 
-Final verdict: `STAGING_READY`
+Final verdict: `STAGING_READY_FOR_RECREATE`
 
-Meaning: CloudCampus is ready for a controlled staging deployment attempt from the repository, but it is not yet ready for paid production or enterprise customers. The backend and web portal are strong enough for internal demos and staging smoke tests. Pilot usage should wait until a real staging environment is deployed and verified, production mail/storage/payment/monitoring/backups are configured, and the remaining scaffold-grade UX is tightened.
+Meaning: CloudCampus is ready to recreate a controlled staging deployment from the repository, and a disposable EC2/Docker HTTP staging smoke has already passed. The smoke host was terminated afterward to avoid ongoing cost, so there is no currently running staging URL. The backend and web portal are strong enough for internal demos and repeatable staging smoke tests. The highest-priority UUID-based student import UX issue found during smoke is fixed in the frontend. Pilot usage should wait until stable HTTPS staging is deployed, production mail/storage/payment/monitoring/backups are configured, exposed staging secrets are rotated, bootstrap is disabled, and the remaining scaffold-grade UX is tightened.
 
 It is not `PRODUCTION_READY` because production readiness requires more than passing tests: live infrastructure, real secrets, HTTPS/DNS, managed PostgreSQL, backups and restore proof, alerting, SMTP/provider delivery, object storage, payment reconciliation, and hosted staging verification are still not proven.
 
 | Area | Score | Verdict |
 | --- | ---: | --- |
-| Overall readiness | 74/100 | Strong staging candidate; not paid-production ready |
+| Overall readiness | 75/100 | Clean staging candidate; not paid-production ready |
 | Backend readiness | 88/100 | READY for staging, PARTIAL for production |
-| Frontend readiness | 78/100 | READY for staging demo, PARTIAL for customer-grade UX |
+| Frontend readiness | 80/100 | READY for staging demo, PARTIAL for broader customer-grade UX |
 | Mobile readiness | 35/100 | SCAFFOLD_ONLY |
 | Security readiness | 78/100 | SAFE_FOR_STAGING, needs hardening for production |
-| Deployment readiness | 66/100 | Repo assets exist; live staging not verified |
+| Deployment readiness | 74/100 | Repo assets pass and disposable EC2 HTTP smoke passed; stable HTTPS staging not running |
 | Data safety readiness | 62/100 | Migrations exist; hosted backup/restore not proven |
 | Monitoring readiness | 42/100 | Health endpoints exist; full observability missing |
 | Performance readiness | 60/100 | MVP scale likely; needs pagination/lazy loading/load tests |
-| Customer usability readiness | 67/100 | Good demo shell; several workflows remain scaffold-grade |
+| Customer usability readiness | 68/100 | Good demo shell; student import improved, other admin setup workflows still need polish |
 
 ## Part 2: Build Validation
 
@@ -37,7 +37,7 @@ It is not `PRODUCTION_READY` because production readiness requires more than pas
 | `cd mobile && npm run lint` | PASS | ESLint completed with no reported errors. | None |
 | `cd mobile && npm run typecheck` | PASS | TypeScript completed with no errors. | None |
 | `cd mobile && npm test -- --run` | PASS | 1 test file, 2 tests passed. | None |
-| `sh scripts/ci/validate-ops.sh` | FAIL | Script found `CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD=SuperAdmin123!` in `.env.example` and a local compose fallback. | Must reconcile local-dev example credentials with ops policy before claiming clean production readiness. |
+| `sh scripts/ci/validate-ops.sh` | PASS | Local-only placeholders are explicitly allowed only in `.env.example`/local compose; staging/prod deploy assets reject local defaults and unsafe bootstrap settings. | None |
 | `sh scripts/ci/security-audit.sh` | PASS gate | No frontend high/critical advisories; mobile has 10 moderate Expo transitive advisories. | Moderate advisories are not a hard gate but should be tracked before production mobile release. |
 | `docker compose --env-file .env.example -f docker-compose.local.yml config` | PASS | Local compose renders. | None |
 | `docker compose --env-file .env.staging.example -f docker-compose.staging.yml config` | PASS | Staging compose renders. | None |
@@ -200,7 +200,7 @@ Ready:
 
 Needs hardening:
 
-- `validate-ops.sh` fails due local Super Admin example credential policy.
+- Local-only Super Admin bootstrap credentials remain documented for developer machines only; staging/prod deploy assets are validated separately and reject those values.
 - MFA delivery/device trust is scaffold-grade.
 - No external secrets manager is configured.
 - No production CORS/domain/TLS environment has been verified.
@@ -318,8 +318,7 @@ Risks:
 
 | Blocker | Impact | Where found | Recommended fix | Priority | Estimated effort |
 | --- | --- | --- | --- | --- | --- |
-| No verified live staging environment | Cannot prove deployment path or end-to-end behavior outside local | Deployment audit | Deploy EC2/Docker staging, run smoke suite, record evidence | P0 | 1-2 days |
-| Ops validation fails on local default Super Admin password | CI readiness signal is red; production gate cannot be called clean | `scripts/ci/validate-ops.sh` output | Split local-dev example credential allowance from staging/prod policy or remove unsafe fallback | P0 | 0.5 day |
+| No stable HTTPS staging environment | Disposable EC2 HTTP smoke passed, but the host was terminated and no domain/TLS staging URL is running | Deployment audit and STAGE-001 smoke | Recreate staging with domain, HTTPS/TLS, rotated secrets, disabled bootstrap, and repeat smoke suite | P0 | 1-2 days |
 | No hosted backup/restore proof | Data recovery unknown | Data audit | Configure managed DB backups and run restore drill | P0 | 1 day |
 | No production monitoring/alerts | Incidents will be invisible | Monitoring audit | Deploy Prometheus/Grafana/alerts or managed equivalent | P0 | 1-2 days |
 | SMTP/provider delivery not proven | Invitations/password flows cannot be trusted for real users | Notification audit | Configure SMTP provider in staging and test invite/reset delivery | P0 | 0.5-1 day |
@@ -349,7 +348,7 @@ Risks:
 Current readiness:
 
 - Local development: READY
-- Staging deployment: READY TO ATTEMPT, NOT VERIFIED
+- Staging deployment: VERIFIED ON DISPOSABLE HTTP EC2, READY TO RECREATE; stable HTTPS staging NOT RUNNING
 - Internal demo: READY
 - Pilot customer: NOT READY
 - Paid production: NOT READY
@@ -357,11 +356,12 @@ Current readiness:
 
 What must be done before pilot:
 
-- Fix ops validation failure.
-- Deploy and verify a live staging environment.
+- Recreate stable staging with a domain and HTTPS/TLS.
+- Rotate all manually exposed staging secrets and disable bootstrap Super Admin.
 - Configure staging SMTP and prove invitation/password email delivery.
 - Configure managed PostgreSQL backups and perform restore drill.
 - Add basic hosted monitoring/alerts.
+- Re-smoke the improved School Admin student import dropdown workflow on the next live staging host.
 - Polish the highest-use School Admin, Teacher, Parent and Finance workflows.
 
 What must be done before paid production:
@@ -385,22 +385,21 @@ What can wait:
 
 | Order | Task ID | Title | Why it matters | Likely files touched | Scope | Validation commands | Done criteria |
 | ---: | --- | --- | --- | --- | --- | --- | --- |
-| 1 | OPS-VALID-001 | Fix ops validation policy for local bootstrap credentials | Current ops gate fails | `.env.example`, `docker-compose.local.yml`, `scripts/ci/validate-ops.sh`, docs | Infra | `sh scripts/ci/validate-ops.sh`, compose config commands | Local dev remains usable; staging/prod reject unsafe defaults; ops validation passes |
-| 2 | STAGE-001 | Deploy and verify EC2/Docker staging | Production path is unproven | deployment docs/scripts, GitHub env secrets | Infra | health curls, login/onboarding smoke, compose logs | Live staging URL works with backend readiness and frontend login |
-| 3 | OPS-BACKUP-001 | Managed DB backup and restore drill | Pilot data safety depends on restore proof | `docs/deployment/*`, scripts | Infra/DB | backup command, restore command, Flyway validate | Restore drill documented with timestamp and row/table proof |
-| 4 | NOTIF-PROVIDER-001 | Configure real staging SMTP delivery | Invitations/reset flows need real delivery | backend env/docs, notification tests | Backend/Infra | backend tests, staging invite smoke | School Admin invite and password reset arrive through provider without leaking tokens |
-| 5 | MON-001 | Deploy basic monitoring and alerts | Staging/pilot needs visibility | `infra/monitoring`, compose/docs | Infra | health alert simulation, dashboard check | Backend/frontend/up/down alerts and dashboards visible |
-| 6 | STORAGE-001 | Add object storage for documents and reports | Current metadata/DB file path is not production file handling | backend document/report services, env/docs | Backend/Infra | backend tests, upload/download smoke | Signed URLs work; cross-school access denied |
-| 7 | SCHOOL-UX-001 | Replace School Admin generic panels with product forms/tables | Main portal must be non-technical | frontend school-admin features | Frontend | frontend tests/lint/typecheck/build | Students, attendance, homework, fees use selectors/tables, not raw JSON |
-| 8 | FIN-PAY-001 | Payment gateway and receipt reconciliation plan/implementation | Paid customers need real fee collection | backend finance, frontend finance, docs | Backend/Frontend | backend tests, webhook tests, frontend tests | Payment status reconciles and receipts are safe |
-| 9 | API-CONTRACT-001 | Generate OpenAPI and add contract validation | Reduces frontend/backend drift | backend config, CI, docs | Backend/CI | backend tests, OpenAPI generation, CI | OpenAPI artifact generated and checked in CI |
-| 10 | PERF-001 | Add staging load/performance baseline | Scale readiness needs numbers | scripts/tests/docs | Backend/Frontend/Infra | load test script, backend tests, frontend build | Baseline p95/error-rate report recorded |
+| 1 | STAGE-HTTPS-001 | Recreate stable HTTPS staging | Disposable HTTP smoke passed but no staging URL is currently running | deployment docs/scripts, DNS/TLS env | Infra | health curls, login/onboarding smoke, compose logs | Stable HTTPS staging URL works and CORS/frontend URLs are correct |
+| 2 | OPS-SECRET-ROTATE-001 | Rotate exposed staging secrets and disable bootstrap | Manual smoke exposed temporary secrets in chat | `.env.staging` on server, deployment docs | Infra/Security | health checks, Super Admin login, onboarding smoke | New JWT/DB/admin secrets active; bootstrap disabled after controlled admin exists |
+| 3 | UX-STU-IMPORT-SMOKE-001 | Re-smoke improved student import UX on staging | New dropdown workflow needs live EC2 verification | staging smoke report, browser smoke notes | Frontend/Infra | live staging browser smoke, frontend tests | School Admin imports a student using dropdowns without seeing raw IDs |
+| 4 | OPS-BACKUP-001 | Managed DB backup and restore drill | Pilot data safety depends on restore proof | `docs/deployment/*`, scripts | Infra/DB | backup command, restore command, Flyway validate | Restore drill documented with timestamp and row/table proof |
+| 5 | NOTIF-PROVIDER-001 | Configure real staging SMTP delivery | Invitations/reset flows need real delivery | backend env/docs, notification tests | Backend/Infra | backend tests, staging invite smoke | School Admin invite and password reset arrive through provider without leaking tokens |
+| 6 | MON-001 | Deploy basic monitoring and alerts | Staging/pilot needs visibility | `infra/monitoring`, compose/docs | Infra | health alert simulation, dashboard check | Backend/frontend/up/down alerts and dashboards visible |
+| 7 | STORAGE-001 | Add object storage for documents and reports | Current metadata/DB file path is not production file handling | backend document/report services, env/docs | Backend/Infra | backend tests, upload/download smoke | Signed URLs work; cross-school access denied |
+| 8 | SCHOOL-UX-001 | Replace remaining School Admin generic panels with product forms/tables | Main portal must be non-technical | frontend school-admin features | Frontend | frontend tests/lint/typecheck/build | Attendance, homework, fees, academic setup use selectors/tables, not raw JSON |
+| 9 | PERF-001 | Add staging load/performance baseline | Scale readiness needs numbers | scripts/tests/docs | Backend/Frontend/Infra | load test script, backend tests, frontend build | Baseline p95/error-rate report recorded |
+| 10 | SEC-SESSION-001 | Harden browser session policy | Improves paid-production auth posture | frontend auth state, backend auth docs/tests | Frontend/Backend | frontend tests, backend auth tests | Explicit token storage, refresh expiry, logout and invalid-session UX are documented and tested |
 
 ## Safest Path to Production
 
-1. Fix the ops validation failure.
-2. Deploy staging and run the smoke checklist.
-3. Prove backups, restore, monitoring and SMTP in staging.
-4. Harden School Admin and Parent/Teacher/Finance UX for the first pilot workflow.
-5. Run a small pilot with non-critical data and active monitoring.
-6. Add payment, object storage, OpenAPI contracts and load tests before paid production.
+1. Deploy staging and run the smoke checklist.
+2. Prove backups, restore, monitoring and SMTP in staging.
+3. Harden School Admin and Parent/Teacher/Finance UX for the first pilot workflow.
+4. Run a small pilot with non-critical data and active monitoring.
+5. Add payment, object storage, OpenAPI contracts and load tests before paid production.

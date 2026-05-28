@@ -958,6 +958,123 @@ p {
   font-weight: 800;
 }
 
+.student-import-workflow {
+  display: grid;
+  gap: 18px;
+}
+
+.import-scope-grid,
+.student-import-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.student-import-fields {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.import-toolbar,
+.import-action-row,
+.student-import-row-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.import-toolbar {
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface-soft);
+}
+
+.import-toolbar div {
+  display: grid;
+  gap: 3px;
+}
+
+.import-toolbar strong,
+.student-import-row-header strong,
+.validation-summary strong {
+  color: var(--text);
+}
+
+.import-toolbar span,
+.validation-summary span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.csv-upload-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-height: 40px;
+  border-radius: 6px;
+  padding: 9px 13px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--primary), var(--violet));
+  font-size: 0.86rem;
+  font-weight: 800;
+  overflow: hidden;
+}
+
+.csv-upload-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.student-import-row-list {
+  display: grid;
+  gap: 12px;
+}
+
+.student-import-row {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--surface);
+}
+
+.student-import-row-header {
+  justify-content: space-between;
+}
+
+.student-import-row-header button {
+  min-height: 34px;
+  color: var(--rose);
+  background: #fff1f2;
+}
+
+.row-validation-list,
+.validation-summary {
+  border: 1px solid color-mix(in srgb, var(--rose) 28%, var(--border));
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #9f1239;
+  background: #fff1f2;
+}
+
+.row-validation-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 28px;
+  font-size: 0.86rem;
+}
+
+.validation-summary {
+  display: grid;
+  gap: 4px;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1551,7 +1668,9 @@ tr:last-child td {
   .brand-proof-grid,
   .metric-grid,
   .insight-grid,
-  .workspace-grid {
+  .workspace-grid,
+  .import-scope-grid,
+  .student-import-fields {
     grid-template-columns: 1fr;
   }
 
