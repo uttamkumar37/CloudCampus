@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -96,6 +96,11 @@ type NavItem = {
   label: string;
   status: ConnectionStatus;
   badge?: string;
+};
+
+type NavGroup = {
+  title: string;
+  itemIds: string[];
 };
 
 type ConnectionStatus = 'CONNECTED_REAL_API';
@@ -249,6 +254,15 @@ const QUICK_ACTIONS_BY_ROLE: Record<UserRole, QuickAction[]> = {
   STUDENT: [
     { label: 'Submit homework', detail: 'Track what is due', icon: BookOpen, navId: 'homework' },
     { label: 'View results', detail: 'Review published marks', icon: GraduationCap, navId: 'results' },
+  ],
+};
+
+const NAV_GROUPS_BY_ROLE: Partial<Record<UserRole, NavGroup[]>> = {
+  SUPER_ADMIN: [
+    { title: 'Platform', itemIds: ['dashboard', 'tenants', 'schools'] },
+    { title: 'Business', itemIds: ['subscriptions', 'revenue', 'reports'] },
+    { title: 'Operations', itemIds: ['health', 'notifications', 'audit'] },
+    { title: 'Settings', itemIds: ['ai-usage', 'settings'] },
   ],
 };
 
@@ -758,16 +772,21 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
           </div>
         </div>
         <nav className="sidebar-nav" aria-label={`${portalTitle} navigation`}>
-          {navItems.map((item) => (
-            <SidebarNavButton
-              isActive={activeNav === item.id}
-              item={item}
-              key={item.id}
-              onSelect={() => {
-                setActiveNav(item.id);
-                setMobileOpen(false);
-              }}
-            />
+          {groupedNavItems(user.role, navItems).map((group) => (
+            <div className="sidebar-nav-group" key={group.title}>
+              <p>{group.title}</p>
+              {group.items.map((item) => (
+                <SidebarNavButton
+                  isActive={activeNav === item.id}
+                  item={item}
+                  key={item.id}
+                  onSelect={() => {
+                    setActiveNav(item.id);
+                    setMobileOpen(false);
+                  }}
+                />
+              ))}
+            </div>
           ))}
         </nav>
         <AIAssistCard role={user.role} />
@@ -799,6 +818,27 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
 
 function visibleNavItems(role: UserRole) {
   return NAV_BY_ROLE[role].filter((item) => item.status === 'CONNECTED_REAL_API');
+}
+
+function groupedNavItems(role: UserRole, navItems: NavItem[]) {
+  const groups = NAV_GROUPS_BY_ROLE[role];
+  if (!groups) {
+    return [{ title: 'Workspace', items: navItems }];
+  }
+
+  const itemById = new Map(navItems.map((item) => [item.id, item]));
+  const groupedIds = new Set<string>();
+  const grouped = groups
+    .map((group) => {
+      const items = group.itemIds
+        .map((id) => itemById.get(id))
+        .filter((item): item is NavItem => Boolean(item));
+      items.forEach((item) => groupedIds.add(item.id));
+      return { title: group.title, items };
+    })
+    .filter((group) => group.items.length > 0);
+  const otherItems = navItems.filter((item) => !groupedIds.has(item.id));
+  return otherItems.length > 0 ? [...grouped, { title: 'More', items: otherItems }] : grouped;
 }
 
 function SidebarNavButton({
@@ -848,7 +888,7 @@ function TopBar({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const pageTitle = activeNav === 'dashboard' ? `${roleTitle(user.role)} Dashboard` : moduleTitle(activeNav);
-  const schoolLabel = user.activeSchool?.name ?? (user.role === 'SUPER_ADMIN' ? 'Platform scope' : 'No active school');
+  const schoolLabel = user.activeSchool?.name ?? (user.role === 'SUPER_ADMIN' ? 'Platform-wide access' : 'No current school');
 
   return (
     <header className="topbar">
@@ -1023,7 +1063,7 @@ function PortalDashboard({
       } catch (caught) {
         if (!mounted) return;
         setSummary(null);
-        setError(caught instanceof Error ? caught.message : 'Dashboard summary API is unavailable.');
+        setError(caught instanceof Error ? caught.message : 'Dashboard summary is unavailable.');
         setStatus('unavailable');
       }
     }
@@ -1039,10 +1079,12 @@ function PortalDashboard({
     <section className="dashboard-region" aria-labelledby={`${ROLE_HOME[user.role]}-dashboard`}>
       <div className="section-heading">
         <div>
-          <p className="eyebrow">{user.role.replace('_', ' ')}</p>
-          <h2 id={`${ROLE_HOME[user.role]}-dashboard`}>{roleTitle(user.role)} Overview</h2>
+          <p className="eyebrow">{user.role === 'SUPER_ADMIN' ? 'CloudCampus Platform' : roleTitle(user.role)}</p>
+          <h2 id={`${ROLE_HOME[user.role]}-dashboard`}>
+            {user.role === 'SUPER_ADMIN' ? 'Welcome back, CloudCampus Super Admin' : `${roleTitle(user.role)} Overview`}
+          </h2>
         </div>
-        <span className="context-pill">{user.activeSchool?.name ?? 'Platform scope'}</span>
+        <span className="context-pill">{user.activeSchool?.name ?? (user.role === 'SUPER_ADMIN' ? 'Platform-wide access' : 'No current school')}</span>
       </div>
 
       <SessionSummaryPanel user={user} />
@@ -1057,8 +1099,7 @@ function PortalDashboard({
 }
 
 function SessionSummaryPanel({ user }: { user: CurrentUser }) {
-  const { date, time } = useLiveClock();
-  const activeSchool = user.activeSchool?.name ?? (user.role === 'SUPER_ADMIN' ? 'Platform owner scope' : 'No active school selected');
+  const signedInAs = user.displayName ?? (user.role === 'SUPER_ADMIN' ? 'CloudCampus Super Admin' : user.email);
 
   return (
     <motion.section
@@ -1070,25 +1111,29 @@ function SessionSummaryPanel({ user }: { user: CurrentUser }) {
     >
       <div className="session-welcome">
         <span className="status-chip info"><span className="live-dot" aria-hidden="true" />Session active</span>
-        <h3 id={`${ROLE_HOME[user.role]}-session-summary`}>Welcome, {user.displayName ?? user.email}</h3>
-        <p>{activeSchool}</p>
+        <h3 id={`${ROLE_HOME[user.role]}-session-summary`}>Account Session</h3>
+        <p>{sessionSummaryLine(user)}</p>
       </div>
       <dl className="session-facts">
         <div>
-          <dt>Date</dt>
-          <dd>{date}</dd>
-        </div>
-        <div>
-          <dt>Time</dt>
-          <dd>{time}</dd>
+          <dt>Signed in as</dt>
+          <dd>{signedInAs}</dd>
         </div>
         <div>
           <dt>Role</dt>
           <dd>{roleTitle(user.role)}</dd>
         </div>
         <div>
+          <dt>Access level</dt>
+          <dd>{roleAccessLevel(user)}</dd>
+        </div>
+        <div>
           <dt>Last login</dt>
           <dd>Current session</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>Active</dd>
         </div>
       </dl>
     </motion.section>
@@ -1133,7 +1178,7 @@ function RoleWorkspace({ activeNav, user }: { activeNav: string; user: CurrentUs
   if (user.role === 'TENANT_ADMIN') {
     return (
       <section className="role-workspace" aria-label="Tenant Admin area">
-        <WorkspaceHeader title="Organisation workspace" activeNav={activeNav} />
+        <WorkspaceHeader title="Organization workspace" activeNav={activeNav} />
         <TenantAdminModule activeNav={activeNav} />
       </section>
     );
@@ -1355,7 +1400,7 @@ function DashboardWorkspacePanel({ role }: { role: UserRole }) {
       <EndpointListPanel title={`${roleTitle(role)} live summary`} path={endpoint} />
       <EmptyState
         title="Production workspace"
-        detail="This dashboard is backed by the authenticated summary API above. Use the sidebar to open the verified operational modules for this role."
+        detail="Use the sidebar to open the tools available for this role."
       />
     </div>
   );
@@ -1465,7 +1510,7 @@ function TeacherScopedPortalPanel({ activeNav }: { activeNav: string }) {
     <section className="data-surface" aria-labelledby={`teacher-${activeNav}-title`}>
       <div className="surface-toolbar">
         <div>
-          <p className="eyebrow">Connected real API</p>
+          <p className="eyebrow">Ready</p>
           <h3 id={`teacher-${activeNav}-title`}>{activeNav === 'classes' ? 'My Classes' : moduleTitle(activeNav)}</h3>
         </div>
         {needsAssignment ? (
@@ -1492,7 +1537,7 @@ function TeacherScopedPortalPanel({ activeNav }: { activeNav: string }) {
       {!error && status !== 'loading' && assignments.length > 0 && items.length === 0 ? (
         <div className="api-empty-state">
           <strong>No records yet</strong>
-          <span>The backend returned an empty list for this teacher scope.</span>
+          <span>New class activity will appear here when it is available.</span>
         </div>
       ) : null}
       <div className="api-record-list">
@@ -1500,7 +1545,7 @@ function TeacherScopedPortalPanel({ activeNav }: { activeNav: string }) {
           <article key={recordKey(item, index)}>
             <strong>{recordTitle(item, index)}</strong>
             <span>{recordDetail(item)}</span>
-            <code>{recordId(item)}</code>
+            <DeveloperDetails><span>{recordId(item)}</span></DeveloperDetails>
           </article>
         ))}
       </div>
@@ -1736,7 +1781,7 @@ function TeacherMarksEntryPanel() {
     <section className="data-surface marks-entry-panel" aria-labelledby="teacher-marks-title">
       <div className="surface-toolbar">
         <div>
-          <p className="eyebrow">Connected real API</p>
+          <p className="eyebrow">Ready</p>
           <h3 id="teacher-marks-title">Teacher Marks Entry</h3>
         </div>
         {hasUnsavedChanges ? <span className="status-chip warning">Unsaved changes</span> : <span className="status-chip info">Saved</span>}
@@ -1945,7 +1990,7 @@ function ParentChildPortalPanel({ activeNav }: { activeNav: string }) {
     <section className="data-surface" aria-labelledby={`parent-${activeNav}-title`}>
       <div className="surface-toolbar">
         <div>
-          <p className="eyebrow">Connected child-scoped API</p>
+          <p className="eyebrow">Ready</p>
           <h3 id={`parent-${activeNav}-title`}>{activeNav === 'children' ? 'My Children' : moduleTitle(activeNav)}</h3>
         </div>
         {activeNav !== 'children' && activeNav !== 'dashboard' ? (
@@ -1972,7 +2017,7 @@ function ParentChildPortalPanel({ activeNav }: { activeNav: string }) {
       {!error && status !== 'loading' && children.length > 0 && items.length === 0 ? (
         <div className="api-empty-state">
           <strong>No records yet</strong>
-          <span>The backend returned an empty list for this child.</span>
+          <span>New child activity will appear here when it is available.</span>
         </div>
       ) : null}
       <div className="api-record-list">
@@ -1980,7 +2025,7 @@ function ParentChildPortalPanel({ activeNav }: { activeNav: string }) {
           <article key={recordKey(item, index)}>
             <strong>{recordTitle(item, index)}</strong>
             <span>{recordDetail(item)}</span>
-            <code>{recordId(item)}</code>
+            <DeveloperDetails><span>{recordId(item)}</span></DeveloperDetails>
           </article>
         ))}
       </div>
@@ -2014,12 +2059,12 @@ function DashboardSummaryPanel({
   if (status === 'unavailable') {
     return (
       <section className="data-surface api-contract-state" aria-labelledby={`${ROLE_HOME[user.role]}-summary-unavailable`}>
-        <p className="eyebrow">Live dashboard API</p>
-        <h3 id={`${ROLE_HOME[user.role]}-summary-unavailable`}>Dashboard summary is not connected yet</h3>
-        <p>
-          No demo numbers are displayed. The frontend attempted the {roleTitle(user.role)} summary API and received:
-        </p>
-        <code>{error ?? 'Summary endpoint unavailable'}</code>
+        <p className="eyebrow">Dashboard summary</p>
+        <h3 id={`${ROLE_HOME[user.role]}-summary-unavailable`}>Dashboard summary is getting ready</h3>
+        <p>Live activity will appear here as soon as this workspace has recent data.</p>
+        <DeveloperDetails>
+          <span>{error ?? 'Summary service unavailable'}</span>
+        </DeveloperDetails>
       </section>
     );
   }
@@ -2029,9 +2074,9 @@ function DashboardSummaryPanel({
   if (metrics.length === 0) {
     return (
       <section className="data-surface api-contract-state" aria-label="Empty dashboard summary">
-        <p className="eyebrow">Live dashboard API</p>
-        <h3>No summary metrics returned</h3>
-        <p>The backend summary endpoint responded, but returned no metrics for this role.</p>
+        <p className="eyebrow">Dashboard summary</p>
+        <h3>No activity yet</h3>
+        <p>{emptySummaryMessage(user.role)}</p>
       </section>
     );
   }
@@ -2066,8 +2111,8 @@ function QuickActionsPanel({
     <section className="quick-actions-panel" aria-labelledby={`${ROLE_HOME[role]}-quick-actions`}>
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Connected actions</p>
-          <h3 id={`${ROLE_HOME[role]}-quick-actions`}>Open live modules</h3>
+          <p className="eyebrow">Quick actions</p>
+          <h3 id={`${ROLE_HOME[role]}-quick-actions`}>Start here</h3>
         </div>
         <Sparkles size={18} aria-hidden="true" />
       </div>
@@ -2090,8 +2135,8 @@ function QuickActionsPanel({
 function ApiCoveragePanel({ navItems, role }: { navItems: NavItem[]; role: UserRole }) {
   return (
     <section className="notification-center" aria-labelledby={`${ROLE_HOME[role]}-api-coverage`}>
-      <p className="eyebrow">API coverage</p>
-      <h3 id={`${ROLE_HOME[role]}-api-coverage`}>Visible modules</h3>
+      <p className="eyebrow">Available modules</p>
+      <h3 id={`${ROLE_HOME[role]}-api-coverage`}>Available tools</h3>
       <ul>
         {navItems.map((item) => (
           <li key={item.id}>
@@ -2116,7 +2161,7 @@ function EndpointListPanel({ path, title }: { path: string | null; title: string
     async function load() {
       if (!path) {
         setStatus('idle');
-        setError('No backend list endpoint exists for this visible section yet.');
+        setError('This view will appear once it is enabled for your workspace.');
         return;
       }
       if (!accessToken) {
@@ -2134,7 +2179,7 @@ function EndpointListPanel({ path, title }: { path: string | null; title: string
       } catch (caught) {
         if (!mounted) return;
         setItems([]);
-        setError(caught instanceof Error ? caught.message : 'API request failed.');
+        setError(caught instanceof Error ? caught.message : 'This information could not be loaded.');
       } finally {
         if (mounted) {
           setStatus('idle');
@@ -2152,18 +2197,20 @@ function EndpointListPanel({ path, title }: { path: string | null; title: string
     <section className="data-surface" aria-labelledby={`${slug(title)}-title`}>
       <div className="surface-toolbar">
         <div>
-          <p className="eyebrow">{path ? 'Connected real API' : 'Missing backend API'}</p>
+          <p className="eyebrow">{path ? 'Ready' : 'Coming soon'}</p>
           <h3 id={`${slug(title)}-title`}>{title}</h3>
         </div>
-        {path ? <code>{path}</code> : null}
       </div>
+      <DeveloperDetails>
+        <span>{path ?? 'No data source configured for this module'}</span>
+      </DeveloperDetails>
 
       {status === 'loading' ? <div className="api-skeleton"><span /><span /><span /></div> : null}
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       {status !== 'loading' && !error && items.length === 0 ? (
         <div className="api-empty-state">
           <strong>No records yet</strong>
-          <span>The backend returned an empty list.</span>
+          <span>New activity will appear here when it is available.</span>
         </div>
       ) : null}
       <div className="api-record-list">
@@ -2171,7 +2218,7 @@ function EndpointListPanel({ path, title }: { path: string | null; title: string
           <article key={recordKey(item, index)}>
             <strong>{recordTitle(item, index)}</strong>
             <span>{recordDetail(item)}</span>
-            <code>{recordId(item)}</code>
+            <DeveloperDetails><span>{recordId(item)}</span></DeveloperDetails>
           </article>
         ))}
       </div>
@@ -2183,7 +2230,7 @@ function ComingSoonPanel({ activeNav, role }: { activeNav: string; role: UserRol
   return (
     <EmptyState
       title={`${moduleTitle(activeNav)} is unavailable`}
-      detail={`${roleTitle(role)} ${moduleTitle(activeNav)} is hidden from navigation until a verified backend/UI integration exists.`}
+      detail={`${moduleTitle(activeNav)} will appear here when it is enabled for ${roleTitle(role)} accounts.`}
     />
   );
 }
@@ -2196,6 +2243,23 @@ function EmptyState({ detail, title }: { detail: string; title: string }) {
       <p>{detail}</p>
     </section>
   );
+}
+
+function DeveloperDetails({ children }: { children: ReactNode }) {
+  if (!isLocalDevelopment()) {
+    return null;
+  }
+
+  return (
+    <details className="developer-details">
+      <summary>Developer details</summary>
+      <div>{children}</div>
+    </details>
+  );
+}
+
+function isLocalDevelopment() {
+  return import.meta.env.DEV && import.meta.env.MODE === 'development';
 }
 
 function toListItems(response: unknown) {
@@ -2260,7 +2324,7 @@ function recordDetail(item: unknown) {
     ?? record.weekday
     ?? record.dueDate
     ?? record.createdAt;
-  return detail ? String(detail) : 'Live backend record';
+  return detail ? String(detail) : 'Ready';
 }
 
 function uniqueBy<T>(items: T[], key: keyof T) {
@@ -2392,13 +2456,101 @@ function navIcon(navId: string): LucideIcon {
 }
 
 function roleInfoItems(user: CurrentUser): RoleInfoItem[] {
-  const activeSchool = user.activeSchool?.name ?? (user.role === 'SUPER_ADMIN' ? 'Platform scope' : 'No active school');
+  const currentSchool = user.activeSchool?.name ?? 'No current school';
+  const assignedSchoolCount = String(user.allowedSchools.length);
+
+  if (user.role === 'SUPER_ADMIN') {
+    return [
+      { label: 'Platform access', value: 'Super Admin', detail: 'Full CloudCampus control center', icon: ShieldCheck, tone: 'blue' },
+      { label: 'Organization', value: 'CloudCampus Platform', detail: 'Platform-wide administration', icon: Building2, tone: 'emerald' },
+      { label: 'Current school', value: 'Platform-wide access', detail: 'Super Admin manages all organizations', icon: School, tone: 'violet' },
+      { label: 'School access', value: 'Not required', detail: 'Super Admin works at platform level', icon: Users, tone: 'amber' },
+    ];
+  }
+
+  if (user.role === 'TENANT_ADMIN') {
+    return [
+      { label: 'Your role', value: 'Tenant Admin', detail: 'Organization administration', icon: ShieldCheck, tone: 'blue' },
+      { label: 'Organization', value: 'Your organization', detail: 'Securely managed by CloudCampus', icon: Building2, tone: 'emerald' },
+      { label: 'Assigned schools', value: assignedSchoolCount, detail: 'Schools assigned to your account', icon: School, tone: 'violet' },
+      { label: 'Plan', value: 'Current subscription', detail: 'Usage and limits are available in Settings', icon: ReceiptText, tone: 'amber' },
+    ];
+  }
+
+  if (user.role === 'SCHOOL_ADMIN') {
+    return [
+      { label: 'Your role', value: 'School Admin', detail: 'School Administrator', icon: ShieldCheck, tone: 'blue' },
+      { label: 'Current school', value: currentSchool, detail: 'Your active workspace', icon: School, tone: 'emerald' },
+      { label: 'Academic year', value: 'Current academic year', detail: 'Configured by school setup', icon: CalendarCheck, tone: 'violet' },
+      { label: 'Assigned schools', value: assignedSchoolCount, detail: 'Schools assigned to your account', icon: Users, tone: 'amber' },
+    ];
+  }
+
+  if (user.role === 'TEACHER') {
+    return [
+      { label: 'Your role', value: 'Teacher', detail: 'Classroom workspace', icon: ShieldCheck, tone: 'blue' },
+      { label: 'School', value: currentSchool, detail: 'Your active school', icon: School, tone: 'emerald' },
+      { label: 'Assigned classes', value: 'View classes', detail: 'Open My Classes for your assignments', icon: Users, tone: 'violet' },
+      { label: 'Today’s classes', value: 'Timetable', detail: 'Open Timetable for today’s schedule', icon: CalendarCheck, tone: 'amber' },
+    ];
+  }
+
+  if (user.role === 'PARENT') {
+    return [
+      { label: 'Your role', value: 'Parent', detail: 'Linked-child access', icon: ShieldCheck, tone: 'blue' },
+      { label: 'Children linked', value: 'Open children', detail: 'View linked students in My Children', icon: Users, tone: 'emerald' },
+      { label: 'Active child', value: 'Choose child', detail: 'Select a child inside each module', icon: GraduationCap, tone: 'violet' },
+      { label: 'School', value: currentSchool, detail: 'Your family workspace', icon: School, tone: 'amber' },
+    ];
+  }
+
+  if (user.role === 'STUDENT') {
+    return [
+      { label: 'Your role', value: 'Student', detail: 'Learning workspace', icon: ShieldCheck, tone: 'blue' },
+      { label: 'Class', value: 'Your class', detail: 'Profile details appear in your student dashboard', icon: GraduationCap, tone: 'emerald' },
+      { label: 'Attendance', value: 'View attendance', detail: 'Open Attendance for your latest percentage', icon: CalendarCheck, tone: 'violet' },
+      { label: 'School', value: currentSchool, detail: 'Your active school', icon: School, tone: 'amber' },
+    ];
+  }
+
+  if (user.role === 'FINANCE_STAFF') {
+    return [
+      { label: 'Your role', value: 'Finance Staff', detail: 'Finance access enabled', icon: ShieldCheck, tone: 'blue' },
+      { label: 'School', value: currentSchool, detail: 'Your active school', icon: School, tone: 'emerald' },
+      { label: 'Finance access', value: 'Enabled', detail: 'Fees, payments and reports are available', icon: CircleDollarSign, tone: 'violet' },
+      { label: 'Assigned schools', value: assignedSchoolCount, detail: 'Schools assigned to your account', icon: Users, tone: 'amber' },
+    ];
+  }
+
   return [
-    { label: 'Authenticated role', value: roleTitle(user.role), detail: 'Server-derived from /v1/me', icon: ShieldCheck, tone: 'blue' },
-    { label: 'Tenant', value: user.tenantId || 'Platform', detail: 'Not accepted from frontend input', icon: Building2, tone: 'emerald' },
-    { label: 'Active school', value: activeSchool, detail: 'Resolved from authenticated session', icon: School, tone: 'violet' },
-    { label: 'Allowed schools', value: String(user.allowedSchools.length), detail: 'Loaded from /v1/me/schools', icon: Users, tone: 'amber' },
+    { label: 'Your role', value: roleTitle(user.role), detail: 'Staff workspace', icon: ShieldCheck, tone: 'blue' },
+    { label: 'School', value: currentSchool, detail: 'Your active school', icon: School, tone: 'emerald' },
+    { label: 'Available tools', value: 'Ready', detail: 'Open modules from the sidebar', icon: Sparkles, tone: 'violet' },
+    { label: 'Assigned schools', value: assignedSchoolCount, detail: 'Schools assigned to your account', icon: Users, tone: 'amber' },
   ];
+}
+
+function sessionSummaryLine(user: CurrentUser) {
+  if (user.role === 'SUPER_ADMIN') {
+    return 'Platform-wide access';
+  }
+  return user.activeSchool?.name ?? 'Choose a school to open your workspace';
+}
+
+function roleAccessLevel(user: CurrentUser) {
+  if (user.role === 'SUPER_ADMIN') return 'Platform-wide';
+  if (user.role === 'TENANT_ADMIN') return 'Organization-wide';
+  if (user.role === 'SCHOOL_ADMIN') return 'School Administrator';
+  if (user.role === 'FINANCE_STAFF') return 'Finance access enabled';
+  return roleTitle(user.role);
+}
+
+function emptySummaryMessage(role: UserRole) {
+  if (role === 'SUPER_ADMIN') return 'Platform activity will appear after organizations, invoices or alerts are created.';
+  if (role === 'TENANT_ADMIN') return 'Organization activity will appear after schools and users are added.';
+  if (role === 'PARENT') return 'Child activity will appear after your account is linked by the school.';
+  if (role === 'STUDENT') return 'Class activity will appear after your school publishes updates.';
+  return 'Workspace activity will appear as your team starts using this module.';
 }
 
 function useLiveClock() {
@@ -2469,8 +2621,8 @@ function dashboardEndpoint(role: UserRole) {
 }
 
 function statusLabel(status: ConnectionStatus) {
-  if (status === 'CONNECTED_REAL_API') return 'Live API';
-  return 'Live API';
+  if (status === 'CONNECTED_REAL_API') return 'Ready';
+  return 'Ready';
 }
 
 function statusTone(status: ConnectionStatus) {

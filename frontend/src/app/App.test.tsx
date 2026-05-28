@@ -311,7 +311,7 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: /super admin onboarding/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /tenant admin portal/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /school admin scaffold/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create organization with first school/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /link parent to student/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
@@ -359,22 +359,31 @@ describe('App', () => {
     expect((await screen.findAllByRole('heading', { name: /super admin dashboard/i })).length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/breadcrumbs/i)).toHaveTextContent(/cloudcampus/i);
     expect(screen.getByText(/session active/i)).toBeInTheDocument();
-    expect(screen.getByText(/platform owner scope/i)).toBeInTheDocument();
-    expect(screen.getByText(/authenticated role/i)).toBeInTheDocument();
-    expect(screen.getByText(/server-derived from \/v1\/me/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/platform-wide access/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: /account session/i })).toBeInTheDocument();
+    expect(screen.getByText(/platform access/i)).toBeInTheDocument();
+    expect(screen.getByText(/school access/i)).toBeInTheDocument();
+    expect(screen.getByText(/not required/i)).toBeInTheDocument();
+    expect(screen.queryByText(/server-derived from \/v1\/me/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\/v1\/me/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/not accepted from frontend input/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/developer details/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/tenant-platform/i)).not.toBeInTheDocument();
     expect((await screen.findAllByText(/Platform Tenant/i)).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/\$2,500/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /actions/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /platform scope/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /platform-wide access/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /open profile menu/i }));
     expect(screen.getByRole('menu', { name: /profile menu/i })).toHaveTextContent(/last login: current session/i);
     expect(screen.getByRole('menu', { name: /profile menu/i })).toHaveTextContent(/super@example.com/i);
     expect(screen.getByRole('region', { name: /super admin area/i })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: /super admin navigation/i })).toBeInTheDocument();
+    expect(screen.getByText(/business/i)).toBeInTheDocument();
+    expect(screen.getByText(/operations/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /tenants/i }));
-    expect(screen.getByRole('heading', { name: /create tenant with first real school/i })).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: /tenant management/i })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /create tenant school/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /create organization with first school/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /organization management/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create school/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /link parent to student/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
   });
@@ -394,8 +403,8 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: /school admin dashboard/i })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: /school admin navigation/i })).toBeInTheDocument();
-    expect(screen.getByText(/authenticated role/i)).toBeInTheDocument();
-    expect(screen.getByText(/allowed schools/i)).toBeInTheDocument();
+    expect(screen.getByText(/your role/i)).toBeInTheDocument();
+    expect(screen.getByText(/assigned schools/i)).toBeInTheDocument();
     expect(screen.getAllByText(/school a/i).length).toBeGreaterThan(0);
     const schoolAdminNav = screen.getByRole('navigation', { name: /school admin navigation/i });
     fireEvent.click(within(schoolAdminNav).getByRole('button', { name: /parents/i }));
@@ -418,7 +427,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /fee lifecycle/i })).toBeInTheDocument();
     fireEvent.click(within(schoolAdminNav).getByRole('button', { name: /reports/i }));
     expect(screen.getByRole('heading', { name: /report exports/i })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create organization with first school/i })).not.toBeInTheDocument();
   });
 
   it('shows only the School Admin area to a School Admin', async () => {
@@ -436,8 +445,8 @@ describe('App', () => {
 
     await screen.findByRole('heading', { name: /school admin dashboard/i });
     expect(screen.getByRole('region', { name: /school admin area/i })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /create tenant school/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create organization with first school/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create school/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
   });
 
@@ -462,8 +471,8 @@ describe('App', () => {
         .join(' ');
       expect((await screen.findAllByRole('heading', { name: new RegExp(`${title} dashboard`, 'i') })).length).toBeGreaterThan(0);
       expect(screen.getByRole('region', { name: new RegExp(`${title} area`, 'i') })).toBeInTheDocument();
-      expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('heading', { name: /create tenant school/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: /create organization with first school/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: /create school/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: /link parent to student/i })).not.toBeInTheDocument();
       expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
     },
@@ -529,7 +538,7 @@ describe('App', () => {
       expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer finance-token' }) }),
     ));
     expect(screen.queryByRole('heading', { name: /academic setup/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create organization with first school/i })).not.toBeInTheDocument();
   });
 
   it('shows only the Tenant Admin area to a Tenant Admin', async () => {
@@ -549,12 +558,12 @@ describe('App', () => {
     expect(screen.getByRole('region', { name: /tenant admin area/i })).toBeInTheDocument();
     const tenantNav = screen.getByRole('navigation', { name: /tenant admin navigation/i });
     fireEvent.click(within(tenantNav).getByRole('button', { name: /schools/i }));
-    expect(screen.getByRole('heading', { name: /create tenant school/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /create school/i })).toBeInTheDocument();
     fireEvent.click(within(tenantNav).getByRole('button', { name: /settings/i }));
-    expect(screen.getByRole('heading', { name: /tenant settings and usage/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /organization settings and usage/i })).toBeInTheDocument();
     fireEvent.click(within(tenantNav).getByRole('button', { name: /reports/i }));
-    expect(screen.getByRole('heading', { name: /tenant reports/i })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /create tenant with first real school/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /organization reports/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /create organization with first school/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /link parent to student/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
   });
@@ -574,7 +583,7 @@ describe('App', () => {
 
     render(<App authClient={authClient} storage={storage} />);
 
-    expect(await screen.findByRole('heading', { name: /^active school$/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^current school$/i })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/^school$/i), { target: { value: 'school-b' } });
     fireEvent.click(screen.getByRole('button', { name: /activate school/i }));
 
@@ -625,7 +634,7 @@ describe('App', () => {
 
     render(<App authClient={authClient} storage={storage} />);
 
-    expect(await screen.findByRole('heading', { name: /^active school$/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^current school$/i })).toBeInTheDocument();
     expect(screen.getByText(/2 assigned schools/i)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/^school$/i), { target: { value: 'school-b' } });
     fireEvent.click(screen.getByRole('button', { name: /activate school/i }));

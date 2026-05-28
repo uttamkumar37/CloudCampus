@@ -51,21 +51,21 @@ export function TenantReportsPage({
     try {
       await action(accessToken);
     } catch {
-      setError('Tenant report lookup failed.');
+      setError('Organization reports could not be loaded.');
       setMessage(null);
     }
   }
 
   return (
     <section className="workflow-panel" aria-labelledby="tenant-reports-title">
-      <p className="eyebrow">MUL-004</p>
-      <h2 id="tenant-reports-title">Tenant reports</h2>
+      <p className="eyebrow">Reports</p>
+      <h2 id="tenant-reports-title">Organization reports</h2>
 
       <form className="workflow-form" onSubmit={(event) => {
         event.preventDefault();
         void handleLoad();
       }}>
-        <button type="submit">Load tenant summary</button>
+        <button type="submit">Load organization summary</button>
       </form>
 
       {error ? <p className="form-error">{error}</p> : null}
@@ -82,14 +82,14 @@ export function TenantReportsPage({
       ) : null}
 
       {summary && summary.schools.length > 0 ? (
-        <ul className="compact-list" aria-label="Tenant report schools">
+        <ul className="compact-list" aria-label="Organization report schools">
           {summary.schools.map((school) => (
             <li key={school.schoolId}>
               <span>{school.name} ({school.code})</span>
               <span>{school.metrics.totalStudents} students</span>
               <span>{money(school.metrics.outstandingAmount)} outstanding</span>
               <button type="button" onClick={() => void handleDrilldown(school.schoolId)}>
-                Drilldown
+                View details
               </button>
             </li>
           ))}

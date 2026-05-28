@@ -97,7 +97,7 @@ export function LoginPage({
 
   return (
     <section className={`workflow-panel ${className}`.trim()} aria-labelledby="login-title">
-      <p className="eyebrow">AUTH-004</p>
+      <p className="eyebrow">Account access</p>
       <h2 id="login-title">{title}</h2>
       <p className="summary compact-summary">{summary}</p>
       <form className="workflow-form" onSubmit={handleSubmit}>
@@ -128,8 +128,8 @@ export function LoginPage({
             MFA code
             <input autoComplete="one-time-code" inputMode="numeric" name="mfaCode" required />
           </label>
-          {mfaChallenge.scaffoldCode ? (
-            <p className="form-hint">Scaffold MFA code: {mfaChallenge.scaffoldCode}</p>
+          {mfaChallenge.scaffoldCode && isLocalDevelopment() ? (
+            <p className="form-hint">Local verification code: {mfaChallenge.scaffoldCode}</p>
           ) : null}
           <button type="submit" disabled={submitting}>
             {submitting ? 'Verifying...' : 'Verify'}
@@ -140,11 +140,22 @@ export function LoginPage({
       {error ? <p className="form-error">{error}</p> : null}
       {session ? (
         <div className="form-result">
-          <strong>{session.user?.role}</strong>
+          <strong>{session.user?.role ? roleTitle(session.user.role) : 'Signed in'}</strong>
           <span>{session.user?.email}</span>
-          <span>Active school: {session.user?.activeSchool?.name ?? 'none'}</span>
+          <span>Current school: {session.user?.activeSchool?.name ?? 'Not required'}</span>
         </div>
       ) : null}
     </section>
   );
+}
+
+function roleTitle(role: string) {
+  return role
+    .split('_')
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function isLocalDevelopment() {
+  return import.meta.env.DEV && import.meta.env.MODE === 'development';
 }

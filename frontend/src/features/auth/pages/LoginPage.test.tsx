@@ -63,7 +63,7 @@ describe('LoginPage', () => {
       'cloudcampus.auth.refreshToken',
       'refresh-token',
     );
-    expect(await screen.findByText(/active school: real school/i)).toBeInTheDocument();
+    expect(await screen.findByText(/current school: real school/i)).toBeInTheDocument();
   });
 
   it('verifies an MFA challenge before storing tokens', async () => {
@@ -109,7 +109,8 @@ describe('LoginPage', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
-    expect(await screen.findByText(/scaffold mfa code: 123456/i)).toBeInTheDocument();
+    expect(await screen.findByLabelText(/mfa code/i)).toBeInTheDocument();
+    expect(screen.queryByText(/scaffold mfa code/i)).not.toBeInTheDocument();
     expect(storage.setItem).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText(/mfa code/i), {

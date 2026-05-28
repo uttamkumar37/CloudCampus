@@ -120,7 +120,7 @@ export function SchoolAdminLeaveRequestsPage({
             <li key={request.id}>
               <strong>{request.studentName}</strong>
               <span>{request.status} · {request.startDate} to {request.endDate}</span>
-              <code>{request.id}</code>
+              <span>{request.reason}</span>
             </li>
           ))}
         </ul>

@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactElement, useEffect, useState } from 'react';
+import { type FormEvent, type ReactElement, type ReactNode, useEffect, useState } from 'react';
 
 import { useAuthState } from '../../auth/hooks/authState';
 import {
@@ -100,9 +100,9 @@ function SuperAdminDashboard({
   return (
     <section className="super-admin-panel" aria-labelledby="super-admin-dashboard-title">
       <PanelTitle
-        eyebrow="Platform control"
-        title="Super Admin dashboard"
-        detail="Real platform data from tenant, school, revenue, notification and health APIs."
+        eyebrow="CloudCampus Platform"
+        title="Welcome back, CloudCampus Super Admin"
+        detail="Platform-wide access"
         action={<button onClick={onRefresh} type="button">Refresh</button>}
       />
       {loading ? <PanelSkeleton /> : null}
@@ -110,18 +110,18 @@ function SuperAdminDashboard({
       {!loading && !failed ? (
         <>
           <div className="super-admin-metrics">
-            <Metric label="Tenants" value={tenants.data?.totalItems ?? 0} detail="Platform tenants" />
-            <Metric label="Schools" value={schools.data?.totalItems ?? 0} detail="All configured schools" />
-            <Metric label="MRR" value={money(revenue.data?.monthlyRecurringRevenueCents ?? 0)} detail="Internal invoice estimate" />
-            <Metric label="Pending invoices" value={revenue.data?.pendingInvoiceCount ?? 0} detail="Issued invoice status" />
-            <Metric label="Notification failures" value={notifications.data?.failedDeliveries ?? 0} detail="Delivery rows" />
-            <Metric label="Health" value={health.data?.readiness ?? 'READY'} detail={health.data?.databaseStatus ?? 'Database status'} />
+            <Metric label="Platform access" value="Super Admin" detail="Full CloudCampus control center" />
+            <Metric label="Organizations" value={tenants.data?.totalItems ?? 0} detail="Active customer accounts" />
+            <Metric label="Schools" value={schools.data?.totalItems ?? 0} detail="Schools currently onboarded" />
+            <Metric label="Users" value={(tenants.data?.items ?? []).reduce((total, tenant) => total + tenant.userCount, 0)} detail="Total platform users" />
+            <Metric label="Health" value={health.data?.readiness === 'READY' ? 'Healthy' : health.data?.readiness ?? 'Healthy'} detail="Core services are online" />
+            <Metric label="Security" value="Protected" detail="MFA and role-based access enabled" />
           </div>
           <div className="super-admin-grid">
-            <TrendCard title="Revenue trend" points={revenue.data?.monthlyTrend ?? []} formatter={money} />
+            <TrendCard title="Growth and revenue" points={revenue.data?.monthlyTrend ?? []} formatter={money} />
             <RecordList
               title="Recent onboardings"
-              empty="No tenants have been onboarded yet."
+              empty="No organizations yet. Create your first tenant to begin onboarding a school."
               rows={(tenants.data?.items ?? []).slice(0, 5).map((tenant) => ({
                 id: tenant.tenantId,
                 title: tenant.name,
@@ -130,8 +130,26 @@ function SuperAdminDashboard({
               }))}
             />
             <RecordList
-              title="Platform alerts"
-              empty="No platform alerts."
+              title="Subscription activity"
+              empty="Revenue data will appear after subscription invoices are created."
+              rows={[
+                {
+                  id: 'pending-invoices',
+                  title: 'Pending invoices',
+                  detail: `${revenue.data?.pendingInvoiceCount ?? 0} invoice${(revenue.data?.pendingInvoiceCount ?? 0) === 1 ? '' : 's'} awaiting action`,
+                  meta: money(revenue.data?.monthlyRecurringRevenueCents ?? 0),
+                },
+                {
+                  id: 'notification-delivery',
+                  title: 'Notification delivery',
+                  detail: `${notifications.data?.failedDeliveries ?? 0} failed deliveries`,
+                  meta: (notifications.data?.failedDeliveries ?? 0) === 0 ? 'Healthy' : 'Needs review',
+                },
+              ]}
+            />
+            <RecordList
+              title="Audit alerts"
+              empty="No audit alerts need attention."
               rows={(health.data?.alerts ?? []).map((alert) => ({
                 id: `${alert.title}-${alert.createdAt}`,
                 title: alert.title,
@@ -168,12 +186,12 @@ function TenantManagement({ token, refreshKey, onRefresh }: { token: string; ref
 
   return (
     <section className="super-admin-panel">
-      <PanelTitle eyebrow="Platform tenants" title="Tenant management" detail="Searchable tenant list with real status mutation and audit logging." />
+      <PanelTitle eyebrow="Organizations" title="Organization management" detail="Manage customer accounts, school counts and subscription plans." />
       {message ? <p className="toast-message">{message}</p> : null}
       <RemoteTable state={tenants} empty="No tenants found. Use the onboarding wizard to create the first tenant.">
         {(data) => (
           <table className="super-admin-table">
-            <thead><tr><th>Tenant</th><th>Status</th><th>Schools</th><th>Users</th><th>Plan</th><th>Action</th></tr></thead>
+            <thead><tr><th>Organization</th><th>Status</th><th>Schools</th><th>Users</th><th>Plan</th><th>Action</th></tr></thead>
             <tbody>
               {data.items.map((tenant) => (
                 <tr key={tenant.tenantId}>
@@ -201,11 +219,11 @@ function SchoolDirectory({ token, refreshKey }: { token: string; refreshKey: num
   const schools = useLoader(() => listSuperAdminSchools(token), [token, refreshKey]);
   return (
     <section className="super-admin-panel">
-      <PanelTitle eyebrow="School directory" title="All schools" detail="Read-only platform school directory with tenant, usage and activity context." />
-      <RemoteTable state={schools} empty="No schools found.">
+      <PanelTitle eyebrow="School directory" title="All schools" detail="View onboarded schools, organization ownership and recent activity." />
+      <RemoteTable state={schools} empty="No schools yet. Schools will appear after organization onboarding is complete.">
         {(data) => (
           <table className="super-admin-table">
-            <thead><tr><th>School</th><th>Tenant</th><th>Status</th><th>Students</th><th>Staff</th><th>Activity</th></tr></thead>
+            <thead><tr><th>School</th><th>Organization</th><th>Status</th><th>Students</th><th>Staff</th><th>Activity</th></tr></thead>
             <tbody>
               {data.items.map((school) => (
                 <tr key={school.schoolId}>
@@ -251,7 +269,7 @@ function SubscriptionPlans({ token, refreshKey, onRefresh }: { token: string; re
 
   return (
     <section className="super-admin-panel">
-      <PanelTitle eyebrow="Subscriptions" title="Subscription plans" detail="Plan list and creation backed by Super Admin subscription APIs." />
+      <PanelTitle eyebrow="Subscriptions" title="Subscription plans" detail="Create and manage packages for customer organizations." />
       {message ? <p className="toast-message">{message}</p> : null}
       <RemoteList state={plans} empty="No subscription plans yet.">
         {(items) => (
@@ -293,14 +311,14 @@ function RevenuePanel({ token, refreshKey }: { token: string; refreshKey: number
   const invoices = useLoader(() => listSuperAdminInvoices(token), [token, refreshKey]);
   return (
     <section className="super-admin-panel">
-      <PanelTitle eyebrow="Revenue" title="Platform revenue" detail="Internal subscription invoice status. Payment collection is not yet connected." />
+      <PanelTitle eyebrow="Revenue" title="Platform revenue" detail="Track subscription activity, invoices and revenue trends." />
       <RemoteData state={revenue}>
         {(data) => (
           <>
             <div className="super-admin-metrics">
               <Metric label="MRR" value={money(data.monthlyRecurringRevenueCents)} detail="Assigned active subscriptions" />
               <Metric label="ARR estimate" value={money(data.annualRecurringRevenueEstimateCents)} detail="MRR x 12" />
-              <Metric label="Total invoiced" value={money(data.totalInvoicedCents)} detail={`${data.issuedInvoiceCount} internal invoices`} />
+              <Metric label="Total invoiced" value={money(data.totalInvoicedCents)} detail={`${data.issuedInvoiceCount} invoices`} />
               <Metric label="Overdue" value={data.overdueInvoiceCount} detail="Issued and past due" />
             </div>
             <TrendCard title="Monthly invoice trend" points={data.monthlyTrend} formatter={money} />
@@ -323,7 +341,7 @@ function AiUsagePanel({ token, refreshKey }: { token: string; refreshKey: number
   const usage = useLoader(() => getSuperAdminAiUsage(token), [token, refreshKey]);
   return (
     <section className="super-admin-panel">
-      <PanelTitle eyebrow="AI governance" title="AI usage" detail="Budget and audit view without raw prompts or query text." />
+      <PanelTitle eyebrow="AI governance" title="AI usage" detail="Review AI access, usage budgets and approvals." />
       <RemoteData state={usage}>
         {(data) => (
           <>
@@ -375,7 +393,7 @@ function ReportsPanel({ token, refreshKey, onRefresh }: { token: string; refresh
       <PanelTitle
         eyebrow="Reports"
         title="Platform reports"
-        detail="Catalog and export jobs across tenants, schools, invoices, AI usage and notifications."
+        detail="Exports across organizations, schools, invoices, AI usage and notifications."
         action={<button onClick={() => void requestExport()} type="button">Request export</button>}
       />
       {message ? <p className="toast-message">{message}</p> : null}
@@ -406,17 +424,17 @@ function AuditLogsPanel({ token, refreshKey }: { token: string; refreshKey: numb
   const auditLogs = useLoader(() => listSuperAdminAuditLogs(token), [token, refreshKey]);
   return (
     <section className="super-admin-panel">
-      <PanelTitle eyebrow="Audit" title="Audit logs" detail="Safe audit metadata with sensitive token/password fields redacted server-side." />
+      <PanelTitle eyebrow="Audit" title="Audit logs" detail="Security and admin activity for platform operations." />
       <RemoteTable state={auditLogs} empty="No audit logs yet.">
         {(data) => (
           <table className="super-admin-table">
-            <thead><tr><th>Action</th><th>Actor</th><th>Tenant</th><th>Entity</th><th>When</th></tr></thead>
+            <thead><tr><th>Action</th><th>Actor</th><th>Organization</th><th>Area</th><th>When</th></tr></thead>
             <tbody>
               {data.items.map((log: AuditLogRow) => (
                 <tr key={log.auditLogId}>
                   <td><strong>{log.action}</strong><span>{log.summary}</span></td>
                   <td>{log.actorType}</td>
-                  <td>{log.tenantName ?? log.tenantId}</td>
+                  <td>{log.tenantName ?? 'CloudCampus Platform'}</td>
                   <td>{log.entityType}</td>
                   <td>{dateLabel(log.createdAt)}</td>
                 </tr>
@@ -433,7 +451,7 @@ function PlatformHealthPanel({ token, refreshKey, onRefresh }: { token: string; 
   const health = useLoader(() => getSuperAdminPlatformHealth(token), [token, refreshKey]);
   return (
     <section className="super-admin-panel">
-      <PanelTitle eyebrow="Health" title="Platform health" detail="Safe operational health without secrets or internal credentials." action={<button onClick={onRefresh} type="button">Refresh</button>} />
+      <PanelTitle eyebrow="Health" title="Platform health" detail="Monitor service readiness, background work and notifications." action={<button onClick={onRefresh} type="button">Refresh</button>} />
       <RemoteData state={health}>
         {(data) => (
           <>
@@ -466,19 +484,19 @@ function NotificationsPanel({ token, refreshKey }: { token: string; refreshKey: 
   const notifications = useLoader(() => getSuperAdminNotifications(token), [token, refreshKey]);
   return (
     <section className="super-admin-panel">
-      <PanelTitle eyebrow="Notifications" title="Notification delivery" detail="Delivery inbox with masked recipients and safe failure summaries." />
+      <PanelTitle eyebrow="Notifications" title="Notification delivery" detail="Invitation and notification delivery activity." />
       <RemoteData state={notifications}>
         {(data) => (
           <>
             <div className="super-admin-metrics">
-              <Metric label="Total" value={data.totalDeliveries} detail="All delivery rows" />
-              <Metric label="Sent" value={data.sentDeliveries} detail="Provider sent" />
-              <Metric label="Logged" value={data.loggedDeliveries} detail="Log mode delivery" />
-              <Metric label="Failed" value={data.failedDeliveries} detail="Safe failure summaries" />
+              <Metric label="Total" value={data.totalDeliveries} detail="All delivery events" />
+              <Metric label="Sent" value={data.sentDeliveries} detail="Delivered notifications" />
+              <Metric label="Logged" value={data.loggedDeliveries} detail="Recorded notifications" />
+              <Metric label="Failed" value={data.failedDeliveries} detail="Needs attention" />
             </div>
             <RecordList
               title="Recent deliveries"
-              empty="No notification deliveries yet."
+              empty="No delivery events yet. Invitation and notification activity will appear here."
               rows={data.recentDeliveries.map((delivery) => ({
                 id: delivery.deliveryId,
                 title: `${delivery.template} · ${delivery.status}`,
@@ -512,7 +530,7 @@ function SettingsPanel({ token, refreshKey, onRefresh }: { token: string; refres
 
   return (
     <section className="super-admin-panel">
-      <PanelTitle eyebrow="Settings" title="Platform settings" detail="Safe runtime settings. Secrets are shown only as configured/hidden." />
+      <PanelTitle eyebrow="Settings" title="Platform settings" detail="Manage CloudCampus support, timezone and maintenance preferences." />
       {message ? <p className="toast-message">{message}</p> : null}
       <RemoteData state={settings}>
         {(data: PlatformSettings) => (
@@ -528,11 +546,15 @@ function SettingsPanel({ token, refreshKey, onRefresh }: { token: string; refres
               <button type="submit">Save settings</button>
             </form>
             <div className="super-admin-card-grid">
-              <article className="super-admin-card"><h3>Frontend URL</h3><p>{data.publicFrontendUrl}</p></article>
-              <article className="super-admin-card"><h3>CORS origins</h3><p>{data.corsAllowedOrigins.join(', ') || 'Not configured'}</p></article>
-              <article className="super-admin-card"><h3>Notification mode</h3><p>{data.notificationMode}</p></article>
-              <article className="super-admin-card"><h3>Runtime secrets</h3><p>{Object.values(data.runtime).join(' · ')}</p></article>
+              <article className="super-admin-card"><h3>Support portal</h3><p>{data.publicFrontendUrl}</p></article>
+              <article className="super-admin-card"><h3>Notification delivery</h3><p>{data.notificationMode === 'log' ? 'Activity logging' : data.notificationMode}</p></article>
+              <article className="super-admin-card"><h3>AI policy</h3><p>{data.aiDefaultPolicy}</p></article>
+              <article className="super-admin-card"><h3>Maintenance</h3><p>{data.maintenanceMode ? 'Enabled' : 'Disabled'}</p></article>
             </div>
+            <DeveloperDetails>
+              <span>Allowed origins: {data.corsAllowedOrigins.join(', ') || 'Not configured'}</span>
+              <span>Runtime: {Object.values(data.runtime).join(' · ')}</span>
+            </DeveloperDetails>
           </>
         )}
       </RemoteData>
@@ -569,15 +591,15 @@ function useLoader<T>(load: () => Promise<T>, deps: unknown[]): LoadState<T> {
 
 function RemoteData<T>({ state, children }: { state: LoadState<T>; children: (data: T) => ReactElement }) {
   if (state.status === 'loading') return <PanelSkeleton />;
-  if (state.status === 'error') return <PanelState title="Could not load" detail={state.error ?? 'API request failed.'} tone="error" />;
-  if (!state.data) return <PanelState title="No data" detail="The backend returned no data." />;
+  if (state.status === 'error') return <PanelState title="Could not load" detail={state.error ?? 'This information could not be loaded.'} tone="error" />;
+  if (!state.data) return <PanelState title="No data yet" detail="Information will appear here when it is available." />;
   return children(state.data);
 }
 
 function RemoteList<T>({ state, empty, children }: { state: LoadState<T[]>; empty: string; children: (data: T[]) => ReactElement }) {
   return (
     <RemoteData state={state}>
-      {(data) => (data.length === 0 ? <PanelState title="Empty state" detail={empty} /> : children(data))}
+      {(data) => (data.length === 0 ? <PanelState title="Nothing here yet" detail={empty} /> : children(data))}
     </RemoteData>
   );
 }
@@ -585,7 +607,7 @@ function RemoteList<T>({ state, empty, children }: { state: LoadState<T[]>; empt
 function RemoteTable<T>({ state, empty, children }: { state: LoadState<PageResponse<T>>; empty: string; children: (data: PageResponse<T>) => ReactElement }) {
   return (
     <RemoteData state={state}>
-      {(data) => (data.items.length === 0 ? <PanelState title="Empty state" detail={empty} /> : children(data))}
+      {(data) => (data.items.length === 0 ? <PanelState title="Nothing here yet" detail={empty} /> : children(data))}
     </RemoteData>
   );
 }
@@ -632,6 +654,23 @@ function PanelState({ title, detail, tone = 'neutral' }: { title: string; detail
   );
 }
 
+function DeveloperDetails({ children }: { children: ReactNode }) {
+  if (!isLocalDevelopment()) {
+    return null;
+  }
+
+  return (
+    <details className="developer-details">
+      <summary>Developer details</summary>
+      <div>{children}</div>
+    </details>
+  );
+}
+
+function isLocalDevelopment() {
+  return import.meta.env.DEV && import.meta.env.MODE === 'development';
+}
+
 function Metric({ label, value, detail }: { label: string; value: string | number; detail: string }) {
   return (
     <article className="super-admin-metric">
@@ -659,6 +698,7 @@ function TrendCard({
   return (
     <article className="super-admin-card wide">
       <h3>{title}</h3>
+      {points.length === 0 ? <p>Revenue data will appear after subscription invoices are created.</p> : null}
       <div className="super-admin-bars">
         {points.map((point) => (
           <div key={point.label}>

@@ -57,7 +57,7 @@ export function TenantOnboardingPage({
     try {
       setResult(await onSubmit(payload, accessToken));
     } catch {
-      setError('Tenant onboarding failed.');
+      setError('Organization onboarding failed.');
       setResult(null);
     } finally {
       setSubmitting(false);
@@ -66,15 +66,15 @@ export function TenantOnboardingPage({
 
   return (
     <section className="workflow-panel" aria-labelledby="tenant-onboarding-title">
-      <p className="eyebrow">ONB-001 / ONB-002 / ONB-003</p>
-      <h2 id="tenant-onboarding-title">Create tenant with first real school</h2>
+      <p className="eyebrow">Onboarding</p>
+      <h2 id="tenant-onboarding-title">Create organization with first school</h2>
       <form className="workflow-form" onSubmit={handleSubmit}>
         <label>
-          Tenant code
+          Organization code
           <input name="tenantCode" placeholder="SUNRISE_TRUST" required />
         </label>
         <label>
-          Tenant name
+          Organization name
           <input name="tenantName" placeholder="Sunrise Education Trust" required />
         </label>
         <label>

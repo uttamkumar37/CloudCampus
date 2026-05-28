@@ -80,7 +80,7 @@ describe('TenantReportsPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /load tenant summary/i }));
+    fireEvent.click(screen.getByRole('button', { name: /load organization summary/i }));
 
     await waitFor(() => expect(onLoad).toHaveBeenCalledWith('tenant-admin-token'));
     expect(await screen.findByText(/loaded 2 schools/i)).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe('TenantReportsPage', () => {
     expect(screen.getByText(/students: 3\/3/i)).toBeInTheDocument();
     expect(screen.getByText(/alpha school \(a\)/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: /drilldown/i })[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: /view details/i })[1]);
 
     await waitFor(() => expect(onDrilldown).toHaveBeenCalledWith('school-b', 'tenant-admin-token'));
     expect(await screen.findByText(/beta school drilldown loaded/i)).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('TenantReportsPage', () => {
 
     render(<TenantReportsPage onLoad={onLoad} storage={storageWithToken(null)} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /load tenant summary/i }));
+    fireEvent.click(screen.getByRole('button', { name: /load organization summary/i }));
 
     expect(screen.getByText(/tenant admin login is required/i)).toBeInTheDocument();
     expect(onLoad).not.toHaveBeenCalled();

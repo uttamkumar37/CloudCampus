@@ -54,7 +54,7 @@ export function FinanceReportsPage() {
     <section className="data-surface" aria-labelledby="finance-reports-title">
       <div className="surface-toolbar">
         <div>
-          <p className="eyebrow">Connected real API</p>
+          <p className="eyebrow">Ready</p>
           <h3 id="finance-reports-title">Finance reports</h3>
         </div>
         <button onClick={() => void loadReports()} type="button">Refresh</button>
@@ -84,7 +84,7 @@ export function FinanceReportsPage() {
           <article key={receipt.id}>
             <strong>{receipt.receiptNumber}</strong>
             <span>{receipt.studentName} · {money(receipt.amount)} · {receipt.paymentMethod}</span>
-            <code>{receipt.paidAt}</code>
+            <span>{dateLabel(receipt.paidAt)}</span>
           </article>
         ))}
       </div>
@@ -95,7 +95,7 @@ export function FinanceReportsPage() {
             <article key={row.date}>
               <strong>{row.date}</strong>
               <span>{money(row.totalCollected)} collected</span>
-              <code>{row.receiptCount} receipts</code>
+              <span>{row.receiptCount} receipts</span>
             </article>
           ))}
         </div>
@@ -119,4 +119,8 @@ function money(value: number) {
     currency: 'USD',
     style: 'currency',
   }).format(value);
+}
+
+function dateLabel(value: string) {
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value));
 }

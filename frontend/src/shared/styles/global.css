@@ -410,9 +410,23 @@ p {
 .sidebar-nav {
   display: grid;
   align-content: start;
-  gap: 4px;
+  gap: 14px;
   overflow: auto;
   padding-right: 4px;
+}
+
+.sidebar-nav-group {
+  display: grid;
+  gap: 4px;
+}
+
+.sidebar-nav-group p {
+  margin: 4px 10px 6px;
+  color: var(--subtle);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .sidebar-nav button {
@@ -795,6 +809,29 @@ p {
   color: var(--muted);
   background: var(--surface-soft);
   font-size: 0.78rem;
+}
+
+.developer-details {
+  margin-top: 10px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  padding: 9px 11px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 0.78rem;
+}
+
+.developer-details summary {
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 850;
+}
+
+.developer-details div {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
 }
 
 .inline-select {
@@ -4162,7 +4199,7 @@ tr:last-child td {
 
 .session-facts {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
 }

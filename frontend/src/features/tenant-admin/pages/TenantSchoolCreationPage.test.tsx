@@ -50,7 +50,7 @@ describe('TenantSchoolCreationPage', () => {
 
     render(<TenantSchoolCreationPage onInviteSchoolAdmin={onInviteSchoolAdmin} storage={storage} />);
 
-    fireEvent.change(screen.getByLabelText(/school id/i), { target: { value: 'school-2' } });
+    fireEvent.change(screen.getByLabelText(/^school$/i), { target: { value: 'school-2' } });
     fireEvent.change(screen.getByLabelText(/admin full name/i), { target: { value: 'Branch Principal' } });
     fireEvent.change(screen.getByLabelText(/admin email/i), { target: { value: 'principal@example.com' } });
     fireEvent.click(screen.getByRole('button', { name: /invite school admin/i }));
@@ -79,7 +79,7 @@ describe('TenantSchoolCreationPage', () => {
 
     render(<TenantSchoolCreationPage onInviteSchoolAdmin={onInviteSchoolAdmin} storage={storage} />);
 
-    fireEvent.change(screen.getByLabelText(/school id/i), { target: { value: 'school-2' } });
+    fireEvent.change(screen.getByLabelText(/^school$/i), { target: { value: 'school-2' } });
     fireEvent.change(screen.getByLabelText(/admin full name/i), { target: { value: 'Branch Principal' } });
     fireEvent.change(screen.getByLabelText(/admin email/i), { target: { value: 'principal@example.com' } });
     fireEvent.click(screen.getByRole('button', { name: /invite school admin/i }));

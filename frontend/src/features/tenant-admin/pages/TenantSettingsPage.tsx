@@ -48,7 +48,7 @@ export function TenantSettingsPage({
       setUsage(usageResponse);
       setMessage(`${settingsResponse.displayName} settings loaded`);
     } catch {
-      setError('Tenant settings lookup failed.');
+      setError('Organization settings could not be loaded.');
       setMessage(null);
     }
   }
@@ -75,7 +75,7 @@ export function TenantSettingsPage({
       setSettings(response);
       setMessage(`${response.displayName} settings updated`);
     } catch {
-      setError('Tenant settings update failed.');
+      setError('Organization settings could not be updated.');
       setMessage(null);
     }
   }
@@ -92,14 +92,14 @@ export function TenantSettingsPage({
 
   return (
     <section className="workflow-panel" aria-labelledby="tenant-settings-title">
-      <p className="eyebrow">MUL-007</p>
-      <h2 id="tenant-settings-title">Tenant settings and usage</h2>
+      <p className="eyebrow">Organization settings</p>
+      <h2 id="tenant-settings-title">Organization settings and usage</h2>
 
       <form className="workflow-form" onSubmit={(event) => {
         event.preventDefault();
         void handleLoad();
       }}>
-        <button type="submit">Load tenant settings</button>
+        <button type="submit">Load organization settings</button>
       </form>
 
       {usage ? (
@@ -123,7 +123,7 @@ export function TenantSettingsPage({
           Display name
           <input
             name="displayName"
-            placeholder="Tenant display name"
+            placeholder="Organization display name"
             defaultValue={settings?.displayName ?? ''}
             required
           />
@@ -154,11 +154,11 @@ export function TenantSettingsPage({
           Locale
           <input name="locale" placeholder="en-IN" defaultValue={settings?.locale ?? 'en-US'} required />
         </label>
-        <button type="submit">Update tenant settings</button>
+        <button type="submit">Update organization settings</button>
       </form>
 
       {settings ? (
-        <div className="result-list" aria-label="Tenant settings">
+        <div className="result-list" aria-label="Organization settings">
           <article className="result-item">
             <strong>{settings.displayName}</strong>
             <span>{settings.tenantCode}</span>

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import {
   createSchoolAdminResource,
@@ -111,7 +111,7 @@ export function SchoolAdminResourcePanel({
     <section className="workflow-panel api-workspace" aria-labelledby={`${resource}-api-title`} data-testid={`${resource}-api-panel`}>
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Connected real API</p>
+      <p className="eyebrow">Ready</p>
           <h2 id={`${resource}-api-title`}>{config.label}</h2>
         </div>
         <button onClick={() => void loadItems()} type="button">Refresh</button>
@@ -124,7 +124,7 @@ export function SchoolAdminResourcePanel({
       {status !== 'loading' && !error && items.length === 0 ? (
         <div className="api-empty-state">
           <strong>No records yet</strong>
-          <span>The backend returned an empty list for {config.listPath}.</span>
+          <span>New {config.label.toLowerCase()} activity will appear here when it is available.</span>
         </div>
       ) : null}
 
@@ -134,16 +134,16 @@ export function SchoolAdminResourcePanel({
             <article key={recordKey(item, index)}>
               <strong>{recordTitle(item, index)}</strong>
               <span>{recordDetail(item)}</span>
-              <code>{recordId(item)}</code>
+              <DeveloperDetails><span>{recordId(item)}</span></DeveloperDetails>
             </article>
           ))}
         </div>
       ) : null}
 
-      {canCreate ? (
+      {canCreate && isLocalDevelopment() ? (
         <form className="workflow-form" onSubmit={handleCreate}>
           <label>
-            Create payload
+            Developer payload
             <textarea
               rows={10}
               value={payload}
@@ -156,10 +156,10 @@ export function SchoolAdminResourcePanel({
         </form>
       ) : null}
 
-      {canPublish ? (
+      {canPublish && isLocalDevelopment() ? (
         <form className="workflow-form compact-form" onSubmit={handlePublish}>
           <label>
-            Record ID
+            Record reference
             <input value={publishId} onChange={(event) => setPublishId(event.target.value)} />
           </label>
           <button disabled={status === 'saving'} type="submit">Publish</button>
@@ -207,5 +207,22 @@ function recordDetail(item: unknown) {
 
   const record = item as Record<string, unknown>;
   const detail = record.status ?? record.admissionNumber ?? record.audience ?? record.dueDate ?? record.createdAt;
-  return detail ? String(detail) : 'Live backend record';
+  return detail ? String(detail) : 'Ready';
+}
+
+function DeveloperDetails({ children }: { children: ReactNode }) {
+  if (!isLocalDevelopment()) {
+    return null;
+  }
+
+  return (
+    <details className="developer-details">
+      <summary>Developer details</summary>
+      <div>{children}</div>
+    </details>
+  );
+}
+
+function isLocalDevelopment() {
+  return import.meta.env.DEV && import.meta.env.MODE === 'development';
 }

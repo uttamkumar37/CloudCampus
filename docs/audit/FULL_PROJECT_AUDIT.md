@@ -29,14 +29,14 @@ Latest validation deltas:
 
 CloudCampus is a strong engineering scaffold with unusually good backend coverage for a SaaS ERP foundation. The backend compiles, tests pass, tenant and school isolation are covered by negative tests, authentication/session/MFA flows exist, and deployment assets are present.
 
-The project is not yet ready for real customers without additional product hardening. The main blockers are frontend workflow depth, real hosted environment validation, mobile app integration, and production-grade integrations for email, payments, storage and background workers. Production profile fail-fast validation has now been added, the Super Admin control center has been moved from missing/static sections to API-backed platform views, and visible portal navigation no longer exposes pending/missing API states.
+The project is not yet ready for real customers without additional product hardening. The main blockers are frontend workflow depth, real hosted environment validation, mobile app integration, and production-grade integrations for email, payments, storage and background workers. Production profile fail-fast validation has now been added, the Super Admin control center has been moved from missing/static sections to API-backed platform views, visible portal navigation no longer exposes pending/missing API states, and the normal UI no longer shows `/v1/me`, server-derived labels, raw tenant UUIDs, or frontend-input/security implementation language.
 
 | Area | Score | Verdict |
 | --- | ---: | --- |
 | Overall project | 76/100 | Strong scaffold, not fully production-ready |
 | Backend | 87/100 | Stable foundation with good isolation tests, Super Admin control APIs, and new directory/settings/finance report APIs |
-| Frontend | 74/100 | Premium shell, visible role portals are API-backed, still needs deeper product UX polish |
-| UI/UX | 70/100 | Homepage/app shell polished, pending navigation removed, some workflows still scaffold-grade |
+| Frontend | 75/100 | Premium shell, visible role portals are API-backed, developer/debug copy hidden from normal users, still needs deeper product UX polish |
+| UI/UX | 73/100 | Homepage/app shell polished, Super Admin dashboard is more demo-ready, pending/debug navigation copy removed, some workflows still scaffold-grade |
 | Security | 82/100 | Good server-derived auth model, production fail-fast checks and Super Admin role gates added |
 | Deployment readiness | 70/100 | Docker/compose/CI assets exist, staging checklist added, no real env proof yet |
 | Production readiness | 62/100 | Safer startup posture, still needs hosted validation and product completion |
@@ -94,6 +94,7 @@ The project is not yet ready for real customers without additional product harde
 - Frontend architecture is too centralized. `frontend/src/app/App.tsx` carries a lot of role shell, dashboard, mock metric, navigation, and rendering responsibility.
 - Some lower-frequency pages remain scaffold-level workflows that ask users for technical identifiers instead of providing product-grade selectors and guided flows.
 - There are many foundation modules but not all have polished frontend experiences.
+- User-facing portal copy is now cleaner: session cards, role panels, quick actions and module availability use non-technical language, while developer details are gated to local development.
 - The mobile project is explicitly still a shell and not a real role-based app.
 
 ## Phase 2: Backend Audit
@@ -137,6 +138,7 @@ The project is not yet ready for real customers without additional product harde
 - Frontend tests, lint, typecheck, and production build pass.
 - Docker frontend image builds successfully.
 - Super Admin portal sections now call real backend APIs for dashboard, tenants, schools, subscriptions, revenue, AI usage, reports, audit logs, platform health, notifications and safe settings.
+- Super Admin dashboard now presents platform access, organizations, schools, users, health, security, onboarding, subscriptions, notification delivery and audit alerts without showing tenant UUIDs or endpoint names.
 
 ### Frontend Gaps
 

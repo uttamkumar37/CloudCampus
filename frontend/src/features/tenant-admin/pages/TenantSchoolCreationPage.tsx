@@ -82,8 +82,8 @@ export function TenantSchoolCreationPage({
 
   return (
     <section className="workflow-panel" aria-labelledby="tenant-school-create-title">
-      <p className="eyebrow">MUL-002</p>
-      <h2 id="tenant-school-create-title">Create tenant school</h2>
+      <p className="eyebrow">School operations</p>
+      <h2 id="tenant-school-create-title">Create school</h2>
 
       <form className="workflow-form compact-form" onSubmit={handleSubmit}>
         <label>
@@ -99,8 +99,8 @@ export function TenantSchoolCreationPage({
 
       <form className="workflow-form compact-form" onSubmit={handleInviteSchoolAdmin}>
         <label>
-          School ID
-          <input name="schoolId" placeholder="school-id" required />
+          School
+          <input name="schoolId" placeholder="Select a school from School Management" required />
         </label>
         <label>
           Admin full name

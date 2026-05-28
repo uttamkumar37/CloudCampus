@@ -67,7 +67,7 @@ export function SchoolSettingsPage() {
 
   return (
     <section className="workflow-panel" aria-labelledby="school-settings-title">
-      <p className="eyebrow">Connected real API</p>
+      <p className="eyebrow">Ready</p>
       <h2 id="school-settings-title">School settings</h2>
 
       {status === 'loading' ? <div className="api-skeleton"><span /><span /><span /></div> : null}

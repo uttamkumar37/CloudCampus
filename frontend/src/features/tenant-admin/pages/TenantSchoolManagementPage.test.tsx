@@ -58,9 +58,9 @@ describe('TenantSchoolManagementPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /load schools/i }));
 
     await waitFor(() => expect(onListSchools).toHaveBeenCalledWith('tenant-admin-token'));
-    expect(await screen.findByText(/primary school/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/primary school/i)).length).toBeGreaterThan(0);
 
-    fireEvent.change(screen.getByLabelText(/school id for admins/i), { target: { value: 'school-1' } });
+    fireEvent.change(screen.getAllByLabelText(/^school$/i)[0], { target: { value: 'school-1' } });
     fireEvent.click(screen.getByRole('button', { name: /load school admins/i }));
 
     await waitFor(() => expect(onListSchoolAdmins).toHaveBeenCalledWith('school-1', 'tenant-admin-token'));
@@ -124,7 +124,7 @@ describe('TenantSchoolManagementPage', () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText(/school id to update/i), { target: { value: 'school-1' } });
+    fireEvent.change(screen.getByLabelText(/school to update/i), { target: { value: 'school-1' } });
     fireEvent.change(screen.getByLabelText(/new school name/i), { target: { value: 'Branch Renamed' } });
     fireEvent.click(screen.getByRole('button', { name: /update school/i }));
 
@@ -132,20 +132,20 @@ describe('TenantSchoolManagementPage', () => {
       name: 'Branch Renamed',
     }, 'tenant-admin-token'));
 
-    fireEvent.change(screen.getByLabelText(/school id to deactivate/i), { target: { value: 'school-1' } });
+    fireEvent.change(screen.getByLabelText(/school to deactivate/i), { target: { value: 'school-1' } });
     fireEvent.click(screen.getByRole('button', { name: /deactivate school/i }));
 
     await waitFor(() => expect(onDeactivateSchool).toHaveBeenCalledWith('school-1', 'tenant-admin-token'));
 
-    fireEvent.change(screen.getByLabelText(/school id for resend/i), { target: { value: 'school-1' } });
-    fireEvent.change(screen.getAllByLabelText(/school admin user id/i)[0], { target: { value: 'user-1' } });
+    fireEvent.change(screen.getAllByLabelText(/^school$/i)[1], { target: { value: 'school-1' } });
+    fireEvent.change(screen.getAllByLabelText(/^school admin$/i)[0], { target: { value: 'user-1' } });
     fireEvent.click(screen.getByRole('button', { name: /resend invitation/i }));
 
     await waitFor(() => expect(onResendSchoolAdminInvitation)
       .toHaveBeenCalledWith('school-1', 'user-1', 'tenant-admin-token'));
 
-    fireEvent.change(screen.getByLabelText(/school id for revoke/i), { target: { value: 'school-1' } });
-    fireEvent.change(screen.getAllByLabelText(/school admin user id/i)[1], { target: { value: 'user-1' } });
+    fireEvent.change(screen.getAllByLabelText(/^school$/i)[2], { target: { value: 'school-1' } });
+    fireEvent.change(screen.getAllByLabelText(/^school admin$/i)[1], { target: { value: 'user-1' } });
     fireEvent.click(screen.getByRole('button', { name: /revoke access/i }));
 
     await waitFor(() => expect(onRevokeSchoolAdminAccess)

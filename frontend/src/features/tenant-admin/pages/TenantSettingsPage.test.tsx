@@ -50,7 +50,7 @@ describe('TenantSettingsPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /load tenant settings/i }));
+    fireEvent.click(screen.getByRole('button', { name: /load organization settings/i }));
 
     expect(screen.getByText(/tenant admin login is required/i)).toBeInTheDocument();
     expect(onLoadSettings).not.toHaveBeenCalled();
@@ -68,7 +68,7 @@ describe('TenantSettingsPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /load tenant settings/i }));
+    fireEvent.click(screen.getByRole('button', { name: /load organization settings/i }));
 
     await waitFor(() => expect(onLoadSettings).toHaveBeenCalledWith('tenant-admin-token'));
     expect(onLoadUsage).toHaveBeenCalledWith('tenant-admin-token');
@@ -77,7 +77,7 @@ describe('TenantSettingsPage', () => {
     expect(screen.getByText(/students: 120/i)).toBeInTheDocument();
   });
 
-  it('updates tenant settings with the stored Bearer token', async () => {
+  it('updates organization settings with the stored Bearer token', async () => {
     const onUpdateSettings = vi.fn().mockResolvedValue({
       ...settings,
       displayName: 'Updated Trust',
@@ -96,7 +96,7 @@ describe('TenantSettingsPage', () => {
     fireEvent.change(screen.getByLabelText(/support email/i), { target: { value: 'help@example.com' } });
     fireEvent.change(screen.getByLabelText(/timezone/i), { target: { value: 'Asia/Kolkata' } });
     fireEvent.change(screen.getByLabelText(/locale/i), { target: { value: 'en-IN' } });
-    fireEvent.click(screen.getByRole('button', { name: /update tenant settings/i }));
+    fireEvent.click(screen.getByRole('button', { name: /update organization settings/i }));
 
     await waitFor(() => expect(onUpdateSettings).toHaveBeenCalledWith({
       displayName: 'Updated Trust',

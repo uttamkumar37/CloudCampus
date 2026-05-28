@@ -44,7 +44,7 @@ export function SchoolSelector() {
   return (
     <section className="workflow-panel auth-panel" aria-labelledby="school-selector-title">
       <p className="eyebrow">School context</p>
-      <h2 id="school-selector-title">Active school</h2>
+      <h2 id="school-selector-title">Current school</h2>
       <p className="summary compact-summary">
         {currentUser.activeSchool?.name ?? 'No active school selected'}
       </p>

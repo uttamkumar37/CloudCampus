@@ -9,10 +9,10 @@ describe('TenantOnboardingPage', () => {
     const storage = { getItem: vi.fn().mockReturnValue('signed-super-token') };
     render(<TenantOnboardingPage onSubmit={onSubmit} storage={storage} />);
 
-    fireEvent.change(screen.getByLabelText(/tenant code/i), {
+    fireEvent.change(screen.getByLabelText(/organization code/i), {
       target: { value: 'DEMO' },
     });
-    fireEvent.change(screen.getByLabelText(/tenant name/i), {
+    fireEvent.change(screen.getByLabelText(/organization name/i), {
       target: { value: 'Demo Trust' },
     });
     fireEvent.change(screen.getByLabelText(/first school code/i), {
@@ -82,10 +82,10 @@ describe('TenantOnboardingPage', () => {
 });
 
 function fillValidForm() {
-  fireEvent.change(screen.getByLabelText(/tenant code/i), {
+  fireEvent.change(screen.getByLabelText(/organization code/i), {
     target: { value: 'demo' },
   });
-  fireEvent.change(screen.getByLabelText(/tenant name/i), {
+  fireEvent.change(screen.getByLabelText(/organization name/i), {
     target: { value: 'Demo Trust' },
   });
   fireEvent.change(screen.getByLabelText(/first school code/i), {

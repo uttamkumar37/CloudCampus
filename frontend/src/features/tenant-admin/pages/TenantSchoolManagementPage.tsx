@@ -162,7 +162,7 @@ export function TenantSchoolManagementPage({
         setMessage(`${result.email} invitation resent`);
       } else {
         const result = await onRevokeSchoolAdminAccess(schoolId, userId, token);
-        setMessage(`${result.userId} access revoked (${result.remainingSchoolAdmins} remain)`);
+        setMessage(`School Admin access revoked (${result.remainingSchoolAdmins} remain)`);
       }
     } catch {
       setError(action === 'resend' ? 'Invitation resend failed.' : 'Access revoke failed.');
@@ -172,8 +172,8 @@ export function TenantSchoolManagementPage({
 
   return (
     <section className="workflow-panel" aria-labelledby="tenant-school-management-title">
-      <p className="eyebrow">MUL-006</p>
-      <h2 id="tenant-school-management-title">Manage tenant schools</h2>
+      <p className="eyebrow">School management</p>
+      <h2 id="tenant-school-management-title">Manage schools</h2>
 
       <form className="workflow-form compact-form" onSubmit={(event) => {
         event.preventDefault();
@@ -188,15 +188,15 @@ export function TenantSchoolManagementPage({
             <strong>{school.name}</strong>
             <span>{school.code}</span>
             <span>{school.active ? 'Active' : 'Inactive'}</span>
-            <span>{school.primarySchool ? 'Primary' : school.id}</span>
+            <span>{school.primarySchool ? 'Primary school' : 'Branch school'}</span>
           </article>
         ))}
       </div>
 
       <form className="workflow-form compact-form" onSubmit={handleUpdateSchool}>
         <label>
-          School ID to update
-          <input name="schoolId" placeholder="school-id" required />
+          School to update
+          <input name="schoolId" placeholder="Select a school from the list above" required />
         </label>
         <label>
           New school name
@@ -207,16 +207,16 @@ export function TenantSchoolManagementPage({
 
       <form className="workflow-form compact-form" onSubmit={handleDeactivateSchool}>
         <label>
-          School ID to deactivate
-          <input name="schoolId" placeholder="school-id" required />
+          School to deactivate
+          <input name="schoolId" placeholder="Select a school from the list above" required />
         </label>
         <button type="submit">Deactivate school</button>
       </form>
 
       <form className="workflow-form compact-form" onSubmit={handleListAdmins}>
         <label>
-          School ID for admins
-          <input name="schoolId" placeholder="school-id" required />
+          School
+          <input name="schoolId" placeholder="Select a school from the list above" required />
         </label>
         <button type="submit">Load School Admins</button>
       </form>
@@ -234,24 +234,24 @@ export function TenantSchoolManagementPage({
 
       <form className="workflow-form compact-form" onSubmit={(event) => void handleAdminAction(event, 'resend')}>
         <label>
-          School ID for resend
-          <input name="schoolId" placeholder="school-id" required />
+          School
+          <input name="schoolId" placeholder="Select a school" required />
         </label>
         <label>
-          School Admin user ID
-          <input name="userId" placeholder="user-id" required />
+          School Admin
+          <input name="userId" placeholder="Select a School Admin" required />
         </label>
         <button type="submit">Resend invitation</button>
       </form>
 
       <form className="workflow-form compact-form" onSubmit={(event) => void handleAdminAction(event, 'revoke')}>
         <label>
-          School ID for revoke
-          <input name="schoolId" placeholder="school-id" required />
+          School
+          <input name="schoolId" placeholder="Select a school" required />
         </label>
         <label>
-          School Admin user ID
-          <input name="userId" placeholder="user-id" required />
+          School Admin
+          <input name="userId" placeholder="Select a School Admin" required />
         </label>
         <button type="submit">Revoke access</button>
       </form>
