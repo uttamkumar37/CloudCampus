@@ -63,7 +63,7 @@ jobs:
           echo "frontend_image=ghcr.io/${repository}/frontend:${image_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to GitHub Container Registry
         if: inputs.push_images
