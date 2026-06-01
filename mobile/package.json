@@ -13,17 +13,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "expo": "^56.0.4",
+    "expo": "^56.0.8",
     "react": "^19.2.6",
     "react-native": "^0.85.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.15",
-    "eslint": "^10.4.0",
+    "eslint": "^10.4.1",
     "globals": "^17.6.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.60.0",
-    "vitest": "^4.0.14"
+    "vitest": "^4.1.8"
   }
 }
