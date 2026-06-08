@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TenantSettingsPage } from './TenantSettingsPage';
 import type { TenantSettings, TenantUsage } from '../api/tenantSettingsApi';
+import { TenantSettingsPage, TenantUsagePage } from './TenantSettingsPage';
 
 function storageWithToken(token: string | null) {
   return {
@@ -40,7 +40,7 @@ const usage: TenantUsage = {
 };
 
 describe('TenantSettingsPage', () => {
-  it('requires a Tenant Admin token before loading settings', () => {
+  it('requires a Tenant Admin token before loading settings', async () => {
     const onLoadSettings = vi.fn();
 
     render(
@@ -50,34 +50,28 @@ describe('TenantSettingsPage', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /load organization settings/i }));
-
-    expect(screen.getByText(/tenant admin login is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/tenant admin login is required/i)).toBeInTheDocument();
     expect(onLoadSettings).not.toHaveBeenCalled();
   });
 
-  it('loads settings and usage with the stored Bearer token', async () => {
+  it('loads organization settings with the stored token', async () => {
     const onLoadSettings = vi.fn().mockResolvedValue(settings);
-    const onLoadUsage = vi.fn().mockResolvedValue(usage);
 
     render(
       <TenantSettingsPage
         onLoadSettings={onLoadSettings}
-        onLoadUsage={onLoadUsage}
         storage={storageWithToken('tenant-admin-token')}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /load organization settings/i }));
-
     await waitFor(() => expect(onLoadSettings).toHaveBeenCalledWith('tenant-admin-token'));
-    expect(onLoadUsage).toHaveBeenCalledWith('tenant-admin-token');
-    expect(await screen.findByText(/trust schools group settings loaded/i)).toBeInTheDocument();
-    expect(screen.getByText(/schools: 2\/3/i)).toBeInTheDocument();
-    expect(screen.getByText(/students: 120/i)).toBeInTheDocument();
+    expect(await screen.findByDisplayValue(/trust schools group/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/billing@example.com/i)).toBeInTheDocument();
+    expect(screen.getByText(/TRUST/i)).toBeInTheDocument();
   });
 
-  it('updates organization settings with the stored Bearer token', async () => {
+  it('updates organization settings with the stored token', async () => {
+    const onLoadSettings = vi.fn().mockResolvedValue(settings);
     const onUpdateSettings = vi.fn().mockResolvedValue({
       ...settings,
       displayName: 'Updated Trust',
@@ -86,17 +80,17 @@ describe('TenantSettingsPage', () => {
 
     render(
       <TenantSettingsPage
+        onLoadSettings={onLoadSettings}
         onUpdateSettings={onUpdateSettings}
         storage={storageWithToken('tenant-admin-token')}
       />,
     );
 
+    expect(await screen.findByDisplayValue(/trust schools group/i)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Updated Trust' } });
     fireEvent.change(screen.getByLabelText(/billing email/i), { target: { value: 'accounts@example.com' } });
     fireEvent.change(screen.getByLabelText(/support email/i), { target: { value: 'help@example.com' } });
-    fireEvent.change(screen.getByLabelText(/timezone/i), { target: { value: 'Asia/Kolkata' } });
-    fireEvent.change(screen.getByLabelText(/locale/i), { target: { value: 'en-IN' } });
-    fireEvent.click(screen.getByRole('button', { name: /update organization settings/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save settings/i }));
 
     await waitFor(() => expect(onUpdateSettings).toHaveBeenCalledWith({
       displayName: 'Updated Trust',
@@ -105,6 +99,26 @@ describe('TenantSettingsPage', () => {
       timezone: 'Asia/Kolkata',
       locale: 'en-IN',
     }, 'tenant-admin-token'));
-    expect(await screen.findByText(/updated trust settings updated/i)).toBeInTheDocument();
+    expect(await screen.findByText(/updated trust settings updated\./i)).toBeInTheDocument();
+  });
+});
+
+describe('TenantUsagePage', () => {
+  it('loads subscription usage as read-only Tenant Admin data', async () => {
+    const onLoadUsage = vi.fn().mockResolvedValue(usage);
+
+    render(
+      <TenantUsagePage
+        onLoadUsage={onLoadUsage}
+        storage={storageWithToken('tenant-admin-token')}
+      />,
+    );
+
+    await waitFor(() => expect(onLoadUsage).toHaveBeenCalledWith('tenant-admin-token'));
+    expect(await screen.findByText(/subscription usage/i)).toBeInTheDocument();
+    expect(screen.getAllByText('2/3').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('120').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Schools 67% used')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /save/i })).not.toBeInTheDocument();
   });
 });

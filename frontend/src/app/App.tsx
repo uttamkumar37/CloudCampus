@@ -68,10 +68,10 @@ import { StaffProvisioningPage } from '../features/staff/pages/StaffProvisioning
 import { StudentImportPage } from '../features/student/pages/StudentImportPage';
 import { getSuperAdminNotifications, searchSuperAdmin, type SuperAdminSearchResponse } from '../features/super-admin/api/platformApi';
 import { SuperAdminPlatformPage } from '../features/super-admin/pages/SuperAdminPlatformPage';
+import { TenantAdminDashboardPage } from '../features/tenant-admin/pages/TenantAdminDashboardPage';
 import { TenantReportsPage } from '../features/tenant-admin/pages/TenantReportsPage';
-import { TenantSchoolCreationPage } from '../features/tenant-admin/pages/TenantSchoolCreationPage';
 import { TenantSchoolManagementPage } from '../features/tenant-admin/pages/TenantSchoolManagementPage';
-import { TenantSettingsPage } from '../features/tenant-admin/pages/TenantSettingsPage';
+import { TenantSettingsPage, TenantUsagePage } from '../features/tenant-admin/pages/TenantSettingsPage';
 import {
   listTeacherAssignments,
   listTeacherAttendance,
@@ -90,6 +90,8 @@ type AppProps = {
   authClient?: Partial<AuthClient>;
   storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 };
+
+type AppStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 type NavItem = {
   id: string;
@@ -348,7 +350,7 @@ function AppExperience({ storage }: Pick<AppProps, 'storage'>) {
     return <PublicAuthExperience storage={storage} />;
   }
 
-  return <AuthenticatedExperience user={auth.currentUser} />;
+  return <AuthenticatedExperience storage={storage} user={auth.currentUser} />;
 }
 
 function PublicAuthExperience({ storage }: Pick<AppProps, 'storage'>) {
@@ -811,7 +813,7 @@ function AccessPanel({
   );
 }
 
-function AuthenticatedExperience({ user }: { user: CurrentUser }) {
+function AuthenticatedExperience({ storage, user }: { storage?: AppStorage; user: CurrentUser }) {
   const [activeNav, setActiveNav] = useState('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [goPrefixActive, setGoPrefixActive] = useState(false);
@@ -906,8 +908,10 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
             ? activeNav !== 'dashboard'
               ? <CompactSessionBanner onOpenDashboard={() => setActiveNav('dashboard')} user={user} />
               : null
-            : <PortalDashboard navItems={navItems} onSelectNav={setActiveNav} user={user} />}
-          <RoleWorkspace activeNav={activeNav} onSelectNav={setActiveNav} user={user} />
+            : user.role === 'TENANT_ADMIN'
+              ? null
+              : <PortalDashboard navItems={navItems} onSelectNav={setActiveNav} user={user} />}
+          <RoleWorkspace activeNav={activeNav} onSelectNav={setActiveNav} storage={storage} user={user} />
         </div>
       </section>
 
@@ -1468,7 +1472,17 @@ function RoleInfoGrid({ user }: { user: CurrentUser }) {
   );
 }
 
-function RoleWorkspace({ activeNav, onSelectNav, user }: { activeNav: string; onSelectNav: (navId: string) => void; user: CurrentUser }) {
+function RoleWorkspace({
+  activeNav,
+  onSelectNav,
+  storage,
+  user,
+}: {
+  activeNav: string;
+  onSelectNav: (navId: string) => void;
+  storage?: AppStorage;
+  user: CurrentUser;
+}) {
   if (user.role === 'SUPER_ADMIN') {
     return (
       <section className="role-workspace super-admin-workspace" aria-label="Super Admin area">
@@ -1481,7 +1495,7 @@ function RoleWorkspace({ activeNav, onSelectNav, user }: { activeNav: string; on
     return (
       <section className="role-workspace" aria-label="Tenant Admin area">
         <WorkspaceHeader title="Organization workspace" activeNav={activeNav} />
-        <TenantAdminModule activeNav={activeNav} />
+        <TenantAdminModule activeNav={activeNav} onSelectNav={onSelectNav} storage={storage} />
       </section>
     );
   }
@@ -1621,35 +1635,37 @@ function SuperAdminModule({ activeNav, onSelectNav }: { activeNav: string; onSel
   return <SuperAdminPlatformPage onNavigate={onSelectNav} section={activeNav} />;
 }
 
-function TenantAdminModule({ activeNav }: { activeNav: string }) {
+function TenantAdminModule({
+  activeNav,
+  onSelectNav,
+  storage,
+}: {
+  activeNav: string;
+  onSelectNav: (navId: string) => void;
+  storage?: AppStorage;
+}) {
   if (activeNav === 'dashboard') {
-    return <DashboardWorkspacePanel role="TENANT_ADMIN" />;
+    return <TenantAdminDashboardPage onNavigate={onSelectNav} storage={storage} />;
   }
 
   if (activeNav === 'schools') {
-    return (
-      <div className="workspace-grid">
-        <TenantSchoolCreationPage />
-        <TenantSchoolManagementPage />
-      </div>
-    );
+    return <TenantSchoolManagementPage mode="schools" storage={storage} />;
   }
 
-  if (activeNav === 'settings' || activeNav === 'usage' || activeNav === 'branding') {
-    return <TenantSettingsPage />;
+  if (activeNav === 'settings' || activeNav === 'branding') {
+    return <TenantSettingsPage storage={storage} />;
+  }
+
+  if (activeNav === 'usage') {
+    return <TenantUsagePage storage={storage} />;
   }
 
   if (activeNav === 'reports') {
-    return <TenantReportsPage />;
+    return <TenantReportsPage storage={storage} />;
   }
 
   if (activeNav === 'admins') {
-    return (
-      <div className="workspace-grid">
-        <TenantSchoolManagementPage />
-        <EmptyState title="School Admins are school-scoped" detail="Select a school in School Management to list, invite, resend or revoke School Admin access through the real backend API." />
-      </div>
-    );
+    return <TenantSchoolManagementPage mode="admins" storage={storage} />;
   }
 
   return <ComingSoonPanel activeNav={activeNav} role="TENANT_ADMIN" />;

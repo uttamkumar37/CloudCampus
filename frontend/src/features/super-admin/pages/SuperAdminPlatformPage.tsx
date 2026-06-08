@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactElement, type ReactNode, useEffect, useState } from 'react';
+import { type FormEvent, type ReactElement, type ReactNode, useEffect, useId, useState } from 'react';
 
 import { useAuthState } from '../../auth/hooks/authState';
 import { TenantOnboardingPage } from './TenantOnboardingPage';
@@ -142,6 +142,18 @@ const AI_RECOMMENDATION_TYPES = [
   'SUBSCRIPTION_RISK_INSIGHT',
 ];
 const REPORT_TYPES = ['PLATFORM_SUMMARY', 'TENANT_DIRECTORY', 'SCHOOL_DIRECTORY', 'INVOICE_SUMMARY', 'STUDENT_DIRECTORY', 'FEE_DEMANDS'];
+type PlanFormField =
+  | 'code'
+  | 'name'
+  | 'description'
+  | 'maxSchools'
+  | 'maxStudents'
+  | 'maxStaff'
+  | 'monthlyPriceCents'
+  | 'annualPriceCents'
+  | 'currency'
+  | 'status';
+type PlanFormErrors = Partial<Record<PlanFormField, string>>;
 
 export function SuperAdminPlatformPage({ onNavigate, section }: SuperAdminPlatformPageProps) {
   const { accessToken } = useAuthState();
@@ -987,6 +999,9 @@ function SubscriptionPlans({ token, refreshKey, onRefresh }: { token: string; re
   const plans = useLoader(() => listSuperAdminSubscriptionPlans(token), [token, refreshKey]);
   const [activeTab, setActiveTab] = useState<'plans' | 'tenant'>('plans');
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const [planDrawerOpen, setPlanDrawerOpen] = useState(false);
+  const [planErrors, setPlanErrors] = useState<PlanFormErrors>({});
+  const [planSubmitting, setPlanSubmitting] = useState(false);
   const [tenantId, setTenantId] = useState('');
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const tenantSubscription = useLoader(
@@ -1000,15 +1015,79 @@ function SubscriptionPlans({ token, refreshKey, onRefresh }: { token: string; re
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!planDrawerOpen || typeof document === 'undefined') {
+      return undefined;
+    }
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        closePlanDrawer();
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [planDrawerOpen, planSubmitting]);
+
+  function openCreatePlan() {
+    setSelectedPlan(null);
+    setPlanErrors({});
+    setActionError(null);
+    setPlanDrawerOpen(true);
+  }
+
+  function openEditPlan(plan: SubscriptionPlan) {
+    setSelectedPlan(plan);
+    setPlanErrors({});
+    setActionError(null);
+    setPlanDrawerOpen(true);
+  }
+
+  function closePlanDrawer() {
+    if (planSubmitting) {
+      return;
+    }
+    setPlanDrawerOpen(false);
+    setSelectedPlan(null);
+    setPlanErrors({});
+  }
+
+  function selectSubscriptionTab(tab: 'plans' | 'tenant') {
+    setActiveTab(tab);
+    if (tab !== 'plans') {
+      closePlanDrawer();
+    }
+  }
+
   async function createPlan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const target = event.currentTarget;
     const form = new FormData(target);
-    await runSubscriptionAction(
-      () => createSuperAdminSubscriptionPlan(planPayloadFromForm(form), token),
-      'Subscription plan created.',
-      target,
-    );
+    const validation = validatePlanForm(form);
+    setPlanErrors(validation.errors);
+    if (!validation.valid) {
+      setActionError('Please fix the highlighted plan fields.');
+      return;
+    }
+    setPlanSubmitting(true);
+    try {
+      const success = await runSubscriptionAction(
+        () => createSuperAdminSubscriptionPlan(planPayloadFromForm(form), token),
+        'Subscription plan created.',
+        target,
+      );
+      if (success) {
+        setPlanDrawerOpen(false);
+        setSelectedPlan(null);
+        setPlanErrors({});
+      }
+    } finally {
+      setPlanSubmitting(false);
+    }
   }
 
   async function updatePlan(event: FormEvent<HTMLFormElement>) {
@@ -1016,10 +1095,26 @@ function SubscriptionPlans({ token, refreshKey, onRefresh }: { token: string; re
     if (!selectedPlan) return;
     const target = event.currentTarget;
     const form = new FormData(target);
-    await runSubscriptionAction(
-      () => updateSuperAdminSubscriptionPlan(selectedPlan.id, planPayloadFromForm(form), token),
-      'Subscription plan updated.',
-    );
+    const validation = validatePlanForm(form);
+    setPlanErrors(validation.errors);
+    if (!validation.valid) {
+      setActionError('Please fix the highlighted plan fields.');
+      return;
+    }
+    setPlanSubmitting(true);
+    try {
+      const success = await runSubscriptionAction(
+        () => updateSuperAdminSubscriptionPlan(selectedPlan.id, planPayloadFromForm(form), token),
+        'Subscription plan updated.',
+      );
+      if (success) {
+        setPlanDrawerOpen(false);
+        setSelectedPlan(null);
+        setPlanErrors({});
+      }
+    } finally {
+      setPlanSubmitting(false);
+    }
   }
 
   async function loadTenantSubscription(event: FormEvent<HTMLFormElement>) {
@@ -1066,33 +1161,59 @@ function SubscriptionPlans({ token, refreshKey, onRefresh }: { token: string; re
       setMessage(success);
       form?.reset();
       onRefresh();
+      return true;
     } catch (caught) {
       setActionError(errorMessage(caught));
+      return false;
     }
   }
 
   return (
     <section className="super-admin-panel">
-      <PanelTitle eyebrow="Business" title="Plans" detail="Define packages, limits, billing cycles, and customer subscription options." />
-      {message ? <p className="toast-message">{message}</p> : null}
-      {actionError ? <PanelState title="Subscription action failed" detail={actionError} tone="error" /> : null}
+      <PanelTitle
+        eyebrow="Business"
+        title="Plans"
+        detail="Define packages, limits, billing cycles, and customer subscription options."
+        action={<button onClick={openCreatePlan} type="button">Create plan</button>}
+      />
+      {message ? <p className="toast-message" role="status">{message}</p> : null}
+      {actionError && !planDrawerOpen ? <p className="toast-message error" role="alert">{actionError}</p> : null}
       <div className="super-admin-tabs" role="tablist" aria-label="Subscription tabs">
-        <TabButton active={activeTab === 'plans'} onClick={() => setActiveTab('plans')}>Plans</TabButton>
-        <TabButton active={activeTab === 'tenant'} onClick={() => setActiveTab('tenant')}>Organization subscription</TabButton>
+        <TabButton active={activeTab === 'plans'} onClick={() => selectSubscriptionTab('plans')}>Plans</TabButton>
+        <TabButton active={activeTab === 'tenant'} onClick={() => selectSubscriptionTab('tenant')}>Organization subscription</TabButton>
       </div>
 
       {activeTab === 'plans' ? (
         <>
+          {plans.status === 'ready' ? <SubscriptionPlanOverview items={plans.data ?? []} /> : null}
           <RemoteList state={plans} empty="No subscription plans yet.">
             {(items) => (
-              <div className="super-admin-grid">
-                <SubscriptionPlanTable items={items} onSelect={setSelectedPlan} />
-                <SubscriptionPlanForm key={selectedPlan?.id ?? 'create-plan'} onSubmit={selectedPlan ? updatePlan : createPlan} plan={selectedPlan} />
-              </div>
+              <section className="super-admin-table-card" aria-labelledby="plan-catalog-title">
+                <div className="super-admin-section-heading">
+                  <div>
+                    <h3 id="plan-catalog-title">Plan catalog</h3>
+                    <span>{items.length} package{items.length === 1 ? '' : 's'} configured</span>
+                  </div>
+                  <button onClick={openCreatePlan} type="button">Create plan</button>
+                </div>
+                <SubscriptionPlanTable items={items} onSelect={openEditPlan} />
+              </section>
             )}
           </RemoteList>
           {plans.status === 'ready' && (plans.data?.length ?? 0) === 0 ? (
-            <SubscriptionPlanForm onSubmit={createPlan} plan={null} />
+            <div className="super-admin-empty-action">
+              <button onClick={openCreatePlan} type="button">Create first plan</button>
+            </div>
+          ) : null}
+          {planDrawerOpen ? (
+            <SubscriptionPlanDrawer
+              errors={planErrors}
+              onClose={closePlanDrawer}
+              onSubmit={selectedPlan ? updatePlan : createPlan}
+              plan={selectedPlan}
+              submitting={planSubmitting}
+              submitError={actionError}
+            />
           ) : null}
         </>
       ) : null}
@@ -1140,50 +1261,330 @@ function SubscriptionPlans({ token, refreshKey, onRefresh }: { token: string; re
   );
 }
 
-function SubscriptionPlanTable({ items, onSelect }: { items: SubscriptionPlan[]; onSelect: (plan: SubscriptionPlan) => void }) {
+function SubscriptionPlanOverview({ items }: { items: SubscriptionPlan[] }) {
+  const activePlans = items.filter((plan) => plan.status === 'ACTIVE');
+  const archivedPlans = items.filter((plan) => plan.status === 'ARCHIVED');
+  const monthlyPrices = activePlans.map((plan) => plan.monthlyPriceCents).filter((price) => price > 0);
+  const annualPrices = activePlans.map((plan) => plan.annualPriceCents).filter((price) => price > 0);
   return (
-    <table className="super-admin-table">
-      <thead><tr><th>Plan</th><th>Limits</th><th>Price</th><th>Status</th><th>Action</th></tr></thead>
-      <tbody>
-        {items.map((plan) => (
-          <tr key={plan.id}>
-            <td><strong>{plan.name}</strong><span>{plan.code}</span></td>
-            <td>{plan.maxSchools} schools, {plan.maxStudents} students, {plan.maxStaff} staff</td>
-            <td>{money(plan.monthlyPriceCents)} monthly</td>
-            <td><StatusBadge status={plan.status} /></td>
-            <td><button onClick={() => onSelect(plan)} type="button">Edit plan</button></td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div className="super-admin-plan-stats" aria-label="Plan summary">
+      <article>
+        <span>Total plans</span>
+        <strong>{items.length}</strong>
+        <em>{activePlans.length} active</em>
+      </article>
+      <article>
+        <span>Archived</span>
+        <strong>{archivedPlans.length}</strong>
+        <em>Hidden from new assignments</em>
+      </article>
+      <article>
+        <span>Monthly from</span>
+        <strong>{monthlyPrices.length > 0 ? money(Math.min(...monthlyPrices)) : money(0)}</strong>
+        <em>Lowest active plan</em>
+      </article>
+      <article>
+        <span>Annual from</span>
+        <strong>{annualPrices.length > 0 ? money(Math.min(...annualPrices)) : money(0)}</strong>
+        <em>Lowest active plan</em>
+      </article>
+    </div>
   );
 }
 
-function SubscriptionPlanForm({
+function SubscriptionPlanTable({ items, onSelect }: { items: SubscriptionPlan[]; onSelect: (plan: SubscriptionPlan) => void }) {
+  return (
+    <div className="super-admin-table-shell" role="region" aria-label="Plans table" tabIndex={0}>
+      <table className="super-admin-table plans-table">
+        <thead>
+          <tr>
+            <th scope="col">Plan</th>
+            <th scope="col">Limits</th>
+            <th scope="col">Billing</th>
+            <th scope="col">Status</th>
+            <th scope="col">Updated</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((plan) => (
+            <tr key={plan.id}>
+              <td>
+                <strong>{plan.name}</strong>
+                <span>{plan.code}</span>
+                {plan.description ? <em>{plan.description}</em> : null}
+              </td>
+              <td>
+                <div className="plan-limit-list">
+                  <span>{plan.maxSchools} schools</span>
+                  <span>{plan.maxStudents} students</span>
+                  <span>{plan.maxStaff} staff</span>
+                </div>
+              </td>
+              <td>
+                <strong>{money(plan.monthlyPriceCents)} / mo</strong>
+                <span>{money(plan.annualPriceCents)} / yr</span>
+                <span>{plan.currency}</span>
+              </td>
+              <td><StatusBadge status={plan.status} /></td>
+              <td>{dateLabel(plan.updatedAt)}</td>
+              <td className="super-admin-table-actions">
+                <button onClick={() => onSelect(plan)} type="button">Edit</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SubscriptionPlanDrawer({
+  errors,
+  onClose,
   onSubmit,
   plan,
+  submitting,
+  submitError,
 }: {
+  errors: PlanFormErrors;
+  onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   plan: SubscriptionPlan | null;
+  submitting: boolean;
+  submitError: string | null;
 }) {
+  const titleId = useId();
   return (
-    <form className="super-admin-form" onSubmit={(event) => onSubmit(event)}>
-      <h3>{plan ? 'Edit plan' : 'Create plan'}</h3>
-      <input defaultValue={plan?.code ?? ''} name="code" placeholder="PLAN_CODE" required />
-      <input defaultValue={plan?.name ?? ''} name="name" placeholder="Plan name" required />
-      <input defaultValue={plan?.description ?? ''} name="description" placeholder="Description" />
-      <input defaultValue={plan?.maxSchools ?? 1} min="1" name="maxSchools" placeholder="Schools" required type="number" />
-      <input defaultValue={plan?.maxStudents ?? 0} min="0" name="maxStudents" placeholder="Students" required type="number" />
-      <input defaultValue={plan?.maxStaff ?? 0} min="0" name="maxStaff" placeholder="Staff" required type="number" />
-      <input defaultValue={plan?.monthlyPriceCents ?? 0} min="0" name="monthlyPriceCents" placeholder="Monthly price cents" required type="number" />
-      <input defaultValue={plan?.annualPriceCents ?? 0} min="0" name="annualPriceCents" placeholder="Annual price cents" required type="number" />
-      <input defaultValue={plan?.currency ?? 'USD'} maxLength={3} minLength={3} name="currency" placeholder="USD" required />
-      <select defaultValue={plan?.status ?? 'ACTIVE'} name="status">
-        <option value="ACTIVE">ACTIVE</option>
-        <option value="ARCHIVED">ARCHIVED</option>
+    <div className="super-admin-drawer" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <button className="super-admin-drawer-backdrop" aria-label="Close plan drawer" onClick={onClose} type="button" />
+      <aside className="super-admin-drawer-panel">
+        <header className="super-admin-drawer-header">
+          <div>
+            <p className="eyebrow">Subscription plan</p>
+            <h3 id={titleId}>{plan ? 'Edit plan' : 'Create plan'}</h3>
+            <span>{plan ? plan.code : 'New package'}</span>
+          </div>
+          <button className="secondary" disabled={submitting} onClick={onClose} type="button">Close</button>
+        </header>
+        <form className="super-admin-plan-form" noValidate onSubmit={(event) => onSubmit(event)}>
+          <div className="super-admin-drawer-body">
+            {submitError ? <p className="toast-message error" role="alert">{submitError}</p> : null}
+            <fieldset className="plan-form-section">
+              <legend>Basic details</legend>
+              <PlanTextField
+                error={errors.code}
+                field="code"
+                hint="Use uppercase letters, numbers, hyphens or underscores."
+                label="Plan code"
+                placeholder="ENTERPRISE_PLUS"
+                required
+                defaultValue={plan?.code ?? ''}
+              />
+              <PlanTextField
+                error={errors.name}
+                field="name"
+                label="Plan name"
+                placeholder="Enterprise Plus"
+                required
+                defaultValue={plan?.name ?? ''}
+              />
+              <PlanTextField
+                error={errors.description}
+                field="description"
+                label="Description"
+                placeholder="Best for multi-school groups"
+                textarea
+                defaultValue={plan?.description ?? ''}
+              />
+            </fieldset>
+            <fieldset className="plan-form-section">
+              <legend>Limits</legend>
+              <div className="plan-form-grid">
+                <PlanTextField
+                  error={errors.maxSchools}
+                  field="maxSchools"
+                  label="Schools"
+                  min={1}
+                  placeholder="10"
+                  required
+                  type="number"
+                  defaultValue={plan?.maxSchools ?? 1}
+                />
+                <PlanTextField
+                  error={errors.maxStudents}
+                  field="maxStudents"
+                  label="Students"
+                  min={0}
+                  placeholder="5000"
+                  required
+                  type="number"
+                  defaultValue={plan?.maxStudents ?? 0}
+                />
+                <PlanTextField
+                  error={errors.maxStaff}
+                  field="maxStaff"
+                  label="Staff"
+                  min={0}
+                  placeholder="500"
+                  required
+                  type="number"
+                  defaultValue={plan?.maxStaff ?? 0}
+                />
+              </div>
+            </fieldset>
+            <fieldset className="plan-form-section">
+              <legend>Billing</legend>
+              <div className="plan-form-grid">
+                <PlanTextField
+                  error={errors.monthlyPriceCents}
+                  field="monthlyPriceCents"
+                  hint="Enter cents. Example: 25000 = $250."
+                  label="Monthly price"
+                  min={0}
+                  placeholder="25000"
+                  required
+                  type="number"
+                  defaultValue={plan?.monthlyPriceCents ?? 0}
+                />
+                <PlanTextField
+                  error={errors.annualPriceCents}
+                  field="annualPriceCents"
+                  hint="Enter cents. Example: 250000 = $2,500."
+                  label="Annual price"
+                  min={0}
+                  placeholder="250000"
+                  required
+                  type="number"
+                  defaultValue={plan?.annualPriceCents ?? 0}
+                />
+                <PlanTextField
+                  error={errors.currency}
+                  field="currency"
+                  label="Currency"
+                  maxLength={3}
+                  minLength={3}
+                  placeholder="USD"
+                  required
+                  defaultValue={plan?.currency ?? 'USD'}
+                />
+              </div>
+            </fieldset>
+            <fieldset className="plan-form-section">
+              <legend>Status</legend>
+              <PlanSelectField error={errors.status} field="status" label="Plan status" required defaultValue={plan?.status ?? 'ACTIVE'}>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="ARCHIVED">ARCHIVED</option>
+              </PlanSelectField>
+            </fieldset>
+          </div>
+          <footer className="super-admin-drawer-footer">
+            <button className="secondary" disabled={submitting} onClick={onClose} type="button">Cancel</button>
+            <button disabled={submitting} type="submit">{submitting ? 'Saving...' : plan ? 'Save plan' : 'Create plan'}</button>
+          </footer>
+        </form>
+      </aside>
+    </div>
+  );
+}
+
+function PlanTextField({
+  defaultValue,
+  error,
+  field,
+  hint,
+  label,
+  maxLength,
+  min,
+  minLength,
+  placeholder,
+  required = false,
+  textarea = false,
+  type = 'text',
+}: {
+  defaultValue: string | number;
+  error?: string;
+  field: PlanFormField;
+  hint?: string;
+  label: string;
+  maxLength?: number;
+  min?: number;
+  minLength?: number;
+  placeholder: string;
+  required?: boolean;
+  textarea?: boolean;
+  type?: string;
+}) {
+  const inputId = `plan-${field}`;
+  const errorId = `${inputId}-error`;
+  const hintId = `${inputId}-hint`;
+  const describedBy = [error ? errorId : '', hint ? hintId : ''].filter(Boolean).join(' ') || undefined;
+  return (
+    <div className="plan-form-field">
+      <label htmlFor={inputId}>{label}{required ? <span aria-hidden="true">*</span> : null}</label>
+      {textarea ? (
+        <textarea
+          aria-describedby={describedBy}
+          aria-invalid={Boolean(error)}
+          defaultValue={defaultValue}
+          id={inputId}
+          name={field}
+          placeholder={placeholder}
+          rows={3}
+        />
+      ) : (
+        <input
+          aria-describedby={describedBy}
+          aria-invalid={Boolean(error)}
+          defaultValue={defaultValue}
+          id={inputId}
+          maxLength={maxLength}
+          min={min}
+          minLength={minLength}
+          name={field}
+          placeholder={placeholder}
+          required={required}
+          type={type}
+        />
+      )}
+      {hint ? <small id={hintId}>{hint}</small> : null}
+      {error ? <em id={errorId}>{error}</em> : null}
+    </div>
+  );
+}
+
+function PlanSelectField({
+  children,
+  defaultValue,
+  error,
+  field,
+  label,
+  required = false,
+}: {
+  children: ReactNode;
+  defaultValue: string;
+  error?: string;
+  field: PlanFormField;
+  label: string;
+  required?: boolean;
+}) {
+  const inputId = `plan-${field}`;
+  const errorId = `${inputId}-error`;
+  return (
+    <div className="plan-form-field">
+      <label htmlFor={inputId}>{label}{required ? <span aria-hidden="true">*</span> : null}</label>
+      <select
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={Boolean(error)}
+        defaultValue={defaultValue}
+        id={inputId}
+        name={field}
+        required={required}
+      >
+        {children}
       </select>
-      <button type="submit">{plan ? 'Save plan' : 'Create plan'}</button>
-    </form>
+      {error ? <em id={errorId}>{error}</em> : null}
+    </div>
   );
 }
 
@@ -1279,6 +1680,51 @@ function planPayloadFromForm(form: FormData): Partial<SubscriptionPlan> {
     annualPriceCents: Number(form.get('annualPriceCents') ?? 0),
     currency: String(form.get('currency') ?? 'USD').trim().toUpperCase(),
   };
+}
+
+function validatePlanForm(form: FormData): { errors: PlanFormErrors; valid: boolean } {
+  const errors: PlanFormErrors = {};
+  const code = String(form.get('code') ?? '').trim();
+  const name = String(form.get('name') ?? '').trim();
+  const currency = String(form.get('currency') ?? '').trim().toUpperCase();
+  const maxSchools = Number(form.get('maxSchools') ?? 0);
+  const maxStudents = Number(form.get('maxStudents') ?? 0);
+  const maxStaff = Number(form.get('maxStaff') ?? 0);
+  const monthlyPriceCents = Number(form.get('monthlyPriceCents') ?? -1);
+  const annualPriceCents = Number(form.get('annualPriceCents') ?? -1);
+  const status = String(form.get('status') ?? '');
+
+  if (!code) {
+    errors.code = 'Plan code is required.';
+  } else if (!/^[A-Z0-9_-]+$/.test(code)) {
+    errors.code = 'Enter uppercase letters, numbers, hyphens, or underscores only.';
+  }
+  if (!name) {
+    errors.name = 'Plan name is required.';
+  }
+  if (!Number.isFinite(maxSchools) || maxSchools < 1) {
+    errors.maxSchools = 'Allow at least one school.';
+  }
+  if (!Number.isFinite(maxStudents) || maxStudents < 0) {
+    errors.maxStudents = 'Students cannot be negative.';
+  }
+  if (!Number.isFinite(maxStaff) || maxStaff < 0) {
+    errors.maxStaff = 'Staff cannot be negative.';
+  }
+  if (!Number.isFinite(monthlyPriceCents) || monthlyPriceCents < 0) {
+    errors.monthlyPriceCents = 'Monthly price cannot be negative.';
+  }
+  if (!Number.isFinite(annualPriceCents) || annualPriceCents < 0) {
+    errors.annualPriceCents = 'Annual price cannot be negative.';
+  }
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    errors.currency = 'Use a 3-letter currency code.';
+  }
+  if (!['ACTIVE', 'ARCHIVED'].includes(status)) {
+    errors.status = 'Choose a valid plan status.';
+  }
+
+  return { errors, valid: Object.keys(errors).length === 0 };
 }
 
 function dateInputValue(value?: string | null) {

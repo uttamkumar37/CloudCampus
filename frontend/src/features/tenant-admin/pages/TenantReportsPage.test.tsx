@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { TenantReportsPage } from './TenantReportsPage';
 import type { TenantReportSummary } from '../api/tenantReportsApi';
+import { TenantReportsPage } from './TenantReportsPage';
 
 function storageWithToken(token: string | null) {
   return {
@@ -60,7 +60,7 @@ const tenantSummary: TenantReportSummary = {
 };
 
 describe('TenantReportsPage', () => {
-  it('loads tenant summary and drills into a school with the stored bearer token', async () => {
+  it('auto-loads tenant summary and drills into a school with the stored token', async () => {
     const onLoad = vi.fn().mockResolvedValue(tenantSummary);
     const onDrilldown = vi.fn().mockResolvedValue({
       ...tenantSummary,
@@ -74,35 +74,30 @@ describe('TenantReportsPage', () => {
 
     render(
       <TenantReportsPage
-        onLoad={onLoad}
         onDrilldown={onDrilldown}
+        onLoad={onLoad}
         storage={storageWithToken('tenant-admin-token')}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /load organization summary/i }));
-
     await waitFor(() => expect(onLoad).toHaveBeenCalledWith('tenant-admin-token'));
-    expect(await screen.findByText(/loaded 2 schools/i)).toBeInTheDocument();
-    expect(screen.getByText(/tenant one/i)).toBeInTheDocument();
-    expect(screen.getByText(/students: 3\/3/i)).toBeInTheDocument();
-    expect(screen.getByText(/alpha school \(a\)/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/alpha school/i)).length).toBeGreaterThan(0);
+    expect(screen.getByText(/active students/i)).toBeInTheDocument();
+    expect(screen.getByText(/school summaries/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: /view details/i })[1]);
 
     await waitFor(() => expect(onDrilldown).toHaveBeenCalledWith('school-b', 'tenant-admin-token'));
-    expect(await screen.findByText(/beta school drilldown loaded/i)).toBeInTheDocument();
-    expect(screen.getByText(/schools: 1\/1/i)).toBeInTheDocument();
+    expect(await screen.findByText(/beta school drilldown loaded\./i)).toBeInTheDocument();
+    expect(screen.getAllByText(/beta school/i).length).toBeGreaterThan(0);
   });
 
-  it('requires a Tenant Admin token before loading reports', () => {
+  it('requires a Tenant Admin token before loading reports', async () => {
     const onLoad = vi.fn();
 
     render(<TenantReportsPage onLoad={onLoad} storage={storageWithToken(null)} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /load organization summary/i }));
-
-    expect(screen.getByText(/tenant admin login is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/tenant admin login is required/i)).toBeInTheDocument();
     expect(onLoad).not.toHaveBeenCalled();
   });
 });

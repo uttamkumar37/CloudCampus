@@ -250,6 +250,85 @@ describe('App', () => {
           runtime: { jwtSecret: 'configured/hidden' },
         });
       }
+      if (url.includes('/v1/tenant-admin/schools') && url.includes('/admins')) {
+        return jsonResponse([]);
+      }
+      if (url.includes('/v1/tenant-admin/schools')) {
+        return jsonResponse([{
+          id: 'school-tenant',
+          tenantId: 'tenant-1',
+          code: 'MAIN',
+          name: 'Tenant Main School',
+          primarySchool: true,
+          active: true,
+          maxSchools: 3,
+          schoolsUsed: 1,
+        }]);
+      }
+      if (url.includes('/v1/tenant-admin/reports/summary')) {
+        return jsonResponse({
+          tenantId: 'tenant-1',
+          tenantName: 'Tenant One',
+          schoolId: null,
+          schoolName: null,
+          totalSchools: 1,
+          activeSchools: 1,
+          totals: {
+            totalStudents: 42,
+            activeStudents: 40,
+            totalFeeDemands: 2,
+            amountDue: 1000,
+            amountPaid: 600,
+            outstandingAmount: 400,
+          },
+          schools: [{
+            schoolId: 'school-tenant',
+            code: 'MAIN',
+            name: 'Tenant Main School',
+            primarySchool: true,
+            active: true,
+            metrics: {
+              totalStudents: 42,
+              activeStudents: 40,
+              totalFeeDemands: 2,
+              amountDue: 1000,
+              amountPaid: 600,
+              outstandingAmount: 400,
+            },
+          }],
+        });
+      }
+      if (url.includes('/v1/tenant-admin/subscription/usage')) {
+        return jsonResponse({
+          tenantId: 'tenant-1',
+          tenantCode: 'TENANT',
+          tenantName: 'Tenant One',
+          tenantStatus: 'ACTIVE',
+          planCode: 'GROWTH',
+          maxSchools: 3,
+          schoolsUsed: 1,
+          activeSchools: 1,
+          remainingSchools: 2,
+          schoolAdmins: 1,
+          teachers: 4,
+          staff: 6,
+          students: 42,
+          schoolLimitReached: false,
+        });
+      }
+      if (url.includes('/v1/tenant-admin/settings')) {
+        return jsonResponse({
+          tenantId: 'tenant-1',
+          tenantCode: 'TENANT',
+          tenantName: 'Tenant One',
+          displayName: 'Tenant One Group',
+          billingEmail: 'billing@tenant.test',
+          supportEmail: 'support@tenant.test',
+          timezone: 'Asia/Kolkata',
+          locale: 'en-IN',
+          updatedAt: '2026-05-28T00:00:00Z',
+        });
+      }
       if (url.includes('/dashboard/summary')) {
         return jsonResponse({ metrics: [], alerts: [], activity: [] });
       }
@@ -667,18 +746,24 @@ describe('App', () => {
 
     render(<App authClient={authClientFor(user, [])} storage={storageWithToken('tenant-admin-token')} />);
 
-    expect(await screen.findByRole('heading', { name: /tenant admin dashboard/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /tenant admin overview/i })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: /tenant admin area/i })).toBeInTheDocument();
     const tenantNav = screen.getByRole('navigation', { name: /tenant admin navigation/i });
     fireEvent.click(within(tenantNav).getByRole('button', { name: /schools/i }));
-    expect(screen.getByRole('heading', { name: /create school/i })).toBeInTheDocument();
+    expect((await screen.findAllByRole('heading', { name: /^schools$/i })).length).toBeGreaterThan(0);
+    expect(await screen.findByText(/tenant main school/i)).toBeInTheDocument();
+    fireEvent.click(within(tenantNav).getByRole('button', { name: /school admins/i }));
+    expect((await screen.findAllByRole('heading', { name: /school admins/i })).length).toBeGreaterThan(0);
     fireEvent.click(within(tenantNav).getByRole('button', { name: /settings/i }));
-    expect(screen.getByRole('heading', { name: /organization settings and usage/i })).toBeInTheDocument();
+    expect((await screen.findAllByRole('heading', { name: /^settings$/i })).length).toBeGreaterThan(0);
+    fireEvent.click(within(tenantNav).getByRole('button', { name: /subscription usage/i }));
+    expect((await screen.findAllByRole('heading', { name: /subscription usage/i })).length).toBeGreaterThan(0);
     fireEvent.click(within(tenantNav).getByRole('button', { name: /reports/i }));
-    expect(screen.getByRole('heading', { name: /organization reports/i })).toBeInTheDocument();
+    expect((await screen.findAllByRole('heading', { name: /^reports$/i })).length).toBeGreaterThan(0);
     expect(screen.queryByRole('heading', { name: /create organization with first school/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /link parent to student/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
+    expect(vi.mocked(fetch).mock.calls.some(([input]) => String(input).includes('/v1/super-admin'))).toBe(false);
   });
 
   it('activates a selected school through the current-user school API', async () => {
