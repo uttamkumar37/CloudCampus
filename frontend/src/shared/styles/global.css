@@ -462,8 +462,13 @@ p {
 }
 
 .sidebar-ai-card {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   padding: 14px;
+  color: inherit;
   background: linear-gradient(135deg, var(--surface), var(--primary-soft));
+  text-align: left;
 }
 
 .sidebar-ai-card p {
@@ -1160,7 +1165,9 @@ p {
 
 .super-admin-title button,
 .super-admin-table button,
-.super-admin-form button {
+.super-admin-form button,
+.super-admin-filters button,
+.super-admin-pagination button {
   border: 0;
   border-radius: 999px;
   background: linear-gradient(135deg, var(--primary), var(--violet));
@@ -1398,6 +1405,52 @@ p {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 11px 12px;
+}
+
+.super-admin-filters {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.super-admin-filters.compact {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.super-admin-filters input,
+.super-admin-filters select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 10px;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.super-admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 2px 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.super-admin-pagination div {
+  display: flex;
+  gap: 8px;
+}
+
+.super-admin-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .inline-check {
@@ -3851,6 +3904,47 @@ tr:last-child td {
   font-weight: 900;
 }
 
+.command-results {
+  display: grid;
+  gap: 8px;
+  max-height: 280px;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+  padding: 12px;
+}
+
+.command-results > strong,
+.command-results > span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.command-results button {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 6px 12px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  color: var(--text);
+  background: var(--surface-soft);
+  text-align: left;
+}
+
+.command-results button em {
+  grid-row: span 2;
+  color: var(--primary);
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.command-results button span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .metric-card,
 .analytics-panel,
 .quick-actions-panel {
@@ -4168,6 +4262,42 @@ tr:last-child td {
     radial-gradient(circle at 8% 0%, rgba(49, 87, 216, 0.13), transparent 30%),
     linear-gradient(135deg, color-mix(in srgb, var(--surface) 94%, transparent), var(--surface-soft));
   box-shadow: var(--shadow-soft);
+}
+
+.compact-session-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.compact-session-banner div {
+  display: grid;
+  gap: 5px;
+}
+
+.compact-session-banner strong {
+  color: var(--text);
+}
+
+.compact-session-banner em {
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.compact-session-banner button {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 12px;
+  color: #fff;
+  background: var(--primary);
+  font-weight: 900;
 }
 
 .session-welcome {

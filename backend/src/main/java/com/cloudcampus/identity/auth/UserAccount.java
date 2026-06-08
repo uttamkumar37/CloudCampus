@@ -96,6 +96,10 @@ public class UserAccount {
         this.mustChangePassword = true;
     }
 
+    public void changeRole(UserRole role) {
+        this.role = role;
+    }
+
     public String getId() {
         return id;
     }

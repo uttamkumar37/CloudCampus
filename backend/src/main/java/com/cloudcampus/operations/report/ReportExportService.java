@@ -213,6 +213,7 @@ public class ReportExportService {
         return switch (exportJob.getReportType()) {
             case STUDENT_DIRECTORY -> studentDirectory(exportJob);
             case FEE_DEMANDS -> feeDemands(exportJob);
+            default -> throw new BadRequestException("This report type is not available for school-scoped export processing.");
         };
     }
 

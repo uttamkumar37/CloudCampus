@@ -8,11 +8,16 @@ describe('auth role model', () => {
       'SUPER_ADMIN',
       'TENANT_ADMIN',
       'SCHOOL_ADMIN',
+      'PRINCIPAL',
       'TEACHER',
-      'FINANCE_STAFF',
-      'STAFF',
-      'PARENT',
       'STUDENT',
+      'PARENT',
+      'FINANCE_STAFF',
+      'OFFICE_STAFF',
+      'GUEST',
+      'SYSTEM',
+      'AI_AGENT',
+      'STAFF',
     ]);
   });
 });

@@ -155,6 +155,52 @@ class AuthSessionFlowTest {
     }
 
     @Test
+    void principalRequiresMfaAndSystemActorsCannotLoginInteractively() throws Exception {
+        Tenant tenant = tenantRepository.save(new Tenant("auth-role-policy-a", "Auth Role Policy"));
+        activeUser(tenant, "auth-principal@example.com", "Auth Principal", UserRole.PRINCIPAL, "PrincipalStrong123!");
+        activeUser(tenant, "auth-system@example.com", "Auth System", UserRole.SYSTEM, "SystemStrong123!");
+        activeUser(tenant, "auth-ai-agent@example.com", "Auth AI Agent", UserRole.AI_AGENT, "AgentStrong123!");
+
+        JsonNode principalChallenge = beginLogin("auth-principal@example.com", "PrincipalStrong123!");
+        assertThat(principalChallenge.path("mfaRequired").asBoolean(false)).isTrue();
+        assertThat(principalChallenge.at("/mfaChallengeId").asText()).isNotBlank();
+        assertThat(principalChallenge.at("/mfaCode").asText()).isNotBlank();
+
+        verifyMfa(principalChallenge)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.role").value("PRINCIPAL"))
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
+
+        loginWithBody("""
+                {
+                  "email": "auth-system@example.com",
+                  "password": "SystemStrong123!"
+                }
+                """)
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        loginWithBody("""
+                {
+                  "email": "auth-ai-agent@example.com",
+                  "password": "AgentStrong123!"
+                }
+                """)
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(post("/v1/auth/forgot-password")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "email": "auth-ai-agent@example.com"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
     void repeatedWrongPasswordsAreRateLimited() throws Exception {
         JsonNode onboarding = onboard("auth-rate-a", "auth-rate-school-a", "rate-admin-a@example.com");
         acceptInvitation(onboarding.at("/schoolAdminInvitation/token").asText(), "StrongerPass123!");
@@ -700,6 +746,12 @@ class AuthSessionFlowTest {
                 }
                 """)
                 .andExpect(status().isOk());
+    }
+
+    private UserAccount activeUser(Tenant tenant, String email, String displayName, UserRole role, String password) {
+        UserAccount user = new UserAccount(tenant, email, displayName, role);
+        user.activate(passwordEncoder.encode(password), displayName, java.time.Instant.now());
+        return userAccountRepository.save(user);
     }
 
     private JsonNode onboard(String tenantCode, String schoolCode, String email) throws Exception {

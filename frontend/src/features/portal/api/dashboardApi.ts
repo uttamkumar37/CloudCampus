@@ -22,11 +22,16 @@ const DASHBOARD_SUMMARY_ENDPOINTS: Record<UserRole, string> = {
   SUPER_ADMIN: '/v1/super-admin/dashboard/summary',
   TENANT_ADMIN: '/v1/tenant-admin/dashboard/summary',
   SCHOOL_ADMIN: '/v1/school-admin/dashboard/summary',
+  PRINCIPAL: '/v1/school-admin/dashboard/summary',
   TEACHER: '/v1/teacher/dashboard/summary',
   FINANCE_STAFF: '/v1/finance/dashboard/summary',
+  OFFICE_STAFF: '/v1/staff/dashboard/summary',
   STAFF: '/v1/staff/dashboard/summary',
   PARENT: '/v1/parent/dashboard/summary',
   STUDENT: '/v1/student/dashboard/summary',
+  GUEST: '/v1/me',
+  SYSTEM: '/v1/me',
+  AI_AGENT: '/v1/me',
 };
 
 export function getDashboardSummary(role: UserRole, accessToken?: string | null) {

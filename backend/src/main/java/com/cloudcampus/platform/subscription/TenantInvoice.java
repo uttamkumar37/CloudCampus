@@ -86,6 +86,10 @@ public class TenantInvoice {
         }
     }
 
+    public void updateStatus(TenantInvoiceStatus status) {
+        this.status = status;
+    }
+
     public String getId() {
         return id;
     }

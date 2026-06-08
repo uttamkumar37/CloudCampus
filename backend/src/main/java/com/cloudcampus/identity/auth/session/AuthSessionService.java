@@ -36,6 +36,7 @@ public class AuthSessionService {
             UserRole.SUPER_ADMIN,
             UserRole.TENANT_ADMIN,
             UserRole.SCHOOL_ADMIN,
+            UserRole.PRINCIPAL,
             UserRole.FINANCE_STAFF
     );
 
@@ -95,6 +96,10 @@ public class AuthSessionService {
         if (user.getStatus() != UserStatus.ACTIVE) {
             loginRateLimiterService.recordFailure(email);
             throw new ForbiddenException("User account is not active.");
+        }
+        if (!canAuthenticateInteractively(user)) {
+            loginRateLimiterService.recordFailure(email);
+            throw new ForbiddenException("System actors cannot sign in interactively.");
         }
         if (user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             loginRateLimiterService.recordFailure(email);
@@ -156,6 +161,9 @@ public class AuthSessionService {
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ForbiddenException("User account is not active.");
         }
+        if (!canAuthenticateInteractively(user)) {
+            throw new ForbiddenException("System actors cannot refresh interactive sessions.");
+        }
 
         IssuedRefreshToken replacement = issueRefreshToken(user);
         currentToken.rotateTo(replacement.entity(), now);
@@ -216,6 +224,9 @@ public class AuthSessionService {
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ForbiddenException("User account is not active.");
         }
+        if (!canAuthenticateInteractively(user)) {
+            throw new ForbiddenException("System actors cannot use password recovery.");
+        }
 
         String rawToken = sessionTokenService.newRawToken();
         Instant expiresAt = Instant.now().plus(30, ChronoUnit.MINUTES);
@@ -263,6 +274,9 @@ public class AuthSessionService {
         UserAccount user = resetToken.getUser();
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ForbiddenException("User account is not active.");
+        }
+        if (!canAuthenticateInteractively(user)) {
+            throw new ForbiddenException("System actors cannot use password recovery.");
         }
 
         user.changePassword(passwordEncoder.encode(request.password()));
@@ -392,6 +406,10 @@ public class AuthSessionService {
 
     private boolean requiresMfa(UserAccount user) {
         return MFA_REQUIRED_ROLES.contains(user.getRole());
+    }
+
+    private boolean canAuthenticateInteractively(UserAccount user) {
+        return user.getRole() != UserRole.SYSTEM && user.getRole() != UserRole.AI_AGENT;
     }
 
     private String normalizeEmail(String rawEmail) {

@@ -47,11 +47,36 @@ public class TeacherAssignment {
     @JoinColumn(name = "class_subject_assignment_id", nullable = false)
     private ClassSubjectAssignment classSubjectAssignment;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "academic_year_id")
+    private AcademicYear academicYear;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "class_id")
+    private ClassLevel classLevel;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "section_id")
+    private Section section;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
+
+    @Column(length = 40)
+    private String roleType;
+
     @Column(nullable = false)
     private boolean active = true;
 
     @Column(nullable = false)
     private Instant createdAt;
+
+    private Instant updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "updated_by")
+    private UserAccount updatedBy;
 
     protected TeacherAssignment() {
     }
@@ -61,6 +86,9 @@ public class TeacherAssignment {
         this.school = classSubjectAssignment.getSchool();
         this.teacher = teacher;
         this.classSubjectAssignment = classSubjectAssignment;
+        this.classLevel = classSubjectAssignment.getClassLevel();
+        this.subject = classSubjectAssignment.getSubject();
+        this.roleType = "SUBJECT_TEACHER";
     }
 
     @PrePersist
@@ -71,6 +99,25 @@ public class TeacherAssignment {
         if (createdAt == null) {
             createdAt = Instant.now();
         }
+        if (updatedAt == null) {
+            updatedAt = createdAt;
+        }
+    }
+
+    public void updateScope(Section section, String roleType, boolean active, UserAccount actor) {
+        this.section = section;
+        if (roleType != null && !roleType.isBlank()) {
+            this.roleType = roleType.trim();
+        }
+        this.active = active;
+        this.updatedBy = actor;
+        this.updatedAt = Instant.now();
+    }
+
+    public void deactivate(UserAccount actor) {
+        this.active = false;
+        this.updatedBy = actor;
+        this.updatedAt = Instant.now();
     }
 
     public String getId() {
@@ -93,7 +140,31 @@ public class TeacherAssignment {
         return classSubjectAssignment;
     }
 
+    public AcademicYear getAcademicYear() {
+        return academicYear;
+    }
+
+    public ClassLevel getClassLevel() {
+        return classLevel;
+    }
+
+    public Section getSection() {
+        return section;
+    }
+
+    public Subject getSubject() {
+        return subject;
+    }
+
+    public String getRoleType() {
+        return roleType;
+    }
+
     public boolean isActive() {
         return active;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 }

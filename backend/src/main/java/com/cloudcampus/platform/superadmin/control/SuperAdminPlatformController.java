@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -153,6 +154,11 @@ public class SuperAdminPlatformController {
         return ResponseEntity.ok(superAdminPlatformService.school(authenticatedUserResolver.requireUser(request), schoolId));
     }
 
+    @GetMapping("/platform-metrics")
+    ResponseEntity<SuperAdminPlatformMetricsResponse> platformMetrics(HttpServletRequest request) {
+        return ResponseEntity.ok(superAdminPlatformService.platformMetrics(authenticatedUserResolver.requireUser(request)));
+    }
+
     @GetMapping("/revenue/summary")
     ResponseEntity<SuperAdminRevenueSummaryResponse> revenueSummary(HttpServletRequest request) {
         return ResponseEntity.ok(superAdminPlatformService.revenueSummary(authenticatedUserResolver.requireUser(request)));
@@ -238,21 +244,39 @@ public class SuperAdminPlatformController {
     ResponseEntity<SuperAdminPageResponse<SuperAdminReportExportResponse>> reportExports(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String reportType,
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(superAdminPlatformService.reportExports(
                 authenticatedUserResolver.requireUser(request),
                 page,
-                size
+                size,
+                status,
+                reportType
         ));
     }
 
     @PostMapping("/reports/exports")
-    ResponseEntity<SuperAdminReportsSummaryResponse> reportExportRequest(
+    ResponseEntity<SuperAdminReportExportResponse> reportExportRequest(
             @Valid @RequestBody SuperAdminReportExportRequest requestBody,
             HttpServletRequest request
     ) {
-        return ResponseEntity.ok(superAdminPlatformService.reportsSummary(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(superAdminPlatformService.requestReportExport(
+                authenticatedUserResolver.requireUser(request),
+                requestBody
+        ));
+    }
+
+    @GetMapping("/reports/exports/{jobId}")
+    ResponseEntity<SuperAdminReportExportResponse> reportExport(
+            @PathVariable String jobId,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.ok(superAdminPlatformService.reportExport(
+                authenticatedUserResolver.requireUser(request),
+                jobId
+        ));
     }
 
     @GetMapping("/audit-logs")
@@ -327,6 +351,23 @@ public class SuperAdminPlatformController {
         return ResponseEntity.ok(superAdminPlatformService.updateSettings(
                 authenticatedUserResolver.requireUser(request),
                 requestBody
+        ));
+    }
+
+    @GetMapping("/search")
+    ResponseEntity<SuperAdminSearchResponse> search(
+            @RequestParam String q,
+            @RequestParam(required = false) String types,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.ok(superAdminPlatformService.search(
+                authenticatedUserResolver.requireUser(request),
+                q,
+                types,
+                page,
+                size
         ));
     }
 }

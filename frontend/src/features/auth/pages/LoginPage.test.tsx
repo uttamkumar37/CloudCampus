@@ -1,9 +1,15 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { LoginPage } from './LoginPage';
+import { LoginPage, shouldShowLocalAuthHints } from './LoginPage';
 
 describe('LoginPage', () => {
+  it('shows local auth hints for Docker localhost builds', () => {
+    expect(shouldShowLocalAuthHints('127.0.0.1', false, 'production')).toBe(true);
+    expect(shouldShowLocalAuthHints('localhost', false, 'production')).toBe(true);
+    expect(shouldShowLocalAuthHints('app.cloudcampus.example', false, 'production')).toBe(false);
+  });
+
   it('labels the shared role login clearly', () => {
     render(<LoginPage onSubmit={vi.fn()} storage={{ setItem: vi.fn() }} />);
 
@@ -110,7 +116,7 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(await screen.findByLabelText(/mfa code/i)).toBeInTheDocument();
-    expect(screen.queryByText(/scaffold mfa code/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/local verification code: 123456/i)).toBeInTheDocument();
     expect(storage.setItem).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText(/mfa code/i), {

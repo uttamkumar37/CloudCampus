@@ -66,6 +66,41 @@ class AuditCoverageMatrixTest {
                     )
             ),
             Map.entry(
+                    "com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java",
+                    evidence(
+                            "com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlService.java",
+                            "ROLE_ASSIGNED",
+                            "ROLE_UPDATED",
+                            "ROLE_DEACTIVATED",
+                            "PERMISSION_OVERRIDE_GRANTED",
+                            "PERMISSION_OVERRIDE_DENIED",
+                            "PERMISSION_OVERRIDE_REVOKED",
+                            "STUDENT_GUARDIAN_LINKED",
+                            "STUDENT_GUARDIAN_UPDATED",
+                            "STUDENT_GUARDIAN_DEACTIVATED",
+                            "TEACHER_ASSIGNMENT_CREATED",
+                            "TEACHER_ASSIGNMENT_UPDATED",
+                            "TEACHER_ASSIGNMENT_DEACTIVATED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/platform/superadmin/control/SuperAdminAiGovernanceController.java",
+                    evidence(
+                            "com/cloudcampus/platform/superadmin/control/SuperAdminAiGovernanceService.java",
+                            "AI_RECOMMENDATION_CREATED",
+                            "AI_RECOMMENDATION_VIEWED",
+                            "AI_RECOMMENDATION_APPROVED",
+                            "AI_RECOMMENDATION_REJECTED",
+                            "AI_RECOMMENDATION_EXECUTED",
+                            "AI_RECOMMENDATION_EXPIRED",
+                            "AUTOMATION_RULE_CREATED",
+                            "AUTOMATION_RULE_UPDATED",
+                            "AUTOMATION_RULE_ENABLED",
+                            "AUTOMATION_RULE_DISABLED",
+                            "AI_POLICY_UPDATED"
+                    )
+            ),
+            Map.entry(
                     "com/cloudcampus/intelligence/ai/SuperAdminAiEntitlementController.java",
                     evidence(
                             "com/cloudcampus/intelligence/ai/AiGovernanceService.java",
@@ -93,6 +128,16 @@ class AuditCoverageMatrixTest {
                             "com/cloudcampus/intelligence/ai/AiKnowledgeRetrievalService.java",
                             "AI_RETRIEVAL_AUDITED",
                             "AI_RETRIEVAL_DENIED"
+                    )
+            ),
+            Map.entry(
+                    "com/cloudcampus/intelligence/ai/AiRecommendationPortalController.java",
+                    evidence(
+                            "com/cloudcampus/intelligence/ai/AiRecommendationPortalService.java",
+                            "AI_RECOMMENDATION_APPROVED",
+                            "AI_RECOMMENDATION_REJECTED",
+                            "AI_RECOMMENDATION_EXECUTED",
+                            "AI_RECOMMENDATION_DISMISSED"
                     )
             ),
             Map.entry(

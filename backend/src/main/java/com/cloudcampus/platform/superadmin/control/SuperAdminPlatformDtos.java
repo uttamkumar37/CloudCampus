@@ -33,6 +33,27 @@ record SuperAdminDashboardResponse(
 ) {
 }
 
+record SuperAdminPlatformMetricsResponse(
+        long totalTenantCount,
+        long activeTenantCount,
+        long totalSchoolCount,
+        long activeSchoolCount,
+        long totalStudentCount,
+        long activeStudentCount,
+        long totalStaffCount,
+        long activeStaffCount,
+        long totalUserCount,
+        long activeUserCount,
+        long pendingInvoiceCount,
+        long overdueInvoiceCount,
+        long paidInvoiceCount,
+        long failedNotificationCount,
+        long pendingOutboxCount,
+        long pendingReportExportCount,
+        Instant lastCalculatedAt
+) {
+}
+
 record SuperAdminTrendPointResponse(
         String label,
         long value
@@ -188,7 +209,7 @@ record SuperAdminReportExportResponse(
 ) {
 }
 
-record SuperAdminReportExportRequest(String reportType, String format) {
+record SuperAdminReportExportRequest(String reportType, String format, String tenantId, String schoolId, Map<String, Object> filters) {
 }
 
 record SuperAdminAuditLogResponse(
@@ -271,5 +292,24 @@ record SuperAdminSettingsUpdateRequest(
         String supportEmail,
         String defaultTimezone,
         boolean maintenanceMode
+) {
+}
+
+record SuperAdminSearchResponse(
+        List<SuperAdminSearchResultResponse> results,
+        int page,
+        int size,
+        long totalItems,
+        int totalPages
+) {
+}
+
+record SuperAdminSearchResultResponse(
+        String id,
+        String type,
+        String title,
+        String detail,
+        String navId,
+        Instant createdAt
 ) {
 }

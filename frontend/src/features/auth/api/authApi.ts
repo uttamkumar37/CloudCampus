@@ -4,11 +4,16 @@ export const BACKEND_USER_ROLES = [
   'SUPER_ADMIN',
   'TENANT_ADMIN',
   'SCHOOL_ADMIN',
+  'PRINCIPAL',
   'TEACHER',
-  'FINANCE_STAFF',
-  'STAFF',
-  'PARENT',
   'STUDENT',
+  'PARENT',
+  'FINANCE_STAFF',
+  'OFFICE_STAFF',
+  'GUEST',
+  'SYSTEM',
+  'AI_AGENT',
+  'STAFF',
 ] as const;
 
 export type UserRole = (typeof BACKEND_USER_ROLES)[number];

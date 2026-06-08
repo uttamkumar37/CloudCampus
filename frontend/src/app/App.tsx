@@ -66,6 +66,7 @@ import type { SchoolAdminResourceKey } from '../features/school-admin/api/school
 import { httpClient } from '../shared/api/httpClient';
 import { StaffProvisioningPage } from '../features/staff/pages/StaffProvisioningPage';
 import { StudentImportPage } from '../features/student/pages/StudentImportPage';
+import { getSuperAdminNotifications, searchSuperAdmin, type SuperAdminSearchResponse } from '../features/super-admin/api/platformApi';
 import { SuperAdminPlatformPage } from '../features/super-admin/pages/SuperAdminPlatformPage';
 import { TenantOnboardingPage } from '../features/super-admin/pages/TenantOnboardingPage';
 import { TenantReportsPage } from '../features/tenant-admin/pages/TenantReportsPage';
@@ -124,11 +125,16 @@ const ROLE_HOME: Record<UserRole, string> = {
   SUPER_ADMIN: 'super-admin',
   TENANT_ADMIN: 'tenant-admin',
   SCHOOL_ADMIN: 'school-admin',
+  PRINCIPAL: 'principal',
   TEACHER: 'teacher',
-  FINANCE_STAFF: 'finance-staff',
-  STAFF: 'staff',
-  PARENT: 'parent',
   STUDENT: 'student',
+  PARENT: 'parent',
+  FINANCE_STAFF: 'finance-staff',
+  OFFICE_STAFF: 'office-staff',
+  GUEST: 'guest',
+  SYSTEM: 'system',
+  AI_AGENT: 'ai-agent',
+  STAFF: 'staff',
 };
 
 const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
@@ -136,9 +142,10 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
     { id: 'tenants', label: 'Tenants', status: 'CONNECTED_REAL_API' },
     { id: 'schools', label: 'Schools', status: 'CONNECTED_REAL_API' },
+    { id: 'access-control', label: 'Access Control', status: 'CONNECTED_REAL_API' },
     { id: 'subscriptions', label: 'Subscription Plans', status: 'CONNECTED_REAL_API' },
     { id: 'revenue', label: 'Revenue', status: 'CONNECTED_REAL_API' },
-    { id: 'ai-usage', label: 'AI Usage', status: 'CONNECTED_REAL_API' },
+    { id: 'ai-usage', label: 'AI Governance', status: 'CONNECTED_REAL_API' },
     { id: 'reports', label: 'Reports', status: 'CONNECTED_REAL_API' },
     { id: 'audit', label: 'Audit Logs', status: 'CONNECTED_REAL_API' },
     { id: 'health', label: 'Platform Health', status: 'CONNECTED_REAL_API' },
@@ -171,6 +178,16 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { id: 'website', label: 'Website Builder', status: 'CONNECTED_REAL_API' },
     { id: 'settings', label: 'Settings', status: 'CONNECTED_REAL_API' },
   ],
+  PRINCIPAL: [
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+    { id: 'teachers', label: 'Teachers', status: 'CONNECTED_REAL_API' },
+    { id: 'students', label: 'Students', status: 'CONNECTED_REAL_API' },
+    { id: 'attendance', label: 'Attendance Review', status: 'CONNECTED_REAL_API' },
+    { id: 'exams', label: 'Exams', status: 'CONNECTED_REAL_API' },
+    { id: 'results', label: 'Results Approval', status: 'CONNECTED_REAL_API' },
+    { id: 'ai-suggestions', label: 'AI Approvals', status: 'CONNECTED_REAL_API' },
+    { id: 'reports', label: 'Reports', status: 'CONNECTED_REAL_API' },
+  ],
   TEACHER: [
     { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
     { id: 'classes', label: 'My Classes', status: 'CONNECTED_REAL_API' },
@@ -180,6 +197,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { id: 'marks', label: 'Marks', status: 'CONNECTED_REAL_API' },
     { id: 'notices', label: 'Notices', status: 'CONNECTED_REAL_API' },
     { id: 'timetable', label: 'Timetable', status: 'CONNECTED_REAL_API' },
+    { id: 'ai-suggestions', label: 'AI Suggestions', status: 'CONNECTED_REAL_API' },
   ],
   FINANCE_STAFF: [
     { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
@@ -187,9 +205,19 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { id: 'payments', label: 'Payments', status: 'CONNECTED_REAL_API' },
     { id: 'receipts', label: 'Receipts', status: 'CONNECTED_REAL_API' },
     { id: 'reports', label: 'Reports', status: 'CONNECTED_REAL_API' },
+    { id: 'ai-suggestions', label: 'AI Fee Suggestions', status: 'CONNECTED_REAL_API' },
   ],
   STAFF: [
     { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+  ],
+  OFFICE_STAFF: [
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+    { id: 'admissions', label: 'Admissions', status: 'CONNECTED_REAL_API' },
+    { id: 'enquiries', label: 'Enquiries', status: 'CONNECTED_REAL_API' },
+    { id: 'students', label: 'Student Records', status: 'CONNECTED_REAL_API' },
+    { id: 'documents', label: 'Documents', status: 'CONNECTED_REAL_API' },
+    { id: 'certificates', label: 'Certificates', status: 'CONNECTED_REAL_API' },
+    { id: 'ai-suggestions', label: 'AI Follow-ups', status: 'CONNECTED_REAL_API' },
   ],
   PARENT: [
     { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
@@ -201,6 +229,7 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { id: 'notices', label: 'Notices', status: 'CONNECTED_REAL_API' },
     { id: 'timetable', label: 'Timetable', status: 'CONNECTED_REAL_API' },
     { id: 'leave', label: 'Leave Requests', status: 'CONNECTED_REAL_API' },
+    { id: 'ai-suggestions', label: 'AI Recommendations', status: 'CONNECTED_REAL_API' },
   ],
   STUDENT: [
     { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
@@ -210,6 +239,16 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { id: 'notices', label: 'Notices', status: 'CONNECTED_REAL_API' },
     { id: 'attendance', label: 'Attendance', status: 'CONNECTED_REAL_API' },
     { id: 'timetable', label: 'Timetable', status: 'CONNECTED_REAL_API' },
+    { id: 'ai-suggestions', label: 'AI Study Help', status: 'CONNECTED_REAL_API' },
+  ],
+  GUEST: [
+    { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
+  ],
+  SYSTEM: [
+    { id: 'dashboard', label: 'System Activity', status: 'CONNECTED_REAL_API' },
+  ],
+  AI_AGENT: [
+    { id: 'dashboard', label: 'AI Activity', status: 'CONNECTED_REAL_API' },
   ],
 };
 
@@ -232,34 +271,57 @@ const QUICK_ACTIONS_BY_ROLE: Record<UserRole, QuickAction[]> = {
     { label: 'Create notice', detail: 'Publish school update', icon: Newspaper, navId: 'notices' },
     { label: 'Create exam', detail: 'Prepare assessment flow', icon: ClipboardCheck, navId: 'exams' },
   ],
+  PRINCIPAL: [
+    { label: 'Review results', detail: 'Open academic approvals', icon: GraduationCap, navId: 'results' },
+    { label: 'AI approvals', detail: 'Review high-impact suggestions', icon: BrainCircuit, navId: 'ai-suggestions' },
+    { label: 'View reports', detail: 'Review school performance', icon: FileText, navId: 'reports' },
+  ],
   TEACHER: [
     { label: 'Mark attendance', detail: 'Open assigned classes', icon: CalendarCheck, navId: 'attendance' },
     { label: 'Create homework', detail: 'Prepare class work', icon: BookOpen, navId: 'homework' },
     { label: 'Enter marks', detail: 'Update exam scores', icon: ClipboardCheck, navId: 'marks' },
+    { label: 'AI suggestions', detail: 'Review teaching recommendations', icon: BrainCircuit, navId: 'ai-suggestions' },
   ],
   FINANCE_STAFF: [
     { label: 'Record payment', detail: 'Issue receipt', icon: CircleDollarSign, navId: 'payments' },
     { label: 'Generate receipt', detail: 'Share payment proof', icon: ReceiptText, navId: 'receipts' },
     { label: 'Export report', detail: 'Share collection view', icon: FileText, navId: 'reports' },
+    { label: 'AI fee suggestions', detail: 'Review reminder drafts', icon: BrainCircuit, navId: 'ai-suggestions' },
   ],
   STAFF: [
     { label: 'Open tasks', detail: 'Review school operations', icon: ClipboardCheck, navId: 'tasks' },
     { label: 'Read notices', detail: 'Catch up on updates', icon: Newspaper, navId: 'notices' },
   ],
+  OFFICE_STAFF: [
+    { label: 'Admissions', detail: 'Open admission records', icon: Users, navId: 'admissions' },
+    { label: 'Documents', detail: 'Review student documents', icon: FileText, navId: 'documents' },
+    { label: 'AI follow-ups', detail: 'Review admission drafts', icon: BrainCircuit, navId: 'ai-suggestions' },
+  ],
   PARENT: [
     { label: 'Pay fees', detail: 'Review reminders', icon: CircleDollarSign, navId: 'fees' },
     { label: 'Apply leave', detail: 'Submit linked-child leave', icon: CalendarCheck, navId: 'leave' },
     { label: 'View results', detail: 'Review published marks', icon: GraduationCap, navId: 'results' },
+    { label: 'AI recommendations', detail: 'View approved child insights', icon: BrainCircuit, navId: 'ai-suggestions' },
   ],
   STUDENT: [
     { label: 'Submit homework', detail: 'Track what is due', icon: BookOpen, navId: 'homework' },
     { label: 'View results', detail: 'Review published marks', icon: GraduationCap, navId: 'results' },
+    { label: 'AI study help', detail: 'Open approved study tips', icon: BrainCircuit, navId: 'ai-suggestions' },
+  ],
+  GUEST: [
+    { label: 'Open dashboard', detail: 'Review available access', icon: Home, navId: 'dashboard' },
+  ],
+  SYSTEM: [
+    { label: 'System activity', detail: 'Non-login actor', icon: Settings, navId: 'dashboard' },
+  ],
+  AI_AGENT: [
+    { label: 'AI activity', detail: 'Non-login actor', icon: BrainCircuit, navId: 'dashboard' },
   ],
 };
 
 const NAV_GROUPS_BY_ROLE: Partial<Record<UserRole, NavGroup[]>> = {
   SUPER_ADMIN: [
-    { title: 'Platform', itemIds: ['dashboard', 'tenants', 'schools'] },
+    { title: 'Platform', itemIds: ['dashboard', 'tenants', 'schools', 'access-control'] },
     { title: 'Business', itemIds: ['subscriptions', 'revenue', 'reports'] },
     { title: 'Operations', itemIds: ['health', 'notifications', 'audit'] },
     { title: 'Settings', itemIds: ['ai-usage', 'settings'] },
@@ -789,7 +851,10 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
             </div>
           ))}
         </nav>
-        <AIAssistCard role={user.role} />
+        <AIAssistCard
+          onOpen={() => setActiveNav(aiNavForRole(user.role))}
+          role={user.role}
+        />
       </aside>
 
       <section className="enterprise-main">
@@ -803,7 +868,11 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
           user={user}
         />
         <div className="content-grid">
-          <PortalDashboard navItems={navItems} onSelectNav={setActiveNav} user={user} />
+          {user.role === 'SUPER_ADMIN' && activeNav !== 'dashboard' ? (
+            <CompactSessionBanner onOpenDashboard={() => setActiveNav('dashboard')} user={user} />
+          ) : (
+            <PortalDashboard navItems={navItems} onSelectNav={setActiveNav} user={user} />
+          )}
           <RoleWorkspace activeNav={activeNav} user={user} />
         </div>
       </section>
@@ -811,13 +880,26 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
       {mobileOpen ? (
         <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} type="button" />
       ) : null}
-      <button className="ai-fab" aria-label="Open CloudCampus AI assistant" type="button">AI</button>
+      <button
+        className="ai-fab"
+        aria-label="Open CloudCampus AI governance"
+        onClick={() => setActiveNav(aiNavForRole(user.role))}
+        type="button"
+      >
+        AI
+      </button>
     </main>
   );
 }
 
 function visibleNavItems(role: UserRole) {
   return NAV_BY_ROLE[role].filter((item) => item.status === 'CONNECTED_REAL_API');
+}
+
+function aiNavForRole(role: UserRole) {
+  if (role === 'SUPER_ADMIN') return 'ai-usage';
+  if (role === 'SYSTEM' || role === 'AI_AGENT' || role === 'GUEST') return 'dashboard';
+  return 'ai-suggestions';
 }
 
 function groupedNavItems(role: UserRole, navItems: NavItem[]) {
@@ -882,7 +964,7 @@ function TopBar({
   theme: 'light' | 'dark';
   user: CurrentUser;
 }) {
-  const { error, logout } = useAuthState();
+  const { accessToken, error, logout } = useAuthState();
   const { date, time } = useLiveClock();
   const [commandOpen, setCommandOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -927,7 +1009,7 @@ function TopBar({
         <ThemeToggle onToggle={onToggleTheme} theme={theme} />
         <div className="topbar-popover-wrap">
           <NotificationButton onClick={() => setNotificationsOpen((open) => !open)} />
-          {notificationsOpen ? <NotificationPopover /> : null}
+          {notificationsOpen ? <NotificationPopover accessToken={accessToken} role={user.role} /> : null}
         </div>
         <div className="profile-menu topbar-popover-wrap">
           <div className="avatar" aria-hidden="true">{user.email.charAt(0).toUpperCase()}</div>
@@ -963,6 +1045,7 @@ function TopBar({
             setCommandOpen(false);
           }}
           role={user.role}
+          accessToken={accessToken}
         />
       ) : null}
     </header>
@@ -970,16 +1053,47 @@ function TopBar({
 }
 
 function CommandPalette({
+  accessToken,
   navItems,
   onClose,
   onSelect,
   role,
 }: {
+  accessToken?: string | null;
   navItems: NavItem[];
   onClose: () => void;
   onSelect: (navId: string) => void;
   role: UserRole;
 }) {
+  const [query, setQuery] = useState('');
+  const [searchState, setSearchState] = useState<{
+    status: 'idle' | 'loading' | 'ready' | 'error';
+    data: SuperAdminSearchResponse | null;
+  }>({ status: 'idle', data: null });
+  const visibleCommands = navItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase().trim()));
+
+  useEffect(() => {
+    if (role !== 'SUPER_ADMIN' || !accessToken || query.trim().length < 2) {
+      setSearchState({ status: 'idle', data: null });
+      return;
+    }
+    let active = true;
+    setSearchState({ status: 'loading', data: null });
+    const timer = globalThis.setTimeout(() => {
+      searchSuperAdmin({ q: query.trim(), size: 10 }, accessToken)
+        .then((data) => {
+          if (active) setSearchState({ status: 'ready', data });
+        })
+        .catch(() => {
+          if (active) setSearchState({ status: 'error', data: null });
+        });
+    }, 250);
+    return () => {
+      active = false;
+      globalThis.clearTimeout(timer);
+    };
+  }, [accessToken, query, role]);
+
   return (
     <div className="command-overlay" role="dialog" aria-modal="true" aria-label="Command palette">
       <button className="command-scrim" onClick={onClose} type="button" aria-label="Close command palette" />
@@ -991,11 +1105,16 @@ function CommandPalette({
       >
         <div className="command-search-row">
           <Search size={18} aria-hidden="true" />
-          <input autoFocus placeholder={`Search ${roleTitle(role)} workspace...`} />
+          <input
+            autoFocus
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={`Search ${roleTitle(role)} workspace...`}
+            value={query}
+          />
           <kbd>Esc</kbd>
         </div>
         <div className="command-list">
-          {navItems.slice(0, 8).map((item) => {
+          {visibleCommands.map((item) => {
             const Icon = navIcon(item.id);
             return (
               <button key={item.id} onClick={() => onSelect(item.id)} type="button">
@@ -1006,12 +1125,99 @@ function CommandPalette({
             );
           })}
         </div>
+        {role === 'SUPER_ADMIN' && query.trim().length >= 2 ? (
+          <div className="command-results">
+            <strong>Platform search</strong>
+            {searchState.status === 'loading' ? <span>Searching...</span> : null}
+            {searchState.status === 'error' ? <span>Search unavailable</span> : null}
+            {searchState.status === 'ready' && searchState.data?.results.length === 0 ? <span>No matching platform records</span> : null}
+            {searchState.data?.results.map((result) => (
+              <button key={`${result.type}-${result.id}`} onClick={() => onSelect(result.navId)} type="button">
+                <em>{result.type}</em>
+                <strong>{result.title}</strong>
+                <span>{result.detail}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
       </motion.section>
     </div>
   );
 }
 
-function NotificationPopover() {
+function NotificationPopover({ accessToken, role }: { accessToken?: string | null; role: UserRole }) {
+  const [summary, setSummary] = useState<Awaited<ReturnType<typeof getSuperAdminNotifications>> | null>(null);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+
+  useEffect(() => {
+    if (role !== 'SUPER_ADMIN' || !accessToken) {
+      return;
+    }
+    let active = true;
+    setStatus('loading');
+    getSuperAdminNotifications(accessToken)
+      .then((data) => {
+        if (!active) return;
+        setSummary(data);
+        setStatus('idle');
+      })
+      .catch(() => {
+        if (!active) return;
+        setSummary(null);
+        setStatus('error');
+      });
+    return () => {
+      active = false;
+    };
+  }, [accessToken, role]);
+
+  if (role === 'SUPER_ADMIN') {
+    return (
+      <div className="notification-popover" role="status" aria-label="Notification center">
+        <div>
+          <strong>Notification center</strong>
+          <span>{summary ? `${summary.failedDeliveries} failed of ${summary.totalDeliveries} deliveries` : 'Loading platform delivery status'}</span>
+        </div>
+        {status === 'error' ? (
+          <article>
+            <i aria-hidden="true" />
+            <span>
+              <strong>Delivery status unavailable</strong>
+              <small>Open Notifications for retry and filter controls.</small>
+            </span>
+          </article>
+        ) : null}
+        {status === 'loading' ? (
+          <article>
+            <i aria-hidden="true" />
+            <span>
+              <strong>Loading deliveries</strong>
+              <small>Checking real notification summary.</small>
+            </span>
+          </article>
+        ) : null}
+        {summary?.recentDeliveries.slice(0, 3).map((delivery) => (
+          <article key={delivery.deliveryId}>
+            <i aria-hidden="true" />
+            <span>
+              <strong>{delivery.template} - {delivery.status}</strong>
+              <small>{delivery.maskedRecipient} - {delivery.channel}</small>
+            </span>
+          </article>
+        ))}
+        {summary && summary.recentDeliveries.length === 0 ? (
+          <article>
+            <i aria-hidden="true" />
+            <span>
+              <strong>No delivery events</strong>
+              <small>Invitation and notification activity will appear here.</small>
+            </span>
+          </article>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="notification-popover" role="status" aria-label="Notification center">
       <div>
@@ -1094,6 +1300,19 @@ function PortalDashboard({
         <QuickActionsPanel navItems={navItems} onSelectNav={onSelectNav} role={user.role} />
         <ApiCoveragePanel navItems={navItems} role={user.role} />
       </div>
+    </section>
+  );
+}
+
+function CompactSessionBanner({ onOpenDashboard, user }: { onOpenDashboard: () => void; user: CurrentUser }) {
+  return (
+    <section className="compact-session-banner" aria-label="Super Admin session">
+      <div>
+        <span className="status-chip info"><span className="live-dot" aria-hidden="true" />Session active</span>
+        <strong>{user.displayName ?? user.email}</strong>
+        <em>{roleTitle(user.role)} - Platform-wide access</em>
+      </div>
+      <button onClick={onOpenDashboard} type="button">Dashboard</button>
     </section>
   );
 }
@@ -1198,6 +1417,20 @@ function RoleWorkspace({ activeNav, user }: { activeNav: string; user: CurrentUs
     );
   }
 
+  if (user.role === 'PRINCIPAL') {
+    return (
+      <section className="role-workspace" aria-label="Principal area">
+        <WorkspaceHeader title="Principal workspace" activeNav={activeNav} />
+        <SchoolSelector />
+        {user.activeSchool ? (
+          <PrincipalModule activeNav={activeNav} />
+        ) : (
+          <EmptyState title="Select active school" detail="Choose an assigned school to open Principal approvals and academic tools." />
+        )}
+      </section>
+    );
+  }
+
   if (user.role === 'FINANCE_STAFF') {
     return (
       <section className="role-workspace" aria-label="Finance Staff area">
@@ -1207,6 +1440,20 @@ function RoleWorkspace({ activeNav, user }: { activeNav: string; user: CurrentUs
           <FinanceStaffModule activeNav={activeNav} />
         ) : (
           <EmptyState title="Select active school" detail="Choose an assigned school to open the finance tools." />
+        )}
+      </section>
+    );
+  }
+
+  if (user.role === 'OFFICE_STAFF') {
+    return (
+      <section className="role-workspace" aria-label="Office Staff area">
+        <WorkspaceHeader title="Office workspace" activeNav={activeNav} />
+        <SchoolSelector />
+        {user.activeSchool ? (
+          <OfficeStaffModule activeNav={activeNav} />
+        ) : (
+          <EmptyState title="Select active school" detail="Choose an assigned school to open office workflows." />
         )}
       </section>
     );
@@ -1223,6 +1470,10 @@ function RoleWorkspace({ activeNav, user }: { activeNav: string; user: CurrentUs
 function FinanceStaffModule({ activeNav }: { activeNav: string }) {
   if (activeNav === 'dashboard') {
     return <DashboardWorkspacePanel role="FINANCE_STAFF" />;
+  }
+
+  if (activeNav === 'ai-suggestions') {
+    return <RoleAiPanel role="FINANCE_STAFF" />;
   }
 
   if (activeNav === 'reports') {
@@ -1246,6 +1497,41 @@ function FinanceStaffModule({ activeNav }: { activeNav: string }) {
   }
 
   return <ComingSoonPanel activeNav={activeNav} role="FINANCE_STAFF" />;
+}
+
+function PrincipalModule({ activeNav }: { activeNav: string }) {
+  if (activeNav === 'dashboard') {
+    return <DashboardWorkspacePanel role="PRINCIPAL" />;
+  }
+  if (activeNav === 'ai-suggestions') {
+    return <RoleAiPanel role="PRINCIPAL" />;
+  }
+  if (activeNav === 'students') return <SchoolAdminResourcePanel resource="students" />;
+  if (activeNav === 'teachers') return <SchoolAdminResourcePanel resource="teachers" />;
+  if (activeNav === 'attendance') return <SchoolAdminResourcePanel resource="attendance" />;
+  if (activeNav === 'exams' || activeNav === 'results') return <SchoolAdminResourcePanel resource="exams" />;
+  if (activeNav === 'reports') return <ReportExportsPage />;
+  return <ComingSoonPanel activeNav={activeNav} role="PRINCIPAL" />;
+}
+
+function OfficeStaffModule({ activeNav }: { activeNav: string }) {
+  if (activeNav === 'dashboard') {
+    return <DashboardWorkspacePanel role="OFFICE_STAFF" />;
+  }
+  if (activeNav === 'ai-suggestions') {
+    return <RoleAiPanel role="OFFICE_STAFF" />;
+  }
+  if (activeNav === 'students') return <SchoolAdminResourcePanel resource="students" />;
+  if (activeNav === 'documents') return <SchoolAdminResourcePanel resource="documents" />;
+  if (activeNav === 'admissions' || activeNav === 'enquiries' || activeNav === 'certificates') {
+    return (
+      <div className="workspace-grid">
+        <EndpointListPanel title={moduleTitle(activeNav)} path={`/v1/office/${activeNav}`} />
+        <EmptyState title={moduleTitle(activeNav)} detail="Office workflow APIs will appear here when enabled for this school." />
+      </div>
+    );
+  }
+  return <ComingSoonPanel activeNav={activeNav} role="OFFICE_STAFF" />;
 }
 
 function SuperAdminModule({ activeNav }: { activeNav: string }) {
@@ -1296,6 +1582,10 @@ function TenantAdminModule({ activeNav }: { activeNav: string }) {
 }
 
 function SchoolAdminModule({ activeNav }: { activeNav: string }) {
+  if (activeNav === 'ai-suggestions') {
+    return <RoleAiPanel role="SCHOOL_ADMIN" />;
+  }
+
   if (activeNav === 'students') {
     return (
       <div className="workspace-grid">
@@ -1369,6 +1659,10 @@ function LearnerStaffModule({ activeNav, role }: { activeNav: string; role: User
     return <DashboardWorkspacePanel role={role} />;
   }
 
+  if (activeNav === 'ai-suggestions') {
+    return <RoleAiPanel role={role} />;
+  }
+
   if (role === 'TEACHER') {
     if (activeNav === 'marks') {
       return <TeacherMarksEntryPanel />;
@@ -1401,6 +1695,28 @@ function DashboardWorkspacePanel({ role }: { role: UserRole }) {
       <EmptyState
         title="Production workspace"
         detail="Use the sidebar to open the tools available for this role."
+      />
+    </div>
+  );
+}
+
+function RoleAiPanel({ role }: { role: UserRole }) {
+  const roleDetail: Partial<Record<UserRole, string>> = {
+    PRINCIPAL: 'Pending academic approvals, timetable suggestions and high-impact student interventions.',
+    TEACHER: 'Teaching recommendations for assigned classes, homework drafts and student-risk suggestions.',
+    FINANCE_STAFF: 'Fee reminder suggestions and finance-risk drafts that require finance review.',
+    OFFICE_STAFF: 'Admission follow-up suggestions and office workflow drafts.',
+    STUDENT: 'Approved study recommendations published for your student account.',
+    PARENT: 'Approved child-related recommendations shared with linked guardians.',
+    SCHOOL_ADMIN: 'School-level AI recommendations and policy-controlled actions.',
+  };
+
+  return (
+    <div className="workspace-grid">
+      <EndpointListPanel title={`${roleTitle(role)} AI recommendations`} path="/v1/ai/recommendations?size=25" />
+      <EmptyState
+        title="AI recommendations"
+        detail={roleDetail[role] ?? 'AI recommendations appear here only when enabled for this role and scope.'}
       />
     </div>
   );
@@ -2406,12 +2722,25 @@ function WorkspaceHeader({ activeNav, title }: { activeNav: string; title: strin
   );
 }
 
-function AIAssistCard({ role }: { role: UserRole }) {
+function AIAssistCard({ onOpen, role }: { onOpen: () => void; role: UserRole }) {
+  const label = role === 'SUPER_ADMIN'
+    ? 'AI governance'
+    : role === 'STUDENT'
+      ? 'Study help'
+      : role === 'FINANCE_STAFF'
+        ? 'Fee suggestions'
+        : role === 'PRINCIPAL'
+          ? 'AI approvals'
+          : role === 'PARENT'
+            ? 'Child insights'
+            : role === 'GUEST' || role === 'SYSTEM' || role === 'AI_AGENT'
+              ? 'Unavailable'
+              : 'Insights ready';
   return (
-    <section className="sidebar-ai-card">
+    <button className="sidebar-ai-card" onClick={onOpen} type="button">
       <p>AI assistant</p>
-      <strong>{role === 'STUDENT' ? 'Study coach ready' : 'Insights ready'}</strong>
-    </section>
+      <strong>{label}</strong>
+    </button>
   );
 }
 
@@ -2465,6 +2794,15 @@ function roleInfoItems(user: CurrentUser): RoleInfoItem[] {
       { label: 'Organization', value: 'CloudCampus Platform', detail: 'Platform-wide administration', icon: Building2, tone: 'emerald' },
       { label: 'Current school', value: 'Platform-wide access', detail: 'Super Admin manages all organizations', icon: School, tone: 'violet' },
       { label: 'School access', value: 'Not required', detail: 'Super Admin works at platform level', icon: Users, tone: 'amber' },
+    ];
+  }
+
+  if (user.role === 'PRINCIPAL') {
+    return [
+      { label: 'Your role', value: 'Principal', detail: 'Academic approval authority', icon: ShieldCheck, tone: 'blue' },
+      { label: 'Current school', value: currentSchool, detail: 'Your active school', icon: School, tone: 'emerald' },
+      { label: 'Approvals', value: 'Academic', detail: 'Results and AI approvals are available', icon: GraduationCap, tone: 'violet' },
+      { label: 'Assigned schools', value: assignedSchoolCount, detail: 'Schools assigned to your account', icon: Users, tone: 'amber' },
     ];
   }
 
@@ -2522,6 +2860,15 @@ function roleInfoItems(user: CurrentUser): RoleInfoItem[] {
     ];
   }
 
+  if (user.role === 'OFFICE_STAFF') {
+    return [
+      { label: 'Your role', value: 'Office Staff', detail: 'Registrar and admission workspace', icon: ShieldCheck, tone: 'blue' },
+      { label: 'School', value: currentSchool, detail: 'Your active school', icon: School, tone: 'emerald' },
+      { label: 'Records', value: 'Enabled', detail: 'Admissions, documents and certificates', icon: FileText, tone: 'violet' },
+      { label: 'Assigned schools', value: assignedSchoolCount, detail: 'Schools assigned to your account', icon: Users, tone: 'amber' },
+    ];
+  }
+
   return [
     { label: 'Your role', value: roleTitle(user.role), detail: 'Staff workspace', icon: ShieldCheck, tone: 'blue' },
     { label: 'School', value: currentSchool, detail: 'Your active school', icon: School, tone: 'emerald' },
@@ -2541,7 +2888,9 @@ function roleAccessLevel(user: CurrentUser) {
   if (user.role === 'SUPER_ADMIN') return 'Platform-wide';
   if (user.role === 'TENANT_ADMIN') return 'Organization-wide';
   if (user.role === 'SCHOOL_ADMIN') return 'School Administrator';
+  if (user.role === 'PRINCIPAL') return 'Academic approval';
   if (user.role === 'FINANCE_STAFF') return 'Finance access enabled';
+  if (user.role === 'OFFICE_STAFF') return 'Office access enabled';
   return roleTitle(user.role);
 }
 
@@ -2613,10 +2962,13 @@ function dashboardEndpoint(role: UserRole) {
   if (role === 'SUPER_ADMIN') return '/v1/super-admin/dashboard/summary';
   if (role === 'TENANT_ADMIN') return '/v1/tenant-admin/dashboard/summary';
   if (role === 'SCHOOL_ADMIN') return '/v1/school-admin/dashboard/summary';
+  if (role === 'PRINCIPAL') return '/v1/school-admin/dashboard/summary';
   if (role === 'TEACHER') return '/v1/teacher/dashboard/summary';
   if (role === 'FINANCE_STAFF') return '/v1/finance/dashboard/summary';
+  if (role === 'OFFICE_STAFF') return '/v1/staff/dashboard/summary';
   if (role === 'STAFF') return '/v1/staff/dashboard/summary';
   if (role === 'PARENT') return '/v1/parent/dashboard/summary';
+  if (role === 'GUEST' || role === 'SYSTEM' || role === 'AI_AGENT') return '/v1/me';
   return '/v1/student/dashboard/summary';
 }
 

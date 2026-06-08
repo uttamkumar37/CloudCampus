@@ -23,4 +23,10 @@ public interface TeacherAssignmentRepository extends JpaRepository<TeacherAssign
             String teacherId,
             String classLevelId
     );
+
+    boolean existsByTeacherIdAndClassLevelIdAndActiveTrue(String teacherId, String classLevelId);
+
+    boolean existsByTeacherIdAndClassLevelIdAndSectionIdAndActiveTrue(String teacherId, String classLevelId, String sectionId);
+
+    List<TeacherAssignment> findByTeacherIdAndActiveTrue(String teacherId);
 }

@@ -4,10 +4,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.cloudcampus.events.outbox.TransactionalOutboxService;
+import com.cloudcampus.platform.superadmin.stats.SchoolStatsRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuditLogService {
@@ -15,17 +17,21 @@ public class AuditLogService {
     private final AuditLogRepository auditLogRepository;
     private final ObjectMapper objectMapper;
     private final TransactionalOutboxService transactionalOutboxService;
+    private final SchoolStatsRepository schoolStatsRepository;
 
     public AuditLogService(
             AuditLogRepository auditLogRepository,
             ObjectMapper objectMapper,
-            TransactionalOutboxService transactionalOutboxService
+            TransactionalOutboxService transactionalOutboxService,
+            SchoolStatsRepository schoolStatsRepository
     ) {
         this.auditLogRepository = auditLogRepository;
         this.objectMapper = objectMapper;
         this.transactionalOutboxService = transactionalOutboxService;
+        this.schoolStatsRepository = schoolStatsRepository;
     }
 
+    @Transactional
     public AuditLog record(
             String tenantId,
             String schoolId,
@@ -58,6 +64,9 @@ public class AuditLogService {
                 "audit:" + auditLog.getId(),
                 auditPayload(auditLog)
         );
+        if (schoolId != null && !schoolId.isBlank()) {
+            schoolStatsRepository.touchActivity(schoolId, auditLog.getCreatedAt());
+        }
         return auditLog;
     }
 

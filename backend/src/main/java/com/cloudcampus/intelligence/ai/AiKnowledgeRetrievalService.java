@@ -166,11 +166,12 @@ public class AiKnowledgeRetrievalService {
     private School resolveRetrievalSchool(AuthenticatedUser authenticatedUser, AiScopedRetrievalRequest request) {
         UserAccount actor = authenticatedUser.user();
         return switch (actor.getRole()) {
-            case SCHOOL_ADMIN, STAFF, FINANCE_STAFF -> schoolFromActiveGrant(authenticatedUser);
+            case SCHOOL_ADMIN, PRINCIPAL, STAFF, OFFICE_STAFF, FINANCE_STAFF -> schoolFromActiveGrant(authenticatedUser);
             case TEACHER -> schoolForTeacher(authenticatedUser);
             case PARENT -> schoolForLinkedChild(actor, request.studentId());
             case STUDENT -> schoolForStudent(actor);
             case SUPER_ADMIN, TENANT_ADMIN -> throw new ForbiddenException("Portal user school context is required for AI retrieval.");
+            case GUEST, SYSTEM, AI_AGENT -> throw new ForbiddenException("This role cannot use school-scoped AI retrieval.");
         };
     }
 

@@ -31,6 +31,7 @@ export function LoginPage({
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const showLocalAuthHints = shouldShowLocalAuthHints();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -114,7 +115,7 @@ export function LoginPage({
         </button>
       </form>
 
-      {import.meta.env.DEV ? (
+      {showLocalAuthHints ? (
         <div className="dev-login-hint" aria-label="Local development login hint">
           <strong>Dev Super Admin:</strong>
           <span>Email: superadmin@cloudcampus.dev</span>
@@ -128,7 +129,7 @@ export function LoginPage({
             MFA code
             <input autoComplete="one-time-code" inputMode="numeric" name="mfaCode" required />
           </label>
-          {mfaChallenge.scaffoldCode && isLocalDevelopment() ? (
+          {mfaChallenge.scaffoldCode && showLocalAuthHints ? (
             <p className="form-hint">Local verification code: {mfaChallenge.scaffoldCode}</p>
           ) : null}
           <button type="submit" disabled={submitting}>
@@ -156,6 +157,14 @@ function roleTitle(role: string) {
     .join(' ');
 }
 
-function isLocalDevelopment() {
-  return import.meta.env.DEV && import.meta.env.MODE === 'development';
+export function shouldShowLocalAuthHints(
+  hostname = globalThis.location?.hostname ?? '',
+  viteDev = import.meta.env.DEV,
+  viteMode = import.meta.env.MODE,
+) {
+  return (viteDev && viteMode === 'development') || isLoopbackHostname(hostname);
+}
+
+function isLoopbackHostname(hostname: string) {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
 }

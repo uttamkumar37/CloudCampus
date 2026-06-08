@@ -13,7 +13,9 @@ import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.events.outbox.TransactionalOutboxService;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
 import com.cloudcampus.identity.auth.UserAccount;
+import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
+import com.cloudcampus.platform.tenant.Tenant;
 import com.cloudcampus.school.School;
 import com.cloudcampus.school.SchoolRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -69,6 +71,31 @@ public class BulkJobService {
                 metadataJson(request.metadata())
         ));
         recordAudit(actor.user(), job, AuditAction.BULK_JOB_CREATED, "Bulk job queued.");
+        recordOutbox(job, "BulkJobCreated", "bulk-job:" + job.getId() + ":created", safePayload(job));
+        return toResponse(job);
+    }
+
+    @Transactional
+    public BulkJobResponse createPlatformJob(AuthenticatedUser actor, BulkJobCreateRequest request) {
+        if (actor.user().getRole() != UserRole.SUPER_ADMIN) {
+            throw new ForbiddenException("Only SUPER_ADMIN can create platform bulk jobs.");
+        }
+        String jobType = normalizeJobType(request.jobType());
+        int totalRecords = request.totalRecords() == null ? 0 : request.totalRecords();
+        if (totalRecords < 0) {
+            throw new BadRequestException("Bulk job total records cannot be negative.");
+        }
+        Tenant tenant = actor.user().getTenant();
+        BulkJob job = bulkJobRepository.save(new BulkJob(
+                tenant,
+                null,
+                actor.user(),
+                jobType,
+                totalRecords,
+                normalizeOptional(request.inputFileReference()),
+                metadataJson(request.metadata())
+        ));
+        recordAudit(actor.user(), job, AuditAction.BULK_JOB_CREATED, "Platform bulk job queued.");
         recordOutbox(job, "BulkJobCreated", "bulk-job:" + job.getId() + ":created", safePayload(job));
         return toResponse(job);
     }
@@ -154,6 +181,12 @@ public class BulkJobService {
 
     private BulkJob requireAccessibleJob(AuthenticatedUser actor, String bulkJobId) {
         BulkJob job = requireJob(bulkJobId);
+        if (job.getSchool() == null) {
+            if (actor.user().getRole() != UserRole.SUPER_ADMIN) {
+                throw new ForbiddenException("Only SUPER_ADMIN can access platform bulk jobs.");
+            }
+            return job;
+        }
         schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), job.getSchool().getId());
         return job;
     }
@@ -196,7 +229,7 @@ public class BulkJobService {
     private void recordAudit(UserAccount actor, BulkJob job, AuditAction action, String summary) {
         auditLogService.record(
                 job.getTenant().getId(),
-                job.getSchool().getId(),
+                job.getSchool() == null ? null : job.getSchool().getId(),
                 actor.getRole().name(),
                 actor.getId(),
                 action,
@@ -219,7 +252,7 @@ public class BulkJobService {
     private void recordOutbox(BulkJob job, String eventType, String eventKey, Map<String, ?> payload) {
         transactionalOutboxService.record(
                 job.getTenant().getId(),
-                job.getSchool().getId(),
+                job.getSchool() == null ? null : job.getSchool().getId(),
                 "BulkJob",
                 job.getId(),
                 eventType,
@@ -232,7 +265,7 @@ public class BulkJobService {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("bulkJobId", job.getId());
         payload.put("tenantId", job.getTenant().getId());
-        payload.put("schoolId", job.getSchool().getId());
+        payload.put("schoolId", job.getSchool() == null ? null : job.getSchool().getId());
         payload.put("jobType", job.getJobType());
         payload.put("requestedByUserId", job.getRequestedBy().getId());
         payload.put("status", job.getStatus().name());
@@ -249,7 +282,7 @@ public class BulkJobService {
         return new BulkJobResponse(
                 job.getId(),
                 job.getTenant().getId(),
-                job.getSchool().getId(),
+                job.getSchool() == null ? null : job.getSchool().getId(),
                 job.getJobType(),
                 job.getRequestedBy().getId(),
                 job.getStatus(),

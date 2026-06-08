@@ -128,6 +128,7 @@ class SchoolScopedControllerGuardCoverageTest {
                 "com/cloudcampus/operations/report/ReportExportController.java",
                 "com/cloudcampus/operations/website/WebsiteController.java",
                 "com/cloudcampus/portal/dashboard/DashboardSummaryController.java",
+                "com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java",
                 "com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java",
                 "com/cloudcampus/platform/tenantadmin/report/TenantAdminReportController.java",
                 "com/cloudcampus/school/SchoolSettingsController.java",

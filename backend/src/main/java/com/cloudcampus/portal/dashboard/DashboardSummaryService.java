@@ -6,12 +6,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloudcampus.academic.TeacherAssignmentRepository;
+import com.cloudcampus.audit.AuditLogRepository;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.events.outbox.OutboxEventRepository;
+import com.cloudcampus.events.outbox.OutboxEventStatus;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
+import com.cloudcampus.notification.NotificationDeliveryRepository;
+import com.cloudcampus.notification.NotificationDeliveryStatus;
+import com.cloudcampus.operations.bulk.BulkJobStatus;
 import com.cloudcampus.operations.attendance.AttendanceSessionRepository;
 import com.cloudcampus.operations.exam.Exam;
 import com.cloudcampus.operations.exam.ExamRepository;
@@ -31,6 +37,9 @@ import com.cloudcampus.people.staff.StaffProfileRepository;
 import com.cloudcampus.people.student.Student;
 import com.cloudcampus.people.student.StudentRepository;
 import com.cloudcampus.platform.tenant.TenantRepository;
+import com.cloudcampus.platform.subscription.TenantInvoice;
+import com.cloudcampus.platform.subscription.TenantInvoiceRepository;
+import com.cloudcampus.platform.subscription.TenantInvoiceStatus;
 import com.cloudcampus.school.SchoolRepository;
 
 import org.springframework.stereotype.Service;
@@ -56,6 +65,10 @@ public class DashboardSummaryService {
     private final FeePaymentRepository feePaymentRepository;
     private final NoticeRepository noticeRepository;
     private final ReportExportJobRepository reportExportJobRepository;
+    private final TenantInvoiceRepository tenantInvoiceRepository;
+    private final NotificationDeliveryRepository notificationDeliveryRepository;
+    private final OutboxEventRepository outboxEventRepository;
+    private final AuditLogRepository auditLogRepository;
 
     public DashboardSummaryService(
             TenantRepository tenantRepository,
@@ -74,7 +87,11 @@ public class DashboardSummaryService {
             FeeDemandRepository feeDemandRepository,
             FeePaymentRepository feePaymentRepository,
             NoticeRepository noticeRepository,
-            ReportExportJobRepository reportExportJobRepository
+            ReportExportJobRepository reportExportJobRepository,
+            TenantInvoiceRepository tenantInvoiceRepository,
+            NotificationDeliveryRepository notificationDeliveryRepository,
+            OutboxEventRepository outboxEventRepository,
+            AuditLogRepository auditLogRepository
     ) {
         this.tenantRepository = tenantRepository;
         this.schoolRepository = schoolRepository;
@@ -93,17 +110,58 @@ public class DashboardSummaryService {
         this.feePaymentRepository = feePaymentRepository;
         this.noticeRepository = noticeRepository;
         this.reportExportJobRepository = reportExportJobRepository;
+        this.tenantInvoiceRepository = tenantInvoiceRepository;
+        this.notificationDeliveryRepository = notificationDeliveryRepository;
+        this.outboxEventRepository = outboxEventRepository;
+        this.auditLogRepository = auditLogRepository;
     }
 
     @Transactional(readOnly = true)
     public DashboardSummaryResponse superAdmin(AuthenticatedUser actor) {
         requireRole(actor, UserRole.SUPER_ADMIN);
-        return response(List.of(
-                metric("Total tenants", tenantRepository.count(), "All platform tenants"),
-                metric("Active schools", schoolRepository.countByActiveTrue(), "Platform schools currently active"),
-                metric("Total users", userAccountRepository.count(), "All platform user accounts"),
-                metric("Platform scope", "Global", "Super Admin does not require active school")
-        ));
+        long overdueInvoices = tenantInvoiceRepository.findAll().stream()
+                .filter(invoice -> invoice.getStatus() == TenantInvoiceStatus.OVERDUE
+                        || (invoice.getStatus() == TenantInvoiceStatus.ISSUED
+                        && invoice.getDueAt() != null
+                        && invoice.getDueAt().isBefore(java.time.Instant.now())))
+                .count();
+        long pendingReports = reportExportJobRepository.findTop10ByOrderByRequestedAtDesc().stream()
+                .filter(job -> job.getBulkJob().getStatus() == BulkJobStatus.QUEUED
+                        || job.getBulkJob().getStatus() == BulkJobStatus.VALIDATING
+                        || job.getBulkJob().getStatus() == BulkJobStatus.PROCESSING)
+                .count();
+        List<DashboardItemResponse> alerts = new ArrayList<>();
+        long pendingOutbox = outboxEventRepository.findTop100ByStatusOrderByCreatedAtAsc(OutboxEventStatus.PENDING).size();
+        long failedNotifications = notificationDeliveryRepository.countByStatus(NotificationDeliveryStatus.FAILED);
+        if (pendingOutbox > 0) {
+            alerts.add(item("Pending outbox", pendingOutbox + " platform events are waiting for delivery.", java.time.Instant.now()));
+        }
+        if (failedNotifications > 0) {
+            alerts.add(item("Failed notifications", failedNotifications + " deliveries need review.", java.time.Instant.now()));
+        }
+        if (overdueInvoices > 0) {
+            alerts.add(item("Overdue invoices", overdueInvoices + " invoices are past due.", java.time.Instant.now()));
+        }
+        if (pendingReports > 0) {
+            alerts.add(item("Report export queue", pendingReports + " report exports are queued or processing.", java.time.Instant.now()));
+        }
+        List<DashboardItemResponse> activity = auditLogRepository.findTop10ByOrderByCreatedAtDesc().stream()
+                .map(log -> item(log.getAction().name(), log.getSummary(), log.getCreatedAt()))
+                .toList();
+        return new DashboardSummaryResponse(
+                List.of(
+                        metric("Total tenants", tenantRepository.count(), "All platform tenants"),
+                        metric("Active tenants", tenantRepository.findAll().stream().filter(tenant -> tenant.getStatus().name().equals("ACTIVE")).count(), "Tenants currently active"),
+                        metric("Total schools", schoolRepository.count(), "All onboarded schools"),
+                        metric("Active schools", schoolRepository.countByActiveTrue(), "Platform schools currently active"),
+                        metric("Total users", userAccountRepository.count(), "All platform user accounts"),
+                        metric("Students", studentRepository.count(), "All student records"),
+                        metric("Staff", staffProfileRepository.count(), "All staff profiles"),
+                        metric("Paid invoices", tenantInvoiceRepository.countByStatus(TenantInvoiceStatus.PAID), "Invoices marked paid")
+                ),
+                alerts,
+                activity
+        );
     }
 
     @Transactional(readOnly = true)
@@ -275,6 +333,10 @@ public class DashboardSummaryService {
 
     private DashboardMetricResponse metric(String label, String value, String detail) {
         return new DashboardMetricResponse(label, value, detail);
+    }
+
+    private DashboardItemResponse item(String title, String detail, java.time.Instant occurredAt) {
+        return new DashboardItemResponse(title, detail, occurredAt);
     }
 
     private int upcomingExams(List<Exam> exams) {
