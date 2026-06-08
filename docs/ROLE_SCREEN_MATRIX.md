@@ -6,16 +6,16 @@ Status: CURRENT_IMPLEMENTED
 
 | Role | Screen | Route/nav id | Visible | API/source | Status |
 | --- | --- | --- | --- | --- | --- |
-| SUPER_ADMIN | Dashboard | dashboard | Yes | /v1/super-admin/dashboard/summary | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Tenants | tenants | Yes | /v1/super-admin/ai/tenants/{tenantId}/entitlement | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Schools | schools | Yes | /v1/me/schools/{schoolId}/activate | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Access Control | access-control | Yes | /v1/super-admin/dashboard/summary | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Subscription Plans | subscriptions | Yes | /v1/super-admin/subscriptions/plans/{planId} | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Revenue | revenue | Yes | /v1/super-admin/revenue/invoices | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | AI Governance | ai-usage | Yes | /v1/super-admin/dashboard/summary | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Dashboard | dashboard | Yes | /v1/super-admin/dashboard/summary, /v1/super-admin/platform-metrics | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Organizations | tenants | Yes | /v1/super-admin/tenants | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Schools | schools | Yes | /v1/super-admin/schools | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Users & Roles | access-control | Yes | /v1/super-admin/users | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Plans | subscriptions | Yes | /v1/super-admin/subscriptions/plans, /v1/super-admin/subscriptions/tenants/{tenantId} | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Revenue | revenue | Yes | /v1/super-admin/revenue/summary, /v1/super-admin/revenue/invoices | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | AI Governance | ai-usage | Yes | /v1/super-admin/ai/usage/summary, /v1/super-admin/ai/recommendations | CURRENT_IMPLEMENTED |
 | SUPER_ADMIN | Reports | reports | Yes | /v1/super-admin/reports/exports/{jobId} | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Audit Logs | audit | Yes | /v1/ai/usage/audit | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Platform Health | health | Yes | /v1/super-admin/platform-health | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Audit | audit | Yes | /v1/super-admin/audit-logs | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Health | health | Yes | /v1/super-admin/platform-health | CURRENT_IMPLEMENTED |
 | SUPER_ADMIN | Notifications | notifications | Yes | /v1/super-admin/notifications/deliveries/{deliveryId} | CURRENT_IMPLEMENTED |
 | SUPER_ADMIN | Settings | settings | Yes | /v1/super-admin/settings | CURRENT_IMPLEMENTED |
 | TENANT_ADMIN | Dashboard | dashboard | Yes | /v1/tenant-admin/dashboard/summary | CURRENT_IMPLEMENTED |

@@ -25,6 +25,8 @@ export type PageQuery = {
   riskLevel?: string;
   assignedTo?: string;
   enabled?: boolean | string;
+  from?: string;
+  to?: string;
 };
 
 export type SuperAdminTenant = {
@@ -82,6 +84,13 @@ export type RevenueSummary = {
   planBreakdown: Array<{ id: string; label: string; amountCents: number; invoiceCount: number }>;
 };
 
+export type RevenueBreakdown = {
+  id: string;
+  label: string;
+  amountCents: number;
+  invoiceCount: number;
+};
+
 export type PlatformMetrics = {
   totalTenantCount: number;
   activeTenantCount: number;
@@ -108,17 +117,7 @@ export type AiUsageSummary = {
   totalUnitsUsedThisMonth: number;
   deniedRequestsThisMonth: number;
   budgetExceededRequestsThisMonth: number;
-  tenants: Array<{
-    tenantId: string;
-    tenantName: string;
-    enabled: boolean;
-    monthlyUnitBudget: number;
-    unitsUsedThisMonth: number;
-    remainingUnitsThisMonth: number;
-    humanApprovalRequired: boolean;
-    enabledFeatures: string[];
-    updatedAt: string | null;
-  }>;
+  tenants: AiTenantUsage[];
   usageAudit: Array<{
     auditId: string;
     tenantId: string;
@@ -131,6 +130,31 @@ export type AiUsageSummary = {
     denialReason: string | null;
     createdAt: string;
   }>;
+};
+
+export type AiTenantUsage = {
+  tenantId: string;
+  tenantName: string;
+  enabled: boolean;
+  monthlyUnitBudget: number;
+  unitsUsedThisMonth: number;
+  remainingUnitsThisMonth: number;
+  humanApprovalRequired: boolean;
+  enabledFeatures: string[];
+  updatedAt: string | null;
+};
+
+export type AiEntitlement = {
+  tenantId: string;
+  enabled: boolean;
+  monthlyUnitBudget: number;
+  unitsUsedThisMonth: number;
+  remainingUnitsThisMonth: number;
+  enabledFeatures: string[];
+  humanApprovalRequired: boolean;
+  retentionDays: number;
+  updatedByUserId: string | null;
+  updatedAt: string | null;
 };
 
 export type ReportSummary = {
@@ -149,6 +173,14 @@ export type ReportExport = {
   status: string;
   requestedAt: string;
   completedAt: string | null;
+};
+
+export type ReportExportRequest = {
+  reportType: string;
+  format: string;
+  tenantId?: string;
+  schoolId?: string;
+  filters?: Record<string, unknown>;
 };
 
 export type SuperAdminSearchResponse = {
@@ -343,6 +375,27 @@ export type AiRecommendation = {
   createdAt: string;
 };
 
+export type AiRecommendationRequest = {
+  tenantId: string;
+  schoolId?: string;
+  targetType?: string;
+  targetId?: string;
+  recommendationType: string;
+  title: string;
+  summary: string;
+  rationale?: string;
+  confidenceScore?: number;
+  riskLevel: string;
+  status?: string;
+  createdByActorType?: string;
+  createdByActorId?: string;
+  assignedToUserId?: string;
+  approvalRequired?: boolean;
+  expiresAt?: string;
+  sourceUsageAuditId?: string;
+  metadataJson?: string;
+};
+
 export type AutomationRule = {
   ruleId: string;
   tenantId: string | null;
@@ -395,6 +448,73 @@ export type AiPolicy = {
   updatedAt: string | null;
 };
 
+export type TeacherAssignment = {
+  assignmentId: string;
+  teacherUserId: string;
+  teacherName: string;
+  tenantId: string;
+  schoolId: string;
+  schoolName: string;
+  classLevelId: string | null;
+  classLevelName: string | null;
+  sectionId: string | null;
+  sectionName: string | null;
+  subjectId: string | null;
+  subjectName: string | null;
+  roleType: string;
+  active: boolean;
+  createdAt: string;
+};
+
+export type StudentGuardian = {
+  guardianLinkId: string;
+  studentId: string;
+  guardianUserId: string;
+  guardianName: string;
+  guardianEmail: string;
+  relation: string;
+  primaryContact: boolean;
+  canPickup: boolean;
+  emergencyContact: boolean;
+  active: boolean;
+  createdAt: string;
+};
+
+export type TenantSubscription = {
+  tenantId: string;
+  tenantCode: string;
+  tenantName: string;
+  tenantStatus: string;
+  subscriptionAssigned: boolean;
+  planId: string | null;
+  planCode: string | null;
+  planName: string | null;
+  subscriptionStatus: string | null;
+  billingCycle: string | null;
+  maxSchools: number;
+  maxStudents: number;
+  maxStaff: number;
+  schoolsUsed: number;
+  remainingSchools: number;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  assignedByUserId: string | null;
+  assignedAt: string | null;
+  invoice: {
+    id: string;
+    tenantId: string;
+    planId: string;
+    planCode: string;
+    invoiceNumber: string;
+    billingCycle: string;
+    amountCents: number;
+    currency: string;
+    status: string;
+    issuedAt: string;
+    dueAt: string | null;
+  } | null;
+};
+
 function queryString(params: PageQuery = {}) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -429,6 +549,14 @@ export function getSuperAdminRevenue(accessToken?: string | null) {
   return httpClient.get<RevenueSummary>('/v1/super-admin/revenue/summary', { accessToken });
 }
 
+export function getSuperAdminRevenueTrends(accessToken?: string | null) {
+  return httpClient.get<RevenueSummary>('/v1/super-admin/revenue/trends', { accessToken });
+}
+
+export function getSuperAdminTenantRevenue(accessToken?: string | null) {
+  return httpClient.get<RevenueSummary>('/v1/super-admin/revenue/tenants', { accessToken });
+}
+
 export function listSuperAdminInvoices(params: PageQuery = {}, accessToken?: string | null) {
   return httpClient.get<PageResponse<SuperAdminInvoice>>(`/v1/super-admin/revenue/invoices${queryString({ page: 0, size: 25, ...params })}`, { accessToken });
 }
@@ -437,20 +565,65 @@ export function getSuperAdminAiUsage(accessToken?: string | null) {
   return httpClient.get<AiUsageSummary>('/v1/super-admin/ai/usage/summary', { accessToken });
 }
 
+export function listSuperAdminAiTenantUsage(accessToken?: string | null) {
+  return httpClient.get<AiTenantUsage[]>('/v1/super-admin/ai/usage/tenants', { accessToken });
+}
+
+export function listSuperAdminAiEntitlements(accessToken?: string | null) {
+  return httpClient.get<AiTenantUsage[]>('/v1/super-admin/ai/entitlements', { accessToken });
+}
+
+export function getSuperAdminAiEntitlement(tenantId: string, accessToken?: string | null) {
+  return httpClient.get<AiEntitlement>(`/v1/super-admin/ai/tenants/${encodeURIComponent(tenantId)}/entitlement`, { accessToken });
+}
+
+export function updateSuperAdminAiEntitlement(
+  tenantId: string,
+  payload: {
+    enabled: boolean;
+    monthlyUnitBudget: number;
+    enabledFeatures: string[];
+    humanApprovalRequired: boolean;
+    retentionDays: number;
+  },
+  accessToken?: string | null,
+) {
+  return httpClient.put<AiEntitlement>(`/v1/super-admin/ai/tenants/${encodeURIComponent(tenantId)}/entitlement`, payload, { accessToken });
+}
+
 export function getSuperAdminReports(accessToken?: string | null) {
   return httpClient.get<ReportSummary>('/v1/super-admin/reports/summary', { accessToken });
 }
 
-export function requestSuperAdminReportExport(accessToken?: string | null) {
+export function listSuperAdminReportTenants(params: PageQuery = {}, accessToken?: string | null) {
+  return httpClient.get<PageResponse<SuperAdminTenant>>(`/v1/super-admin/reports/tenants${queryString({ page: 0, size: 25, ...params })}`, { accessToken });
+}
+
+export function listSuperAdminReportSchools(params: PageQuery = {}, accessToken?: string | null) {
+  return httpClient.get<PageResponse<SuperAdminSchool>>(`/v1/super-admin/reports/schools${queryString({ page: 0, size: 25, ...params })}`, { accessToken });
+}
+
+export function requestSuperAdminReportExport(
+  payloadOrToken?: ReportExportRequest | string | null,
+  accessToken?: string | null,
+) {
+  const payload = typeof payloadOrToken === 'object' && payloadOrToken !== null
+    ? payloadOrToken
+    : { reportType: 'PLATFORM_SUMMARY', format: 'CSV' };
+  const token = typeof payloadOrToken === 'string' || payloadOrToken === null ? payloadOrToken : accessToken;
   return httpClient.post<ReportExport>(
     '/v1/super-admin/reports/exports',
-    { reportType: 'PLATFORM_SUMMARY', format: 'CSV' },
-    { accessToken },
+    payload,
+    { accessToken: token },
   );
 }
 
 export function listSuperAdminReportExports(params: PageQuery = {}, accessToken?: string | null) {
   return httpClient.get<PageResponse<ReportExport>>(`/v1/super-admin/reports/exports${queryString({ page: 0, size: 25, ...params })}`, { accessToken });
+}
+
+export function getSuperAdminReportExport(jobId: string, accessToken?: string | null) {
+  return httpClient.get<ReportExport>(`/v1/super-admin/reports/exports/${encodeURIComponent(jobId)}`, { accessToken });
 }
 
 export function listSuperAdminAuditLogs(params: PageQuery = {}, accessToken?: string | null) {
@@ -469,6 +642,10 @@ export function listSuperAdminNotificationDeliveries(params: PageQuery = {}, acc
   return httpClient.get<PageResponse<NotificationDelivery>>(`/v1/super-admin/notifications/deliveries${queryString({ page: 0, size: 25, ...params })}`, { accessToken });
 }
 
+export function getSuperAdminNotificationDelivery(deliveryId: string, accessToken?: string | null) {
+  return httpClient.get<NotificationDelivery>(`/v1/super-admin/notifications/deliveries/${encodeURIComponent(deliveryId)}`, { accessToken });
+}
+
 export function getSuperAdminSettings(accessToken?: string | null) {
   return httpClient.get<PlatformSettings>('/v1/super-admin/settings', { accessToken });
 }
@@ -485,6 +662,33 @@ export function createSuperAdminSubscriptionPlan(payload: Partial<SubscriptionPl
   return httpClient.post<SubscriptionPlan>('/v1/super-admin/subscriptions/plans', payload, { accessToken });
 }
 
+export function updateSuperAdminSubscriptionPlan(planId: string, payload: Partial<SubscriptionPlan>, accessToken?: string | null) {
+  return httpClient.patch<SubscriptionPlan>(`/v1/super-admin/subscriptions/plans/${encodeURIComponent(planId)}`, payload, { accessToken });
+}
+
+export function getSuperAdminTenantSubscription(tenantId: string, accessToken?: string | null) {
+  return httpClient.get<TenantSubscription>(`/v1/super-admin/subscriptions/tenants/${encodeURIComponent(tenantId)}`, { accessToken });
+}
+
+export function assignSuperAdminTenantSubscription(
+  tenantId: string,
+  payload: {
+    planCode: string;
+    billingCycle?: string;
+    currentPeriodStart?: string;
+    currentPeriodEnd?: string;
+    issueInvoice?: boolean;
+    invoiceDueAt?: string;
+  },
+  accessToken?: string | null,
+) {
+  return httpClient.put<TenantSubscription>(`/v1/super-admin/subscriptions/tenants/${encodeURIComponent(tenantId)}`, payload, { accessToken });
+}
+
+export function listSuperAdminTenantSubscriptionInvoices(tenantId: string, accessToken?: string | null) {
+  return httpClient.get<Array<NonNullable<TenantSubscription['invoice']>>>(`/v1/super-admin/subscriptions/tenants/${encodeURIComponent(tenantId)}/invoices`, { accessToken });
+}
+
 export function searchSuperAdmin(params: PageQuery, accessToken?: string | null) {
   return httpClient.get<SuperAdminSearchResponse>(`/v1/super-admin/search${queryString({ page: 0, size: 25, ...params })}`, { accessToken });
 }
@@ -495,6 +699,10 @@ export function listSuperAdminUsers(params: PageQuery = {}, accessToken?: string
 
 export function getSuperAdminUser(userId: string, accessToken?: string | null) {
   return httpClient.get<AccessControlUser>(`/v1/super-admin/users/${encodeURIComponent(userId)}`, { accessToken });
+}
+
+export function listSuperAdminUserRoles(userId: string, accessToken?: string | null) {
+  return httpClient.get<UserRoleAssignment[]>(`/v1/super-admin/users/${encodeURIComponent(userId)}/roles`, { accessToken });
 }
 
 export function listSuperAdminPermissions(accessToken?: string | null) {
@@ -526,6 +734,17 @@ export function updateSuperAdminUserRole(
   );
 }
 
+export function deleteSuperAdminUserRole(userId: string, roleAssignmentId: string, accessToken?: string | null) {
+  return httpClient.delete<void>(
+    `/v1/super-admin/users/${encodeURIComponent(userId)}/roles/${encodeURIComponent(roleAssignmentId)}`,
+    { accessToken },
+  );
+}
+
+export function listSuperAdminUserPermissionOverrides(userId: string, accessToken?: string | null) {
+  return httpClient.get<PermissionOverride[]>(`/v1/super-admin/users/${encodeURIComponent(userId)}/permission-overrides`, { accessToken });
+}
+
 export function createSuperAdminPermissionOverride(
   userId: string,
   payload: { permissionCode: string; allowed: boolean; tenantId?: string; schoolId?: string; reason: string },
@@ -547,8 +766,87 @@ export function updateSuperAdminPermissionOverride(
   );
 }
 
+export function deleteSuperAdminPermissionOverride(userId: string, overrideId: string, accessToken?: string | null) {
+  return httpClient.delete<void>(
+    `/v1/super-admin/users/${encodeURIComponent(userId)}/permission-overrides/${encodeURIComponent(overrideId)}`,
+    { accessToken },
+  );
+}
+
+export function linkSuperAdminStudentGuardian(
+  studentId: string,
+  payload: {
+    guardianUserId: string;
+    relation: string;
+    contactEmail?: string;
+    contactMobile?: string;
+    primaryContact?: boolean;
+    canPickup?: boolean;
+    emergencyContact?: boolean;
+  },
+  accessToken?: string | null,
+) {
+  return httpClient.post<StudentGuardian>(`/v1/super-admin/students/${encodeURIComponent(studentId)}/guardians`, payload, { accessToken });
+}
+
+export function updateSuperAdminStudentGuardian(
+  studentId: string,
+  guardianLinkId: string,
+  payload: { relation?: string; primaryContact?: boolean; canPickup?: boolean; emergencyContact?: boolean; active?: boolean },
+  accessToken?: string | null,
+) {
+  return httpClient.patch<StudentGuardian>(
+    `/v1/super-admin/students/${encodeURIComponent(studentId)}/guardians/${encodeURIComponent(guardianLinkId)}`,
+    payload,
+    { accessToken },
+  );
+}
+
+export function deleteSuperAdminStudentGuardian(studentId: string, guardianLinkId: string, accessToken?: string | null) {
+  return httpClient.delete<void>(
+    `/v1/super-admin/students/${encodeURIComponent(studentId)}/guardians/${encodeURIComponent(guardianLinkId)}`,
+    { accessToken },
+  );
+}
+
+export function createSuperAdminTeacherAssignment(
+  teacherUserId: string,
+  payload: { classSubjectAssignmentId: string; sectionId?: string; roleType?: string; active?: boolean; reason?: string },
+  accessToken?: string | null,
+) {
+  return httpClient.post<TeacherAssignment>(`/v1/super-admin/teachers/${encodeURIComponent(teacherUserId)}/assignments`, payload, { accessToken });
+}
+
+export function updateSuperAdminTeacherAssignment(
+  teacherUserId: string,
+  assignmentId: string,
+  payload: { classSubjectAssignmentId?: string; sectionId?: string; roleType?: string; active?: boolean; reason?: string },
+  accessToken?: string | null,
+) {
+  return httpClient.patch<TeacherAssignment>(
+    `/v1/super-admin/teachers/${encodeURIComponent(teacherUserId)}/assignments/${encodeURIComponent(assignmentId)}`,
+    payload,
+    { accessToken },
+  );
+}
+
+export function deleteSuperAdminTeacherAssignment(teacherUserId: string, assignmentId: string, accessToken?: string | null) {
+  return httpClient.delete<void>(
+    `/v1/super-admin/teachers/${encodeURIComponent(teacherUserId)}/assignments/${encodeURIComponent(assignmentId)}`,
+    { accessToken },
+  );
+}
+
 export function listSuperAdminAiRecommendations(params: PageQuery = {}, accessToken?: string | null) {
   return httpClient.get<PageResponse<AiRecommendation>>(`/v1/super-admin/ai/recommendations${queryString({ page: 0, size: 25, ...params })}`, { accessToken });
+}
+
+export function createSuperAdminAiRecommendation(payload: AiRecommendationRequest, accessToken?: string | null) {
+  return httpClient.post<AiRecommendation>('/v1/super-admin/ai/recommendations', payload, { accessToken });
+}
+
+export function getSuperAdminAiRecommendation(recommendationId: string, accessToken?: string | null) {
+  return httpClient.get<AiRecommendation>(`/v1/super-admin/ai/recommendations/${encodeURIComponent(recommendationId)}`, { accessToken });
 }
 
 export function approveSuperAdminAiRecommendation(recommendationId: string, accessToken?: string | null) {
@@ -600,6 +898,10 @@ export function listSuperAdminAutomationRuns(params: PageQuery = {}, accessToken
 
 export function listSuperAdminAiPolicies(params: PageQuery = {}, accessToken?: string | null) {
   return httpClient.get<PageResponse<AiPolicy>>(`/v1/super-admin/ai/policies${queryString({ page: 0, size: 25, ...params })}`, { accessToken });
+}
+
+export function getSuperAdminAiPolicy(tenantId: string, accessToken?: string | null) {
+  return httpClient.get<AiPolicy>(`/v1/super-admin/ai/policies/${encodeURIComponent(tenantId)}`, { accessToken });
 }
 
 export function updateSuperAdminAiPolicy(tenantId: string, payload: Partial<AiPolicy>, accessToken?: string | null) {

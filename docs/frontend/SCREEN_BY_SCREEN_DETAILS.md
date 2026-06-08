@@ -6,16 +6,16 @@ Status: CURRENT_IMPLEMENTED
 
 | Role | Screen | Route/nav id | Primary API/source | Loading | Empty | Error | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| SUPER_ADMIN | Dashboard | dashboard | /v1/super-admin/dashboard/summary | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Tenants | tenants | /v1/super-admin/ai/tenants/{tenantId}/entitlement | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Schools | schools | /v1/me/schools/{schoolId}/activate | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Access Control | access-control | /v1/super-admin/dashboard/summary | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Subscription Plans | subscriptions | /v1/super-admin/subscriptions/plans/{planId} | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Dashboard | dashboard | /v1/super-admin/dashboard/summary, /v1/super-admin/platform-metrics, /v1/super-admin/revenue/summary, /v1/super-admin/platform-health | CURRENT_IMPLEMENTED generic loading | CURRENT_IMPLEMENTED no-fake-data states | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Organizations | tenants | /v1/super-admin/tenants | CURRENT_IMPLEMENTED generic loading | CURRENT_IMPLEMENTED create-first-organization empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Schools | schools | /v1/super-admin/schools | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Users & Roles | access-control | /v1/super-admin/users | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Plans | subscriptions | /v1/super-admin/subscriptions/plans and /v1/super-admin/subscriptions/tenants/{tenantId} | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
 | SUPER_ADMIN | Revenue | revenue | /v1/super-admin/revenue/invoices | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | AI Governance | ai-usage | /v1/super-admin/dashboard/summary | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | AI Governance | ai-usage | /v1/super-admin/ai/recommendations and /v1/super-admin/ai/automation-rules | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
 | SUPER_ADMIN | Reports | reports | /v1/super-admin/reports/exports/{jobId} | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Audit Logs | audit | /v1/ai/usage/audit | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
-| SUPER_ADMIN | Platform Health | health | /v1/super-admin/platform-health | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Audit | audit | /v1/super-admin/audit-logs | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
+| SUPER_ADMIN | Health | health | /v1/super-admin/platform-health | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
 | SUPER_ADMIN | Notifications | notifications | /v1/super-admin/notifications/deliveries/{deliveryId} | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
 | SUPER_ADMIN | Settings | settings | /v1/super-admin/settings | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
 | TENANT_ADMIN | Dashboard | dashboard | /v1/tenant-admin/dashboard/summary | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
@@ -92,6 +92,7 @@ Status: CURRENT_IMPLEMENTED
 | SYSTEM | System Activity | dashboard | /v1/me | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
 | AI_AGENT | AI Activity | dashboard | /v1/me | CURRENT_IMPLEMENTED generic loading | CURRENT_PARTIAL module empty state | CURRENT_IMPLEMENTED API error state | CURRENT_IMPLEMENTED |
 
-- CURRENT_PARTIAL: Command palette/search is navigation-oriented.
-- CURRENT_PARTIAL: Notification popover and some AI shell elements may be presentational.
-- CURRENT_IMPLEMENTED: Super Admin platform page is connected to API sections for dashboard, tenants, schools, access control, subscriptions, revenue, AI, reports, audit, health, notifications, settings.
+- CURRENT_IMPLEMENTED: Super Admin command palette lists all grouped Super Admin nav items, supports `G D`, `G O`, and `G S` keyboard navigation, and calls `/v1/super-admin/search` for grouped platform results.
+- CURRENT_IMPLEMENTED: Super Admin notification popover uses `/v1/super-admin/notifications/summary` and safe recent data states.
+- CURRENT_IMPLEMENTED: Super Admin platform page is connected to API sections for dashboard, organizations, schools, users and roles, plans, revenue, AI, reports, audit, health, notifications, settings.
+- CURRENT_IMPLEMENTED: Super Admin shell removes the generic account-session dashboard from the Super Admin dashboard route and uses a compact session banner only on non-dashboard Super Admin modules.

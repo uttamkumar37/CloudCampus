@@ -60,6 +60,79 @@ describe('App', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
+      if (url.includes('/v1/super-admin/search')) {
+        return jsonResponse({
+          results: [{
+            id: 'user-1',
+            type: 'USER',
+            title: 'Ada Admin',
+            detail: 'ada@example.com',
+            navId: 'access-control',
+            createdAt: '2026-06-01T00:00:00Z',
+          }],
+          page: 0,
+          size: 10,
+          totalItems: 1,
+          totalPages: 1,
+        });
+      }
+      if (url.includes('/v1/super-admin/platform-metrics')) {
+        return jsonResponse({
+          totalTenantCount: 1,
+          activeTenantCount: 1,
+          totalSchoolCount: 1,
+          activeSchoolCount: 1,
+          totalStudentCount: 42,
+          activeStudentCount: 40,
+          totalStaffCount: 8,
+          activeStaffCount: 8,
+          totalUserCount: 3,
+          activeUserCount: 3,
+          pendingInvoiceCount: 1,
+          overdueInvoiceCount: 0,
+          paidInvoiceCount: 0,
+          failedNotificationCount: 0,
+          pendingOutboxCount: 0,
+          pendingReportExportCount: 0,
+          lastCalculatedAt: '2026-05-28T00:00:00Z',
+        });
+      }
+      if (url.includes('/v1/super-admin/users')) {
+        return jsonResponse({
+          items: [{
+            userId: 'user-1',
+            tenantId: 'tenant-platform',
+            tenantName: 'Platform Tenant',
+            email: 'ada@example.com',
+            displayName: 'Ada Admin',
+            primaryRole: 'TENANT_ADMIN',
+            status: 'ACTIVE',
+            mfaRequired: true,
+            activatedAt: '2026-06-01T00:00:00Z',
+            roles: [],
+            permissionOverrides: [],
+            schoolAccess: [],
+          }],
+          page: 0,
+          size: 25,
+          totalItems: 1,
+          totalPages: 1,
+        });
+      }
+      if (url.includes('/v1/super-admin/roles/') && url.includes('/permissions')) {
+        return jsonResponse([]);
+      }
+      if (url.includes('/v1/super-admin/permissions')) {
+        return jsonResponse([{
+          code: 'TENANT_VIEW',
+          name: 'Tenant View',
+          description: null,
+          category: 'TENANT',
+          riskLevel: 'LOW',
+          scopeType: 'TENANT',
+          active: true,
+        }]);
+      }
       if (url.includes('/v1/super-admin/tenants')) {
         return jsonResponse({
           items: [{
@@ -358,12 +431,11 @@ describe('App', () => {
 
     expect((await screen.findAllByRole('heading', { name: /super admin dashboard/i })).length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/breadcrumbs/i)).toHaveTextContent(/cloudcampus/i);
-    expect(screen.getByText(/session active/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/platform-wide access/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole('heading', { name: /account session/i })).toBeInTheDocument();
-    expect(screen.getByText(/platform access/i)).toBeInTheDocument();
-    expect(screen.getByText(/school access/i)).toBeInTheDocument();
-    expect(screen.getByText(/not required/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: /^super admin dashboard$/i }).length).toBeGreaterThan(1);
+    expect(screen.getAllByText(/platform access/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/platform-wide access/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /account session/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/school access/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/server-derived from \/v1\/me/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/\/v1\/me/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/not accepted from frontend input/i)).not.toBeInTheDocument();
@@ -372,20 +444,61 @@ describe('App', () => {
     expect((await screen.findAllByText(/Platform Tenant/i)).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/\$2,500/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /actions/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /platform-wide access/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /platform access/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /open profile menu/i }));
     expect(screen.getByRole('menu', { name: /profile menu/i })).toHaveTextContent(/last login: current session/i);
     expect(screen.getByRole('menu', { name: /profile menu/i })).toHaveTextContent(/super@example.com/i);
     expect(screen.getByRole('region', { name: /super admin area/i })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: /super admin navigation/i })).toBeInTheDocument();
-    expect(screen.getByText(/business/i)).toBeInTheDocument();
-    expect(screen.getByText(/operations/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /tenants/i }));
-    expect(screen.getByRole('heading', { name: /create organization with first school/i })).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: /organization management/i })).toBeInTheDocument();
+    const superAdminNav = screen.getByRole('navigation', { name: /super admin navigation/i });
+    expect(within(superAdminNav).getByText(/overview/i)).toBeInTheDocument();
+    expect(within(superAdminNav).getByText(/manage/i)).toBeInTheDocument();
+    expect(within(superAdminNav).getByText(/business/i)).toBeInTheDocument();
+    expect(within(superAdminNav).getByText(/operations/i)).toBeInTheDocument();
+    expect(within(superAdminNav).getByText(/intelligence/i)).toBeInTheDocument();
+    expect(within(superAdminNav).getByText(/configuration/i)).toBeInTheDocument();
+    expect(within(superAdminNav).getByRole('button', { name: /organizations/i })).toBeInTheDocument();
+    expect(within(superAdminNav).getByRole('button', { name: /users & roles/i })).toBeInTheDocument();
+    expect(within(superAdminNav).getByRole('button', { name: /^plans$/i })).toBeInTheDocument();
+    expect(within(superAdminNav).getByRole('button', { name: /^health$/i })).toBeInTheDocument();
+    expect(within(superAdminNav).getByRole('button', { name: /^audit$/i })).toBeInTheDocument();
+    fireEvent.click(within(superAdminNav).getByRole('button', { name: /organizations/i }));
+    expect((await screen.findAllByRole('heading', { name: /^organizations$/i })).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('dialog', { name: /create organization/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /create organization/i }));
+    expect(screen.getByRole('dialog', { name: /create organization/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^create organization$/i })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /create school/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /link parent to student/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
+  });
+
+  it('opens grouped Super Admin search results from the command palette', async () => {
+    const user: CurrentUser = {
+      userId: 'super-search',
+      email: 'super-search@example.com',
+      displayName: 'Super Search',
+      role: 'SUPER_ADMIN',
+      tenantId: 'platform',
+      activeSchool: null,
+      allowedSchools: [],
+    };
+
+    render(<App authClient={authClientFor(user, [])} storage={storageWithToken('super-token')} />);
+
+    expect((await screen.findAllByRole('heading', { name: /^super admin dashboard$/i })).length).toBeGreaterThan(1);
+    fireEvent.click(screen.getByRole('button', { name: /actions/i }));
+
+    const dialog = screen.getByRole('dialog', { name: /command palette/i });
+    expect(within(dialog).getByText(/g d dashboard/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/g o organizations/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/g s schools/i)).toBeInTheDocument();
+
+    fireEvent.change(within(dialog).getByPlaceholderText(/search organizations, schools, users/i), { target: { value: 'ada' } });
+    expect((await within(dialog).findAllByText(/^Users$/i)).length).toBeGreaterThan(0);
+    fireEvent.click(await within(dialog).findByRole('button', { name: /ada admin/i }));
+
+    expect((await screen.findAllByRole('heading', { name: /users & roles/i })).length).toBeGreaterThan(0);
   });
 
   it('allows a School Admin to access the active-school scaffold', async () => {

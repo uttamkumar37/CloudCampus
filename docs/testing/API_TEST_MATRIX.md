@@ -4,6 +4,19 @@
 
 Status: CURRENT_IMPLEMENTED
 
+## Super Admin Verification Overlay
+
+Verified on June 8, 2026 after the Super Admin portal wiring pass:
+
+| Area | Endpoint coverage | Evidence | Status |
+| --- | --- | --- | --- |
+| Platform directories and search | `/v1/super-admin/tenants`, `/schools`, `/users`, `/search` | `frontend/src/features/super-admin/api/platformApi.test.ts`, `frontend/src/features/super-admin/pages/SuperAdminPlatformPage.test.tsx`, `tests/performance/super-admin-platform-smoke.k6.js` | CURRENT_IMPLEMENTED smoke/API coverage; broader role-negative matrix remains CURRENT_PARTIAL |
+| Access control writes | user role assign/update/delete, permission override grant/update/delete, teacher assignments, student guardians | `frontend/src/features/super-admin/api/platformApi.test.ts`, `frontend/src/features/super-admin/pages/SuperAdminPlatformPage.test.tsx`, `backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java` | CURRENT_PARTIAL backend matrix; UI/API caller coverage added |
+| AI governance | usage summary/tenants, entitlements, policies, recommendations, automation rules, automation runs | `frontend/src/features/super-admin/api/platformApi.test.ts`, `frontend/src/features/super-admin/pages/SuperAdminPlatformPage.test.tsx`, `backend/src/test/java/com/cloudcampus/intelligence/ai/AiGovernanceFlowTest.java`, `tests/performance/super-admin-platform-smoke.k6.js` | CURRENT_IMPLEMENTED portal coverage; role-negative matrix remains CURRENT_PARTIAL |
+| Revenue/reports/notifications/subscriptions | invoices, trends, tenant revenue, report tenants/schools/exports, notification delivery detail, plan/tenant subscription flows | `frontend/src/features/super-admin/api/platformApi.test.ts`, `frontend/src/features/super-admin/pages/SuperAdminPlatformPage.test.tsx`, `backend/src/test/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionFlowTest.java`, `backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java` | CURRENT_IMPLEMENTED portal/API coverage |
+
+The generated inventory below is retained as a broad endpoint-to-test index. Rows marked `CURRENT_PARTIAL` generally indicate the role-negative/security coverage matrix is not complete for every endpoint, not that the endpoint is absent.
+
 | Method | Endpoint | Backend controller | Direct test discovered | Status |
 | --- | --- | --- | --- | --- |
 | PATCH | /v1/ai/automation-rules/{id} | backend/src/main/java/com/cloudcampus/intelligence/ai/AiRecommendationPortalController.java | backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java | CURRENT_PARTIAL |

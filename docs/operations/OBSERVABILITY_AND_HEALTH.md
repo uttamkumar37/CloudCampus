@@ -13,3 +13,5 @@ Status: CURRENT_IMPLEMENTED
 | Notification failures | notification deliveries summary/list/detail. | CURRENT_IMPLEMENTED |
 | AI usage/budget | AI usage summary/audit tables. | CURRENT_IMPLEMENTED |
 | Prometheus/Grafana | Not discovered. | NOT_FOUND_IN_CODEBASE |
+
+Verified June 8, 2026: `tests/performance/super-admin-platform-smoke.k6.js` exercises platform health-adjacent Super Admin flows for dashboard metrics, platform metrics, directories/search, audit logs, notifications, revenue, report exports, AI recommendations, automation rules, and automation runs.

@@ -14,3 +14,7 @@ Status: CURRENT_IMPLEMENTED
 | Refresh | Active/unexpired refresh, active user, interactive actor. | CURRENT_IMPLEMENTED |
 | Logout | Access token revoked; refresh token revoked when supplied. | CURRENT_IMPLEMENTED |
 | Endpoint freshness | Uniform sensitive-action freshness not found. | CURRENT_PARTIAL |
+
+Verified June 8, 2026:
+- Super Admin portal UI now adds explicit confirmation/validation around high-risk AI execution, access-control assignment, permission override, subscription assignment, report export, and settings flows.
+- Backend MFA freshness is still a documented extension point rather than a uniform request-time guard across every sensitive Super Admin mutation.

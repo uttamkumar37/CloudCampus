@@ -14,3 +14,8 @@ Status: CURRENT_IMPLEMENTED
 | Human approval | Approve/reject/execute endpoints exist; harden risk policy. | CURRENT_PARTIAL |
 | AI_AGENT login | Interactive login blocked. | CURRENT_IMPLEMENTED |
 | Prompt privacy | Audit/retrieval models exist; redaction policy review needed. | CURRENT_PARTIAL |
+
+Verified June 8, 2026:
+- `frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx` exposes Super Admin AI tabs for usage summary, tenant usage, entitlements, policies, recommendations, automation rules, automation runs, and audit/safety notes.
+- The Super Admin UI shows approval status, budget/usage, sanitized metadata, rejection reason capture, and high/critical execution confirmation.
+- Service-level MFA freshness and broader risk-policy hardening remain `CURRENT_PARTIAL` unless covered by endpoint-specific backend tests.

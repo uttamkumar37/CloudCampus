@@ -2,7 +2,54 @@
 
 # Super Admin API
 
-Status: CURRENT_IMPLEMENTED for discovered controllers; NOT_FOUND_IN_CODEBASE for planned/missing cards.
+Status: CURRENT_IMPLEMENTED for verified Super Admin portal surfaces; API-only or missing UI routes remain explicitly marked.
+
+## Verified June 8, 2026 Portal Surfaces
+
+The Super Admin React portal now visibly uses the following backend groups through `frontend/src/features/super-admin/api/platformApi.ts` and `frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx`: access-control user detail, role assignment, permission overrides, teacher assignment mutations, student guardian mutations, AI usage/entitlements/policies/recommendations/automation, notification delivery detail, revenue invoices/trends/tenant revenue, report tenant/school/export views, audit logs, school listing, and subscription plan plus tenant subscription assignment/invoices.
+
+Still not a dedicated visible workflow: `GET /v1/super-admin/schools/{schoolId}` and the tenant detail subresources under `GET /v1/super-admin/tenants/{tenantId}/schools`, `GET /v1/super-admin/tenants/{tenantId}/users`, `GET /v1/super-admin/tenants/{tenantId}/audit`, and `PATCH /v1/super-admin/tenants/{tenantId}/settings` are backend implemented, but the current tenant/school screens do not provide full detail drawers for those routes.
+
+Real response examples verified from DTOs/tests:
+
+```json
+{
+  "items": [
+    {
+      "invoiceId": "invoice-1",
+      "invoiceNumber": "INV-SA-CTRL-0001",
+      "tenantId": "tenant-1",
+      "tenantName": "Super Admin Control Tenant",
+      "planCode": "CTRL",
+      "billingCycle": "MONTHLY",
+      "amountCents": 250000,
+      "currency": "USD",
+      "status": "ISSUED",
+      "issuedAt": "2026-06-08T00:00:00Z",
+      "dueAt": "2026-06-09T00:00:00Z"
+    }
+  ],
+  "page": 0,
+  "size": 25,
+  "totalItems": 1,
+  "totalPages": 1
+}
+```
+
+```json
+{
+  "tenantId": "tenant-1",
+  "tenantCode": "TENANT",
+  "tenantName": "Tenant Trust",
+  "tenantStatus": "ACTIVE",
+  "subscriptionAssigned": true,
+  "planCode": "STARTER",
+  "subscriptionStatus": "ACTIVE",
+  "billingCycle": "MONTHLY",
+  "schoolsUsed": 1,
+  "remainingSchools": 2
+}
+```
 
 | Method | Endpoint | Module | Roles | Frontend caller | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -10,32 +57,32 @@ Status: CURRENT_IMPLEMENTED for discovered controllers; NOT_FOUND_IN_CODEBASE fo
 | GET | /v1/super-admin/permissions | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/super-admin/platform-health | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/super-admin/platform-metrics | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
-| GET | /v1/super-admin/revenue/invoices | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/super-admin/revenue/invoices | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/super-admin/revenue/summary | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
-| GET | /v1/super-admin/revenue/tenants | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/revenue/trends | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/super-admin/revenue/tenants | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
+| GET | /v1/super-admin/revenue/trends | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/super-admin/roles/{role}/permissions | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/super-admin/schools/{schoolId} | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/schools | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/super-admin/schools | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/super-admin/search | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
-| DELETE | /v1/super-admin/students/{studentId}/guardians/{guardianLinkId} | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| PATCH | /v1/super-admin/students/{studentId}/guardians/{guardianLinkId} | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/super-admin/students/{studentId}/guardians | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| DELETE | /v1/super-admin/students/{studentId}/guardians/{guardianLinkId} | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
+| PATCH | /v1/super-admin/students/{studentId}/guardians/{guardianLinkId} | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
+| POST | /v1/super-admin/students/{studentId}/guardians | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | PATCH | /v1/super-admin/subscriptions/plans/{planId} | Subscription | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/super-admin/subscriptions/plans | Subscription | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | POST | /v1/super-admin/subscriptions/plans | Subscription | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
-| GET | /v1/super-admin/subscriptions/tenants/{tenantId}/invoices | Subscription | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/subscriptions/tenants/{tenantId} | Subscription | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| PUT | /v1/super-admin/subscriptions/tenants/{tenantId} | Subscription | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| DELETE | /v1/super-admin/teachers/{teacherUserId}/assignments/{assignmentId} | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| PATCH | /v1/super-admin/teachers/{teacherUserId}/assignments/{assignmentId} | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/super-admin/teachers/{teacherUserId}/assignments | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/tenants/{tenantId}/schools | Super Admin | SUPER_ADMIN | frontend/src/shared/api/httpClient.test.ts | CURRENT_IMPLEMENTED |
+| GET | /v1/super-admin/subscriptions/tenants/{tenantId}/invoices | Subscription | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
+| GET | /v1/super-admin/subscriptions/tenants/{tenantId} | Subscription | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
+| PUT | /v1/super-admin/subscriptions/tenants/{tenantId} | Subscription | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
+| DELETE | /v1/super-admin/teachers/{teacherUserId}/assignments/{assignmentId} | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
+| PATCH | /v1/super-admin/teachers/{teacherUserId}/assignments/{assignmentId} | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
+| POST | /v1/super-admin/teachers/{teacherUserId}/assignments | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
+| GET | /v1/super-admin/tenants/{tenantId}/schools | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
 | PATCH | /v1/super-admin/tenants/{tenantId}/status | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts, frontend/src/shared/api/httpClient.test.ts | CURRENT_IMPLEMENTED |
-| GET | /v1/super-admin/tenants/{tenantId}/users | Super Admin | SUPER_ADMIN | frontend/src/shared/api/httpClient.test.ts | CURRENT_IMPLEMENTED |
-| GET | /v1/super-admin/tenants/{tenantId} | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/onboardingApi.ts, frontend/src/features/super-admin/api/platformApi.ts, frontend/src/shared/api/httpClient.test.ts | CURRENT_IMPLEMENTED |
+| GET | /v1/super-admin/tenants/{tenantId}/users | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/super-admin/tenants/{tenantId} | Super Admin | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
 | POST | /v1/super-admin/tenants/onboard | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/onboardingApi.ts | CURRENT_IMPLEMENTED |
-| GET | /v1/super-admin/tenants | Super Admin | SUPER_ADMIN | frontend/src/shared/api/httpClient.test.ts | CURRENT_IMPLEMENTED |
+| GET | /v1/super-admin/tenants | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | DELETE | /v1/super-admin/users/{userId}/permission-overrides/{overrideId} | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | PATCH | /v1/super-admin/users/{userId}/permission-overrides/{overrideId} | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/super-admin/users/{userId}/permission-overrides | Super Admin | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
@@ -724,7 +771,7 @@ curl -X GET "http://127.0.0.1:18080/v1/super-admin/platform-metrics" \
 - Current status: CURRENT_IMPLEMENTED
 - Module: Super Admin
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java method invoices
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -1053,7 +1100,7 @@ curl -X GET "http://127.0.0.1:18080/v1/super-admin/revenue/summary" \
 - Current status: CURRENT_IMPLEMENTED
 - Module: Super Admin
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java method tenantRevenue
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -1216,7 +1263,7 @@ curl -X GET "http://127.0.0.1:18080/v1/super-admin/revenue/tenants" \
 - Current status: CURRENT_IMPLEMENTED
 - Module: Super Admin
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java method revenueTrends
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -1755,7 +1802,7 @@ curl -X GET "http://127.0.0.1:18080/v1/super-admin/schools/sample-schoolId" \
 - Current status: CURRENT_IMPLEMENTED
 - Module: Super Admin
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java method schools
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -2097,7 +2144,7 @@ curl -X GET "http://127.0.0.1:18080/v1/super-admin/search" \
 - Current status: CURRENT_IMPLEMENTED
 - Module: Super Admin
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java method deactivateGuardian
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -2253,7 +2300,7 @@ curl -X DELETE "http://127.0.0.1:18080/v1/super-admin/students/sample-studentId/
 - Current status: CURRENT_IMPLEMENTED
 - Module: Super Admin
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java method updateGuardian
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -2417,7 +2464,7 @@ curl -X PATCH "http://127.0.0.1:18080/v1/super-admin/students/sample-studentId/g
 - Current status: CURRENT_IMPLEMENTED
 - Module: Super Admin
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java method linkGuardian
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -3062,7 +3109,7 @@ curl -X POST "http://127.0.0.1:18080/v1/super-admin/subscriptions/plans" \
 - Current status: CURRENT_IMPLEMENTED
 - Module: Subscription
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionController.java method tenantInvoices
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -3224,7 +3271,7 @@ curl -X GET "http://127.0.0.1:18080/v1/super-admin/subscriptions/tenants/sample-
 - Current status: CURRENT_IMPLEMENTED
 - Module: Subscription
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionController.java method tenantSubscription
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -3387,7 +3434,7 @@ curl -X GET "http://127.0.0.1:18080/v1/super-admin/subscriptions/tenants/sample-
 - Current status: CURRENT_IMPLEMENTED
 - Module: Subscription
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionController.java method assignTenantSubscription
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -3547,7 +3594,7 @@ curl -X PUT "http://127.0.0.1:18080/v1/super-admin/subscriptions/tenants/sample-
 - Current status: CURRENT_IMPLEMENTED
 - Module: Super Admin
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java method deactivateTeacherAssignment
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -3703,7 +3750,7 @@ curl -X DELETE "http://127.0.0.1:18080/v1/super-admin/teachers/sample-teacherUse
 - Current status: CURRENT_IMPLEMENTED
 - Module: Super Admin
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java method updateTeacherAssignment
 - Planned/future: No separate planned endpoint; gaps listed below.
 
@@ -3867,7 +3914,7 @@ curl -X PATCH "http://127.0.0.1:18080/v1/super-admin/teachers/sample-teacherUser
 - Current status: CURRENT_IMPLEMENTED
 - Module: Super Admin
 - Role audience: SUPER_ADMIN
-- Frontend used: NOT_FOUND_IN_CODEBASE
+- Frontend used: CURRENT_IMPLEMENTED in frontend/src/features/super-admin/api/platformApi.ts and frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend implemented: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java method createTeacherAssignment
 - Planned/future: No separate planned endpoint; gaps listed below.
 

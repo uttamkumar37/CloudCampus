@@ -68,7 +68,6 @@ import { StaffProvisioningPage } from '../features/staff/pages/StaffProvisioning
 import { StudentImportPage } from '../features/student/pages/StudentImportPage';
 import { getSuperAdminNotifications, searchSuperAdmin, type SuperAdminSearchResponse } from '../features/super-admin/api/platformApi';
 import { SuperAdminPlatformPage } from '../features/super-admin/pages/SuperAdminPlatformPage';
-import { TenantOnboardingPage } from '../features/super-admin/pages/TenantOnboardingPage';
 import { TenantReportsPage } from '../features/tenant-admin/pages/TenantReportsPage';
 import { TenantSchoolCreationPage } from '../features/tenant-admin/pages/TenantSchoolCreationPage';
 import { TenantSchoolManagementPage } from '../features/tenant-admin/pages/TenantSchoolManagementPage';
@@ -140,16 +139,16 @@ const ROLE_HOME: Record<UserRole, string> = {
 const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   SUPER_ADMIN: [
     { id: 'dashboard', label: 'Dashboard', status: 'CONNECTED_REAL_API' },
-    { id: 'tenants', label: 'Tenants', status: 'CONNECTED_REAL_API' },
+    { id: 'tenants', label: 'Organizations', status: 'CONNECTED_REAL_API' },
     { id: 'schools', label: 'Schools', status: 'CONNECTED_REAL_API' },
-    { id: 'access-control', label: 'Access Control', status: 'CONNECTED_REAL_API' },
-    { id: 'subscriptions', label: 'Subscription Plans', status: 'CONNECTED_REAL_API' },
+    { id: 'access-control', label: 'Users & Roles', status: 'CONNECTED_REAL_API' },
+    { id: 'subscriptions', label: 'Plans', status: 'CONNECTED_REAL_API' },
     { id: 'revenue', label: 'Revenue', status: 'CONNECTED_REAL_API' },
-    { id: 'ai-usage', label: 'AI Governance', status: 'CONNECTED_REAL_API' },
     { id: 'reports', label: 'Reports', status: 'CONNECTED_REAL_API' },
-    { id: 'audit', label: 'Audit Logs', status: 'CONNECTED_REAL_API' },
-    { id: 'health', label: 'Platform Health', status: 'CONNECTED_REAL_API' },
+    { id: 'health', label: 'Health', status: 'CONNECTED_REAL_API' },
     { id: 'notifications', label: 'Notifications', status: 'CONNECTED_REAL_API' },
+    { id: 'audit', label: 'Audit', status: 'CONNECTED_REAL_API' },
+    { id: 'ai-usage', label: 'AI Governance', status: 'CONNECTED_REAL_API' },
     { id: 'settings', label: 'Settings', status: 'CONNECTED_REAL_API' },
   ],
   TENANT_ADMIN: [
@@ -254,9 +253,9 @@ const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
 
 const QUICK_ACTIONS_BY_ROLE: Record<UserRole, QuickAction[]> = {
   SUPER_ADMIN: [
-    { label: 'Create tenant', detail: 'Create trust, first school and admin', icon: Building2, navId: 'tenants' },
+    { label: 'Create organization', detail: 'Create trust, first school and admin', icon: Building2, navId: 'tenants' },
     { label: 'Create plan', detail: 'Prepare subscription package', icon: ReceiptText, navId: 'subscriptions' },
-    { label: 'System health', detail: 'Check platform readiness', icon: LineChart, navId: 'health' },
+    { label: 'View health', detail: 'Check platform readiness', icon: LineChart, navId: 'health' },
   ],
   TENANT_ADMIN: [
     { label: 'Add school', detail: 'Add a new campus safely', icon: School, navId: 'schools' },
@@ -321,10 +320,12 @@ const QUICK_ACTIONS_BY_ROLE: Record<UserRole, QuickAction[]> = {
 
 const NAV_GROUPS_BY_ROLE: Partial<Record<UserRole, NavGroup[]>> = {
   SUPER_ADMIN: [
-    { title: 'Platform', itemIds: ['dashboard', 'tenants', 'schools', 'access-control'] },
+    { title: 'Overview', itemIds: ['dashboard'] },
+    { title: 'Manage', itemIds: ['tenants', 'schools', 'access-control'] },
     { title: 'Business', itemIds: ['subscriptions', 'revenue', 'reports'] },
     { title: 'Operations', itemIds: ['health', 'notifications', 'audit'] },
-    { title: 'Settings', itemIds: ['ai-usage', 'settings'] },
+    { title: 'Intelligence', itemIds: ['ai-usage'] },
+    { title: 'Configuration', itemIds: ['settings'] },
   ],
 };
 
@@ -813,6 +814,7 @@ function AccessPanel({
 function AuthenticatedExperience({ user }: { user: CurrentUser }) {
   const [activeNav, setActiveNav] = useState('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [goPrefixActive, setGoPrefixActive] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const navItems = useMemo(() => visibleNavItems(user.role), [user.role]);
   const portalTitle = roleTitle(user.role);
@@ -822,6 +824,38 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
       setActiveNav(navItems[0]?.id ?? 'dashboard');
     }
   }, [activeNav, navItems]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.altKey || event.ctrlKey || event.metaKey || isTextEntryTarget(event.target)) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      if (key === 'g') {
+        setGoPrefixActive(true);
+        return;
+      }
+
+      if (!goPrefixActive) {
+        return;
+      }
+
+      const shortcuts: Record<string, string> = user.role === 'SUPER_ADMIN'
+        ? { d: 'dashboard', o: 'tenants', s: 'schools' }
+        : { d: 'dashboard' };
+      const nextNav = shortcuts[key];
+      if (nextNav && navItems.some((item) => item.id === nextNav)) {
+        event.preventDefault();
+        setActiveNav(nextNav);
+        setMobileOpen(false);
+      }
+      setGoPrefixActive(false);
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [goPrefixActive, navItems, user.role]);
 
   return (
     <main className="enterprise-shell" data-testid="cloudcampus-shell" data-theme={theme}>
@@ -868,12 +902,12 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
           user={user}
         />
         <div className="content-grid">
-          {user.role === 'SUPER_ADMIN' && activeNav !== 'dashboard' ? (
-            <CompactSessionBanner onOpenDashboard={() => setActiveNav('dashboard')} user={user} />
-          ) : (
-            <PortalDashboard navItems={navItems} onSelectNav={setActiveNav} user={user} />
-          )}
-          <RoleWorkspace activeNav={activeNav} user={user} />
+          {user.role === 'SUPER_ADMIN'
+            ? activeNav !== 'dashboard'
+              ? <CompactSessionBanner onOpenDashboard={() => setActiveNav('dashboard')} user={user} />
+              : null
+            : <PortalDashboard navItems={navItems} onSelectNav={setActiveNav} user={user} />}
+          <RoleWorkspace activeNav={activeNav} onSelectNav={setActiveNav} user={user} />
         </div>
       </section>
 
@@ -890,6 +924,14 @@ function AuthenticatedExperience({ user }: { user: CurrentUser }) {
       </button>
     </main>
   );
+}
+
+function isTextEntryTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+  const tagName = target.tagName.toLowerCase();
+  return target.isContentEditable || tagName === 'input' || tagName === 'textarea' || tagName === 'select';
 }
 
 function visibleNavItems(role: UserRole) {
@@ -970,7 +1012,7 @@ function TopBar({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const pageTitle = activeNav === 'dashboard' ? `${roleTitle(user.role)} Dashboard` : moduleTitle(activeNav);
-  const schoolLabel = user.activeSchool?.name ?? (user.role === 'SUPER_ADMIN' ? 'Platform-wide access' : 'No current school');
+  const schoolLabel = user.activeSchool?.name ?? (user.role === 'SUPER_ADMIN' ? 'Platform access' : 'No current school');
 
   return (
     <header className="topbar">
@@ -990,7 +1032,7 @@ function TopBar({
       </div>
       <label className="global-search">
         <Search size={17} aria-hidden="true" />
-        <input onFocus={() => setCommandOpen(true)} placeholder="Search students, invoices, reports..." />
+        <input onFocus={() => setCommandOpen(true)} placeholder={user.role === 'SUPER_ADMIN' ? 'Search organizations, schools, users, invoices...' : 'Search workspace and actions...'} />
         <button onClick={() => setCommandOpen(true)} type="button" aria-label="Open command palette">
           <Command size={14} aria-hidden="true" />
           K
@@ -1002,7 +1044,7 @@ function TopBar({
           Actions
         </button>
         <button className="school-switcher-chip" onClick={() => setCommandOpen(true)} type="button">
-          <School size={16} aria-hidden="true" />
+          {user.role === 'SUPER_ADMIN' ? <ShieldCheck size={16} aria-hidden="true" /> : <School size={16} aria-hidden="true" />}
           <span>{schoolLabel}</span>
           <ChevronDown size={14} aria-hidden="true" />
         </button>
@@ -1071,6 +1113,17 @@ function CommandPalette({
     data: SuperAdminSearchResponse | null;
   }>({ status: 'idle', data: null });
   const visibleCommands = navItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase().trim()));
+  const groupedResults = groupSearchResults(searchState.data);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
 
   useEffect(() => {
     if (role !== 'SUPER_ADMIN' || !accessToken || query.trim().length < 2) {
@@ -1108,10 +1161,15 @@ function CommandPalette({
           <input
             autoFocus
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={`Search ${roleTitle(role)} workspace...`}
+            placeholder={role === 'SUPER_ADMIN' ? 'Search organizations, schools, users, invoices, audit, and AI...' : `Search ${roleTitle(role)} workspace...`}
             value={query}
           />
           <kbd>Esc</kbd>
+        </div>
+        <div className="command-hints" aria-label="Keyboard shortcuts">
+          <span>G D Dashboard</span>
+          {role === 'SUPER_ADMIN' ? <span>G O Organizations</span> : null}
+          {role === 'SUPER_ADMIN' ? <span>G S Schools</span> : null}
         </div>
         <div className="command-list">
           {visibleCommands.map((item) => {
@@ -1120,29 +1178,55 @@ function CommandPalette({
               <button key={item.id} onClick={() => onSelect(item.id)} type="button">
                 <span><Icon size={17} aria-hidden="true" /></span>
                 <strong>{item.label}</strong>
-                <em>Open</em>
+                <em>Open {moduleTitle(item.id)}</em>
               </button>
             );
           })}
+          {visibleCommands.length === 0 ? <p className="command-empty">No modules match that search.</p> : null}
         </div>
         {role === 'SUPER_ADMIN' && query.trim().length >= 2 ? (
           <div className="command-results">
             <strong>Platform search</strong>
             {searchState.status === 'loading' ? <span>Searching...</span> : null}
-            {searchState.status === 'error' ? <span>Search unavailable</span> : null}
-            {searchState.status === 'ready' && searchState.data?.results.length === 0 ? <span>No matching platform records</span> : null}
-            {searchState.data?.results.map((result) => (
-              <button key={`${result.type}-${result.id}`} onClick={() => onSelect(result.navId)} type="button">
-                <em>{result.type}</em>
-                <strong>{result.title}</strong>
-                <span>{result.detail}</span>
-              </button>
+            {searchState.status === 'error' ? <span>Search unavailable. Try again in a moment.</span> : null}
+            {searchState.status === 'ready' && searchState.data?.results.length === 0 ? <span>No results found. Try organization name, school code, invoice number, or audit action.</span> : null}
+            {Object.entries(groupedResults).map(([group, results]) => (
+              <section className="command-result-group" key={group} aria-label={group}>
+                <p>{group}</p>
+                {results.map((result) => (
+                  <button key={`${result.type}-${result.id}`} onClick={() => onSelect(result.navId)} type="button">
+                    <em>{searchGroupLabel(result.type)}</em>
+                    <strong>{result.title}</strong>
+                    <span>{result.detail}</span>
+                  </button>
+                ))}
+              </section>
             ))}
           </div>
         ) : null}
       </motion.section>
     </div>
   );
+}
+
+function groupSearchResults(data: SuperAdminSearchResponse | null) {
+  return (data?.results ?? []).reduce<Record<string, SuperAdminSearchResponse['results']>>((groups, result) => {
+    const label = searchGroupLabel(result.type);
+    groups[label] = [...(groups[label] ?? []), result];
+    return groups;
+  }, {});
+}
+
+function searchGroupLabel(type: string) {
+  const normalized = type.toLowerCase();
+  if (normalized.includes('tenant') || normalized.includes('organization')) return 'Organizations';
+  if (normalized.includes('school')) return 'Schools';
+  if (normalized.includes('user')) return 'Users';
+  if (normalized.includes('invoice') || normalized.includes('revenue')) return 'Invoices';
+  if (normalized.includes('report') || normalized.includes('export')) return 'Reports';
+  if (normalized.includes('audit')) return 'Audit';
+  if (normalized.includes('ai') || normalized.includes('recommendation') || normalized.includes('automation')) return 'AI';
+  return 'Other';
 }
 
 function NotificationPopover({ accessToken, role }: { accessToken?: string | null; role: UserRole }) {
@@ -1209,8 +1293,8 @@ function NotificationPopover({ accessToken, role }: { accessToken?: string | nul
           <article>
             <i aria-hidden="true" />
             <span>
-              <strong>No delivery events</strong>
-              <small>Invitation and notification activity will appear here.</small>
+              <strong>{summary.failedDeliveries === 0 ? 'No failed notifications' : 'No recent deliveries'}</strong>
+              <small>{summary.failedDeliveries === 0 ? 'Delivery is healthy across the platform.' : 'Open Notifications to investigate delivery history.'}</small>
             </span>
           </article>
         ) : null}
@@ -1308,9 +1392,9 @@ function CompactSessionBanner({ onOpenDashboard, user }: { onOpenDashboard: () =
   return (
     <section className="compact-session-banner" aria-label="Super Admin session">
       <div>
-        <span className="status-chip info"><span className="live-dot" aria-hidden="true" />Session active</span>
+        <span className="status-chip info"><span className="live-dot" aria-hidden="true" />Platform access</span>
         <strong>{user.displayName ?? user.email}</strong>
-        <em>{roleTitle(user.role)} - Platform-wide access</em>
+        <em>{roleTitle(user.role)} session. Use search or the sidebar to move between platform modules.</em>
       </div>
       <button onClick={onOpenDashboard} type="button">Dashboard</button>
     </section>
@@ -1384,12 +1468,11 @@ function RoleInfoGrid({ user }: { user: CurrentUser }) {
   );
 }
 
-function RoleWorkspace({ activeNav, user }: { activeNav: string; user: CurrentUser }) {
+function RoleWorkspace({ activeNav, onSelectNav, user }: { activeNav: string; onSelectNav: (navId: string) => void; user: CurrentUser }) {
   if (user.role === 'SUPER_ADMIN') {
     return (
-      <section className="role-workspace" aria-label="Super Admin area">
-        <WorkspaceHeader title="Platform control center" activeNav={activeNav} />
-        <SuperAdminModule activeNav={activeNav} />
+      <section className="role-workspace super-admin-workspace" aria-label="Super Admin area">
+        <SuperAdminModule activeNav={activeNav} onSelectNav={onSelectNav} />
       </section>
     );
   }
@@ -1534,17 +1617,8 @@ function OfficeStaffModule({ activeNav }: { activeNav: string }) {
   return <ComingSoonPanel activeNav={activeNav} role="OFFICE_STAFF" />;
 }
 
-function SuperAdminModule({ activeNav }: { activeNav: string }) {
-  if (activeNav === 'tenants') {
-    return (
-      <div className="workspace-grid">
-        <TenantOnboardingPage />
-        <SuperAdminPlatformPage section={activeNav} />
-      </div>
-    );
-  }
-
-  return <SuperAdminPlatformPage section={activeNav} />;
+function SuperAdminModule({ activeNav, onSelectNav }: { activeNav: string; onSelectNav: (navId: string) => void }) {
+  return <SuperAdminPlatformPage onNavigate={onSelectNav} section={activeNav} />;
 }
 
 function TenantAdminModule({ activeNav }: { activeNav: string }) {
@@ -2738,8 +2812,9 @@ function AIAssistCard({ onOpen, role }: { onOpen: () => void; role: UserRole }) 
               : 'Insights ready';
   return (
     <button className="sidebar-ai-card" onClick={onOpen} type="button">
-      <p>AI assistant</p>
+      <p>{role === 'SUPER_ADMIN' ? 'Intelligence' : 'AI assistant'}</p>
       <strong>{label}</strong>
+      {role === 'SUPER_ADMIN' ? <span>Review approvals, budgets and automation safety.</span> : null}
     </button>
   );
 }
@@ -2770,6 +2845,9 @@ function roleTitle(role: UserRole) {
 
 function navIcon(navId: string): LucideIcon {
   if (navId.includes('dashboard')) return Home;
+  if (navId === 'tenants') return Building2;
+  if (navId === 'schools') return School;
+  if (navId === 'access-control') return Users;
   if (navId.includes('tenant') || navId.includes('school') || navId.includes('branding')) return Building2;
   if (navId.includes('student') || navId.includes('parent') || navId.includes('teacher') || navId.includes('staff') || navId.includes('admin')) return Users;
   if (navId.includes('attendance') || navId.includes('timetable') || navId.includes('leave')) return CalendarCheck;
@@ -2987,6 +3065,17 @@ function slug(value: string) {
 }
 
 function moduleTitle(value: string) {
+  const labels: Record<string, string> = {
+    tenants: 'Organizations',
+    'access-control': 'Users & Roles',
+    subscriptions: 'Plans',
+    'ai-usage': 'AI Governance',
+    health: 'Health',
+    audit: 'Audit',
+  };
+  if (labels[value]) {
+    return labels[value];
+  }
   return value
     .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

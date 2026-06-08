@@ -2,7 +2,19 @@
 
 This document describes how the current Super Admin portal works in this codebase. It covers the visible UI, backend APIs, data calculations, auth behavior, side effects, and current implementation gaps.
 
-Last updated after the access-control and AI-governance pass. The portal now includes stat-table-backed metrics, paginated/searchable/filterable Super Admin screens, persistent platform settings, real backend global search, real notification popover data, visible asynchronous platform report export jobs, scoped user role/permission administration, and AI recommendation/automation governance.
+Last updated on June 8, 2026 after the Super Admin gap-closure pass. The portal now includes stat-table-backed metrics, paginated/searchable/filterable Super Admin screens, persistent platform settings, real backend global search, real notification popover data, visible asynchronous platform report export jobs, scoped user role/permission administration, AI recommendation/automation governance, revenue trend and tenant revenue views, notification delivery detail, and subscription plan plus tenant subscription management.
+
+Verified implemented code paths:
+
+| Area | Visible Super Admin behavior | Status |
+| --- | --- | --- |
+| Access Control | User list/detail, role assignment/deactivate/delete, permission override grant/revoke/delete, teacher assignment mutation forms, guardian link mutation forms, recent audit context | CURRENT_IMPLEMENTED |
+| AI Governance | Usage, tenant usage, entitlements, policy edit, recommendations detail/actions, automation rules, automation runs, sanitized audit notes | CURRENT_IMPLEMENTED |
+| Notifications | Summary, delivery list, safe delivery detail, no retry button because no Super Admin retry endpoint exists | CURRENT_IMPLEMENTED |
+| Revenue | Summary, invoice table with tenant/status/date filters, trends, tenant revenue table | CURRENT_IMPLEMENTED |
+| Reports | Summary, export request/list/detail, tenant and school report tables, warning when no Super Admin download endpoint exists | CURRENT_IMPLEMENTED |
+| Subscriptions | Plan list/create/edit, tenant subscription load/assign, tenant subscription invoice history | CURRENT_IMPLEMENTED |
+| Remaining API-only detail routes | School detail and tenant detail subresources under `/v1/super-admin/tenants/{tenantId}/...` | BACKEND_EXISTS_UI_NOT_SURFACED |
 
 ## Source Files Covered
 

@@ -11,6 +11,19 @@ Status: CURRENT_IMPLEMENTED
 | POST | /v1/ai/automation-rules | NOT_FOUND_IN_CODEBASE | Implement, document alternate route, or keep planned. |
 | PUT | /v1/super-admin/roles/{role}/permissions | NOT_FOUND_IN_CODEBASE | Implement, document alternate route, or keep planned. |
 
+## Super Admin Gaps Closed In This Pass
+
+| Area | Endpoints surfaced in portal | Status |
+| --- | --- | --- |
+| Access control | `/v1/super-admin/users`, `/v1/super-admin/users/{userId}`, role assignments, permission overrides, teacher assignment mutations, student guardian mutations | CURRENT_IMPLEMENTED |
+| AI governance | usage summary, tenant usage, entitlements, tenant entitlement GET/PUT, policies, recommendations, automation rules, automation runs | CURRENT_IMPLEMENTED |
+| Notifications | `/v1/super-admin/notifications/summary`, deliveries list, delivery detail | CURRENT_IMPLEMENTED |
+| Revenue | summary, invoices with tenant/date/status filters, trends, tenant revenue | CURRENT_IMPLEMENTED |
+| Reports | summary, exports list/detail/create, tenant reports, school reports | CURRENT_IMPLEMENTED |
+| Subscriptions | plan list/create/edit, organization subscription detail/assign, organization subscription invoices | CURRENT_IMPLEMENTED |
+| Audit and schools | audit log list and school directory list | CURRENT_IMPLEMENTED |
+| Super Admin UX IA | grouped sidebar, single dashboard surface, command palette search, organization wizard modal, clearer no-fake-data empty states | CURRENT_IMPLEMENTED |
+
 ## Backend Exists UI Not Surfaced
 
 | Method | Endpoint | Backend controller | Status |
@@ -59,30 +72,12 @@ Status: CURRENT_IMPLEMENTED
 | GET | /v1/student/profile | backend/src/main/java/com/cloudcampus/people/student/StudentLoginController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/student/results | backend/src/main/java/com/cloudcampus/operations/exam/ExamController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/student/timetable | backend/src/main/java/com/cloudcampus/operations/timetable/TimetableController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/ai/automation-runs | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAiGovernanceController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/ai/entitlements | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/ai/tenants/{tenantId}/entitlement | backend/src/main/java/com/cloudcampus/intelligence/ai/SuperAdminAiEntitlementController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| PUT | /v1/super-admin/ai/tenants/{tenantId}/entitlement | backend/src/main/java/com/cloudcampus/intelligence/ai/SuperAdminAiEntitlementController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/ai/usage/tenants | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/audit-logs | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/notifications/deliveries/{deliveryId} | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/notifications/deliveries | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/reports/schools | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/reports/tenants | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/revenue/invoices | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/revenue/tenants | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/revenue/trends | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/super-admin/schools/{schoolId} | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/schools | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| DELETE | /v1/super-admin/students/{studentId}/guardians/{guardianLinkId} | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| PATCH | /v1/super-admin/students/{studentId}/guardians/{guardianLinkId} | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/super-admin/students/{studentId}/guardians | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/subscriptions/tenants/{tenantId}/invoices | backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/super-admin/subscriptions/tenants/{tenantId} | backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| PUT | /v1/super-admin/subscriptions/tenants/{tenantId} | backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| DELETE | /v1/super-admin/teachers/{teacherUserId}/assignments/{assignmentId} | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| PATCH | /v1/super-admin/teachers/{teacherUserId}/assignments/{assignmentId} | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/super-admin/teachers/{teacherUserId}/assignments | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/super-admin/tenants/{tenantId} | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/super-admin/tenants/{tenantId}/audit | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/super-admin/tenants/{tenantId}/schools | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
+| PATCH | /v1/super-admin/tenants/{tenantId}/settings | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/super-admin/tenants/{tenantId}/users | backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/system/readiness | backend/src/main/java/com/cloudcampus/common/health/SystemReadinessController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/teacher/notices | backend/src/main/java/com/cloudcampus/operations/notice/NoticeController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 
@@ -95,5 +90,6 @@ Status: CURRENT_IMPLEMENTED
 | Global rate limiting beyond login | CURRENT_PARTIAL | Abuse risk. | Add per-role/IP/user limits. |
 | Uniform DTO validation | CURRENT_PARTIAL | Inconsistent 400 behavior. | Add validation annotations/tests. |
 | Read audit coverage | CURRENT_PARTIAL | Sensitive reads may not audit. | Audit high-risk views/downloads. |
-| UI static/presentational elements | CURRENT_PARTIAL | Search/notification/AI affordances may overpromise. | Connect or scope UI. |
+| UI static/presentational elements outside the verified Super Admin shell | CURRENT_PARTIAL | Non-Super Admin generated screens may still overpromise. | Connect or scope UI per role. |
+| Super Admin browser visual QA in Codex in-app browser | CURRENT_PARTIAL | Browser plugin was available but no `iab` browser backend was registered in this session. | Re-run visual QA when an in-app browser backend is registered; automated DOM tests and live API smoke passed. |
 | Permission matrix tests | CURRENT_PARTIAL | RBAC regressions possible. | Generate critical role-by-endpoint tests. |

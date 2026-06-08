@@ -9,6 +9,9 @@ const DEFAULTS = {
   auditLogs: 0,
   notifications: 0,
   invoices: 100_000,
+  aiRecommendations: 10_000,
+  automationRules: 1000,
+  automationRuns: 50_000,
   batchSize: 1000,
 };
 
@@ -32,6 +35,9 @@ seedStudents();
 seedAuditLogs();
 seedNotifications();
 seedInvoices();
+seedAiRecommendations();
+seedAutomationRules();
+seedAutomationRuns();
 refreshStats();
 
 writeLine('');
@@ -67,6 +73,9 @@ function parseOptions(args) {
   if (parsed.batchSize < 1) {
     throw new Error('batch-size must be at least 1.');
   }
+  if (parsed.automationRuns > 0 && parsed.automationRules < 1) {
+    throw new Error('automation-runs requires automation-rules to be at least 1.');
+  }
   return parsed;
 }
 
@@ -83,6 +92,9 @@ Options:
   --audit-logs=0
   --notifications=0
   --invoices=100000
+  --ai-recommendations=10000
+  --automation-rules=1000
+  --automation-runs=50000
   --batch-size=1000`);
 }
 
@@ -342,6 +354,160 @@ function seedInvoices() {
   );
 }
 
+function seedAiRecommendations() {
+  writeInsert(
+    'ai_recommendations',
+    [
+      'id',
+      'tenant_id',
+      'school_id',
+      'target_type',
+      'target_id',
+      'recommendation_type',
+      'title',
+      'summary',
+      'rationale',
+      'confidence_score',
+      'risk_level',
+      'status',
+      'created_by_actor_type',
+      'created_by_actor_id',
+      'assigned_to_user_id',
+      'approval_required',
+      'expires_at',
+      'metadata_json',
+      'created_at',
+      'updated_at',
+    ],
+    options.aiRecommendations,
+    (index) => {
+      const schoolIndex = schoolIndexForDistributedRow(index);
+      const tenantIndex = tenantIndexForSchool(schoolIndex);
+      const status = index % 17 === 0 ? 'APPROVED' : (index % 23 === 0 ? 'REJECTED' : 'PENDING_REVIEW');
+      const riskLevel = index % 31 === 0 ? 'HIGH' : (index % 7 === 0 ? 'MEDIUM' : 'LOW');
+      return [
+        id('aiRecommendation', index),
+        id('tenant', tenantIndex),
+        id('school', schoolIndex),
+        'SCHOOL',
+        id('school', schoolIndex),
+        index % 5 === 0 ? 'PLATFORM_HEALTH_INSIGHT' : 'STUDENT_RISK_ATTENDANCE',
+        `Performance AI recommendation ${index}`,
+        `Synthetic AI recommendation summary ${index}`,
+        'Generated for Super Admin performance smoke coverage.',
+        raw('0.8200'),
+        riskLevel,
+        status,
+        'SYSTEM',
+        rawNull(),
+        rawNull(),
+        rawBoolean(riskLevel !== 'LOW'),
+        rawTimestamp(index + 60),
+        '{"source":"performance-seed","promptStatus":"redacted"}',
+        rawTimestamp(index),
+        rawTimestamp(index),
+      ];
+    },
+    'ON CONFLICT DO NOTHING'
+  );
+}
+
+function seedAutomationRules() {
+  writeInsert(
+    'automation_rules',
+    [
+      'id',
+      'tenant_id',
+      'school_id',
+      'code',
+      'name',
+      'description',
+      'trigger_type',
+      'trigger_config_json',
+      'action_type',
+      'action_config_json',
+      'enabled',
+      'requires_approval',
+      'approval_role',
+      'risk_level',
+      'created_by',
+      'updated_by',
+      'created_at',
+      'updated_at',
+    ],
+    options.automationRules,
+    (index) => {
+      const schoolIndex = schoolIndexForDistributedRow(index);
+      const tenantIndex = tenantIndexForSchool(schoolIndex);
+      return [
+        id('automationRule', index),
+        id('tenant', tenantIndex),
+        id('school', schoolIndex),
+        `PERF_RULE_${pad(index, 6)}`,
+        `Performance automation rule ${index}`,
+        'Synthetic automation rule for Super Admin performance smoke coverage.',
+        'SCHEDULED',
+        '{"schedule":"PT1H"}',
+        'CREATE_RECOMMENDATION',
+        '{"recommendationType":"PLATFORM_HEALTH_INSIGHT"}',
+        rawBoolean(index % 3 !== 0),
+        rawBoolean(index % 5 === 0),
+        index % 5 === 0 ? 'SUPER_ADMIN' : rawNull(),
+        index % 5 === 0 ? 'HIGH' : 'LOW',
+        id('superUser', 1),
+        id('superUser', 1),
+        rawTimestamp(index),
+        rawTimestamp(index),
+      ];
+    },
+    'ON CONFLICT ON CONSTRAINT uk_automation_rules_code_scope DO NOTHING'
+  );
+}
+
+function seedAutomationRuns() {
+  writeInsert(
+    'automation_runs',
+    [
+      'id',
+      'automation_rule_id',
+      'tenant_id',
+      'school_id',
+      'status',
+      'triggered_by_actor_type',
+      'triggered_by_actor_id',
+      'input_summary_json',
+      'output_summary_json',
+      'error_message',
+      'started_at',
+      'completed_at',
+      'created_at',
+    ],
+    options.automationRuns,
+    (index) => {
+      const ruleIndex = ((index - 1) % Math.max(1, options.automationRules)) + 1;
+      const schoolIndex = schoolIndexForDistributedRow(ruleIndex);
+      const tenantIndex = tenantIndexForSchool(schoolIndex);
+      const failed = index % 29 === 0;
+      return [
+        id('automationRun', index),
+        id('automationRule', ruleIndex),
+        id('tenant', tenantIndex),
+        id('school', schoolIndex),
+        failed ? 'FAILED' : (index % 11 === 0 ? 'RUNNING' : 'COMPLETED'),
+        'SYSTEM',
+        rawNull(),
+        '{"source":"performance-seed"}',
+        failed ? '{}' : '{"createdRecommendation":true}',
+        failed ? 'Synthetic automation failure' : rawNull(),
+        rawTimestamp(index),
+        index % 11 === 0 ? rawNull() : rawTimestamp(index + 1),
+        rawTimestamp(index),
+      ];
+    },
+    'ON CONFLICT DO NOTHING'
+  );
+}
+
 function refreshStats() {
   writeLine(`
 INSERT INTO school_stats (
@@ -519,6 +685,9 @@ function id(kind, index) {
     notification: '70000000',
     invoice: '80000000',
     studentUser: 'a0000000',
+    aiRecommendation: 'b0000000',
+    automationRule: 'c0000000',
+    automationRun: 'd0000000',
   };
   const prefix = prefixes[kind];
   if (!prefix) {

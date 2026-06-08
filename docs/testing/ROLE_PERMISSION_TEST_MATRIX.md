@@ -4,6 +4,18 @@
 
 Status: CURRENT_IMPLEMENTED
 
+## Super Admin Portal Verification Overlay
+
+Verified on June 8, 2026:
+
+| Area | Evidence | Status |
+| --- | --- | --- |
+| Super Admin-only portal access and shell wiring | `frontend/src/app/App.test.tsx`, `frontend/src/features/super-admin/pages/SuperAdminPlatformPage.test.tsx` | CURRENT_IMPLEMENTED UI coverage |
+| Super Admin access-control role/override validation | `frontend/src/features/super-admin/pages/SuperAdminPlatformPage.test.tsx`, `frontend/src/features/super-admin/api/platformApi.test.ts` | CURRENT_IMPLEMENTED frontend validation/API coverage; backend role-negative matrix remains CURRENT_PARTIAL |
+| Super Admin AI, notification, revenue, report, and subscription actions | `frontend/src/features/super-admin/api/platformApi.test.ts`, `backend/src/test/java/com/cloudcampus/intelligence/ai/AiGovernanceFlowTest.java`, `backend/src/test/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionFlowTest.java`, `backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java` | CURRENT_IMPLEMENTED flow coverage; exhaustive permission-negative matrix remains CURRENT_PARTIAL |
+
+The generated rows below retain `CURRENT_PARTIAL` where endpoint-specific negative/security tests are still recommended.
+
 | Role | Endpoint | Positive test needed | Negative test needed | Status |
 | --- | --- | --- | --- | --- |
 | SUPER_ADMIN | PATCH /v1/ai/automation-rules/{id} | Yes | Scope negative recommended | CURRENT_PARTIAL |

@@ -13,3 +13,8 @@ Status: CURRENT_IMPLEMENTED
 | AI prompt metadata | Retention/audit model exists; redaction review needed. | CURRENT_PARTIAL |
 | Export redaction | Verify per report type. | CURRENT_PARTIAL |
 | Audit tests | AuditCoverageMatrixTest exists; expansion recommended. | CURRENT_PARTIAL |
+
+Verified June 8, 2026:
+- Super Admin notification delivery UI renders masked recipients and safe failure text only.
+- Super Admin AI governance UI renders sanitized metadata and does not render raw prompts.
+- Super Admin audit/report/export docs continue to mark per-report export redaction and uniform read-audit coverage as `CURRENT_PARTIAL`.

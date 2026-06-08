@@ -169,13 +169,19 @@ public class SuperAdminPlatformController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String tenantId,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(superAdminPlatformService.invoices(
                 authenticatedUserResolver.requireUser(request),
                 page,
                 size,
-                status
+                status,
+                tenantId,
+                from,
+                to
         ));
     }
 

@@ -19,6 +19,8 @@ const thresholds = {
   'http_req_duration{endpoint:tenantSearch}': ['p(95)<1500'],
   'http_req_duration{endpoint:schoolList}': ['p(95)<800'],
   'http_req_duration{endpoint:schoolSearch}': ['p(95)<1500'],
+  'http_req_duration{endpoint:userList}': ['p(95)<800'],
+  'http_req_duration{endpoint:platformSearch}': ['p(95)<1500'],
   'http_req_duration{endpoint:auditLogs}': ['p(95)<800'],
   'http_req_duration{endpoint:revenueSummary}': ['p(95)<500'],
   'http_req_duration{endpoint:invoiceList}': ['p(95)<800'],
@@ -26,6 +28,9 @@ const thresholds = {
   'http_req_duration{endpoint:notificationList}': ['p(95)<800'],
   'http_req_duration{endpoint:reportsSummary}': ['p(95)<800'],
   'http_req_duration{endpoint:reportExportList}': ['p(95)<800'],
+  'http_req_duration{endpoint:aiRecommendationList}': ['p(95)<800'],
+  'http_req_duration{endpoint:automationRuleList}': ['p(95)<800'],
+  'http_req_duration{endpoint:automationRunList}': ['p(95)<800'],
 };
 
 if (INCLUDE_EXPORT_POST) {
@@ -62,6 +67,8 @@ export default function () {
     get(`/v1/super-admin/tenants?page=0&size=50&search=${encodeURIComponent(TENANT_SEARCH)}`, 'tenantSearch');
     get('/v1/super-admin/schools?page=0&size=50', 'schoolList');
     get(`/v1/super-admin/schools?page=0&size=50&search=${encodeURIComponent(SCHOOL_SEARCH)}`, 'schoolSearch');
+    get('/v1/super-admin/users?page=0&size=50', 'userList');
+    get(`/v1/super-admin/search?page=0&size=25&q=${encodeURIComponent(TENANT_SEARCH)}`, 'platformSearch');
   });
 
   group('Super Admin high-volume logs and money', () => {
@@ -75,6 +82,12 @@ export default function () {
     get('/v1/super-admin/notifications/deliveries?page=0&size=50', 'notificationList');
     get('/v1/super-admin/reports/summary', 'reportsSummary');
     get('/v1/super-admin/reports/exports?page=0&size=50', 'reportExportList');
+  });
+
+  group('Super Admin AI governance', () => {
+    get('/v1/super-admin/ai/recommendations?page=0&size=50', 'aiRecommendationList');
+    get('/v1/super-admin/ai/automation-rules?page=0&size=50', 'automationRuleList');
+    get('/v1/super-admin/ai/automation-runs?page=0&size=50', 'automationRunList');
   });
 
   if (INCLUDE_EXPORT_POST) {

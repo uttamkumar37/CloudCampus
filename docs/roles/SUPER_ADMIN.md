@@ -17,9 +17,9 @@
 | Data sensitivity level | platform-wide identity, finance, audit, school, tenant, and AI policy data | CURRENT_IMPLEMENTED |
 
 ## 2. Role responsibilities
-- CURRENT_IMPLEMENTED: Use visible screens: Dashboard, Tenants, Schools, Access Control, Subscription Plans, Revenue, AI Governance, Reports, Audit Logs, Platform Health, Notifications, Settings.
+- CURRENT_IMPLEMENTED: Use visible screens: Dashboard, Organizations, Schools, Users & Roles, Plans, Revenue, Reports, Health, Notifications, Audit, AI Governance, Settings.
 - CURRENT_IMPLEMENTED: Call 90 backend endpoint(s) inferred for this role/scope.
-- CURRENT_IMPLEMENTED: Quick actions: Create tenant - Create trust, first school and admin; Create plan - Prepare subscription package; System health - Check platform readiness.
+- CURRENT_IMPLEMENTED: Quick actions: Create organization - Create trust/group, first school and admin; Create plan - Prepare subscription package; View health - Check platform readiness.
 - CURRENT_IMPLEMENTED: Platform-wide tenant, school, subscription, revenue, AI, report, audit, health, notification, setting, and access-control ownership.
 - CURRENT_IMPLEMENTED: Operate only inside documented scope.
 
@@ -139,28 +139,30 @@
 ## 6. Navigation and screens
 | Screen | Route/nav id | Visible? | Required permission | API used | Current status |
 | --- | --- | --- | --- | --- | --- |
-| Dashboard | dashboard | Yes | SESSION_SELF_MANAGE | /v1/super-admin/dashboard/summary | CURRENT_IMPLEMENTED |
-| Tenants | tenants | Yes | SCREEN_TENANTS | /v1/super-admin/ai/tenants/{tenantId}/entitlement | CURRENT_IMPLEMENTED |
-| Schools | schools | Yes | SCREEN_SCHOOLS | /v1/me/schools/{schoolId}/activate | CURRENT_IMPLEMENTED |
-| Access Control | access-control | Yes | SCREEN_ACCESS_CONTROL | /v1/super-admin/dashboard/summary | CURRENT_IMPLEMENTED |
-| Subscription Plans | subscriptions | Yes | SCREEN_SUBSCRIPTIONS | /v1/super-admin/subscriptions/plans/{planId} | CURRENT_IMPLEMENTED |
-| Revenue | revenue | Yes | SCREEN_REVENUE | /v1/super-admin/revenue/invoices | CURRENT_IMPLEMENTED |
-| AI Governance | ai-usage | Yes | SCREEN_AI_USAGE | /v1/super-admin/dashboard/summary | CURRENT_IMPLEMENTED |
-| Reports | reports | Yes | SCREEN_REPORTS | /v1/super-admin/reports/exports/{jobId} | CURRENT_IMPLEMENTED |
-| Audit Logs | audit | Yes | SCREEN_AUDIT | /v1/ai/usage/audit | CURRENT_IMPLEMENTED |
-| Platform Health | health | Yes | SCREEN_HEALTH | /v1/super-admin/platform-health | CURRENT_IMPLEMENTED |
-| Notifications | notifications | Yes | SCREEN_NOTIFICATIONS | /v1/super-admin/notifications/deliveries/{deliveryId} | CURRENT_IMPLEMENTED |
+| Dashboard | dashboard | Yes | SESSION_SELF_MANAGE | /v1/super-admin/dashboard/summary, /v1/super-admin/platform-metrics, /v1/super-admin/platform-health | CURRENT_IMPLEMENTED |
+| Organizations | tenants | Yes | SCREEN_TENANTS | /v1/super-admin/tenants, /v1/super-admin/tenants/{tenantId}/status | CURRENT_IMPLEMENTED |
+| Schools | schools | Yes | SCREEN_SCHOOLS | /v1/super-admin/schools | CURRENT_IMPLEMENTED |
+| Users & Roles | access-control | Yes | SCREEN_ACCESS_CONTROL | /v1/super-admin/users, /v1/super-admin/users/{userId}/roles, /v1/super-admin/users/{userId}/permission-overrides | CURRENT_IMPLEMENTED |
+| Plans | subscriptions | Yes | SCREEN_SUBSCRIPTIONS | /v1/super-admin/subscriptions/plans, /v1/super-admin/subscriptions/tenants/{tenantId} | CURRENT_IMPLEMENTED |
+| Revenue | revenue | Yes | SCREEN_REVENUE | /v1/super-admin/revenue/summary, /v1/super-admin/revenue/invoices, /v1/super-admin/revenue/trends, /v1/super-admin/revenue/tenants | CURRENT_IMPLEMENTED |
+| AI Governance | ai-usage | Yes | SCREEN_AI_USAGE | /v1/super-admin/ai/usage/summary, /v1/super-admin/ai/recommendations, /v1/super-admin/ai/automation-rules | CURRENT_IMPLEMENTED |
+| Reports | reports | Yes | SCREEN_REPORTS | /v1/super-admin/reports/summary, /v1/super-admin/reports/exports, /v1/super-admin/reports/tenants, /v1/super-admin/reports/schools | CURRENT_IMPLEMENTED |
+| Audit | audit | Yes | SCREEN_AUDIT | /v1/super-admin/audit-logs | CURRENT_IMPLEMENTED |
+| Health | health | Yes | SCREEN_HEALTH | /v1/super-admin/platform-health | CURRENT_IMPLEMENTED |
+| Notifications | notifications | Yes | SCREEN_NOTIFICATIONS | /v1/super-admin/notifications/summary, /v1/super-admin/notifications/deliveries | CURRENT_IMPLEMENTED |
 | Settings | settings | Yes | SCREEN_SETTINGS | /v1/super-admin/settings | CURRENT_IMPLEMENTED |
 
+Verified June 8, 2026: the portal code paths above are implemented in `frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx`, backed by API helpers in `frontend/src/features/super-admin/api/platformApi.ts`, and covered by targeted frontend tests for grouped Super Admin navigation, duplicate-dashboard removal, command palette search, access-control guardrails, notification detail safety, subscription assignment, and API route construction. Dedicated tenant and school detail drawers remain BACKEND_EXISTS_UI_NOT_SURFACED where noted in `docs/gaps/CURRENT_GAPS_AND_TODOS.md`.
+
 ## 7. Dashboard details
-- dashboard title: Welcome back, CloudCampus Super Admin
-- widgets/cards: Create tenant, Create plan, System health
-- metrics: CURRENT_IMPLEMENTED from role dashboard summary endpoint.
-- API source: /v1/super-admin/dashboard/summary
+- dashboard title: Super Admin Dashboard
+- widgets/cards: Create organization, Create plan, View health, Needs attention, Recent activity, Growth & revenue, Platform health summary
+- metrics: CURRENT_IMPLEMENTED from /v1/super-admin/platform-metrics plus revenue, health, notification, report, tenant, and AI summaries.
+- API source: /v1/super-admin/dashboard/summary, /v1/super-admin/platform-metrics, /v1/super-admin/revenue/summary, /v1/super-admin/platform-health, /v1/super-admin/notifications/summary, /v1/super-admin/reports/summary, /v1/super-admin/ai/usage/summary
 - loading state: CURRENT_IMPLEMENTED shell and page loading states.
 - empty state: CURRENT_IMPLEMENTED generic empty states; module-specific quality CURRENT_PARTIAL.
 - error state: CURRENT_IMPLEMENTED API/form error panels.
-- refresh behavior: CURRENT_PARTIAL manual navigation/refetch; no uniform live refresh found.
+- refresh behavior: CURRENT_IMPLEMENTED manual dashboard refresh; CURRENT_PARTIAL no live push refresh.
 
 ## 8. API access matrix
 | Method | Endpoint | Allowed? | Required permission | Required scope | Request params/body | Response DTO | Audit event | Notes |
@@ -1064,12 +1066,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAiGovernanceController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAiGovernanceService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/ai/entitlements
 - Method: GET
@@ -1101,12 +1103,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/ai/policies/{tenantId}
 - Method: GET
@@ -1471,12 +1473,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/intelligence/ai/SuperAdminAiEntitlementController.java
 - Backend service file: CURRENT_PARTIAL service may be differently named
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/intelligence/ai/AiGovernanceFlowTest.java, backend/src/test/java/com/cloudcampus/intelligence/ai/AiScopedRetrievalFlowTest.java, frontend/src/app/App.test.tsx
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### PUT /v1/super-admin/ai/tenants/{tenantId}/entitlement
 - Method: PUT
@@ -1508,12 +1510,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/intelligence/ai/SuperAdminAiEntitlementController.java
 - Backend service file: CURRENT_PARTIAL service may be differently named
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/intelligence/ai/AiGovernanceFlowTest.java, backend/src/test/java/com/cloudcampus/intelligence/ai/AiScopedRetrievalFlowTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/ai/usage/summary
 - Method: GET
@@ -1582,12 +1584,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/audit-logs
 - Method: GET
@@ -1619,12 +1621,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/events/outbox/TransactionalOutboxFlowTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java, frontend/src/app/App.test.tsx, tests/performance/super-admin-platform-smoke.k6.js, tests/performance/super-admin-scale-seed-sql.mjs
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/dashboard/summary
 - Method: GET
@@ -1693,12 +1695,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/notification/InvitationEmailDeliveryFlowTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/notifications/deliveries
 - Method: GET
@@ -1730,12 +1732,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java, tests/performance/super-admin-platform-smoke.k6.js
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/notifications/summary
 - Method: GET
@@ -2026,12 +2028,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/reports/summary
 - Method: GET
@@ -2100,12 +2102,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java, frontend/src/features/tenant-admin/pages/TenantReportsPage.test.tsx
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/revenue/invoices
 - Method: GET
@@ -2137,12 +2139,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionFlowTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java, frontend/src/app/App.test.tsx, tests/performance/super-admin-platform-smoke.k6.js, tests/performance/super-admin-scale-seed-sql.mjs
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/revenue/summary
 - Method: GET
@@ -2211,12 +2213,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/revenue/trends
 - Method: GET
@@ -2248,12 +2250,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/roles/{role}/permissions
 - Method: GET
@@ -2359,12 +2361,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/notification/InvitationEmailDeliveryFlowTest.java, backend/src/test/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionFlowTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java, backend/src/test/java/com/cloudcampus/platform/tenantadmin/report/TenantAdminReportSummaryFlowTest.java, backend/src/test/java/com/cloudcampus/platform/tenantadmin/school/TenantAdminSchoolManagementFlowTest.java, backend/src/test/java/com/cloudcampus/platform/tenantadmin/settings/TenantAdminSettingsFlowTest.java, backend/src/test/java/com/cloudcampus/portal/dashboard/DashboardSummaryFlowTest.java, backend/src/test/java/com/cloudcampus/security/AuthSessionFlowTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java, frontend/src/app/App.test.tsx, frontend/src/features/super-admin/api/platformApi.test.ts, frontend/src/features/tenant-admin/pages/TenantReportsPage.test.tsx, frontend/src/features/tenant-admin/pages/TenantSchoolCreationPage.test.tsx, frontend/src/features/tenant-admin/pages/TenantSchoolManagementPage.test.tsx, frontend/src/features/tenant-admin/pages/TenantSettingsPage.test.tsx, tests/performance/super-admin-platform-smoke.k6.js, tests/performance/super-admin-scale-seed-sql.mjs
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/search
 - Method: GET
@@ -2507,12 +2509,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### PATCH /v1/super-admin/students/{studentId}/guardians/{guardianLinkId}
 - Method: PATCH
@@ -2544,12 +2546,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### POST /v1/super-admin/students/{studentId}/guardians
 - Method: POST
@@ -2581,12 +2583,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### PATCH /v1/super-admin/subscriptions/plans/{planId}
 - Method: PATCH
@@ -2729,12 +2731,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionFlowTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/subscriptions/tenants/{tenantId}
 - Method: GET
@@ -2766,12 +2768,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionFlowTest.java, backend/src/test/java/com/cloudcampus/platform/superadmin/control/SuperAdminPlatformControlFlowTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### PUT /v1/super-admin/subscriptions/tenants/{tenantId}
 - Method: PUT
@@ -2803,12 +2805,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/platform/subscription/SuperAdminSubscriptionFlowTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### DELETE /v1/super-admin/teachers/{teacherUserId}/assignments/{assignmentId}
 - Method: DELETE
@@ -2840,12 +2842,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### PATCH /v1/super-admin/teachers/{teacherUserId}/assignments/{assignmentId}
 - Method: PATCH
@@ -2877,12 +2879,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### POST /v1/super-admin/teachers/{teacherUserId}/assignments
 - Method: POST
@@ -2914,12 +2916,12 @@
 - Security notes: enforce role/scope and no tenant/school spoofing.
 - Privacy notes: mask sensitive fields by role.
 - Performance notes: broad lists must be paginated/indexed.
-- Frontend caller file: NOT_FOUND_IN_CODEBASE
+- Frontend caller file: frontend/src/features/super-admin/api/platformApi.ts; visible screen: frontend/src/features/super-admin/pages/SuperAdminPlatformPage.tsx
 - Backend controller file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlController.java
 - Backend service file: backend/src/main/java/com/cloudcampus/platform/superadmin/control/SuperAdminAccessControlService.java
 - Repository/query source: CURRENT_PARTIAL module-specific repository.
 - Tests that cover it: backend/src/test/java/com/cloudcampus/audit/AuditCoverageMatrixTest.java, backend/src/test/java/com/cloudcampus/security/SchoolScopedControllerGuardCoverageTest.java
-- Gaps/TODOs: BACKEND_EXISTS_UI_NOT_SURFACED
+- Gaps/TODOs: CURRENT_IMPLEMENTED in Super Admin portal; remaining detail-only gaps are tracked separately.
 
 ### GET /v1/super-admin/tenants/{tenantId}/audit
 - Method: GET

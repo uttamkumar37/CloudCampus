@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -200,6 +202,15 @@ class SuperAdminPlatformControlFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.monthlyRecurringRevenueCents").value(0))
                 .andExpect(jsonPath("$.totalInvoicedCents").value(250000));
+
+        mockMvc.perform(get("/v1/super-admin/revenue/invoices")
+                        .param("tenantId", tenant.getId())
+                        .param("status", "ISSUED")
+                        .param("from", LocalDate.now(ZoneOffset.UTC).toString())
+                        .param("to", LocalDate.now(ZoneOffset.UTC).toString())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(superAdmin.accessToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].invoiceNumber").value("INV-SA-CTRL-0001"));
 
         mockMvc.perform(get("/v1/super-admin/audit-logs")
                         .header(HttpHeaders.AUTHORIZATION, bearer(superAdmin.accessToken())))

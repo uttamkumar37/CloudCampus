@@ -21,6 +21,7 @@ Status: CURRENT_IMPLEMENTED
 | POST /v1/super-admin/ai/recommendations | CURRENT_IMPLEMENTED | AI_RECOMMENDATION_CREATED | SUPER_ADMIN; Read or act on AI recommendations. |
 
 - CURRENT_IMPLEMENTED: Recommendation endpoints exist for platform and role portal flows.
-- CURRENT_PARTIAL: Risk-level enforcement should be verified by tests.
-- PLANNED_RECOMMENDED: High-risk actions require MFA freshness and human approval.
+- CURRENT_IMPLEMENTED: Super Admin portal lists, filters, creates, opens, approves, rejects, and executes recommendations through `/v1/super-admin/ai/recommendations`.
+- CURRENT_IMPLEMENTED: Super Admin UI requires explicit confirmation before high/critical recommendation execution and does not render raw prompt content.
+- CURRENT_PARTIAL: Service-level MFA freshness and exhaustive risk-level negative tests remain open.
 - PLANNED_RECOMMENDED: AI_AGENT drafts only.

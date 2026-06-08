@@ -1,6 +1,7 @@
 package com.cloudcampus.platform.superadmin.control;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -361,11 +362,14 @@ public class SuperAdminPlatformService {
             AuthenticatedUser actor,
             int page,
             int size,
-            String status
+            String status,
+            String tenantId,
+            String from,
+            String to
     ) {
         requireSuperAdmin(actor);
         Page<TenantInvoice> invoicePage = tenantInvoiceRepository.findAll(
-                invoiceSpec(status),
+                invoiceSpec(status, tenantId, from, to),
                 pageable(page, size, "issuedAt,desc", Set.of("issuedAt", "dueAt", "status", "amountCents"))
         );
         return page(invoicePage.map(this::invoiceResponse));
@@ -1203,13 +1207,51 @@ public class SuperAdminPlatformService {
         };
     }
 
-    private Specification<TenantInvoice> invoiceSpec(String status) {
+    private Specification<TenantInvoice> invoiceSpec(String status, String tenantId, String from, String to) {
         TenantInvoiceStatus invoiceStatus = status == null || status.isBlank()
                 ? null
                 : parseEnum(TenantInvoiceStatus.class, status, "Invoice status filter is not supported.");
-        return (root, query, criteriaBuilder) -> invoiceStatus == null
-                ? criteriaBuilder.conjunction()
-                : criteriaBuilder.equal(root.get("status"), invoiceStatus);
+        String normalizedTenantId = tenantId == null || tenantId.isBlank() ? null : tenantId.trim();
+        Instant fromInstant = parseDateStart(from, "Invoice from date must be yyyy-MM-dd.");
+        Instant toInstant = parseDateEnd(to, "Invoice to date must be yyyy-MM-dd.");
+        return (root, query, criteriaBuilder) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            if (invoiceStatus != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), invoiceStatus));
+            }
+            if (normalizedTenantId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("tenant").get("id"), normalizedTenantId));
+            }
+            if (fromInstant != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("issuedAt"), fromInstant));
+            }
+            if (toInstant != null) {
+                predicates.add(criteriaBuilder.lessThan(root.get("issuedAt"), toInstant));
+            }
+            return criteriaBuilder.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+    }
+
+    private Instant parseDateStart(String value, String message) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value.trim()).atStartOfDay().toInstant(ZoneOffset.UTC);
+        } catch (RuntimeException exception) {
+            throw new BadRequestException(message);
+        }
+    }
+
+    private Instant parseDateEnd(String value, String message) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value.trim()).plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        } catch (RuntimeException exception) {
+            throw new BadRequestException(message);
+        }
     }
 
     private Specification<TenantInvoice> invoiceSearchSpec(String search) {
