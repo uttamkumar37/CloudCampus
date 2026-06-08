@@ -31,7 +31,6 @@ Generated on 2026-06-08 from local source inventory. Every major item is labeled
 | Operations | docs/operations/DEPLOYMENT_AND_RUNTIME.md | CURRENT_IMPLEMENTED |
 | Gaps | docs/gaps/CURRENT_GAPS_AND_TODOS.md | CURRENT_IMPLEMENTED |
 | Super Admin full detail | docs/super-admin-portal/SUPER_ADMIN_PORTAL_FULL_DETAILS.md | CURRENT_IMPLEMENTED |
-| Recent docs bundle | docs/recent-docs-bundle/README.md | CURRENT_IMPLEMENTED |
 
 - CURRENT_PARTIAL: Command palette/global search is navigation-oriented and may show a limited subset.
 - CURRENT_PARTIAL: Shell notification popover may be static unless connected to notification delivery APIs.
