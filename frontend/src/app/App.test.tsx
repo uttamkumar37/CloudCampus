@@ -717,7 +717,8 @@ describe('App', () => {
         .split('_')
         .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
         .join(' ');
-      expect((await screen.findAllByRole('heading', { name: new RegExp(`${title} dashboard`, 'i') })).length).toBeGreaterThan(0);
+      const heading = role === 'TEACHER' ? /teacher overview/i : new RegExp(`${title} dashboard`, 'i');
+      expect((await screen.findAllByRole('heading', { name: heading })).length).toBeGreaterThan(0);
       expect(screen.getByRole('region', { name: new RegExp(`${title} area`, 'i') })).toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: /create organization with first school/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: /create school/i })).not.toBeInTheDocument();
@@ -746,7 +747,8 @@ describe('App', () => {
         .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
         .join(' ');
 
-      expect((await screen.findAllByRole('heading', { name: new RegExp(`${title} dashboard`, 'i') })).length).toBeGreaterThan(0);
+      const heading = role === 'TEACHER' ? /teacher overview/i : new RegExp(`${title} dashboard`, 'i');
+      expect((await screen.findAllByRole('heading', { name: heading })).length).toBeGreaterThan(0);
       expect(screen.queryByText(/partial api/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/^partial$/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/missing api/i)).not.toBeInTheDocument();
@@ -1081,22 +1083,24 @@ describe('App', () => {
 
     render(<App authClient={authClientFor(user)} storage={storageWithToken('teacher-token')} />);
 
-    expect(await screen.findByRole('heading', { name: /teacher dashboard/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /teacher overview/i })).toBeInTheDocument();
     const teacherNav = screen.getByRole('navigation', { name: /teacher navigation/i });
     fireEvent.click(within(teacherNav).getByRole('button', { name: /marks/i }));
 
-    expect(await screen.findByRole('heading', { name: /teacher marks entry/i })).toBeInTheDocument();
+    expect((await screen.findAllByRole('heading', { name: /^marks$/i })).length).toBeGreaterThan(0);
     expect((await screen.findAllByText(/asha mehta/i)).length).toBeGreaterThan(0);
-    expect(screen.getByLabelText(/class/i)).toHaveValue('class-1');
-    expect(screen.getByLabelText(/subject/i)).toHaveValue('subject-1');
+    expect(screen.getByLabelText(/assigned class and subject/i)).toHaveValue('assignment-1');
     expect(screen.getByLabelText(/exam/i)).toHaveValue('exam-1');
 
     fireEvent.change(screen.getByLabelText(/marks for asha mehta/i), { target: { value: '105' } });
-    fireEvent.click(screen.getByRole('button', { name: /save marks/i }));
+    fireEvent.click(screen.getByRole('button', { name: /submit changed marks/i }));
     expect(await screen.findByText(/cannot exceed 100/i)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/marks for asha mehta/i), { target: { value: '95' } });
-    fireEvent.click(screen.getByRole('button', { name: /save marks/i }));
+    fireEvent.click(screen.getByRole('button', { name: /submit changed marks/i }));
+
+    const confirmDialog = await screen.findByRole('dialog', { name: /submit marks/i });
+    fireEvent.click(within(confirmDialog).getByRole('button', { name: /^submit marks$/i }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
       '/v1/teacher/exams/exam-1/results',

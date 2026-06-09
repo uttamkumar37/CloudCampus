@@ -26,6 +26,8 @@ import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.JwtAccessTokenService;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
 import com.cloudcampus.people.parent.ParentStudentLink;
 import com.cloudcampus.people.parent.ParentStudentLinkRepository;
 import com.cloudcampus.people.student.Student;
@@ -89,6 +91,9 @@ class TimetablePortalFlowTest {
     private UserAccountRepository userAccountRepository;
 
     @Autowired
+    private UserSchoolAccessRepository userSchoolAccessRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -148,6 +153,7 @@ class TimetablePortalFlowTest {
                 "Mathematics"
         ));
         UserAccount teacher = createUser(tenant, "teacher-" + suffix + "@example.com", "Teacher", UserRole.TEACHER);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, teacher, UserRole.TEACHER, true));
         teacherAssignmentRepository.save(new TeacherAssignment(teacher, classSubject));
         UserAccount parent = createUser(tenant, "parent-" + suffix + "@example.com", "Parent", UserRole.PARENT);
         UserAccount unlinkedParent = createUser(tenant, "unlinked-parent-" + suffix + "@example.com", "Other Parent", UserRole.PARENT);

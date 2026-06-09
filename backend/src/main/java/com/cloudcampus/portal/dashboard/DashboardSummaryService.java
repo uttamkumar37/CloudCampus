@@ -187,10 +187,13 @@ public class DashboardSummaryService {
     @Transactional(readOnly = true)
     public DashboardSummaryResponse teacher(AuthenticatedUser actor) {
         requireRole(actor, UserRole.TEACHER);
-        String schoolId = requireActiveSchool(actor);
+        String schoolId = requireActiveTeacherSchool(actor);
         long assignments = teacherAssignmentRepository.findByTeacherIdOrderByClassSubjectAssignmentClassLevelNameAscClassSubjectAssignmentSubjectNameAsc(
                 actor.user().getId()
-        ).size();
+        ).stream()
+                .filter(assignment -> assignment.isActive()
+                        && assignment.getSchool().getId().equals(schoolId))
+                .count();
         List<Homework> homework = homeworkRepository.findBySchoolIdOrderByDueDateAscCreatedAtAsc(schoolId)
                 .stream()
                 .filter(item -> item.getCreatedByUser().getId().equals(actor.user().getId()))
@@ -336,6 +339,17 @@ public class DashboardSummaryService {
                 .orElse(false);
         if (!allowed) {
             throw new ForbiddenException("School leadership access is required.");
+        }
+        return schoolId;
+    }
+
+    private String requireActiveTeacherSchool(AuthenticatedUser actor) {
+        String schoolId = requireActiveSchool(actor);
+        boolean allowed = userSchoolAccessRepository.findByUserIdAndSchoolId(actor.user().getId(), schoolId)
+                .map(access -> access.getRole() == UserRole.TEACHER)
+                .orElse(false);
+        if (!allowed) {
+            throw new ForbiddenException("Teacher access is required for the active school.");
         }
         return schoolId;
     }

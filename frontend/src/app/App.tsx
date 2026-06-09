@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -74,18 +74,7 @@ import { TenantAdminDashboardPage } from '../features/tenant-admin/pages/TenantA
 import { TenantReportsPage } from '../features/tenant-admin/pages/TenantReportsPage';
 import { TenantSchoolManagementPage } from '../features/tenant-admin/pages/TenantSchoolManagementPage';
 import { TenantSettingsPage, TenantUsagePage } from '../features/tenant-admin/pages/TenantSettingsPage';
-import {
-  listTeacherAssignments,
-  listTeacherAttendance,
-  listTeacherExamRoster,
-  listTeacherExams,
-  listTeacherHomework,
-  listTeacherTimetable,
-  recordTeacherExamMarks,
-  type TeacherAssignment,
-  type TeacherExam,
-  type TeacherExamRosterStudent,
-} from '../features/teacher/api/teacherPortalApi';
+import { TeacherPortalPage } from '../features/teacher/pages/TeacherPortalPage';
 import type { AuthSession, CurrentUser, UserRole } from '../features/auth/api/authApi';
 
 type AppProps = {
@@ -912,7 +901,9 @@ function AuthenticatedExperience({ storage, user }: { storage?: AppStorage; user
               : null
             : user.role === 'TENANT_ADMIN'
               ? null
-              : <PortalDashboard navItems={navItems} onSelectNav={setActiveNav} user={user} />}
+              : user.role === 'TEACHER'
+                ? null
+                : <PortalDashboard navItems={navItems} onSelectNav={setActiveNav} user={user} />}
           <RoleWorkspace activeNav={activeNav} onSelectNav={setActiveNav} storage={storage} user={user} />
         </div>
       </section>
@@ -1530,6 +1521,20 @@ function RoleWorkspace({
     );
   }
 
+  if (user.role === 'TEACHER') {
+    return (
+      <section className="role-workspace" aria-label="Teacher area">
+        <WorkspaceHeader title="Teacher workspace" activeNav={activeNav} />
+        <SchoolSelector />
+        {user.activeSchool ? (
+          <TeacherModule activeNav={activeNav} onSelectNav={onSelectNav} />
+        ) : (
+          <EmptyState title="Select active school" detail="Choose an assigned school to open your teaching workspace." />
+        )}
+      </section>
+    );
+  }
+
   if (user.role === 'FINANCE_STAFF') {
     return (
       <section className="role-workspace" aria-label="Finance Staff area">
@@ -1600,6 +1605,10 @@ function FinanceStaffModule({ activeNav }: { activeNav: string }) {
 
 function PrincipalModule({ activeNav, onSelectNav }: { activeNav: string; onSelectNav: (navId: string) => void }) {
   return <PrincipalPortalPage onNavigate={onSelectNav} section={activeNav} />;
+}
+
+function TeacherModule({ activeNav, onSelectNav }: { activeNav: string; onSelectNav: (navId: string) => void }) {
+  return <TeacherPortalPage onNavigate={onSelectNav} section={activeNav} />;
 }
 
 function OfficeStaffModule({ activeNav }: { activeNav: string }) {
@@ -1739,13 +1748,6 @@ function LearnerStaffModule({ activeNav, role }: { activeNav: string; role: User
     return <RoleAiPanel role={role} />;
   }
 
-  if (role === 'TEACHER') {
-    if (activeNav === 'marks') {
-      return <TeacherMarksEntryPanel />;
-    }
-    return <TeacherScopedPortalPanel activeNav={activeNav} />;
-  }
-
   if (role === 'PARENT' && activeNav !== 'leave') {
     return <ParentChildPortalPanel activeNav={activeNav} />;
   }
@@ -1795,497 +1797,6 @@ function RoleAiPanel({ role }: { role: UserRole }) {
         detail={roleDetail[role] ?? 'AI recommendations appear here only when enabled for this role and scope.'}
       />
     </div>
-  );
-}
-
-function TeacherScopedPortalPanel({ activeNav }: { activeNav: string }) {
-  const { accessToken } = useAuthState();
-  const [assignments, setAssignments] = useState<TeacherAssignment[]>([]);
-  const [selectedId, setSelectedId] = useState('');
-  const [items, setItems] = useState<unknown[]>([]);
-  const [status, setStatus] = useState<'loading' | 'idle'>('loading');
-  const [error, setError] = useState<string | null>(null);
-
-  const selected = assignments.find((assignment) => assignment.id === selectedId) ?? assignments[0] ?? null;
-  const needsAssignment = ['attendance', 'homework', 'exams'].includes(activeNav);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadAssignments() {
-      if (!accessToken) {
-        setError('Teacher login is required.');
-        setStatus('idle');
-        return;
-      }
-      setStatus('loading');
-      try {
-        const loaded = await listTeacherAssignments(accessToken);
-        if (!mounted) return;
-        setAssignments(loaded);
-        setSelectedId((current) => current || loaded[0]?.id || '');
-        setError(null);
-      } catch (caught) {
-        if (!mounted) return;
-        setAssignments([]);
-        setError(caught instanceof Error ? caught.message : 'Teacher assignments could not be loaded.');
-      } finally {
-        if (mounted) setStatus('idle');
-      }
-    }
-
-    void loadAssignments();
-    return () => {
-      mounted = false;
-    };
-  }, [accessToken]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadItems() {
-      if (!accessToken) return;
-      if (activeNav === 'classes' || activeNav === 'dashboard') {
-        setItems(assignments);
-        return;
-      }
-      if (activeNav === 'timetable') {
-        setStatus('loading');
-        try {
-          const timetable = await listTeacherTimetable(accessToken);
-          if (mounted) {
-            setItems(timetable);
-            setError(null);
-          }
-        } catch (caught) {
-          if (mounted) setError(caught instanceof Error ? caught.message : 'Teacher timetable could not be loaded.');
-        } finally {
-          if (mounted) setStatus('idle');
-        }
-        return;
-      }
-      if (!selected && needsAssignment) {
-        setItems([]);
-        return;
-      }
-      if (!selected) return;
-
-      setStatus('loading');
-      try {
-        const loader = activeNav === 'attendance'
-          ? listTeacherAttendance
-          : activeNav === 'homework'
-            ? listTeacherHomework
-            : listTeacherExams;
-        const loaded = await loader(selected.classLevelId, selected.subjectId, accessToken);
-        if (mounted) {
-          setItems(loaded);
-          setError(null);
-        }
-      } catch (caught) {
-        if (mounted) {
-          setItems([]);
-          setError(caught instanceof Error ? caught.message : `${moduleTitle(activeNav)} could not be loaded.`);
-        }
-      } finally {
-        if (mounted) setStatus('idle');
-      }
-    }
-
-    void loadItems();
-    return () => {
-      mounted = false;
-    };
-  }, [accessToken, activeNav, assignments, needsAssignment, selected]);
-
-  return (
-    <section className="data-surface" aria-labelledby={`teacher-${activeNav}-title`}>
-      <div className="surface-toolbar">
-        <div>
-          <p className="eyebrow">Ready</p>
-          <h3 id={`teacher-${activeNav}-title`}>{activeNav === 'classes' ? 'My Classes' : moduleTitle(activeNav)}</h3>
-        </div>
-        {needsAssignment ? (
-          <label className="inline-select">
-            Assignment
-            <select value={selected?.id ?? ''} onChange={(event) => setSelectedId(event.target.value)}>
-              {assignments.map((assignment) => (
-                <option key={assignment.id} value={assignment.id}>
-                  {assignment.className} - {assignment.subjectName}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-      </div>
-      {status === 'loading' ? <div className="api-skeleton"><span /><span /><span /></div> : null}
-      {error ? <p className="form-error" role="alert">{error}</p> : null}
-      {!error && status !== 'loading' && assignments.length === 0 ? (
-        <div className="api-empty-state">
-          <strong>No assigned classes</strong>
-          <span>Ask your School Admin to assign a class and subject before using teacher workflows.</span>
-        </div>
-      ) : null}
-      {!error && status !== 'loading' && assignments.length > 0 && items.length === 0 ? (
-        <div className="api-empty-state">
-          <strong>No records yet</strong>
-          <span>New class activity will appear here when it is available.</span>
-        </div>
-      ) : null}
-      <div className="api-record-list">
-        {items.slice(0, 12).map((item, index) => (
-          <article key={recordKey(item, index)}>
-            <strong>{recordTitle(item, index)}</strong>
-            <span>{recordDetail(item)}</span>
-            <DeveloperDetails><span>{recordId(item)}</span></DeveloperDetails>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function TeacherMarksEntryPanel() {
-  const { accessToken } = useAuthState();
-  const [assignments, setAssignments] = useState<TeacherAssignment[]>([]);
-  const [classLevelId, setClassLevelId] = useState('');
-  const [subjectId, setSubjectId] = useState('');
-  const [exams, setExams] = useState<TeacherExam[]>([]);
-  const [examId, setExamId] = useState('');
-  const [roster, setRoster] = useState<TeacherExamRosterStudent[]>([]);
-  const [marksByStudent, setMarksByStudent] = useState<Record<string, string>>({});
-  const [initialMarksByStudent, setInitialMarksByStudent] = useState<Record<string, string>>({});
-  const [status, setStatus] = useState<'loading' | 'idle' | 'submitting'>('loading');
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
-  const selectedExam = exams.find((exam) => exam.id === examId) ?? null;
-  const classOptions = useMemo(() => uniqueBy(assignments, 'classLevelId'), [assignments]);
-  const subjectOptions = useMemo(
-    () => assignments.filter((assignment) => assignment.classLevelId === classLevelId),
-    [assignments, classLevelId],
-  );
-  const hasUnsavedChanges = useMemo(
-    () => roster.some((student) => (marksByStudent[student.studentId] ?? '') !== (initialMarksByStudent[student.studentId] ?? '')),
-    [initialMarksByStudent, marksByStudent, roster],
-  );
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadAssignments() {
-      if (!accessToken) {
-        setError('Teacher login is required.');
-        setStatus('idle');
-        return;
-      }
-      setStatus('loading');
-      try {
-        const loaded = await listTeacherAssignments(accessToken);
-        if (!mounted) return;
-        setAssignments(loaded);
-        setClassLevelId((current) => current || loaded[0]?.classLevelId || '');
-        setSubjectId((current) => current || loaded[0]?.subjectId || '');
-        setError(null);
-      } catch (caught) {
-        if (!mounted) return;
-        setError(caught instanceof Error ? caught.message : 'Teacher assignments could not be loaded.');
-      } finally {
-        if (mounted) setStatus('idle');
-      }
-    }
-
-    void loadAssignments();
-    return () => {
-      mounted = false;
-    };
-  }, [accessToken]);
-
-  useEffect(() => {
-    if (!classLevelId || subjectOptions.some((assignment) => assignment.subjectId === subjectId)) {
-      return;
-    }
-    setSubjectId(subjectOptions[0]?.subjectId ?? '');
-  }, [classLevelId, subjectId, subjectOptions]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadExams() {
-      if (!accessToken || !classLevelId || !subjectId) {
-        setExams([]);
-        setExamId('');
-        return;
-      }
-      setStatus('loading');
-      try {
-        const loaded = await listTeacherExams(classLevelId, subjectId, accessToken);
-        if (!mounted) return;
-        setExams(loaded);
-        setExamId((current) => loaded.some((exam) => exam.id === current) ? current : loaded[0]?.id ?? '');
-        setError(null);
-      } catch (caught) {
-        if (!mounted) return;
-        setExams([]);
-        setExamId('');
-        setError(caught instanceof Error ? caught.message : 'Assigned exams could not be loaded.');
-      } finally {
-        if (mounted) setStatus('idle');
-      }
-    }
-
-    void loadExams();
-    return () => {
-      mounted = false;
-    };
-  }, [accessToken, classLevelId, subjectId]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadRoster() {
-      if (!accessToken || !examId) {
-        setRoster([]);
-        setMarksByStudent({});
-        setInitialMarksByStudent({});
-        return;
-      }
-      setStatus('loading');
-      try {
-        const loaded = await listTeacherExamRoster(examId, accessToken);
-        if (!mounted) return;
-        const nextMarks = Object.fromEntries(
-          loaded.map((student) => [student.studentId, student.marksObtained == null ? '' : String(student.marksObtained)]),
-        );
-        setRoster(loaded);
-        setMarksByStudent(nextMarks);
-        setInitialMarksByStudent(nextMarks);
-        setError(null);
-        setSuccess(null);
-      } catch (caught) {
-        if (!mounted) return;
-        setRoster([]);
-        setError(caught instanceof Error ? caught.message : 'Exam roster could not be loaded.');
-      } finally {
-        if (mounted) setStatus('idle');
-      }
-    }
-
-    void loadRoster();
-    return () => {
-      mounted = false;
-    };
-  }, [accessToken, examId]);
-
-  useEffect(() => {
-    if (!hasUnsavedChanges) {
-      return undefined;
-    }
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasUnsavedChanges]);
-
-  function changeClass(nextClassLevelId: string) {
-    if (!confirmDiscardChanges()) return;
-    const nextAssignment = assignments.find((assignment) => assignment.classLevelId === nextClassLevelId);
-    setClassLevelId(nextClassLevelId);
-    setSubjectId(nextAssignment?.subjectId ?? '');
-    resetMarks();
-  }
-
-  function changeSubject(nextSubjectId: string) {
-    if (!confirmDiscardChanges()) return;
-    setSubjectId(nextSubjectId);
-    resetMarks();
-  }
-
-  function changeExam(nextExamId: string) {
-    if (!confirmDiscardChanges()) return;
-    setExamId(nextExamId);
-  }
-
-  function confirmDiscardChanges() {
-    return !hasUnsavedChanges || window.confirm('You have unsaved marks. Discard changes?');
-  }
-
-  function resetMarks() {
-    setRoster([]);
-    setMarksByStudent({});
-    setInitialMarksByStudent({});
-    setSuccess(null);
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!accessToken || !selectedExam) {
-      setError('Teacher login and selected exam are required.');
-      return;
-    }
-    const validationError = validateMarks(selectedExam, roster, marksByStudent);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-    const changedEntries = roster
-      .map((student) => ({
-        studentId: student.studentId,
-        marks: marksByStudent[student.studentId] ?? '',
-        initialMarks: initialMarksByStudent[student.studentId] ?? '',
-      }))
-      .filter((entry) => entry.marks !== '' && entry.marks !== entry.initialMarks);
-    if (changedEntries.length === 0) {
-      setError('Enter or change marks before submitting.');
-      return;
-    }
-
-    setStatus('submitting');
-    setError(null);
-    setSuccess(null);
-    try {
-      await Promise.all(
-        changedEntries.map((entry) => recordTeacherExamMarks(
-          selectedExam.id,
-          entry.studentId,
-          Number(entry.marks),
-          accessToken,
-        )),
-      );
-      const refreshed = await listTeacherExamRoster(selectedExam.id, accessToken);
-      const nextMarks = Object.fromEntries(
-        refreshed.map((student) => [student.studentId, student.marksObtained == null ? '' : String(student.marksObtained)]),
-      );
-      setRoster(refreshed);
-      setMarksByStudent(nextMarks);
-      setInitialMarksByStudent(nextMarks);
-      setSuccess(`${changedEntries.length} mark ${changedEntries.length === 1 ? 'entry' : 'entries'} saved.`);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Marks could not be saved.');
-    } finally {
-      setStatus('idle');
-    }
-  }
-
-  return (
-    <section className="data-surface marks-entry-panel" aria-labelledby="teacher-marks-title">
-      <div className="surface-toolbar">
-        <div>
-          <p className="eyebrow">Ready</p>
-          <h3 id="teacher-marks-title">Teacher Marks Entry</h3>
-        </div>
-        {hasUnsavedChanges ? <span className="status-chip warning">Unsaved changes</span> : <span className="status-chip info">Saved</span>}
-      </div>
-
-      <div className="marks-selector-grid">
-        <label className="inline-select">
-          Class
-          <select value={classLevelId} onChange={(event) => changeClass(event.target.value)}>
-            {classOptions.map((assignment) => (
-              <option key={assignment.classLevelId} value={assignment.classLevelId}>
-                {assignment.className}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="inline-select">
-          Subject
-          <select value={subjectId} onChange={(event) => changeSubject(event.target.value)}>
-            {subjectOptions.map((assignment) => (
-              <option key={assignment.subjectId} value={assignment.subjectId}>
-                {assignment.subjectName} ({assignment.subjectCode})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="inline-select">
-          Exam
-          <select value={examId} onChange={(event) => changeExam(event.target.value)}>
-            {exams.map((exam) => (
-              <option key={exam.id} value={exam.id}>
-                {exam.title} - {exam.sectionName ? `Section ${exam.sectionName}` : 'All sections'}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {selectedExam ? (
-        <div className="marks-context">
-          <span>{selectedExam.className}</span>
-          <span>{selectedExam.subjectName}</span>
-          <span>Max marks: {selectedExam.maxMarks}</span>
-          <span>Status: {selectedExam.status}</span>
-        </div>
-      ) : null}
-
-      {status === 'loading' ? <div className="api-skeleton"><span /><span /><span /></div> : null}
-      {error ? <p className="form-error" role="alert">{error}</p> : null}
-      {success ? <p className="toast-message" role="status">{success}</p> : null}
-      {!error && status !== 'loading' && assignments.length === 0 ? (
-        <div className="api-empty-state">
-          <strong>No assigned classes</strong>
-          <span>Ask your School Admin to assign a class and subject before entering marks.</span>
-        </div>
-      ) : null}
-      {!error && status !== 'loading' && assignments.length > 0 && exams.length === 0 ? (
-        <div className="api-empty-state">
-          <strong>No assigned exams</strong>
-          <span>No exams exist yet for the selected class and subject.</span>
-        </div>
-      ) : null}
-      {!error && status !== 'loading' && selectedExam && roster.length === 0 ? (
-        <div className="api-empty-state">
-          <strong>No students in exam scope</strong>
-          <span>The selected exam class/section does not currently have active students.</span>
-        </div>
-      ) : null}
-
-      {selectedExam && roster.length > 0 ? (
-        <form className="marks-entry-form" noValidate onSubmit={handleSubmit}>
-          <div className="marks-table" role="table" aria-label="Teacher marks roster">
-            <div className="marks-row marks-header" role="row">
-              <span>Student</span>
-              <span>Admission</span>
-              <span>Roll</span>
-              <span>Marks</span>
-            </div>
-            {roster.map((student) => (
-              <div className="marks-row" role="row" key={student.studentId}>
-                <strong>{student.fullName}</strong>
-                <span>{student.admissionNumber}</span>
-                <span>{student.rollNumber ?? 'Not set'}</span>
-                <label>
-                  <span className="sr-only">Marks for {student.fullName}</span>
-                  <input
-                    aria-label={`Marks for ${student.fullName}`}
-                    inputMode="decimal"
-                    min="0"
-                    max={selectedExam.maxMarks}
-                    step="0.01"
-                    type="number"
-                    value={marksByStudent[student.studentId] ?? ''}
-                    onChange={(event) => {
-                      setMarksByStudent((current) => ({
-                        ...current,
-                        [student.studentId]: event.target.value,
-                      }));
-                      setSuccess(null);
-                    }}
-                  />
-                </label>
-              </div>
-            ))}
-          </div>
-          <p className="form-hint">Absent marking is not enabled by the current backend exam API, so only numeric marks are submitted.</p>
-          <button type="submit" disabled={status === 'submitting'}>
-            {status === 'submitting' ? 'Saving marks...' : 'Save marks'}
-          </button>
-        </form>
-      ) : null}
-    </section>
   );
 }
 
@@ -2717,42 +2228,6 @@ function recordDetail(item: unknown) {
     ?? record.dueDate
     ?? record.createdAt;
   return detail ? String(detail) : 'Ready';
-}
-
-function uniqueBy<T>(items: T[], key: keyof T) {
-  const seen = new Set<unknown>();
-  return items.filter((item) => {
-    const value = item[key];
-    if (seen.has(value)) {
-      return false;
-    }
-    seen.add(value);
-    return true;
-  });
-}
-
-function validateMarks(
-  exam: TeacherExam,
-  roster: TeacherExamRosterStudent[],
-  marksByStudent: Record<string, string>,
-) {
-  for (const student of roster) {
-    const rawMarks = marksByStudent[student.studentId] ?? '';
-    if (rawMarks === '') {
-      continue;
-    }
-    const marks = Number(rawMarks);
-    if (!Number.isFinite(marks)) {
-      return `Marks for ${student.fullName} must be a valid number.`;
-    }
-    if (marks < 0) {
-      return `Marks for ${student.fullName} cannot be negative.`;
-    }
-    if (marks > exam.maxMarks) {
-      return `Marks for ${student.fullName} cannot exceed ${exam.maxMarks}.`;
-    }
-  }
-  return null;
 }
 
 function LoadingScreen() {

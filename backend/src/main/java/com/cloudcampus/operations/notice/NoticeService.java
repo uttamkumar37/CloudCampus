@@ -111,13 +111,13 @@ public class NoticeService {
         if (actor.user().getRole() != UserRole.TEACHER) {
             throw new ForbiddenException("Teacher access is required.");
         }
-        List<String> schoolIds = activeTeacherSchoolIds(actor);
-        if (schoolIds.isEmpty()) {
+        String activeSchoolId = activeTeacherSchoolId(actor);
+        if (activeSchoolId == null) {
             return List.of();
         }
-        Set<String> assignedClassLevelIds = activeTeacherClassLevelIds(actor);
+        Set<String> assignedClassLevelIds = activeTeacherClassLevelIds(actor, activeSchoolId);
         return noticeRepository.findBySchoolIdInAndStatusAndAudienceInOrderByPublishedAtDescCreatedAtDesc(
-                        schoolIds,
+                        List.of(activeSchoolId),
                         NoticeStatus.PUBLISHED,
                         List.of(NoticeAudience.ALL, NoticeAudience.TEACHERS)
                 )
@@ -214,27 +214,31 @@ public class NoticeService {
                 .toList();
     }
 
-    private List<String> activeTeacherSchoolIds(AuthenticatedUser actor) {
-        return teacherAssignmentRepository
+    private String activeTeacherSchoolId(AuthenticatedUser actor) {
+        String activeSchoolId = actor.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        boolean hasAssignment = teacherAssignmentRepository
                 .findByTeacherIdOrderByClassSubjectAssignmentClassLevelNameAscClassSubjectAssignmentSubjectNameAsc(
                         actor.user().getId()
                 )
                 .stream()
-                .filter(assignment -> assignment.isActive()
-                        && assignment.getTenant().getId().equals(actor.user().getTenant().getId()))
-                .map(assignment -> assignment.getSchool().getId())
-                .distinct()
-                .toList();
+                .anyMatch(assignment -> assignment.isActive()
+                        && assignment.getTenant().getId().equals(actor.user().getTenant().getId())
+                        && assignment.getSchool().getId().equals(activeSchoolId));
+        return hasAssignment ? activeSchoolId : null;
     }
 
-    private Set<String> activeTeacherClassLevelIds(AuthenticatedUser actor) {
+    private Set<String> activeTeacherClassLevelIds(AuthenticatedUser actor, String activeSchoolId) {
         return teacherAssignmentRepository
                 .findByTeacherIdOrderByClassSubjectAssignmentClassLevelNameAscClassSubjectAssignmentSubjectNameAsc(
                         actor.user().getId()
                 )
                 .stream()
                 .filter(assignment -> assignment.isActive()
-                        && assignment.getTenant().getId().equals(actor.user().getTenant().getId()))
+                        && assignment.getTenant().getId().equals(actor.user().getTenant().getId())
+                        && assignment.getSchool().getId().equals(activeSchoolId))
                 .map(assignment -> assignment.getClassSubjectAssignment().getClassLevel().getId())
                 .collect(Collectors.toSet());
     }

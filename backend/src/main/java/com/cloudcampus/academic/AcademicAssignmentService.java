@@ -125,6 +125,7 @@ public class AcademicAssignmentService {
                     throw new ConflictException("Teacher is already assigned to this class subject.");
                 });
 
+        schoolAccessService.grantTeacherAccessIfMissing(classSubject.getSchool(), teacher);
         TeacherAssignment assignment = teacherAssignmentRepository.save(new TeacherAssignment(teacher, classSubject));
         recordTeacherAssignment(actor.user(), assignment);
         return toTeacherAssignmentResponse(assignment);
@@ -141,26 +142,30 @@ public class AcademicAssignmentService {
 
     @Transactional(readOnly = true)
     public List<TeacherAssignmentResponse> myAssignments(AuthenticatedUser teacher) {
-        requireTeacher(teacher);
+        String activeSchoolId = requireActiveTeacherSchoolId(teacher);
         return teacherAssignmentRepository.findByTeacherIdOrderByClassSubjectAssignmentClassLevelNameAscClassSubjectAssignmentSubjectNameAsc(
                         teacher.user().getId()
                 )
                 .stream()
-                .filter(assignment -> assignment.getTenant().getId().equals(teacher.user().getTenant().getId()))
+                .filter(assignment -> assignment.isActive()
+                        && assignment.getTenant().getId().equals(teacher.user().getTenant().getId())
+                        && assignment.getSchool().getId().equals(activeSchoolId))
                 .map(this::toTeacherAssignmentResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<TeacherAssignmentResponse> myAssignmentsForClass(AuthenticatedUser teacher, String classLevelId) {
-        requireTeacher(teacher);
+        String activeSchoolId = requireActiveTeacherSchoolId(teacher);
         List<TeacherAssignment> assignments = teacherAssignmentRepository
                 .findByTeacherIdAndClassSubjectAssignmentClassLevelIdOrderByClassSubjectAssignmentSubjectNameAsc(
                         teacher.user().getId(),
                         classLevelId
                 )
                 .stream()
-                .filter(assignment -> assignment.getTenant().getId().equals(teacher.user().getTenant().getId()))
+                .filter(assignment -> assignment.isActive()
+                        && assignment.getTenant().getId().equals(teacher.user().getTenant().getId())
+                        && assignment.getSchool().getId().equals(activeSchoolId))
                 .toList();
         if (assignments.isEmpty()) {
             throw new ForbiddenException("Teacher is not assigned to this class.");
@@ -170,14 +175,16 @@ public class AcademicAssignmentService {
 
     @Transactional(readOnly = true)
     public TeacherAssignment requireTeacherAssignment(AuthenticatedUser teacher, String classLevelId, String subjectId) {
-        requireTeacher(teacher);
+        String activeSchoolId = requireActiveTeacherSchoolId(teacher);
         return teacherAssignmentRepository
                 .findByTeacherIdAndClassSubjectAssignmentClassLevelIdAndClassSubjectAssignmentSubjectId(
                         teacher.user().getId(),
                         classLevelId,
                         subjectId
                 )
-                .filter(assignment -> assignment.getTenant().getId().equals(teacher.user().getTenant().getId()))
+                .filter(assignment -> assignment.isActive()
+                        && assignment.getTenant().getId().equals(teacher.user().getTenant().getId())
+                        && assignment.getSchool().getId().equals(activeSchoolId))
                 .orElseThrow(() -> new ForbiddenException("Teacher is not assigned to this class subject."));
     }
 
@@ -216,6 +223,16 @@ public class AcademicAssignmentService {
         if (teacher.user().getRole() != UserRole.TEACHER) {
             throw new ForbiddenException("Teacher access is required.");
         }
+    }
+
+    private String requireActiveTeacherSchoolId(AuthenticatedUser teacher) {
+        requireTeacher(teacher);
+        String activeSchoolId = teacher.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        schoolAccessService.requireSchoolTeacherAccess(teacher.user().getId(), activeSchoolId);
+        return activeSchoolId;
     }
 
     private String normalizeCode(String code) {

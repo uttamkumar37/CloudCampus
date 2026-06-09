@@ -116,11 +116,16 @@ public class TimetableService {
         if (actor.user().getRole() != UserRole.TEACHER) {
             throw new ForbiddenException("Teacher access is required.");
         }
+        String activeSchoolId = actor.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
         List<TeacherAssignment> assignments = teacherAssignmentRepository
                 .findByTeacherIdOrderByClassSubjectAssignmentClassLevelNameAscClassSubjectAssignmentSubjectNameAsc(actor.user().getId())
                 .stream()
                 .filter(assignment -> assignment.isActive()
-                        && assignment.getTenant().getId().equals(actor.user().getTenant().getId()))
+                        && assignment.getTenant().getId().equals(actor.user().getTenant().getId())
+                        && assignment.getSchool().getId().equals(activeSchoolId))
                 .toList();
         return assignments.stream()
                 .flatMap(assignment -> timetableEntryRepository.findBySchoolIdAndClassLevelIdOrderByWeekdayAscStartTimeAsc(
