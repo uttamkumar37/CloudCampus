@@ -75,6 +75,7 @@ Source: backend/src/main/java/com/cloudcampus/audit/AuditAction.java
 | REPORT_EXPORT_REQUESTED | report export requested | CURRENT_IMPLEMENTED enum value |
 | REPORT_EXPORT_STARTED | report export started | CURRENT_IMPLEMENTED enum value |
 | REPORT_EXPORT_COMPLETED | report export completed | CURRENT_IMPLEMENTED enum value |
+| REPORT_EXPORT_DOWNLOADED | report export downloaded | CURRENT_IMPLEMENTED enum value |
 | REPORT_EXPORT_FAILED | report export failed | CURRENT_IMPLEMENTED enum value |
 | ROLE_ASSIGNED | role assigned | CURRENT_IMPLEMENTED enum value |
 | ROLE_UPDATED | role updated | CURRENT_IMPLEMENTED enum value |

@@ -18,18 +18,18 @@
 
 ## 2. Role responsibilities
 - CURRENT_IMPLEMENTED: Use visible screens: Dashboard, Admissions, Enquiries, Student Records, Documents, Certificates, AI Follow-ups.
-- CURRENT_IMPLEMENTED: Call 19 backend endpoint(s) inferred for this role/scope.
+- CURRENT_IMPLEMENTED: Call only active-school office endpoints: dashboard summary, student-record read, school-document read/create, session self-service, and approved AI follow-up reads.
 - CURRENT_IMPLEMENTED: Quick actions: Admissions - Open admission records; Documents - Review student documents; AI follow-ups - Review admission drafts.
-- CURRENT_PARTIAL: Some responsibilities depend on module APIs/UI surfaces and are listed in matrices.
+- CURRENT_PARTIAL: Admissions, enquiries, and certificates are visible planned workflow screens; no `/v1/office/*` backend endpoints are currently wired.
 - CURRENT_IMPLEMENTED: Operate only inside documented scope.
 
 ## 3. Role restrictions
-- CURRENT_IMPLEMENTED: Must not access resources outside school scope.
+- CURRENT_IMPLEMENTED: Must not access resources outside active assigned school scope.
 - CURRENT_IMPLEMENTED: Must not spoof tenant/school headers or use another user session.
 - CURRENT_IMPLEMENTED: Must not access /v1/super-admin APIs unless role is SUPER_ADMIN.
-- CURRENT_PARTIAL: Fine-grained denials are module-specific.
-- CURRENT_PARTIAL: Parent-child restrictions apply where guardian endpoints are used.
-- PLANNED_RECOMMENDED: Add endpoint-level MFA freshness for high-risk exports, finance, access-control, and AI execution.
+- CURRENT_IMPLEMENTED: Must not access tenant-admin, finance-only, parent, teacher-only, super-admin, AI automation, AI entitlement, AI usage-audit, or AI recommendation mutation APIs.
+- CURRENT_IMPLEMENTED: Must not run import, bulk job, report export, finance, attendance, homework, exam, timetable, staff provisioning, or website admin mutations.
+- PLANNED_RECOMMENDED: Add endpoint-level MFA freshness for high-risk document/certificate workflows.
 
 ## 4. Tenant/school/class/student scope rules
 - tenant_id rules: CURRENT_IMPLEMENTED derived from authenticated user/server context.
@@ -49,19 +49,19 @@
 | MANAGE_STUDENT_DOCUMENTS | OFFICE | Yes | SCHOOL | HIGH | Manage student documents. |
 | MANAGE_TRANSFER_CERTIFICATES | OFFICE | Yes | SCHOOL | HIGH | Manage transfer certificates. |
 | MANAGE_VISITORS | OFFICE | Yes | SCHOOL | MEDIUM | Manage visitor records. |
-| VIEW_AI_RECOMMENDATIONS | AI | Yes | TENANT | MEDIUM | View scoped AI recommendations. |
+| VIEW_AI_RECOMMENDATIONS | AI | Yes | SCHOOL | MEDIUM | View approved active-school ADMISSION_FOLLOW_UP recommendations only. |
 | VIEW_SCHOOL_DASHBOARD | SCHOOL | Yes | SCHOOL | LOW | View assigned school dashboard. |
 
 ## 6. Navigation and screens
 | Screen | Route/nav id | Visible? | Required permission | API used | Current status |
 | --- | --- | --- | --- | --- | --- |
 | Dashboard | dashboard | Yes | SESSION_SELF_MANAGE | /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
-| Admissions | admissions | Yes | SCREEN_ADMISSIONS | /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
-| Enquiries | enquiries | Yes | SCREEN_ENQUIRIES | /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
-| Student Records | students | Yes | SCREEN_STUDENTS | /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
-| Documents | documents | Yes | SCREEN_DOCUMENTS | /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
-| Certificates | certificates | Yes | SCREEN_CERTIFICATES | /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
-| AI Follow-ups | ai-suggestions | Yes | SCREEN_AI_SUGGESTIONS | /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
+| Admissions | admissions | Yes | SCREEN_ADMISSIONS | none wired; planned panel only | CURRENT_PARTIAL |
+| Enquiries | enquiries | Yes | SCREEN_ENQUIRIES | none wired; planned panel only | CURRENT_PARTIAL |
+| Student Records | students | Yes | SCREEN_STUDENTS | GET /v1/school-admin/students | CURRENT_IMPLEMENTED |
+| Documents | documents | Yes | SCREEN_DOCUMENTS | GET/POST /v1/school-admin/documents | CURRENT_IMPLEMENTED |
+| Certificates | certificates | Yes | SCREEN_CERTIFICATES | none wired; planned panel only | CURRENT_PARTIAL |
+| AI Follow-ups | ai-suggestions | Yes | SCREEN_AI_SUGGESTIONS | GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
 
 ## 7. Dashboard details
 - dashboard title: Office Staff Overview
@@ -76,27 +76,32 @@
 ## 8. API access matrix
 | Method | Endpoint | Allowed? | Required permission | Required scope | Request params/body | Response DTO | Audit event | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| PATCH | /v1/ai/automation-rules/{id} | Yes | MANAGE_AI_AUTOMATION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AUTOMATION_RULE_UPDATED | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/automation-rules | Yes | VIEW_AI_AUTOMATION | role AI policy scope | query params | AiRecommendationPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/automation-runs | Yes | VIEW_AI_AUTOMATION | role AI policy scope | query params | AiRecommendationPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/entitlement | Yes | VIEW_AI_USAGE_OR_POLICY | role AI policy scope | query params | AiUsage response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/knowledge/search | Yes | MANAGE_AI_POLICY | role AI policy scope | path params / JSON body | AiRetrieval response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/accept | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_CREATED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/approve | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_APPROVED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/dismiss | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_DISMISSED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/execute | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_EXECUTED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/reject | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_REJECTED | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | query params | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_VIEWED where service records views; otherwise read audit is CURRENT_PARTIAL. | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | query params | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_VIEWED where service records views; otherwise read audit is CURRENT_PARTIAL. | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/usage/audit | Yes | MANAGE_AI_POLICY | role AI policy scope | path params / JSON body | AiUsage response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
+| PATCH | /v1/ai/automation-rules/{id} | No | MANAGE_AI_AUTOMATION | AI admin | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied |
+| GET | /v1/ai/automation-rules | No | VIEW_AI_AUTOMATION | AI admin | query params | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied |
+| GET | /v1/ai/automation-runs | No | VIEW_AI_AUTOMATION | AI admin | query params | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied |
+| GET | /v1/ai/entitlement | No | VIEW_AI_USAGE_OR_POLICY | AI admin | query params | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied |
+| POST | /v1/ai/knowledge/search | Yes | MANAGE_AI_POLICY | active school | path params / JSON body | AiRetrieval response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
+| POST | /v1/ai/recommendations/{id}/accept | No | AI_RECOMMENDATION_ACTION | AI action | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied |
+| POST | /v1/ai/recommendations/{id}/approve | No | AI_RECOMMENDATION_ACTION | AI action | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied |
+| POST | /v1/ai/recommendations/{id}/dismiss | No | AI_RECOMMENDATION_ACTION | AI action | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied |
+| POST | /v1/ai/recommendations/{id}/execute | No | AI_RECOMMENDATION_ACTION | AI action | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied |
+| POST | /v1/ai/recommendations/{id}/reject | No | AI_RECOMMENDATION_ACTION | AI action | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied |
+| GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | approved active-school ADMISSION_FOLLOW_UP only | query params | AiRecommendationPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | approved active-school ADMISSION_FOLLOW_UP only | query params | AiRecommendationPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| POST | /v1/ai/usage/audit | No | MANAGE_AI_POLICY | AI admin | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied |
 | POST | /v1/me/change-password | Yes | SESSION_SELF_MANAGE | current user/session | path params / JSON body | CurrentUser response/DTO | PASSWORD_CHANGED | CURRENT_IMPLEMENTED |
 | POST | /v1/me/logout | Yes | SESSION_SELF_MANAGE | current user/session | path params / JSON body | CurrentUser response/DTO | USER_LOGGED_OUT | CURRENT_IMPLEMENTED |
 | POST | /v1/me/schools/{schoolId}/activate | Yes | SESSION_SELF_MANAGE | current user/session | path params / JSON body | CurrentUser response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
 | GET | /v1/me/schools | Yes | SESSION_SELF_MANAGE | current user/session | query params | CurrentUser response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
 | GET | /v1/me | Yes | SESSION_SELF_MANAGE | current user/session | query params | CurrentUser response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/staff/dashboard/summary | Yes | STAFF_VIEW | school | query params | DashboardSummary response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/school-admin/documents/{documentId} | Yes | MANAGE_STUDENT_DOCUMENTS | active/allowed school | path params | SchoolDocument response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/school-admin/documents | Yes | MANAGE_STUDENT_DOCUMENTS | active school | query params | SchoolDocument response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| POST | /v1/school-admin/documents | Yes | MANAGE_STUDENT_DOCUMENTS | active school | JSON body | SchoolDocument response/DTO | DOCUMENT_CREATED | CURRENT_IMPLEMENTED |
+| GET | /v1/school-admin/students | Yes | MANAGE_STUDENT_DOCUMENTS | active school | query params | StudentImport response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/staff/dashboard/summary | Yes | VIEW_SCHOOL_DASHBOARD | active school | query params | DashboardSummary response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
 
 ## 9. Detailed API behavior
+The detailed generated inventory below may include shared endpoint shapes. For OFFICE_STAFF, the explicit matrix in section 8 is authoritative: shared AI automation, entitlement, usage-audit, and recommendation mutation endpoints are denied by service guards.
 ### PATCH /v1/ai/automation-rules/{id}
 - Method: PATCH
 - Full endpoint: /v1/ai/automation-rules/{id}

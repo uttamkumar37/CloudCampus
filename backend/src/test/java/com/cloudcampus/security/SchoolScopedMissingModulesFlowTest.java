@@ -15,6 +15,9 @@ import com.cloudcampus.academic.Section;
 import com.cloudcampus.academic.SectionRepository;
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogRepository;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
+import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.JwtAccessTokenService;
@@ -66,6 +69,9 @@ class SchoolScopedMissingModulesFlowTest {
 
     @Autowired
     private UserAccountRepository userAccountRepository;
+
+    @Autowired
+    private UserSchoolAccessRepository userSchoolAccessRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -156,6 +162,36 @@ class SchoolScopedMissingModulesFlowTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
 
+        String firstOfficeToken = officeStaffToken(first, "first");
+        JsonNode firstOfficeDocument = createDocument(
+                firstOfficeToken,
+                firstSetup.classLevelId(),
+                null,
+                "first-school-office-form.pdf"
+        );
+        mockMvc.perform(get("/v1/school-admin/documents")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(firstOfficeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].schoolId").value(first.at("/school/id").asText()));
+        mockMvc.perform(get("/v1/school-admin/documents/{documentId}", firstOfficeDocument.at("/id").asText())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(firstOfficeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(firstOfficeDocument.at("/id").asText()));
+        mockMvc.perform(post("/v1/school-admin/documents")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(firstOfficeToken))
+                        .contentType("application/json")
+                        .content(documentBody(
+                                secondSetup.classLevelId(),
+                                secondStudent.getId(),
+                                "blocked-office.pdf"
+                        )))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/school-admin/documents/{documentId}", secondDocument.at("/id").asText())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(firstOfficeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
         JsonNode firstPage = createWebsitePage(firstAdminToken, "about-first", "About First School");
         JsonNode secondPage = createWebsitePage(secondAdminToken, "about-second", "About Second School");
         assertThat(firstPage.at("/schoolId").asText()).isEqualTo(first.at("/school/id").asText());
@@ -175,7 +211,7 @@ class SchoolScopedMissingModulesFlowTest {
         mockMvc.perform(get("/v1/school-admin/documents")
                         .header(HttpHeaders.AUTHORIZATION, bearer(firstAdminToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(firstDocument.at("/id").asText()));
+                .andExpect(jsonPath("$[?(@.id == '%s')]".formatted(firstDocument.at("/id").asText())).exists());
         mockMvc.perform(post("/v1/school-admin/website/pages/{pageId}/publish", firstPage.at("/id").asText())
                         .header(HttpHeaders.AUTHORIZATION, bearer(firstAdminToken)))
                 .andExpect(status().isOk())
@@ -350,6 +386,23 @@ class SchoolScopedMissingModulesFlowTest {
         String email = onboarding.at("/schoolAdminInvitation/email").asText();
         acceptInvitation(onboarding.at("/schoolAdminInvitation/token").asText(), "MissingStrong123!", "Missing Module Admin");
         return login(email, "MissingStrong123!").at("/accessToken").asText();
+    }
+
+    private String officeStaffToken(JsonNode onboarding, String seed) {
+        String tenantId = onboarding.at("/tenant/id").asText();
+        String schoolId = onboarding.at("/school/id").asText();
+        var tenant = tenantRepository.findById(tenantId).orElseThrow();
+        var school = schoolRepository.findById(schoolId).orElseThrow();
+        UserAccount officeStaff = new UserAccount(
+                tenant,
+                "missing-office-" + seed + "-" + schoolId + "@example.com",
+                "Missing Module Office Staff",
+                UserRole.OFFICE_STAFF
+        );
+        officeStaff.activate(passwordEncoder.encode("MissingOffice123!"), "Missing Module Office Staff", Instant.now());
+        userAccountRepository.save(officeStaff);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, officeStaff, UserRole.OFFICE_STAFF, true));
+        return jwtAccessTokenService.issueToken(officeStaff.getId(), tenantId, UserRole.OFFICE_STAFF, schoolId);
     }
 
     private void acceptInvitation(String token, String password, String displayName) throws Exception {

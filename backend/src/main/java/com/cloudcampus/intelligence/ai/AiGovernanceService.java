@@ -102,6 +102,12 @@ public class AiGovernanceService {
         if (authenticatedUser.user().getRole() == UserRole.PARENT) {
             throw new ForbiddenException("Parents cannot access AI entitlement details.");
         }
+        if (isOfficeStaff(authenticatedUser.user())) {
+            throw new ForbiddenException("Office staff cannot access AI entitlement details.");
+        }
+        if (authenticatedUser.user().getRole() == UserRole.FINANCE_STAFF) {
+            throw new ForbiddenException("Finance staff cannot access AI entitlement details.");
+        }
         Tenant tenant = authenticatedUser.user().getTenant();
         return entitlementResponse(tenant, aiTenantEntitlementRepository.findById(tenant.getId()).orElse(null));
     }
@@ -111,6 +117,12 @@ public class AiGovernanceService {
         UserAccount actor = authenticatedUser.user();
         if (actor.getRole() == UserRole.PARENT) {
             throw new ForbiddenException("Parents cannot submit AI usage audits.");
+        }
+        if (isOfficeStaff(actor)) {
+            throw new ForbiddenException("Office staff cannot submit AI usage audits.");
+        }
+        if (actor.getRole() == UserRole.FINANCE_STAFF) {
+            throw new ForbiddenException("Finance staff cannot submit AI usage audits.");
         }
         Tenant tenant = actor.getTenant();
         School activeSchool = activeSchool(authenticatedUser, tenant);
@@ -173,6 +185,10 @@ public class AiGovernanceService {
             throw new ForbiddenException("Only SUPER_ADMIN can manage AI entitlements.");
         }
         return actor;
+    }
+
+    private boolean isOfficeStaff(UserAccount actor) {
+        return actor.getRole() == UserRole.OFFICE_STAFF || actor.getRole() == UserRole.STAFF;
     }
 
     private Tenant tenant(String tenantId) {

@@ -26,7 +26,11 @@ Status: CURRENT_IMPLEMENTED
 
 ## Backend Exists UI Not Surfaced
 
-Parent AI guard note: these shared AI endpoints remain backend-present but not parent UI/admin affordances. Service guards deny PARENT access to AI automation, entitlement, usage-audit, and recommendation mutation actions; PARENT read access is limited to approved active-school linked-child recommendations and active-school linked-child knowledge search.
+Parent/office/finance AI guard note: these shared AI endpoints remain backend-present but are not broad admin affordances. Service guards deny PARENT, OFFICE_STAFF, and FINANCE_STAFF access to AI automation, entitlement, and usage-audit controls. PARENT read access is limited to approved active-school linked-child recommendations and active-school linked-child knowledge search; OFFICE_STAFF read access is limited to approved active-school `ADMISSION_FOLLOW_UP` recommendations and active-school knowledge search; FINANCE_STAFF access is limited to active-school `FEE_REMINDER_SUGGESTION` recommendations and active-school knowledge search.
+
+Office workflow gap note: the OFFICE_STAFF navigation intentionally shows Admissions, Enquiries, and Certificates as planned workflow panels without calling `/v1/office/*` endpoints. Student Records uses active-school `GET /v1/school-admin/students`; Documents uses active-school `GET/POST /v1/school-admin/documents`.
+
+Finance workflow gap note: FINANCE_STAFF fee demands, payments, receipts, finance reports, and fee-demand exports are wired to backend and frontend. Fee structures, concessions/discounts, refunds, and reminder sending remain CURRENT_PARTIAL/PLANNED_RECOMMENDED unless their modules are added.
 
 | Method | Endpoint | Backend controller | Status |
 | --- | --- | --- | --- |
@@ -41,13 +45,8 @@ Parent AI guard note: these shared AI endpoints remain backend-present but not p
 | POST | /v1/ai/recommendations/{id}/execute | backend/src/main/java/com/cloudcampus/intelligence/ai/AiRecommendationPortalController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | POST | /v1/ai/recommendations/{id}/reject | backend/src/main/java/com/cloudcampus/intelligence/ai/AiRecommendationPortalController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/ai/recommendations/{id} | backend/src/main/java/com/cloudcampus/intelligence/ai/AiRecommendationPortalController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/ai/recommendations | backend/src/main/java/com/cloudcampus/intelligence/ai/AiRecommendationPortalController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | POST | /v1/ai/usage/audit | backend/src/main/java/com/cloudcampus/intelligence/ai/AiUsageController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/finance/fees/demands/{demandId}/payments | backend/src/main/java/com/cloudcampus/operations/finance/FeeController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/finance/fees/demands/{demandId} | backend/src/main/java/com/cloudcampus/operations/finance/FeeController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/finance/fees/demands | backend/src/main/java/com/cloudcampus/operations/finance/FeeController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/finance/fees/demands | backend/src/main/java/com/cloudcampus/operations/finance/FeeController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/finance/receipts | backend/src/main/java/com/cloudcampus/operations/finance/FeeController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/school-admin/ai/knowledge-documents | backend/src/main/java/com/cloudcampus/intelligence/ai/SchoolAdminAiKnowledgeController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | POST | /v1/school-admin/ai/knowledge-documents | backend/src/main/java/com/cloudcampus/intelligence/ai/SchoolAdminAiKnowledgeController.java | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/school-admin/documents/{documentId} | backend/src/main/java/com/cloudcampus/operations/document/SchoolDocumentController.java | BACKEND_EXISTS_UI_NOT_SURFACED |

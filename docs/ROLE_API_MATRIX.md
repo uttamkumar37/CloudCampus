@@ -13,8 +13,8 @@ Status: CURRENT_IMPLEMENTED
 | TEACHER | 32 | PATCH /v1/ai/automation-rules/{id}<br>GET /v1/ai/automation-rules<br>GET /v1/ai/automation-runs<br>GET /v1/ai/entitlement<br>POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/execute<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
 | STUDENT | 27 | PATCH /v1/ai/automation-rules/{id}<br>GET /v1/ai/automation-rules<br>GET /v1/ai/automation-runs<br>GET /v1/ai/entitlement<br>POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/execute<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
 | PARENT | 20 | POST /v1/ai/knowledge/search<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations<br>POST /v1/me/change-password<br>POST /v1/me/logout<br>POST /v1/me/schools/{schoolId}/activate<br>GET /v1/me/schools<br>GET /v1/me<br>GET /v1/parent/children/{studentId}/attendance<br>POST /v1/parent/children/{studentId}/fees/{demandId}/payments<br>GET /v1/parent/children/{studentId}/fees<br>GET /v1/parent/children/{studentId}/homework | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | 26 | PATCH /v1/ai/automation-rules/{id}<br>GET /v1/ai/automation-rules<br>GET /v1/ai/automation-runs<br>GET /v1/ai/entitlement<br>POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/execute<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | 19 | PATCH /v1/ai/automation-rules/{id}<br>GET /v1/ai/automation-rules<br>GET /v1/ai/automation-runs<br>GET /v1/ai/entitlement<br>POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/execute<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | 24 | POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations<br>GET/POST /v1/finance/reports/exports... | CURRENT_IMPLEMENTED |
+| OFFICE_STAFF | 13 | POST /v1/ai/knowledge/search<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations<br>POST /v1/me/change-password<br>POST /v1/me/logout<br>POST /v1/me/schools/{schoolId}/activate<br>GET /v1/me/schools<br>GET /v1/me<br>GET /v1/school-admin/documents/{documentId}<br>GET /v1/school-admin/documents<br>POST /v1/school-admin/documents<br>GET /v1/school-admin/students<br>GET /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
 | GUEST | 6 | POST /v1/auth/forgot-password<br>POST /v1/auth/login<br>POST /v1/auth/mfa/verify<br>POST /v1/auth/refresh<br>POST /v1/auth/reset-password<br>POST /v1/invitations/accept | CURRENT_IMPLEMENTED |
 | SYSTEM | 1 | GET /v1/system/readiness | CURRENT_IMPLEMENTED |
 | AI_AGENT | 0 | none | CURRENT_PARTIAL |
@@ -1591,19 +1591,19 @@ Status: CURRENT_IMPLEMENTED
 | PARENT | GET | /v1/tenant-admin/settings | No | SETTINGS_VIEW | tenant | CURRENT_IMPLEMENTED denied |
 | PARENT | PATCH | /v1/tenant-admin/settings | No | SETTINGS_MANAGE | tenant | CURRENT_IMPLEMENTED denied |
 | PARENT | GET | /v1/tenant-admin/subscription/usage | No | TENANT_VIEW | tenant | CURRENT_IMPLEMENTED denied |
-| FINANCE_STAFF | PATCH | /v1/ai/automation-rules/{id} | Yes | MANAGE_AI_AUTOMATION | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | GET | /v1/ai/automation-rules | Yes | VIEW_AI_AUTOMATION | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | GET | /v1/ai/automation-runs | Yes | VIEW_AI_AUTOMATION | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | GET | /v1/ai/entitlement | Yes | VIEW_AI_USAGE_OR_POLICY | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | POST | /v1/ai/knowledge/search | Yes | MANAGE_AI_POLICY | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | POST | /v1/ai/recommendations/{id}/accept | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | POST | /v1/ai/recommendations/{id}/approve | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | POST | /v1/ai/recommendations/{id}/dismiss | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | POST | /v1/ai/recommendations/{id}/execute | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | POST | /v1/ai/recommendations/{id}/reject | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | POST | /v1/ai/usage/audit | Yes | MANAGE_AI_POLICY | role AI policy scope | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | PATCH | /v1/ai/automation-rules/{id} | No | MANAGE_AI_AUTOMATION | not available / automation admin | CURRENT_IMPLEMENTED denied |
+| FINANCE_STAFF | GET | /v1/ai/automation-rules | No | VIEW_AI_AUTOMATION | automation admin | CURRENT_IMPLEMENTED denied |
+| FINANCE_STAFF | GET | /v1/ai/automation-runs | No | VIEW_AI_AUTOMATION | automation admin | CURRENT_IMPLEMENTED denied |
+| FINANCE_STAFF | GET | /v1/ai/entitlement | No | VIEW_AI_USAGE_OR_POLICY | AI governance | CURRENT_IMPLEMENTED denied |
+| FINANCE_STAFF | POST | /v1/ai/knowledge/search | Yes | SCHOOL_POLICY_QA entitlement | active school | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST | /v1/ai/recommendations/{id}/accept | Yes | VIEW_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST | /v1/ai/recommendations/{id}/approve | Yes | APPROVE_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST | /v1/ai/recommendations/{id}/dismiss | Yes | VIEW_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST | /v1/ai/recommendations/{id}/execute | No | RUN_AI_AUTOMATION | automation execution policy | CURRENT_IMPLEMENTED denied |
+| FINANCE_STAFF | POST | /v1/ai/recommendations/{id}/reject | Yes | VIEW_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST | /v1/ai/usage/audit | No | MANAGE_AI_POLICY | AI governance | CURRENT_IMPLEMENTED denied |
 | FINANCE_STAFF | POST | /v1/auth/forgot-password | No | PUBLIC_AUTH_FLOW | public/auth flow | CURRENT_IMPLEMENTED denied |
 | FINANCE_STAFF | POST | /v1/auth/login | No | PUBLIC_AUTH_FLOW | public/auth flow | CURRENT_IMPLEMENTED denied |
 | FINANCE_STAFF | POST | /v1/auth/mfa/verify | No | PUBLIC_AUTH_FLOW | public/auth flow | CURRENT_IMPLEMENTED denied |
@@ -1617,6 +1617,10 @@ Status: CURRENT_IMPLEMENTED
 | FINANCE_STAFF | GET | /v1/finance/receipts | Yes | FINANCE_VIEW | school | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | GET | /v1/finance/reports/collections | Yes | VIEW_REPORTS | school | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | GET | /v1/finance/reports/summary | Yes | VIEW_REPORTS | school | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET | /v1/finance/reports/exports/{exportId}/download | Yes | EXPORT_FINANCE_REPORTS | active school FEE_DEMANDS export | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET | /v1/finance/reports/exports/{exportId} | Yes | VIEW_FINANCE_REPORTS | active school FEE_DEMANDS export | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET | /v1/finance/reports/exports | Yes | VIEW_FINANCE_REPORTS | active school FEE_DEMANDS exports | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST | /v1/finance/reports/exports | Yes | EXPORT_FINANCE_REPORTS | active school FEE_DEMANDS only | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | POST | /v1/invitations/accept | No | PUBLIC_AUTH_FLOW | public/auth flow | CURRENT_IMPLEMENTED denied |
 | FINANCE_STAFF | POST | /v1/me/change-password | Yes | SESSION_SELF_MANAGE | current user/session | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | POST | /v1/me/logout | Yes | SESSION_SELF_MANAGE | current user/session | CURRENT_IMPLEMENTED |
@@ -1815,19 +1819,19 @@ Status: CURRENT_IMPLEMENTED
 | FINANCE_STAFF | GET | /v1/tenant-admin/settings | No | SETTINGS_VIEW | tenant | CURRENT_IMPLEMENTED denied |
 | FINANCE_STAFF | PATCH | /v1/tenant-admin/settings | No | SETTINGS_MANAGE | tenant | CURRENT_IMPLEMENTED denied |
 | FINANCE_STAFF | GET | /v1/tenant-admin/subscription/usage | No | TENANT_VIEW | tenant | CURRENT_IMPLEMENTED denied |
-| OFFICE_STAFF | PATCH | /v1/ai/automation-rules/{id} | Yes | MANAGE_AI_AUTOMATION | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | GET | /v1/ai/automation-rules | Yes | VIEW_AI_AUTOMATION | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | GET | /v1/ai/automation-runs | Yes | VIEW_AI_AUTOMATION | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | GET | /v1/ai/entitlement | Yes | VIEW_AI_USAGE_OR_POLICY | role AI policy scope | CURRENT_IMPLEMENTED |
+| OFFICE_STAFF | PATCH | /v1/ai/automation-rules/{id} | No | MANAGE_AI_AUTOMATION | AI admin | CURRENT_IMPLEMENTED denied |
+| OFFICE_STAFF | GET | /v1/ai/automation-rules | No | VIEW_AI_AUTOMATION | AI admin | CURRENT_IMPLEMENTED denied |
+| OFFICE_STAFF | GET | /v1/ai/automation-runs | No | VIEW_AI_AUTOMATION | AI admin | CURRENT_IMPLEMENTED denied |
+| OFFICE_STAFF | GET | /v1/ai/entitlement | No | VIEW_AI_USAGE_OR_POLICY | AI admin | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | POST | /v1/ai/knowledge/search | Yes | MANAGE_AI_POLICY | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | POST | /v1/ai/recommendations/{id}/accept | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | POST | /v1/ai/recommendations/{id}/approve | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | POST | /v1/ai/recommendations/{id}/dismiss | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | POST | /v1/ai/recommendations/{id}/execute | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | POST | /v1/ai/recommendations/{id}/reject | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | CURRENT_IMPLEMENTED |
-| OFFICE_STAFF | POST | /v1/ai/usage/audit | Yes | MANAGE_AI_POLICY | role AI policy scope | CURRENT_IMPLEMENTED |
+| OFFICE_STAFF | POST | /v1/ai/recommendations/{id}/accept | No | AI_RECOMMENDATION_ACTION | AI action | CURRENT_IMPLEMENTED denied |
+| OFFICE_STAFF | POST | /v1/ai/recommendations/{id}/approve | No | AI_RECOMMENDATION_ACTION | AI action | CURRENT_IMPLEMENTED denied |
+| OFFICE_STAFF | POST | /v1/ai/recommendations/{id}/dismiss | No | AI_RECOMMENDATION_ACTION | AI action | CURRENT_IMPLEMENTED denied |
+| OFFICE_STAFF | POST | /v1/ai/recommendations/{id}/execute | No | AI_RECOMMENDATION_ACTION | AI action | CURRENT_IMPLEMENTED denied |
+| OFFICE_STAFF | POST | /v1/ai/recommendations/{id}/reject | No | AI_RECOMMENDATION_ACTION | AI action | CURRENT_IMPLEMENTED denied |
+| OFFICE_STAFF | GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | approved active-school ADMISSION_FOLLOW_UP only | CURRENT_IMPLEMENTED |
+| OFFICE_STAFF | GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | approved active-school ADMISSION_FOLLOW_UP only | CURRENT_IMPLEMENTED |
+| OFFICE_STAFF | POST | /v1/ai/usage/audit | No | MANAGE_AI_POLICY | AI admin | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | POST | /v1/auth/forgot-password | No | PUBLIC_AUTH_FLOW | public/auth flow | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | POST | /v1/auth/login | No | PUBLIC_AUTH_FLOW | public/auth flow | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | POST | /v1/auth/mfa/verify | No | PUBLIC_AUTH_FLOW | public/auth flow | CURRENT_IMPLEMENTED denied |
@@ -1876,9 +1880,9 @@ Status: CURRENT_IMPLEMENTED
 | OFFICE_STAFF | GET | /v1/school-admin/classes | No | SCHOOL_VIEW | school | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | POST | /v1/school-admin/classes | No | SCHOOL_MANAGE | school | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | GET | /v1/school-admin/dashboard/summary | No | SCHOOL_VIEW | school | CURRENT_IMPLEMENTED denied |
-| OFFICE_STAFF | GET | /v1/school-admin/documents/{documentId} | No | SCHOOL_VIEW | school | CURRENT_IMPLEMENTED denied |
-| OFFICE_STAFF | GET | /v1/school-admin/documents | No | SCHOOL_VIEW | school | CURRENT_IMPLEMENTED denied |
-| OFFICE_STAFF | POST | /v1/school-admin/documents | No | SCHOOL_MANAGE | school | CURRENT_IMPLEMENTED denied |
+| OFFICE_STAFF | GET | /v1/school-admin/documents/{documentId} | Yes | MANAGE_STUDENT_DOCUMENTS | active/allowed school | CURRENT_IMPLEMENTED |
+| OFFICE_STAFF | GET | /v1/school-admin/documents | Yes | MANAGE_STUDENT_DOCUMENTS | active school | CURRENT_IMPLEMENTED |
+| OFFICE_STAFF | POST | /v1/school-admin/documents | Yes | MANAGE_STUDENT_DOCUMENTS | active school | CURRENT_IMPLEMENTED |
 | OFFICE_STAFF | POST | /v1/school-admin/exams/{examId}/publish | No | EXAM_MANAGE | school | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | POST | /v1/school-admin/exams/{examId}/results | No | EXAM_MANAGE | school | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | GET | /v1/school-admin/exams/{examId} | No | EXAM_VIEW | school | CURRENT_IMPLEMENTED denied |
@@ -1915,7 +1919,7 @@ Status: CURRENT_IMPLEMENTED
 | OFFICE_STAFF | GET | /v1/school-admin/students/import/template | No | STUDENT_VIEW | school | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | POST | /v1/school-admin/students/import/validate | No | STUDENT_MANAGE | school | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | POST | /v1/school-admin/students/import | No | STUDENT_MANAGE | school | CURRENT_IMPLEMENTED denied |
-| OFFICE_STAFF | GET | /v1/school-admin/students | No | STUDENT_VIEW | school | CURRENT_IMPLEMENTED denied |
+| OFFICE_STAFF | GET | /v1/school-admin/students | Yes | MANAGE_STUDENT_DOCUMENTS | active school | CURRENT_IMPLEMENTED |
 | OFFICE_STAFF | GET | /v1/school-admin/subjects | No | SCHOOL_VIEW | school | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | POST | /v1/school-admin/subjects | No | SCHOOL_MANAGE | school | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | GET | /v1/school-admin/teacher-assignments | No | TEACHER_VIEW | school | CURRENT_IMPLEMENTED denied |
@@ -1928,7 +1932,7 @@ Status: CURRENT_IMPLEMENTED
 | OFFICE_STAFF | GET | /v1/school-admin/website/pages/{pageId} | No | SCHOOL_VIEW | school | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | GET | /v1/school-admin/website/pages | No | SCHOOL_VIEW | school | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | POST | /v1/school-admin/website/pages | No | SCHOOL_MANAGE | school | CURRENT_IMPLEMENTED denied |
-| OFFICE_STAFF | GET | /v1/staff/dashboard/summary | Yes | STAFF_VIEW | school | CURRENT_IMPLEMENTED |
+| OFFICE_STAFF | GET | /v1/staff/dashboard/summary | Yes | VIEW_SCHOOL_DASHBOARD | active school | CURRENT_IMPLEMENTED |
 | OFFICE_STAFF | GET | /v1/student/attendance | No | ATTENDANCE_VIEW | own record | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | GET | /v1/student/dashboard/summary | No | STUDENT_PARENT_VIEW | own record | CURRENT_IMPLEMENTED denied |
 | OFFICE_STAFF | GET | /v1/student/fees | No | FINANCE_VIEW | own record | CURRENT_IMPLEMENTED denied |

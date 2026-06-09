@@ -128,7 +128,7 @@ public class StudentImportService {
 
     @Transactional(readOnly = true)
     public List<StudentResponse> students(AuthenticatedUser actor) {
-        School school = requireActiveSchoolLeadershipSchool(actor);
+        School school = requireActiveStudentRecordSchool(actor);
         return studentRepository.findBySchoolIdOrderByAdmissionNumberAsc(school.getId())
                 .stream()
                 .map(this::toResponse)
@@ -137,7 +137,7 @@ public class StudentImportService {
 
     @Transactional(readOnly = true)
     public PageResponse<StudentResponse> students(AuthenticatedUser actor, int page, int size, String search, String status) {
-        School school = requireActiveSchoolLeadershipSchool(actor);
+        School school = requireActiveStudentRecordSchool(actor);
         String normalizedSearch = normalizeOptional(search);
         String normalizedStatus = normalizeOptional(status);
         List<StudentResponse> rows = studentRepository.findBySchoolIdOrderByAdmissionNumberAsc(school.getId())
@@ -227,12 +227,12 @@ public class StudentImportService {
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }
 
-    private School requireActiveSchoolLeadershipSchool(AuthenticatedUser actor) {
+    private School requireActiveStudentRecordSchool(AuthenticatedUser actor) {
         String activeSchoolId = actor.activeSchoolId();
         if (activeSchoolId == null || activeSchoolId.isBlank()) {
             throw new ForbiddenException("An active school is required.");
         }
-        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), activeSchoolId);
+        schoolAccessService.requireSchoolStudentRecordAccess(actor.user().getId(), activeSchoolId);
         return schoolRepository.findById(activeSchoolId)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }

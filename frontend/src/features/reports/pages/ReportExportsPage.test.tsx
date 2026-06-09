@@ -85,4 +85,45 @@ describe('ReportExportsPage', () => {
     expect(await screen.findByText(/school admin login is required/i)).toBeInTheDocument();
     expect(onRequest).not.toHaveBeenCalled();
   });
+
+  it('can be scoped to finance fee-demand exports', async () => {
+    const onRequest = vi.fn().mockResolvedValue({
+      id: 'finance-export-1',
+      tenantId: 'tenant-1',
+      schoolId: 'school-1',
+      requestedByUserId: 'finance-1',
+      bulkJobId: 'bulk-1',
+      reportType: 'FEE_DEMANDS',
+      format: 'CSV',
+      status: 'QUEUED',
+      fileName: null,
+      contentType: null,
+      sizeBytes: null,
+      checksumSha256: null,
+      requestedAt: '2026-05-26T10:00:00Z',
+      completedAt: null,
+    });
+
+    render(
+      <ReportExportsPage
+        initialReportType="FEE_DEMANDS"
+        loginRequiredMessage="Finance Staff login is required."
+        onRequest={onRequest}
+        reportTypes={[{ value: 'FEE_DEMANDS', label: 'Fee demands' }]}
+        storage={storageWithToken('finance-token')}
+        title="Finance exports"
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: /finance exports/i })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /student directory/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /request export/i }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: /queue report export/i })).getByRole('button', { name: /queue export/i }));
+
+    await waitFor(() => expect(onRequest).toHaveBeenCalledWith(
+      { reportType: 'FEE_DEMANDS', format: 'CSV' },
+      'finance-token',
+    ));
+    expect(await screen.findByText(/fee demands export queued/i)).toBeInTheDocument();
+  });
 });

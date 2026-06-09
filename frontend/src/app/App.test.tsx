@@ -439,6 +439,9 @@ describe('App', () => {
           items: [{ date: '2026-05-28', totalCollected: 500, receiptCount: 1 }],
         });
       }
+      if (url.includes('/v1/finance/reports/exports')) {
+        return jsonResponse([]);
+      }
       if (url.includes('/v1/teacher/assignments')) {
         return jsonResponse([]);
       }
@@ -751,6 +754,59 @@ describe('App', () => {
     },
   );
 
+  it('shows the office staff workspace without admin, finance, or missing office API calls', async () => {
+    const officeSchool: SchoolAccess = { ...schoolA, role: 'OFFICE_STAFF' };
+    const user: CurrentUser = {
+      userId: 'office-staff-1',
+      email: 'office@example.com',
+      displayName: 'Office Staff',
+      role: 'OFFICE_STAFF',
+      tenantId: 'tenant-1',
+      activeSchool: officeSchool,
+      allowedSchools: [officeSchool],
+    };
+
+    render(<App authClient={authClientFor(user)} storage={storageWithToken('office-token')} />);
+
+    expect((await screen.findAllByRole('heading', { name: /office staff overview/i })).length).toBeGreaterThan(0);
+    const officeNav = screen.getByRole('navigation', { name: /office staff navigation/i });
+    ['Dashboard', 'Admissions', 'Enquiries', 'Student Records', 'Documents', 'Certificates', 'AI Follow-ups'].forEach((label) => {
+      expect(within(officeNav).getByRole('button', { name: new RegExp(`^${label}$`, 'i') })).toBeInTheDocument();
+    });
+    expect(within(officeNav).queryByRole('button', { name: /finance|fees|payments|super admin|settings/i })).not.toBeInTheDocument();
+
+    fireEvent.click(within(officeNav).getByRole('button', { name: /student records/i }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      '/v1/school-admin/students',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ Authorization: 'Bearer office-token' }),
+      }),
+    ));
+
+    fireEvent.click(within(officeNav).getByRole('button', { name: /^documents$/i }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      '/v1/school-admin/documents',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ Authorization: 'Bearer office-token' }),
+      }),
+    ));
+
+    fireEvent.click(within(officeNav).getByRole('button', { name: /^admissions$/i }));
+    expect(await screen.findByText(/admissions is not enabled yet/i)).toBeInTheDocument();
+    expect(vi.mocked(fetch).mock.calls.some(([input]) => String(input).includes('/v1/office/admissions'))).toBe(false);
+
+    fireEvent.click(within(officeNav).getByRole('button', { name: /ai follow-ups/i }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      '/v1/ai/recommendations?size=25',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ Authorization: 'Bearer office-token' }),
+      }),
+    ));
+  });
+
   it.each(['SUPER_ADMIN', 'TENANT_ADMIN', 'SCHOOL_ADMIN', 'TEACHER', 'FINANCE_STAFF', 'PARENT', 'STUDENT', 'STAFF'] as const)(
     'does not show pending or missing navigation states for %s',
     async (role) => {
@@ -807,12 +863,18 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /fee lifecycle/i })).toBeInTheDocument();
     fireEvent.click(within(financeNav).getByRole('button', { name: /reports/i }));
     expect(await screen.findByRole('heading', { name: /finance reports/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /finance exports/i })).toBeInTheDocument();
     await waitFor(() => expect(fetch).toHaveBeenCalledWith(
       '/v1/finance/reports/summary',
       expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer finance-token' }) }),
     ));
     await waitFor(() => expect(fetch).toHaveBeenCalledWith(
       '/v1/finance/receipts?size=50',
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer finance-token' }) }),
+    ));
+    fireEvent.click(screen.getByRole('button', { name: /load exports/i }));
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      '/v1/finance/reports/exports',
       expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer finance-token' }) }),
     ));
     expect(screen.queryByRole('heading', { name: /academic setup/i })).not.toBeInTheDocument();

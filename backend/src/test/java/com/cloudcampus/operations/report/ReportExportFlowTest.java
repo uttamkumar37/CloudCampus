@@ -217,6 +217,88 @@ class ReportExportFlowTest {
     }
 
     @Test
+    void financeStaffCanExportOnlyActiveSchoolFeeDemandReports() throws Exception {
+        SchoolUserContext finance = schoolUserContext(UserRole.FINANCE_STAFF, UserRole.FINANCE_STAFF);
+        SchoolUserContext otherFinance = schoolUserContext(UserRole.FINANCE_STAFF, UserRole.FINANCE_STAFF);
+        Student student = studentRepository.save(new Student(finance.tenant(), finance.school(), "REP-FIN-100", "Finance Report Student"));
+        feeDemandRepository.save(new FeeDemand(
+                finance.tenant(),
+                finance.school(),
+                student,
+                "Finance term fee",
+                new java.math.BigDecimal("1500.00"),
+                LocalDate.of(2026, 7, 1)
+        ));
+
+        mockMvc.perform(post("/v1/finance/reports/exports")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(finance.accessToken()))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "reportType": "STUDENT_DIRECTORY",
+                                  "format": "CSV"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
+
+        JsonNode created = jsonBody(mockMvc.perform(post("/v1/finance/reports/exports")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(finance.accessToken()))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "reportType": "FEE_DEMANDS",
+                                  "format": "CSV"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tenantId").value(finance.tenant().getId()))
+                .andExpect(jsonPath("$.schoolId").value(finance.school().getId()))
+                .andExpect(jsonPath("$.reportType").value("FEE_DEMANDS"))
+                .andExpect(jsonPath("$.status").value("QUEUED"))
+                .andReturn());
+        String exportId = created.at("/id").asText();
+        reportExportService.processExport(exportId);
+
+        mockMvc.perform(get("/v1/finance/reports/exports")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(finance.accessToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(exportId));
+
+        mockMvc.perform(get("/v1/finance/reports/exports/{exportId}", exportId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(otherFinance.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(get("/v1/finance/reports/exports/{exportId}/download", exportId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(finance.accessToken())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("REP-FIN-100")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Finance term fee")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("1500")));
+
+        mockMvc.perform(post("/v1/school-admin/reports/exports")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(finance.accessToken()))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "reportType": "FEE_DEMANDS",
+                                  "format": "CSV"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        assertThat(auditLogRepository.findByTenantId(finance.tenant().getId()))
+                .extracting(auditLog -> auditLog.getAction())
+                .contains(
+                        AuditAction.REPORT_EXPORT_REQUESTED,
+                        AuditAction.REPORT_EXPORT_COMPLETED,
+                        AuditAction.REPORT_EXPORT_DOWNLOADED
+                );
+    }
+
+    @Test
     void principalCanRequestAndListSchoolScopedReportExports() throws Exception {
         SchoolUserContext context = schoolUserContext(UserRole.PRINCIPAL, UserRole.PRINCIPAL);
         studentRepository.save(new Student(context.tenant(), context.school(), "REP-PRN-100", "Principal Report Student"));

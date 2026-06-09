@@ -18,17 +18,17 @@
 
 ## 2. Role responsibilities
 - CURRENT_IMPLEMENTED: Use visible screens: Dashboard, Fee Demands, Payments, Receipts, Reports, AI Fee Suggestions.
-- CURRENT_IMPLEMENTED: Call 26 backend endpoint(s) inferred for this role/scope.
+- CURRENT_IMPLEMENTED: Call 24 backend endpoint(s) verified for this role/scope, including finance exports and scoped AI fee suggestions.
 - CURRENT_IMPLEMENTED: Quick actions: Record payment - Issue receipt; Generate receipt - Share payment proof; Export report - Share collection view; AI fee suggestions - Review reminder drafts.
-- CURRENT_PARTIAL: Some responsibilities depend on module APIs/UI surfaces and are listed in matrices.
+- CURRENT_PARTIAL: Fee structure, concessions/discounts, and fee reminder modules have permissions but no complete finance workflow surface in this codebase.
 - CURRENT_IMPLEMENTED: Operate only inside documented scope.
 
 ## 3. Role restrictions
 - CURRENT_IMPLEMENTED: Must not access resources outside school scope.
 - CURRENT_IMPLEMENTED: Must not spoof tenant/school headers or use another user session.
 - CURRENT_IMPLEMENTED: Must not access /v1/super-admin APIs unless role is SUPER_ADMIN.
-- CURRENT_PARTIAL: Fine-grained denials are module-specific.
-- CURRENT_PARTIAL: Parent-child restrictions apply where guardian endpoints are used.
+- CURRENT_IMPLEMENTED: Must not access AI automation, AI entitlement, or AI usage-audit controls.
+- CURRENT_IMPLEMENTED: Must not access parent/student self-service endpoints except intentionally separate fee flows for those roles.
 - PLANNED_RECOMMENDED: Add endpoint-level MFA freshness for high-risk exports, finance, access-control, and AI execution.
 
 ## 4. Tenant/school/class/student scope rules
@@ -42,14 +42,14 @@
 ## 5. Permissions
 | Permission code | Category | Allowed by default | Scope | Risk | Notes |
 | --- | --- | --- | --- | --- | --- |
-| APPROVE_AI_RECOMMENDATIONS | AI | Yes | TENANT | HIGH | Approve scoped AI recommendations. |
+| APPROVE_AI_RECOMMENDATIONS | AI | Yes | ACTIVE_SCHOOL_FEE_SUGGESTION | HIGH | Approve active-school fee reminder suggestions only. |
 | EXPORT_FINANCE_REPORTS | FINANCE | Yes | SCHOOL | HIGH | Export finance reports. |
 | ISSUE_INVOICES | FINANCE | Yes | SCHOOL | HIGH | Issue fee invoices/demands. |
-| MANAGE_DISCOUNTS | FINANCE | Yes | SCHOOL | HIGH | Manage discounts/concessions. |
-| MANAGE_FEE_STRUCTURE | FINANCE | Yes | SCHOOL | HIGH | Create and update fee structures. |
+| MANAGE_DISCOUNTS | FINANCE | Yes | SCHOOL | HIGH | Permission exists; discount/concession workflow is CURRENT_PARTIAL. |
+| MANAGE_FEE_STRUCTURE | FINANCE | Yes | SCHOOL | HIGH | Permission exists; fee structure workflow is CURRENT_PARTIAL. |
 | RECORD_PAYMENTS | FINANCE | Yes | SCHOOL | HIGH | Record payments and receipts. |
-| SEND_FEE_REMINDERS | FINANCE | Yes | SCHOOL | HIGH | Send fee reminders. |
-| VIEW_AI_RECOMMENDATIONS | AI | Yes | TENANT | MEDIUM | View scoped AI recommendations. |
+| SEND_FEE_REMINDERS | FINANCE | Yes | SCHOOL | HIGH | Permission exists; reminder workflow is CURRENT_PARTIAL. |
+| VIEW_AI_RECOMMENDATIONS | AI | Yes | ACTIVE_SCHOOL_FEE_SUGGESTION | MEDIUM | View active-school fee reminder suggestions only. |
 | VIEW_FINANCE_DASHBOARD | FINANCE | Yes | SCHOOL | MEDIUM | View finance dashboard. |
 | VIEW_FINANCE_REPORTS | FINANCE | Yes | SCHOOL | HIGH | View finance reports. |
 
@@ -60,8 +60,8 @@
 | Fee Demands | fees | Yes | SCREEN_FEES | /v1/finance/fees/demands/{demandId}/payments | CURRENT_IMPLEMENTED |
 | Payments | payments | Yes | SCREEN_PAYMENTS | /v1/finance/fees/demands/{demandId}/payments | CURRENT_IMPLEMENTED |
 | Receipts | receipts | Yes | SCREEN_RECEIPTS | /v1/finance/receipts | CURRENT_IMPLEMENTED |
-| Reports | reports | Yes | SCREEN_REPORTS | /v1/finance/reports/collections | CURRENT_IMPLEMENTED |
-| AI Fee Suggestions | ai-suggestions | Yes | SCREEN_AI_SUGGESTIONS | /v1/finance/dashboard/summary | CURRENT_IMPLEMENTED |
+| Reports | reports | Yes | SCREEN_REPORTS | /v1/finance/reports/summary, /v1/finance/reports/collections, /v1/finance/reports/exports | CURRENT_IMPLEMENTED |
+| AI Fee Suggestions | ai-suggestions | Yes | SCREEN_AI_SUGGESTIONS | /v1/ai/recommendations scoped to FEE_REMINDER_SUGGESTION | CURRENT_IMPLEMENTED |
 
 ## 7. Dashboard details
 - dashboard title: Finance Staff Overview
@@ -76,19 +76,19 @@
 ## 8. API access matrix
 | Method | Endpoint | Allowed? | Required permission | Required scope | Request params/body | Response DTO | Audit event | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| PATCH | /v1/ai/automation-rules/{id} | Yes | MANAGE_AI_AUTOMATION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AUTOMATION_RULE_UPDATED | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/automation-rules | Yes | VIEW_AI_AUTOMATION | role AI policy scope | query params | AiRecommendationPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/automation-runs | Yes | VIEW_AI_AUTOMATION | role AI policy scope | query params | AiRecommendationPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/entitlement | Yes | VIEW_AI_USAGE_OR_POLICY | role AI policy scope | query params | AiUsage response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/knowledge/search | Yes | MANAGE_AI_POLICY | role AI policy scope | path params / JSON body | AiRetrieval response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/accept | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_CREATED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/approve | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_APPROVED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/dismiss | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_DISMISSED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/execute | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_EXECUTED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/reject | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_REJECTED | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | query params | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_VIEWED where service records views; otherwise read audit is CURRENT_PARTIAL. | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | query params | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_VIEWED where service records views; otherwise read audit is CURRENT_PARTIAL. | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/usage/audit | Yes | MANAGE_AI_POLICY | role AI policy scope | path params / JSON body | AiUsage response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
+| PATCH | /v1/ai/automation-rules/{id} | No | MANAGE_AI_AUTOMATION | automation admin | path params / JSON body | none | n/a | CURRENT_IMPLEMENTED denied/unavailable |
+| GET | /v1/ai/automation-rules | No | VIEW_AI_AUTOMATION | automation admin | query params | AiRecommendationPortal response/DTO | n/a | CURRENT_IMPLEMENTED denied |
+| GET | /v1/ai/automation-runs | No | VIEW_AI_AUTOMATION | automation admin | query params | AiRecommendationPortal response/DTO | n/a | CURRENT_IMPLEMENTED denied |
+| GET | /v1/ai/entitlement | No | VIEW_AI_USAGE_OR_POLICY | AI governance | query params | AiUsage response/DTO | n/a | CURRENT_IMPLEMENTED denied |
+| POST | /v1/ai/knowledge/search | Yes | SCHOOL_POLICY_QA entitlement | active school | path params / JSON body | AiRetrieval response/DTO | AI_RETRIEVAL_AUDITED/DENIED | CURRENT_IMPLEMENTED |
+| POST | /v1/ai/recommendations/{id}/accept | Yes | VIEW_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_APPROVED | CURRENT_IMPLEMENTED |
+| POST | /v1/ai/recommendations/{id}/approve | Yes | APPROVE_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_APPROVED | CURRENT_IMPLEMENTED |
+| POST | /v1/ai/recommendations/{id}/dismiss | Yes | VIEW_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_DISMISSED | CURRENT_IMPLEMENTED |
+| POST | /v1/ai/recommendations/{id}/execute | No | RUN_AI_AUTOMATION | automation execution policy | path params / JSON body | AiRecommendationPortal response/DTO | n/a | CURRENT_IMPLEMENTED denied |
+| POST | /v1/ai/recommendations/{id}/reject | Yes | VIEW_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_REJECTED | CURRENT_IMPLEMENTED |
+| GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | query params | AiRecommendationPortal response/DTO | read audit CURRENT_PARTIAL | CURRENT_IMPLEMENTED |
+| GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | active school FEE_REMINDER_SUGGESTION only | query params | AiRecommendationPortal response/DTO | read audit CURRENT_PARTIAL | CURRENT_IMPLEMENTED |
+| POST | /v1/ai/usage/audit | No | MANAGE_AI_POLICY | AI governance | path params / JSON body | AiUsage response/DTO | n/a | CURRENT_IMPLEMENTED denied |
 | GET | /v1/finance/dashboard/summary | Yes | FINANCE_VIEW | school | query params | DashboardSummary response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
 | POST | /v1/finance/fees/demands/{demandId}/payments | Yes | FINANCE_MANAGE | school | path params / JSON body | Fee response/DTO | FEE_PAYMENT_RECORDED, RECEIPT_ISSUED | CURRENT_IMPLEMENTED |
 | GET | /v1/finance/fees/demands/{demandId} | Yes | FINANCE_VIEW | school | query params | Fee response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
@@ -97,6 +97,10 @@
 | GET | /v1/finance/receipts | Yes | FINANCE_VIEW | school | query params | Fee response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
 | GET | /v1/finance/reports/collections | Yes | VIEW_REPORTS | school | query params | Fee response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
 | GET | /v1/finance/reports/summary | Yes | VIEW_REPORTS | school | query params | Fee response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/finance/reports/exports/{exportId}/download | Yes | EXPORT_FINANCE_REPORTS | active school FEE_DEMANDS export | path params | CSV | REPORT_EXPORT_DOWNLOADED | CURRENT_IMPLEMENTED |
+| GET | /v1/finance/reports/exports/{exportId} | Yes | VIEW_FINANCE_REPORTS | active school FEE_DEMANDS export | path params | ReportExport response/DTO | read audit CURRENT_PARTIAL | CURRENT_IMPLEMENTED |
+| GET | /v1/finance/reports/exports | Yes | VIEW_FINANCE_REPORTS | active school FEE_DEMANDS exports | query params | ReportExport response/DTO | read audit CURRENT_PARTIAL | CURRENT_IMPLEMENTED |
+| POST | /v1/finance/reports/exports | Yes | EXPORT_FINANCE_REPORTS | active school FEE_DEMANDS only | JSON body | ReportExport response/DTO | REPORT_EXPORT_REQUESTED | CURRENT_IMPLEMENTED |
 | POST | /v1/me/change-password | Yes | SESSION_SELF_MANAGE | current user/session | path params / JSON body | CurrentUser response/DTO | PASSWORD_CHANGED | CURRENT_IMPLEMENTED |
 | POST | /v1/me/logout | Yes | SESSION_SELF_MANAGE | current user/session | path params / JSON body | CurrentUser response/DTO | USER_LOGGED_OUT | CURRENT_IMPLEMENTED |
 | POST | /v1/me/schools/{schoolId}/activate | Yes | SESSION_SELF_MANAGE | current user/session | path params / JSON body | CurrentUser response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
@@ -104,6 +108,8 @@
 | GET | /v1/me | Yes | SESSION_SELF_MANAGE | current user/session | query params | CurrentUser response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
 
 ## 9. Detailed API behavior
+Finance-specific rows in section 8 are authoritative for shared `/v1/ai/*` controllers. Some generated detail cards below describe common controller routes and may include roles that are service-denied for FINANCE_STAFF.
+
 ### PATCH /v1/ai/automation-rules/{id}
 - Method: PATCH
 - Full endpoint: /v1/ai/automation-rules/{id}

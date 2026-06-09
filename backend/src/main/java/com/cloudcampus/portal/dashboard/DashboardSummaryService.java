@@ -19,6 +19,7 @@ import com.cloudcampus.notification.NotificationDeliveryRepository;
 import com.cloudcampus.notification.NotificationDeliveryStatus;
 import com.cloudcampus.operations.bulk.BulkJobStatus;
 import com.cloudcampus.operations.attendance.AttendanceSessionRepository;
+import com.cloudcampus.operations.document.SchoolDocumentRepository;
 import com.cloudcampus.operations.exam.Exam;
 import com.cloudcampus.operations.exam.ExamRepository;
 import com.cloudcampus.operations.exam.ExamResultRepository;
@@ -61,6 +62,7 @@ public class DashboardSummaryService {
     private final HomeworkRepository homeworkRepository;
     private final ExamRepository examRepository;
     private final ExamResultRepository examResultRepository;
+    private final SchoolDocumentRepository schoolDocumentRepository;
     private final FeeDemandRepository feeDemandRepository;
     private final FeePaymentRepository feePaymentRepository;
     private final NoticeRepository noticeRepository;
@@ -84,6 +86,7 @@ public class DashboardSummaryService {
             HomeworkRepository homeworkRepository,
             ExamRepository examRepository,
             ExamResultRepository examResultRepository,
+            SchoolDocumentRepository schoolDocumentRepository,
             FeeDemandRepository feeDemandRepository,
             FeePaymentRepository feePaymentRepository,
             NoticeRepository noticeRepository,
@@ -106,6 +109,7 @@ public class DashboardSummaryService {
         this.homeworkRepository = homeworkRepository;
         this.examRepository = examRepository;
         this.examResultRepository = examResultRepository;
+        this.schoolDocumentRepository = schoolDocumentRepository;
         this.feeDemandRepository = feeDemandRepository;
         this.feePaymentRepository = feePaymentRepository;
         this.noticeRepository = noticeRepository;
@@ -214,18 +218,19 @@ public class DashboardSummaryService {
     @Transactional(readOnly = true)
     public DashboardSummaryResponse finance(AuthenticatedUser actor) {
         requireRole(actor, UserRole.FINANCE_STAFF);
-        String schoolId = requireActiveSchool(actor);
+        String schoolId = requireActiveFinanceSchool(actor);
         return financeSummary(schoolId);
     }
 
     @Transactional(readOnly = true)
     public DashboardSummaryResponse staff(AuthenticatedUser actor) {
-        requireRole(actor, UserRole.STAFF);
-        String schoolId = requireActiveSchool(actor);
+        requireAnyRole(actor, UserRole.OFFICE_STAFF, UserRole.STAFF);
+        String schoolId = requireActiveStaffSchool(actor);
         return response(List.of(
-                metric("Active school", "Selected", "School-scoped staff dashboard"),
-                metric("School notices", noticeRepository.findBySchoolIdOrderByCreatedAtDesc(schoolId).size(), "Visible school notices"),
-                metric("Report exports", reportExportJobRepository.findBySchoolIdOrderByRequestedAtDesc(schoolId).size(), "Report/export jobs available")
+                metric("Active school", "Selected", "School-scoped office dashboard"),
+                metric("Student records", studentRepository.countBySchoolIdAndActiveTrue(schoolId), "Active student records"),
+                metric("Documents", schoolDocumentRepository.findBySchoolIdOrderByCreatedAtDesc(schoolId).size(), "School document records"),
+                metric("AI follow-ups", "Scoped", "Approved admission follow-up recommendations only")
         ));
     }
 
@@ -369,6 +374,34 @@ public class DashboardSummaryService {
                 .orElse(false);
         if (!allowed) {
             throw new ForbiddenException("Teacher access is required for the active school.");
+        }
+        return schoolId;
+    }
+
+    private String requireActiveStaffSchool(AuthenticatedUser actor) {
+        String schoolId = requireActiveSchool(actor);
+        boolean allowed = userSchoolAccessRepository.findByUserIdAndSchoolId(actor.user().getId(), schoolId)
+                .map(access -> access.getRole() == UserRole.OFFICE_STAFF || access.getRole() == UserRole.STAFF)
+                .orElse(false);
+        if (!allowed) {
+            throw new ForbiddenException("Office staff access is required for the active school.");
+        }
+        return schoolId;
+    }
+
+    private String requireActiveFinanceSchool(AuthenticatedUser actor) {
+        String schoolId = requireActiveSchool(actor);
+        boolean allowed = userSchoolAccessRepository.findByUserIdAndSchoolId(actor.user().getId(), schoolId)
+                .map(access -> access.getRole() == UserRole.FINANCE_STAFF)
+                .orElse(false);
+        if (!allowed) {
+            throw new ForbiddenException("Finance staff access is required for the active school.");
+        }
+        boolean active = schoolRepository.findById(schoolId)
+                .map(com.cloudcampus.school.School::isActive)
+                .orElse(false);
+        if (!active) {
+            throw new ForbiddenException("Active school is not available.");
         }
         return schoolId;
     }

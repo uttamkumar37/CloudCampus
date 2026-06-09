@@ -39,13 +39,44 @@ export async function requestReportExport(
   request: ReportExportRequest,
   accessToken: string,
 ): Promise<ReportExportResponse> {
-  return httpClient.post<ReportExportResponse>('/v1/school-admin/reports/exports', request, { accessToken });
+  return requestReportExportAt('/v1/school-admin/reports/exports', request, accessToken);
 }
 
 export async function listReportExports(accessToken: string): Promise<ReportExportResponse[]> {
-  return httpClient.get<ReportExportResponse[]>('/v1/school-admin/reports/exports', { accessToken });
+  return listReportExportsAt('/v1/school-admin/reports/exports', accessToken);
 }
 
 export async function downloadReportExport(exportId: string, accessToken: string): Promise<string> {
-  return httpClient.get<string>(`/v1/school-admin/reports/exports/${exportId}/download`, { accessToken });
+  return downloadReportExportAt('/v1/school-admin/reports/exports', exportId, accessToken);
+}
+
+export async function requestFinanceReportExport(
+  request: ReportExportRequest,
+  accessToken: string,
+): Promise<ReportExportResponse> {
+  return requestReportExportAt('/v1/finance/reports/exports', request, accessToken);
+}
+
+export async function listFinanceReportExports(accessToken: string): Promise<ReportExportResponse[]> {
+  return listReportExportsAt('/v1/finance/reports/exports', accessToken);
+}
+
+export async function downloadFinanceReportExport(exportId: string, accessToken: string): Promise<string> {
+  return downloadReportExportAt('/v1/finance/reports/exports', exportId, accessToken);
+}
+
+function requestReportExportAt(
+  path: string,
+  request: ReportExportRequest,
+  accessToken: string,
+): Promise<ReportExportResponse> {
+  return httpClient.post<ReportExportResponse>(path, request, { accessToken });
+}
+
+function listReportExportsAt(path: string, accessToken: string): Promise<ReportExportResponse[]> {
+  return httpClient.get<ReportExportResponse[]>(path, { accessToken });
+}
+
+function downloadReportExportAt(path: string, exportId: string, accessToken: string): Promise<string> {
+  return httpClient.get<string>(`${path}/${exportId}/download`, { accessToken });
 }

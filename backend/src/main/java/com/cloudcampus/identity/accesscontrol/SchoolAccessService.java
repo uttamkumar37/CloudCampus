@@ -1,5 +1,7 @@
 package com.cloudcampus.identity.accesscontrol;
 
+import java.util.Set;
+
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserRole;
@@ -19,79 +21,51 @@ public class SchoolAccessService {
 
     @Transactional(readOnly = true)
     public SchoolAccessGrant requireSchoolAdminAccess(String userId, String schoolId) {
-        UserSchoolAccess access = userSchoolAccessRepository.findByUserIdAndSchoolId(userId, schoolId)
-                .orElseThrow(() -> new ForbiddenException("User is not allowed to access this school."));
-
-        if (access.getRole() != UserRole.SCHOOL_ADMIN) {
-            throw new ForbiddenException("User is not allowed to administer this school.");
-        }
-
-        String accessTenantId = access.getTenant().getId();
-        String userTenantId = access.getUser().getTenant().getId();
-        String schoolTenantId = access.getSchool().getTenant().getId();
-
-        if (!accessTenantId.equals(userTenantId) || !accessTenantId.equals(schoolTenantId)) {
-            throw new ForbiddenException("School access grant tenant scope is invalid.");
-        }
-
-        return new SchoolAccessGrant(
-                accessTenantId,
-                access.getSchool().getId(),
-                access.getUser().getId(),
-                access.getRole(),
-                access.isPrimaryAccess()
+        return requireSchoolAccessForRoles(
+                userId,
+                schoolId,
+                Set.of(UserRole.SCHOOL_ADMIN),
+                "User is not allowed to administer this school."
         );
     }
 
     @Transactional(readOnly = true)
     public SchoolAccessGrant requireSchoolLeadershipAccess(String userId, String schoolId) {
-        UserSchoolAccess access = userSchoolAccessRepository.findByUserIdAndSchoolId(userId, schoolId)
-                .orElseThrow(() -> new ForbiddenException("User is not allowed to access this school."));
+        return requireSchoolAccessForRoles(
+                userId,
+                schoolId,
+                Set.of(UserRole.SCHOOL_ADMIN, UserRole.PRINCIPAL),
+                "User is not allowed to review this school."
+        );
+    }
 
-        if (access.getRole() != UserRole.SCHOOL_ADMIN && access.getRole() != UserRole.PRINCIPAL) {
-            throw new ForbiddenException("User is not allowed to review this school.");
-        }
+    @Transactional(readOnly = true)
+    public SchoolAccessGrant requireSchoolStudentRecordAccess(String userId, String schoolId) {
+        return requireSchoolAccessForRoles(
+                userId,
+                schoolId,
+                Set.of(UserRole.SCHOOL_ADMIN, UserRole.PRINCIPAL, UserRole.OFFICE_STAFF, UserRole.STAFF),
+                "User is not allowed to review student records for this school."
+        );
+    }
 
-        String accessTenantId = access.getTenant().getId();
-        String userTenantId = access.getUser().getTenant().getId();
-        String schoolTenantId = access.getSchool().getTenant().getId();
-
-        if (!accessTenantId.equals(userTenantId) || !accessTenantId.equals(schoolTenantId)) {
-            throw new ForbiddenException("School access grant tenant scope is invalid.");
-        }
-
-        return new SchoolAccessGrant(
-                accessTenantId,
-                access.getSchool().getId(),
-                access.getUser().getId(),
-                access.getRole(),
-                access.isPrimaryAccess()
+    @Transactional(readOnly = true)
+    public SchoolAccessGrant requireSchoolDocumentAccess(String userId, String schoolId) {
+        return requireSchoolAccessForRoles(
+                userId,
+                schoolId,
+                Set.of(UserRole.SCHOOL_ADMIN, UserRole.OFFICE_STAFF, UserRole.STAFF),
+                "User is not allowed to manage school documents."
         );
     }
 
     @Transactional(readOnly = true)
     public SchoolAccessGrant requireSchoolTeacherAccess(String userId, String schoolId) {
-        UserSchoolAccess access = userSchoolAccessRepository.findByUserIdAndSchoolId(userId, schoolId)
-                .orElseThrow(() -> new ForbiddenException("User is not allowed to access this school."));
-
-        if (access.getRole() != UserRole.TEACHER) {
-            throw new ForbiddenException("Teacher access is required for this school.");
-        }
-
-        String accessTenantId = access.getTenant().getId();
-        String userTenantId = access.getUser().getTenant().getId();
-        String schoolTenantId = access.getSchool().getTenant().getId();
-
-        if (!accessTenantId.equals(userTenantId) || !accessTenantId.equals(schoolTenantId)) {
-            throw new ForbiddenException("School access grant tenant scope is invalid.");
-        }
-
-        return new SchoolAccessGrant(
-                accessTenantId,
-                access.getSchool().getId(),
-                access.getUser().getId(),
-                access.getRole(),
-                access.isPrimaryAccess()
+        return requireSchoolAccessForRoles(
+                userId,
+                schoolId,
+                Set.of(UserRole.TEACHER),
+                "Teacher access is required for this school."
         );
     }
 
@@ -126,28 +100,28 @@ public class SchoolAccessService {
 
     @Transactional(readOnly = true)
     public SchoolAccessGrant requireSchoolFinanceAccess(String userId, String schoolId) {
+        return requireSchoolAccessForRoles(
+                userId,
+                schoolId,
+                Set.of(UserRole.SCHOOL_ADMIN, UserRole.FINANCE_STAFF),
+                "User is not allowed to manage school finance."
+        );
+    }
+
+    private SchoolAccessGrant requireSchoolAccessForRoles(
+            String userId,
+            String schoolId,
+            Set<UserRole> allowedRoles,
+            String forbiddenMessage
+    ) {
         UserSchoolAccess access = userSchoolAccessRepository.findByUserIdAndSchoolId(userId, schoolId)
                 .orElseThrow(() -> new ForbiddenException("User is not allowed to access this school."));
 
-        if (access.getRole() != UserRole.SCHOOL_ADMIN && access.getRole() != UserRole.FINANCE_STAFF) {
-            throw new ForbiddenException("User is not allowed to manage school finance.");
+        if (!allowedRoles.contains(access.getRole())) {
+            throw new ForbiddenException(forbiddenMessage);
         }
 
-        String accessTenantId = access.getTenant().getId();
-        String userTenantId = access.getUser().getTenant().getId();
-        String schoolTenantId = access.getSchool().getTenant().getId();
-
-        if (!accessTenantId.equals(userTenantId) || !accessTenantId.equals(schoolTenantId)) {
-            throw new ForbiddenException("School access grant tenant scope is invalid.");
-        }
-
-        return new SchoolAccessGrant(
-                accessTenantId,
-                access.getSchool().getId(),
-                access.getUser().getId(),
-                access.getRole(),
-                access.isPrimaryAccess()
-        );
+        return toGrant(access);
     }
 
     private SchoolAccessGrant toGrant(UserSchoolAccess access) {

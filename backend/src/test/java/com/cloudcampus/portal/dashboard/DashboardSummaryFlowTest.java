@@ -123,6 +123,7 @@ class DashboardSummaryFlowTest {
         Fixture tenantAdmin = fixture("dash-tenant", UserRole.TENANT_ADMIN, false);
         Fixture teacher = fixture("dash-teacher", UserRole.TEACHER, true);
         Fixture finance = fixture("dash-finance", UserRole.FINANCE_STAFF, true);
+        Fixture office = fixture("dash-office", UserRole.OFFICE_STAFF, true);
         Fixture staff = fixture("dash-staff", UserRole.STAFF, true);
         Fixture parent = fixture("dash-parent", UserRole.PARENT, true);
         Fixture studentUser = fixture("dash-student", UserRole.STUDENT, true);
@@ -144,6 +145,7 @@ class DashboardSummaryFlowTest {
         assertSummaryEndpoint("/v1/tenant-admin/dashboard/summary", tenantAdmin.token(), "Active schools");
         assertSummaryEndpoint("/v1/teacher/dashboard/summary", teacher.token(), "Assigned classes");
         assertSummaryEndpoint("/v1/finance/dashboard/summary", finance.token(), "Fee demands");
+        assertSummaryEndpoint("/v1/staff/dashboard/summary", office.token(), "Active school");
         assertSummaryEndpoint("/v1/staff/dashboard/summary", staff.token(), "Active school");
         assertSummaryEndpoint("/v1/parent/dashboard/summary", parent.token(), "Linked children");
         assertSummaryEndpoint("/v1/student/dashboard/summary", studentUser.token(), "Profile");

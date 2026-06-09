@@ -10,6 +10,9 @@ import java.nio.charset.StandardCharsets;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogRepository;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
+import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.JwtAccessTokenService;
@@ -62,6 +65,9 @@ class FeeLifecycleFlowTest {
 
     @Autowired
     private UserAccountRepository userAccountRepository;
+
+    @Autowired
+    private UserSchoolAccessRepository userSchoolAccessRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -268,10 +274,35 @@ class FeeLifecycleFlowTest {
                   "designation": "Accountant",
                   "portalLoginRequired": true
                 }
-                """);
+        """);
         assertThat(financeStaff.at("/role").asText()).isEqualTo("FINANCE_STAFF");
         acceptInvitation(financeStaff.at("/invitationToken").asText(), "FinanceStrong123!", "Finance One");
-        JsonNode financeLogin = login("finance-one@example.com", "FinanceStrong123!");
+        MvcResult financeLoginStart = mockMvc.perform(post("/v1/auth/login")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "email": "finance-one@example.com",
+                                  "password": "FinanceStrong123!"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mfaRequired").value(true))
+                .andExpect(jsonPath("$.mfaChallengeId").isNotEmpty())
+                .andReturn();
+        JsonNode financeChallenge = jsonBody(financeLoginStart);
+        JsonNode financeLogin = jsonBody(mockMvc.perform(post("/v1/auth/mfa/verify")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "challengeId": "%s",
+                                  "code": "%s"
+                                }
+                                """.formatted(
+                                        financeChallenge.at("/mfaChallengeId").asText(),
+                                        financeChallenge.at("/mfaCode").asText()
+                                )))
+                .andExpect(status().isOk())
+                .andReturn());
         assertThat(financeLogin.at("/user/role").asText()).isEqualTo("FINANCE_STAFF");
         assertThat(financeLogin.at("/user/activeSchool/schoolId").asText()).isEqualTo(school.getId());
         String financeToken = financeLogin.at("/accessToken").asText();
@@ -383,6 +414,96 @@ class FeeLifecycleFlowTest {
                                 """.formatted(secondStudent.getId())))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    void financeStaffCannotUseDemandFromAllowedButNonActiveSchoolContext() throws Exception {
+        JsonNode onboarding = onboard("fee-life-f", "fee-school-f", "fee-admin-f@example.com");
+        String schoolAdminToken = activateSchoolAdmin(onboarding, "FeeAdminStrong123!");
+        String financeToken = financeStaffToken(schoolAdminToken, "finance-f@example.com");
+        Tenant tenant = tenantRepository.findById(onboarding.at("/tenant/id").asText()).orElseThrow();
+        School activeSchool = schoolRepository.findById(onboarding.at("/school/id").asText()).orElseThrow();
+        School otherAllowedSchool = schoolRepository.save(new School(tenant, "FEE-ALT-F", "Finance Alternate School", false));
+        UserAccount financeUser = userAccountRepository.findByEmailIgnoreCase("finance-f@example.com").getFirst();
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, otherAllowedSchool, financeUser, UserRole.FINANCE_STAFF, false));
+        Student otherStudent = studentRepository.save(new Student(tenant, otherAllowedSchool, "FEE-600", "Allowed Other School Student"));
+        FeeDemand otherDemand = feeDemandRepository.save(new FeeDemand(
+                tenant,
+                otherAllowedSchool,
+                otherStudent,
+                "Other active-school fee",
+                new java.math.BigDecimal("250.00"),
+                java.time.LocalDate.of(2026, 7, 1)
+        ));
+
+        assertThat(activeSchool.getId()).isNotEqualTo(otherAllowedSchool.getId());
+        mockMvc.perform(get("/v1/finance/fees/demands/{demandId}", otherDemand.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(post("/v1/finance/fees/demands/{demandId}/payments", otherDemand.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "amount": 50.00,
+                                  "paymentMethod": "cash"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    void financePaymentValidationRejectsDuplicateReferenceAndUnsupportedMethod() throws Exception {
+        JsonNode onboarding = onboard("fee-life-g", "fee-school-g", "fee-admin-g@example.com");
+        String schoolAdminToken = activateSchoolAdmin(onboarding, "FeeAdminStrong123!");
+        String financeToken = financeStaffToken(schoolAdminToken, "finance-g@example.com");
+        Tenant tenant = tenantRepository.findById(onboarding.at("/tenant/id").asText()).orElseThrow();
+        School school = schoolRepository.findById(onboarding.at("/school/id").asText()).orElseThrow();
+        Student student = studentRepository.save(new Student(tenant, school, "FEE-700", "Finance Validation Student"));
+        String demandId = jsonBody(createFinanceDemand(financeToken, student.getId(), "Validation fee", "300.00"))
+                .at("/id")
+                .asText();
+
+        mockMvc.perform(post("/v1/finance/fees/demands/{demandId}/payments", demandId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "amount": 100.00,
+                                  "paymentMethod": "bank transfer",
+                                  "paymentReference": "finance-duplicate-ref"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("PARTIALLY_PAID"));
+
+        mockMvc.perform(post("/v1/finance/fees/demands/{demandId}/payments", demandId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "amount": 50.00,
+                                  "paymentMethod": "bank transfer",
+                                  "paymentReference": "FINANCE-DUPLICATE-REF"
+                                }
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CONFLICT"));
+
+        mockMvc.perform(post("/v1/finance/fees/demands/{demandId}/payments", demandId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "amount": 50.00,
+                                  "paymentMethod": "crypto"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
     }
 
     private MvcResult createDemand(String token, String studentId, String description, String amount) throws Exception {

@@ -12,6 +12,7 @@ import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
 import com.cloudcampus.identity.auth.UserAccount;
+import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
 import com.cloudcampus.people.student.Student;
 import com.cloudcampus.people.student.StudentRepository;
@@ -49,7 +50,7 @@ public class SchoolDocumentService {
 
     @Transactional
     public SchoolDocumentResponse create(AuthenticatedUser actor, SchoolDocumentRequest request) {
-        School school = requireActiveSchoolAdminSchool(actor);
+        School school = requireActiveSchoolDocumentSchool(actor);
         ClassLevel classLevel = resolveClassLevel(actor, school, request.classLevelId());
         Student student = resolveStudent(actor, school, classLevel, request.studentId());
         SchoolDocument document = schoolDocumentRepository.save(new SchoolDocument(
@@ -67,7 +68,7 @@ public class SchoolDocumentService {
 
     @Transactional(readOnly = true)
     public List<SchoolDocumentResponse> list(AuthenticatedUser actor) {
-        School school = requireActiveSchoolAdminSchool(actor);
+        School school = requireActiveSchoolDocumentSchool(actor);
         return schoolDocumentRepository.findBySchoolIdOrderByCreatedAtDesc(school.getId())
                 .stream()
                 .map(this::toResponse)
@@ -78,16 +79,17 @@ public class SchoolDocumentService {
     public SchoolDocumentResponse read(AuthenticatedUser actor, String documentId) {
         SchoolDocument document = schoolDocumentRepository.findById(documentId)
                 .orElseThrow(() -> new NotFoundException("Document was not found."));
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), document.getSchool().getId());
+        requireActiveSchoolMatchForOffice(actor, document.getSchool().getId());
+        schoolAccessService.requireSchoolDocumentAccess(actor.user().getId(), document.getSchool().getId());
         return toResponse(document);
     }
 
-    private School requireActiveSchoolAdminSchool(AuthenticatedUser actor) {
+    private School requireActiveSchoolDocumentSchool(AuthenticatedUser actor) {
         String activeSchoolId = actor.activeSchoolId();
         if (activeSchoolId == null || activeSchoolId.isBlank()) {
             throw new ForbiddenException("An active school is required.");
         }
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), activeSchoolId);
+        schoolAccessService.requireSchoolDocumentAccess(actor.user().getId(), activeSchoolId);
         return schoolRepository.findById(activeSchoolId)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }
@@ -98,7 +100,7 @@ public class SchoolDocumentService {
         }
         ClassLevel classLevel = classLevelRepository.findById(classLevelId)
                 .orElseThrow(() -> new NotFoundException("Class was not found."));
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), classLevel.getSchool().getId());
+        schoolAccessService.requireSchoolDocumentAccess(actor.user().getId(), classLevel.getSchool().getId());
         if (!activeSchool.getId().equals(classLevel.getSchool().getId())) {
             throw new ForbiddenException("Class does not belong to the active school.");
         }
@@ -111,7 +113,7 @@ public class SchoolDocumentService {
         }
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new NotFoundException("Student was not found."));
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), student.getSchool().getId());
+        schoolAccessService.requireSchoolDocumentAccess(actor.user().getId(), student.getSchool().getId());
         if (!activeSchool.getId().equals(student.getSchool().getId())) {
             throw new ForbiddenException("Student does not belong to the active school.");
         }
@@ -121,6 +123,16 @@ public class SchoolDocumentService {
             throw new ForbiddenException("Student does not belong to the selected class.");
         }
         return student;
+    }
+
+    private void requireActiveSchoolMatchForOffice(AuthenticatedUser actor, String schoolId) {
+        UserRole role = actor.user().getRole();
+        if (role != UserRole.OFFICE_STAFF && role != UserRole.STAFF) {
+            return;
+        }
+        if (actor.activeSchoolId() == null || actor.activeSchoolId().isBlank() || !actor.activeSchoolId().equals(schoolId)) {
+            throw new ForbiddenException("Office staff can only access documents in the active school.");
+        }
     }
 
     private SchoolDocumentResponse toResponse(SchoolDocument document) {

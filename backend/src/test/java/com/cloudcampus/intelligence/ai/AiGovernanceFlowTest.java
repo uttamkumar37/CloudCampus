@@ -453,6 +453,328 @@ class AiGovernanceFlowTest {
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
+    @Test
+    void officeStaffAiPortalIsApprovedActiveSchoolAdmissionFollowUpsOnlyAndNoAutomationOrUsageAudit() throws Exception {
+        Tenant tenant = tenant("ai-office-portal-a", "AI Office Portal A");
+        School school = school(tenant, "AI-OFFICE-A", "AI Office Portal School A");
+        School otherSchool = school(tenant, "AI-OFFICE-B", "AI Office Portal School B");
+        UserAccount officeStaff = user(tenant, "ai-office-portal@example.com", UserRole.OFFICE_STAFF);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, officeStaff, UserRole.OFFICE_STAFF, true));
+        String officeToken = jwtAccessTokenService.issueToken(
+                officeStaff.getId(),
+                tenant.getId(),
+                UserRole.OFFICE_STAFF,
+                school.getId()
+        );
+
+        AiRecommendation approvedAdmission = aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "ADMISSION",
+                "admission-1",
+                AiRecommendationType.ADMISSION_FOLLOW_UP,
+                "Approved admission follow-up",
+                "Approved admission summary",
+                "Office staff can review approved admission follow-ups.",
+                new BigDecimal("0.86"),
+                AiRecommendationRiskLevel.LOW,
+                AiRecommendationStatus.APPROVED,
+                "SYSTEM",
+                "system",
+                null,
+                false,
+                null,
+                null,
+                "{}"
+        ));
+        AiRecommendation pendingAdmission = aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "ADMISSION",
+                "admission-2",
+                AiRecommendationType.ADMISSION_FOLLOW_UP,
+                "Pending admission follow-up",
+                "Pending admission summary",
+                "Pending follow-ups should not be visible to office staff.",
+                new BigDecimal("0.78"),
+                AiRecommendationRiskLevel.MEDIUM,
+                AiRecommendationStatus.PENDING_REVIEW,
+                "SYSTEM",
+                "system",
+                null,
+                true,
+                null,
+                null,
+                "{}"
+        ));
+        AiRecommendation financeSuggestion = aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "SCHOOL",
+                school.getId(),
+                AiRecommendationType.FEE_REMINDER_SUGGESTION,
+                "Fee reminder",
+                "Finance summary",
+                "Finance-only suggestions are not office follow-ups.",
+                new BigDecimal("0.91"),
+                AiRecommendationRiskLevel.LOW,
+                AiRecommendationStatus.APPROVED,
+                "SYSTEM",
+                "system",
+                null,
+                false,
+                null,
+                null,
+                "{}"
+        ));
+        aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                otherSchool,
+                "ADMISSION",
+                "admission-other-school",
+                AiRecommendationType.ADMISSION_FOLLOW_UP,
+                "Other school follow-up",
+                "Other school summary",
+                "Other school follow-ups are not visible.",
+                new BigDecimal("0.82"),
+                AiRecommendationRiskLevel.LOW,
+                AiRecommendationStatus.APPROVED,
+                "SYSTEM",
+                "system",
+                null,
+                false,
+                null,
+                null,
+                "{}"
+        ));
+        AutomationRule rule = automationRuleRepository.save(new AutomationRule(
+                tenant,
+                school,
+                "OFFICE_RULE_DENIED",
+                "Office denied rule",
+                "Automation configuration is not office-facing.",
+                "EVENT",
+                "{}",
+                "ACTION",
+                "{}",
+                true,
+                true,
+                UserRole.SCHOOL_ADMIN,
+                AiRecommendationRiskLevel.MEDIUM,
+                officeStaff
+        ));
+        automationRunRepository.save(new AutomationRun(
+                rule,
+                AutomationRunStatus.COMPLETED,
+                "SYSTEM",
+                "system",
+                "{}"
+        ));
+
+        mockMvc.perform(get("/v1/ai/recommendations")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(officeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].recommendationId").value(approvedAdmission.getId()))
+                .andExpect(jsonPath("$.items[0].recommendationType").value("ADMISSION_FOLLOW_UP"));
+
+        mockMvc.perform(get("/v1/ai/recommendations/{id}", pendingAdmission.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(officeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/recommendations/{id}", financeSuggestion.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(officeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(post("/v1/ai/recommendations/{id}/dismiss", approvedAdmission.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(officeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/automation-rules")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(officeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/automation-runs")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(officeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/entitlement")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(officeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(post("/v1/ai/usage/audit")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(officeToken))
+                        .contentType("application/json")
+                        .content(usagePayload("ADMISSION_ENQUIRY_ASSISTANT", 1, 1)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    void financeStaffAiPortalIsActiveSchoolFeeSuggestionsOnlyAndNoAutomationOrUsageAudit() throws Exception {
+        Tenant tenant = tenant("ai-finance-portal-a", "AI Finance Portal A");
+        School school = school(tenant, "AI-FINANCE-A", "AI Finance Portal School A");
+        School otherSchool = school(tenant, "AI-FINANCE-B", "AI Finance Portal School B");
+        UserAccount financeStaff = user(tenant, "ai-finance-portal@example.com", UserRole.FINANCE_STAFF);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, financeStaff, UserRole.FINANCE_STAFF, true));
+        String financeToken = jwtAccessTokenService.issueToken(
+                financeStaff.getId(),
+                tenant.getId(),
+                UserRole.FINANCE_STAFF,
+                school.getId()
+        );
+
+        AiRecommendation feePending = aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "SCHOOL",
+                school.getId(),
+                AiRecommendationType.FEE_REMINDER_SUGGESTION,
+                "Pending fee reminder",
+                "Pending fee summary",
+                "Finance staff can review active-school fee reminder suggestions.",
+                new BigDecimal("0.91"),
+                AiRecommendationRiskLevel.HIGH,
+                AiRecommendationStatus.PENDING_REVIEW,
+                "SYSTEM",
+                "system",
+                financeStaff,
+                true,
+                null,
+                null,
+                "{}"
+        ));
+        AiRecommendation feeApproved = aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "SCHOOL",
+                school.getId(),
+                AiRecommendationType.FEE_REMINDER_SUGGESTION,
+                "Approved fee reminder",
+                "Approved fee summary",
+                "Finance staff can dismiss active-school fee suggestions.",
+                new BigDecimal("0.88"),
+                AiRecommendationRiskLevel.LOW,
+                AiRecommendationStatus.APPROVED,
+                "SYSTEM",
+                "system",
+                financeStaff,
+                false,
+                null,
+                null,
+                "{}"
+        ));
+        AiRecommendation academicSuggestion = aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "STUDENT",
+                "student-should-not-leak",
+                AiRecommendationType.STUDENT_RISK_ACADEMIC,
+                "Academic suggestion",
+                "Academic summary",
+                "Finance staff should not see academic AI suggestions.",
+                new BigDecimal("0.74"),
+                AiRecommendationRiskLevel.MEDIUM,
+                AiRecommendationStatus.APPROVED,
+                "SYSTEM",
+                "system",
+                null,
+                false,
+                null,
+                null,
+                "{}"
+        ));
+        AiRecommendation otherSchoolFee = aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                otherSchool,
+                "SCHOOL",
+                otherSchool.getId(),
+                AiRecommendationType.FEE_REMINDER_SUGGESTION,
+                "Other school fee reminder",
+                "Other school summary",
+                "Other school finance suggestions are not visible.",
+                new BigDecimal("0.82"),
+                AiRecommendationRiskLevel.LOW,
+                AiRecommendationStatus.APPROVED,
+                "SYSTEM",
+                "system",
+                null,
+                false,
+                null,
+                null,
+                "{}"
+        ));
+        AutomationRule rule = automationRuleRepository.save(new AutomationRule(
+                tenant,
+                school,
+                "FINANCE_RULE_DENIED",
+                "Finance denied rule",
+                "Automation configuration is not finance-staff-facing.",
+                "EVENT",
+                "{}",
+                "ACTION",
+                "{}",
+                true,
+                true,
+                UserRole.SCHOOL_ADMIN,
+                AiRecommendationRiskLevel.MEDIUM,
+                financeStaff
+        ));
+        automationRunRepository.save(new AutomationRun(
+                rule,
+                AutomationRunStatus.COMPLETED,
+                "SYSTEM",
+                "system",
+                "{}"
+        ));
+
+        mockMvc.perform(get("/v1/ai/recommendations")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(2));
+
+        mockMvc.perform(get("/v1/ai/recommendations/{id}", academicSuggestion.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/recommendations/{id}", otherSchoolFee.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(post("/v1/ai/recommendations/{id}/approve", feePending.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
+        mockMvc.perform(post("/v1/ai/recommendations/{id}/dismiss", feeApproved.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+        mockMvc.perform(post("/v1/ai/recommendations/{id}/execute", feePending.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(get("/v1/ai/automation-rules")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/automation-runs")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/entitlement")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(post("/v1/ai/usage/audit")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken))
+                        .contentType("application/json")
+                        .content(usagePayload("NOTICE_DRAFTING", 1, 1)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
     private void enableAi(String superAdminToken, Tenant tenant, long budget, String feature) throws Exception {
         mockMvc.perform(put("/v1/super-admin/ai/tenants/{tenantId}/entitlement", tenant.getId())
                         .header(HttpHeaders.AUTHORIZATION, bearer(superAdminToken))

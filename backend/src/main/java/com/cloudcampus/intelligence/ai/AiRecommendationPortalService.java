@@ -64,7 +64,7 @@ public class AiRecommendationPortalService {
 
     @Transactional
     public AiRecommendationPortalResponse approve(AuthenticatedUser actor, String id) {
-        AiRecommendation recommendation = requireMutableRecommendation(actor.user(), id);
+        AiRecommendation recommendation = requireMutableRecommendation(actor, id);
         if (!authorizationService.canApproveAiRecommendation(
                 actor.user(),
                 recommendation.getTenant().getId(),
@@ -80,7 +80,7 @@ public class AiRecommendationPortalService {
 
     @Transactional
     public AiRecommendationPortalResponse reject(AuthenticatedUser actor, String id, AiRecommendationRejectRequest request) {
-        AiRecommendation recommendation = requireMutableRecommendation(actor.user(), id);
+        AiRecommendation recommendation = requireMutableRecommendation(actor, id);
         String reason = request == null || request.reason() == null || request.reason().isBlank()
                 ? "Rejected from scoped AI portal."
                 : request.reason().trim();
@@ -91,7 +91,7 @@ public class AiRecommendationPortalService {
 
     @Transactional
     public AiRecommendationPortalResponse accept(AuthenticatedUser actor, String id) {
-        AiRecommendation recommendation = requireMutableRecommendation(actor.user(), id);
+        AiRecommendation recommendation = requireMutableRecommendation(actor, id);
         if (recommendation.isApprovalRequired() && recommendation.getRiskLevel() != AiRecommendationRiskLevel.LOW) {
             throw new BadRequestException("This recommendation requires formal approval.");
         }
@@ -102,7 +102,7 @@ public class AiRecommendationPortalService {
 
     @Transactional
     public AiRecommendationPortalResponse execute(AuthenticatedUser actor, String id) {
-        AiRecommendation recommendation = requireMutableRecommendation(actor.user(), id);
+        AiRecommendation recommendation = requireMutableRecommendation(actor, id);
         if (recommendation.getStatus() != AiRecommendationStatus.APPROVED) {
             throw new BadRequestException("Only approved AI recommendations can be executed.");
         }
@@ -120,7 +120,7 @@ public class AiRecommendationPortalService {
 
     @Transactional
     public AiRecommendationPortalResponse dismiss(AuthenticatedUser actor, String id) {
-        AiRecommendation recommendation = requireMutableRecommendation(actor.user(), id);
+        AiRecommendation recommendation = requireMutableRecommendation(actor, id);
         recommendation.cancel();
         audit(actor.user(), recommendation, AuditAction.AI_RECOMMENDATION_DISMISSED, "AI recommendation dismissed from scoped portal.");
         return response(recommendation);
@@ -128,7 +128,7 @@ public class AiRecommendationPortalService {
 
     @Transactional(readOnly = true)
     public PageResponse<AiAutomationRulePortalResponse> automationRules(AuthenticatedUser actor, int page, int size) {
-        denyParentAutomation(actor.user());
+        denyRestrictedAutomation(actor.user());
         List<AiAutomationRulePortalResponse> rows = automationRuleRepository.findAll().stream()
                 .filter(rule -> rule.getTenant() == null || authorizationService.canAccessTenant(actor.user(), rule.getTenant().getId()))
                 .filter(rule -> rule.getSchool() == null || authorizationService.canAccessSchool(actor.user(), rule.getSchool().getId()))
@@ -151,7 +151,7 @@ public class AiRecommendationPortalService {
 
     @Transactional(readOnly = true)
     public PageResponse<AiAutomationRunPortalResponse> automationRuns(AuthenticatedUser actor, int page, int size) {
-        denyParentAutomation(actor.user());
+        denyRestrictedAutomation(actor.user());
         List<AiAutomationRunPortalResponse> rows = automationRunRepository.findAll().stream()
                 .filter(run -> run.getTenant() == null || authorizationService.canAccessTenant(actor.user(), run.getTenant().getId()))
                 .filter(run -> run.getSchool() == null || authorizationService.canAccessSchool(actor.user(), run.getSchool().getId()))
@@ -171,9 +171,13 @@ public class AiRecommendationPortalService {
         return PageResponses.of(rows, page, size);
     }
 
-    private AiRecommendation requireMutableRecommendation(UserAccount actor, String id) {
-        if (actor.getRole() == UserRole.PARENT) {
+    private AiRecommendation requireMutableRecommendation(AuthenticatedUser actor, String id) {
+        UserAccount user = actor.user();
+        if (user.getRole() == UserRole.PARENT) {
             throw new ForbiddenException("Parents can only view approved child AI recommendations.");
+        }
+        if (user.getRole() == UserRole.OFFICE_STAFF || user.getRole() == UserRole.STAFF) {
+            throw new ForbiddenException("Office staff can only view approved office AI follow-ups.");
         }
         AiRecommendation recommendation = requireRecommendation(id);
         if (!canAccess(actor, recommendation)) {
@@ -223,15 +227,36 @@ public class AiRecommendationPortalService {
                     && recommendation.getTargetId() != null
                     && authorizationService.canAccessStudent(user, recommendation.getTargetId());
         }
+        if (user.getRole() == UserRole.OFFICE_STAFF || user.getRole() == UserRole.STAFF) {
+            return activeSchoolId != null
+                    && !activeSchoolId.isBlank()
+                    && recommendation.getStatus() == AiRecommendationStatus.APPROVED
+                    && recommendation.getSchool() != null
+                    && recommendation.getSchool().getId().equals(activeSchoolId)
+                    && recommendation.getRecommendationType() == AiRecommendationType.ADMISSION_FOLLOW_UP;
+        }
+        if (user.getRole() == UserRole.FINANCE_STAFF) {
+            return activeSchoolId != null
+                    && !activeSchoolId.isBlank()
+                    && recommendation.getSchool() != null
+                    && recommendation.getSchool().getId().equals(activeSchoolId)
+                    && recommendation.getRecommendationType() == AiRecommendationType.FEE_REMINDER_SUGGESTION;
+        }
         if ("STUDENT".equalsIgnoreCase(recommendation.getTargetType()) && recommendation.getTargetId() != null) {
             return authorizationService.canAccessStudent(user, recommendation.getTargetId());
         }
         return true;
     }
 
-    private void denyParentAutomation(UserAccount actor) {
+    private void denyRestrictedAutomation(UserAccount actor) {
         if (actor.getRole() == UserRole.PARENT) {
             throw new ForbiddenException("Parents cannot access AI automation controls.");
+        }
+        if (actor.getRole() == UserRole.OFFICE_STAFF || actor.getRole() == UserRole.STAFF) {
+            throw new ForbiddenException("Office staff cannot access AI automation controls.");
+        }
+        if (actor.getRole() == UserRole.FINANCE_STAFF) {
+            throw new ForbiddenException("Finance staff cannot access AI automation controls.");
         }
     }
 

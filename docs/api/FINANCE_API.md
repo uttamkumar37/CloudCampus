@@ -7,15 +7,17 @@ Status: CURRENT_IMPLEMENTED for discovered controllers; NOT_FOUND_IN_CODEBASE fo
 | Method | Endpoint | Module | Roles | Frontend caller | Status |
 | --- | --- | --- | --- | --- | --- |
 | GET | /v1/finance/dashboard/summary | Finance | FINANCE_STAFF | frontend/src/features/portal/api/dashboardApi.ts | CURRENT_IMPLEMENTED |
-| POST | /v1/finance/fees/demands/{demandId}/payments | Finance | FINANCE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| POST | /v1/finance/fees/demands/{demandId}/payments | Finance | FINANCE_STAFF | frontend/src/features/finance/api/feeApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/finance/fees/demands/{demandId} | Finance | FINANCE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/finance/fees/demands | Finance | FINANCE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/finance/fees/demands | Finance | FINANCE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/finance/receipts | Finance | FINANCE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/finance/fees/demands | Finance | FINANCE_STAFF | frontend/src/app/App.tsx | CURRENT_IMPLEMENTED |
+| POST | /v1/finance/fees/demands | Finance | FINANCE_STAFF | frontend/src/features/finance/api/feeApi.ts | CURRENT_IMPLEMENTED |
+| GET | /v1/finance/receipts | Finance | FINANCE_STAFF | frontend/src/features/finance/api/feeApi.ts | CURRENT_IMPLEMENTED |
 | POST | /v1/school-admin/fees/demands/{demandId}/payments | Finance | SCHOOL_ADMIN, PRINCIPAL | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/school-admin/fees/demands/{demandId} | Finance | SCHOOL_ADMIN, PRINCIPAL | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/school-admin/fees/demands | Finance | SCHOOL_ADMIN, PRINCIPAL | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
 | POST | /v1/school-admin/fees/demands | Finance | SCHOOL_ADMIN, PRINCIPAL | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+
+Finance guard note: FINANCE_STAFF finance endpoints derive tenant/school from the authenticated active school, reject demand IDs outside the active school, require an active school and active student for demand creation, validate payment methods, reject duplicate school payment references, and audit `FEE_DEMAND_CREATED`, `FEE_PAYMENT_RECORDED`, and `RECEIPT_ISSUED`.
 
 # GET /v1/finance/dashboard/summary
 

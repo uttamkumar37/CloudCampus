@@ -11,6 +11,7 @@ import {
 const ACCESS_TOKEN_STORAGE_KEY = 'cloudcampus.auth.accessToken';
 
 type FeeLifecyclePageProps = {
+  loginRequiredMessage?: string;
   onCreateDemand?: (request: FeeDemandCreateRequest, accessToken: string) => Promise<FeeDemandResponse>;
   onRecordPayment?: (
     demandId: string,
@@ -26,6 +27,7 @@ type PendingPayment = {
 };
 
 export function FeeLifecyclePage({
+  loginRequiredMessage = 'School Admin login is required.',
   onCreateDemand = createFeeDemand,
   onRecordPayment = recordFeePayment,
   storage = globalThis.sessionStorage,
@@ -99,7 +101,7 @@ export function FeeLifecyclePage({
   async function withToken(action: (accessToken: string) => Promise<void>) {
     const accessToken = storage.getItem(ACCESS_TOKEN_STORAGE_KEY);
     if (!accessToken) {
-      setError('School Admin login is required.');
+      setError(loginRequiredMessage);
       setMessage(null);
       return;
     }
@@ -180,11 +182,18 @@ export function FeeLifecyclePage({
         </label>
         <label>
           Method
-          <input
+          <select
             name="paymentMethod"
             value={paymentMethod}
             onChange={(event) => setPaymentMethod(event.target.value)}
-          />
+          >
+            <option value="cash">Cash</option>
+            <option value="card">Card</option>
+            <option value="upi">UPI</option>
+            <option value="bank transfer">Bank transfer</option>
+            <option value="cheque">Cheque</option>
+            <option value="online">Online</option>
+          </select>
         </label>
         <label>
           Reference

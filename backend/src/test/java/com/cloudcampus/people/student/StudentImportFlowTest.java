@@ -173,6 +173,21 @@ class StudentImportFlowTest {
                         .content(validImportPayload(academicSetup.classLevelId(), academicSetup.sectionId())))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        String officeToken = officeStaffToken(onboarding);
+
+        mockMvc.perform(get("/v1/school-admin/students?page=0&size=10&search=ishan&status=active")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(officeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].fullName").value("Ishan Rao"))
+                .andExpect(jsonPath("$.totalItems").value(1));
+
+        mockMvc.perform(post("/v1/school-admin/students/import")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(officeToken))
+                        .contentType("application/json")
+                        .content(validImportPayload(academicSetup.classLevelId(), academicSetup.sectionId())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
     @Test
@@ -397,6 +412,23 @@ class StudentImportFlowTest {
         userAccountRepository.save(principal);
         userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, principal, UserRole.PRINCIPAL, true));
         return jwtAccessTokenService.issueToken(principal.getId(), tenantId, UserRole.PRINCIPAL, schoolId);
+    }
+
+    private String officeStaffToken(JsonNode onboarding) {
+        String tenantId = onboarding.at("/tenant/id").asText();
+        String schoolId = onboarding.at("/school/id").asText();
+        Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
+        School school = schoolRepository.findById(schoolId).orElseThrow();
+        UserAccount officeStaff = new UserAccount(
+                tenant,
+                "office-students-" + schoolId + "@example.com",
+                "Student Records Office Staff",
+                UserRole.OFFICE_STAFF
+        );
+        officeStaff.activate(passwordEncoder.encode("StudentOffice123!"), "Student Records Office Staff", Instant.now());
+        userAccountRepository.save(officeStaff);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, officeStaff, UserRole.OFFICE_STAFF, true));
+        return jwtAccessTokenService.issueToken(officeStaff.getId(), tenantId, UserRole.OFFICE_STAFF, schoolId);
     }
 
     private void acceptInvitation(String token, String password) throws Exception {

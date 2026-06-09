@@ -79,8 +79,8 @@ Status: CURRENT_IMPLEMENTED
 | FINANCE_STAFF | Fee Demands | fees | Yes | /v1/finance/fees/demands/{demandId}/payments | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | Payments | payments | Yes | /v1/finance/fees/demands/{demandId}/payments | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | Receipts | receipts | Yes | /v1/finance/receipts | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | Reports | reports | Yes | /v1/finance/reports/collections | CURRENT_IMPLEMENTED |
-| FINANCE_STAFF | AI Fee Suggestions | ai-suggestions | Yes | /v1/finance/dashboard/summary | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | Reports | reports | Yes | /v1/finance/reports/summary, /v1/finance/reports/collections, /v1/finance/reports/exports | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | AI Fee Suggestions | ai-suggestions | Yes | /v1/ai/recommendations scoped to FEE_REMINDER_SUGGESTION | CURRENT_IMPLEMENTED |
 | OFFICE_STAFF | Dashboard | dashboard | Yes | /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
 | OFFICE_STAFF | Admissions | admissions | Yes | /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
 | OFFICE_STAFF | Enquiries | enquiries | Yes | /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |

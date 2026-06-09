@@ -11,4 +11,6 @@ public interface FeePaymentRepository extends JpaRepository<FeePayment, String> 
     List<FeePayment> findBySchoolIdOrderByPaidAtDesc(String schoolId);
 
     long countBySchoolId(String schoolId);
+
+    boolean existsBySchoolIdAndPaymentReferenceIgnoreCase(String schoolId, String paymentReference);
 }

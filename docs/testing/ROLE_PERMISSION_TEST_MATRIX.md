@@ -1138,19 +1138,19 @@ The generated rows below retain `CURRENT_PARTIAL` where endpoint-specific negati
 | PARENT | GET /v1/super-admin/revenue/tenants | No | Yes | CURRENT_PARTIAL |
 | PARENT | GET /v1/super-admin/revenue/trends | No | Yes | CURRENT_PARTIAL |
 | PARENT | GET /v1/super-admin/roles/{role}/permissions | No | Yes | CURRENT_PARTIAL |
-| FINANCE_STAFF | PATCH /v1/ai/automation-rules/{id} | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | GET /v1/ai/automation-rules | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | GET /v1/ai/automation-runs | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | GET /v1/ai/entitlement | Yes | Scope negative recommended | CURRENT_PARTIAL |
+| FINANCE_STAFF | PATCH /v1/ai/automation-rules/{id} | No | Denied/unavailable | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET /v1/ai/automation-rules | No | Denied in AiGovernanceFlowTest | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET /v1/ai/automation-runs | No | Denied in AiGovernanceFlowTest | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET /v1/ai/entitlement | No | Denied in AiGovernanceFlowTest | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | POST /v1/ai/knowledge/search | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | POST /v1/ai/recommendations/{id}/accept | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | POST /v1/ai/recommendations/{id}/approve | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | POST /v1/ai/recommendations/{id}/dismiss | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | POST /v1/ai/recommendations/{id}/execute | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | POST /v1/ai/recommendations/{id}/reject | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | GET /v1/ai/recommendations/{id} | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | GET /v1/ai/recommendations | Yes | Scope negative recommended | CURRENT_PARTIAL |
-| FINANCE_STAFF | POST /v1/ai/usage/audit | Yes | Scope negative recommended | CURRENT_PARTIAL |
+| FINANCE_STAFF | POST /v1/ai/recommendations/{id}/accept | Yes | Active-school fee scope tested for shared mutations | CURRENT_PARTIAL |
+| FINANCE_STAFF | POST /v1/ai/recommendations/{id}/approve | Yes | Active-school fee scope tested in AiGovernanceFlowTest | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST /v1/ai/recommendations/{id}/dismiss | Yes | Active-school fee scope tested in AiGovernanceFlowTest | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST /v1/ai/recommendations/{id}/execute | No | Denied without automation policy in AiGovernanceFlowTest | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST /v1/ai/recommendations/{id}/reject | Yes | Active-school fee scope covered by recommendation guard | CURRENT_PARTIAL |
+| FINANCE_STAFF | GET /v1/ai/recommendations/{id} | Yes | Non-finance and cross-school denial tested | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET /v1/ai/recommendations | Yes | Active-school fee suggestion list tested | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST /v1/ai/usage/audit | No | Denied in AiGovernanceFlowTest | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | POST /v1/auth/forgot-password | No | Yes | CURRENT_PARTIAL |
 | FINANCE_STAFF | POST /v1/auth/login | No | Yes | CURRENT_PARTIAL |
 | FINANCE_STAFF | POST /v1/auth/mfa/verify | No | Yes | CURRENT_PARTIAL |
@@ -1164,6 +1164,10 @@ The generated rows below retain `CURRENT_PARTIAL` where endpoint-specific negati
 | FINANCE_STAFF | GET /v1/finance/receipts | Yes | Scope negative recommended | CURRENT_PARTIAL |
 | FINANCE_STAFF | GET /v1/finance/reports/collections | Yes | Scope negative recommended | CURRENT_PARTIAL |
 | FINANCE_STAFF | GET /v1/finance/reports/summary | Yes | Scope negative recommended | CURRENT_PARTIAL |
+| FINANCE_STAFF | GET /v1/finance/reports/exports/{exportId}/download | Yes | Cross-school denial and download audited in ReportExportFlowTest | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET /v1/finance/reports/exports/{exportId} | Yes | Cross-school denial tested in ReportExportFlowTest | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | GET /v1/finance/reports/exports | Yes | Active-school list tested in ReportExportFlowTest | CURRENT_IMPLEMENTED |
+| FINANCE_STAFF | POST /v1/finance/reports/exports | Yes | FEE_DEMANDS-only creation tested in ReportExportFlowTest | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | POST /v1/invitations/accept | No | Yes | CURRENT_PARTIAL |
 | FINANCE_STAFF | POST /v1/me/change-password | Yes | Scope negative recommended | CURRENT_PARTIAL |
 | FINANCE_STAFF | POST /v1/me/logout | Yes | Scope negative recommended | CURRENT_PARTIAL |

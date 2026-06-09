@@ -7,11 +7,13 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
+import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.web.PageResponse;
@@ -31,6 +33,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FeeService {
+
+    private static final Set<String> SUPPORTED_PAYMENT_METHODS = Set.of(
+            "BANK_TRANSFER",
+            "CARD",
+            "CASH",
+            "CHEQUE",
+            "ONLINE",
+            "UPI"
+    );
 
     private final FeeDemandRepository feeDemandRepository;
     private final FeePaymentRepository feePaymentRepository;
@@ -143,15 +154,13 @@ public class FeeService {
 
     @Transactional(readOnly = true)
     public FeeDemandResponse schoolDemand(AuthenticatedUser actor, String demandId) {
-        FeeDemand demand = requireDemand(demandId);
-        schoolAccessService.requireSchoolFinanceAccess(actor.user().getId(), demand.getSchool().getId());
+        FeeDemand demand = requireActiveFinanceDemand(actor, demandId);
         return toResponse(demand);
     }
 
     @Transactional
     public FeeDemandResponse recordSchoolPayment(AuthenticatedUser actor, String demandId, FeePaymentRequest request) {
-        FeeDemand demand = requireDemand(demandId);
-        schoolAccessService.requireSchoolFinanceAccess(actor.user().getId(), demand.getSchool().getId());
+        FeeDemand demand = requireActiveFinanceDemand(actor, demandId);
         recordPayment(actor.user(), demand, request);
         return toResponse(demand);
     }
@@ -196,6 +205,12 @@ public class FeeService {
         if (amount.compareTo(demand.outstandingAmount()) > 0) {
             throw new BadRequestException("Payment amount cannot exceed outstanding demand amount.");
         }
+        String paymentMethod = normalizeMethod(request.paymentMethod());
+        String paymentReference = normalizeOptional(request.paymentReference());
+        if (paymentReference != null
+                && feePaymentRepository.existsBySchoolIdAndPaymentReferenceIgnoreCase(demand.getSchool().getId(), paymentReference)) {
+            throw new ConflictException("Payment reference already exists for this school.");
+        }
 
         demand.recordPayment(amount);
         FeePayment payment = feePaymentRepository.save(new FeePayment(
@@ -205,8 +220,8 @@ public class FeeService {
                 demand.getStudent(),
                 actor,
                 amount,
-                normalizeMethod(request.paymentMethod()),
-                normalizeOptional(request.paymentReference()),
+                paymentMethod,
+                paymentReference,
                 receiptNumber(demand),
                 Instant.now()
         ));
@@ -222,12 +237,25 @@ public class FeeService {
         }
         schoolAccessService.requireSchoolFinanceAccess(actor.user().getId(), activeSchoolId);
         return schoolRepository.findById(activeSchoolId)
+                .filter(School::isActive)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
+    }
+
+    private FeeDemand requireActiveFinanceDemand(AuthenticatedUser actor, String demandId) {
+        School activeSchool = requireActiveFinanceSchool(actor);
+        FeeDemand demand = requireDemand(demandId);
+        if (!demand.getSchool().getId().equals(activeSchool.getId())) {
+            throw new ForbiddenException("Fee demand does not belong to the active school.");
+        }
+        return demand;
     }
 
     private void requireStudentInSchool(Student student, String schoolId) {
         if (!student.getSchool().getId().equals(schoolId)) {
             throw new ForbiddenException("Student does not belong to the active school.");
+        }
+        if (!student.isActive()) {
+            throw new BadRequestException("Fee demand can only be created for an active student.");
         }
     }
 
@@ -409,7 +437,11 @@ public class FeeService {
     }
 
     private String normalizeMethod(String value) {
-        return value.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
+        String normalized = value.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
+        if (!SUPPORTED_PAYMENT_METHODS.contains(normalized)) {
+            throw new BadRequestException("Payment method is not supported.");
+        }
+        return normalized;
     }
 
     private String normalizeOptional(String value) {

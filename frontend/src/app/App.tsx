@@ -60,6 +60,11 @@ import {
 } from '../features/parent/api/parentPortalApi';
 import { getDashboardSummary, type DashboardSummary } from '../features/portal/api/dashboardApi';
 import { PrincipalPortalPage } from '../features/principal/pages/PrincipalPortalPage';
+import {
+  downloadFinanceReportExport,
+  listFinanceReportExports,
+  requestFinanceReportExport,
+} from '../features/reports/api/reportExportsApi';
 import { ReportExportsPage } from '../features/reports/pages/ReportExportsPage';
 import { SchoolAdminDashboardPage } from '../features/school-admin/pages/SchoolAdminDashboardPage';
 import { SchoolAdminResourcePanel } from '../features/school-admin/pages/SchoolAdminResourcePanel';
@@ -1500,7 +1505,7 @@ function RoleWorkspace({
         <WorkspaceHeader title="School ERP workspace" activeNav={activeNav} />
         <SchoolSelector />
         {user.activeSchool ? (
-          <SchoolAdminModule activeNav={activeNav} onSelectNav={onSelectNav} />
+          <SchoolAdminModule activeNav={activeNav} onSelectNav={onSelectNav} storage={storage} />
         ) : (
           <EmptyState title="Select active school" detail="Choose an assigned school to open the School Admin tools." />
         )}
@@ -1556,7 +1561,7 @@ function RoleWorkspace({
         <WorkspaceHeader title="Finance workspace" activeNav={activeNav} />
         <SchoolSelector />
         {user.activeSchool ? (
-          <FinanceStaffModule activeNav={activeNav} />
+          <FinanceStaffModule activeNav={activeNav} storage={storage} />
         ) : (
           <EmptyState title="Select active school" detail="Choose an assigned school to open the finance tools." />
         )}
@@ -1586,7 +1591,7 @@ function RoleWorkspace({
   );
 }
 
-function FinanceStaffModule({ activeNav }: { activeNav: string }) {
+function FinanceStaffModule({ activeNav, storage }: { activeNav: string; storage?: AppStorage }) {
   if (activeNav === 'dashboard') {
     return <DashboardWorkspacePanel role="FINANCE_STAFF" />;
   }
@@ -1596,7 +1601,22 @@ function FinanceStaffModule({ activeNav }: { activeNav: string }) {
   }
 
   if (activeNav === 'reports') {
-    return <FinanceReportsPage />;
+    return (
+      <div className="workspace-grid">
+        <FinanceReportsPage />
+        <ReportExportsPage
+          eyebrow="FIN-EXPORT"
+          initialReportType="FEE_DEMANDS"
+          loginRequiredMessage="Finance Staff login is required."
+          onDownload={downloadFinanceReportExport}
+          onLoad={listFinanceReportExports}
+          onRequest={requestFinanceReportExport}
+          reportTypes={[{ value: 'FEE_DEMANDS', label: 'Fee demands' }]}
+          storage={storage}
+          title="Finance exports"
+        />
+      </div>
+    );
   }
 
   if (activeNav === 'fees' || activeNav === 'payments' || activeNav === 'receipts') {
@@ -1607,8 +1627,10 @@ function FinanceStaffModule({ activeNav }: { activeNav: string }) {
           <EndpointListPanel title="Finance receipts" path="/v1/finance/receipts?size=50" />
         ) : (
           <FeeLifecyclePage
+            loginRequiredMessage="Finance Staff login is required."
             onCreateDemand={createFinanceFeeDemand}
             onRecordPayment={recordFinanceFeePayment}
+            storage={storage}
           />
         )}
       </div>
@@ -1640,12 +1662,7 @@ function OfficeStaffModule({ activeNav }: { activeNav: string }) {
   if (activeNav === 'students') return <SchoolAdminResourcePanel resource="students" />;
   if (activeNav === 'documents') return <SchoolAdminResourcePanel resource="documents" />;
   if (activeNav === 'admissions' || activeNav === 'enquiries' || activeNav === 'certificates') {
-    return (
-      <div className="workspace-grid">
-        <EndpointListPanel title={moduleTitle(activeNav)} path={`/v1/office/${activeNav}`} />
-        <EmptyState title={moduleTitle(activeNav)} detail="Office workflow APIs will appear here when enabled for this school." />
-      </div>
-    );
+    return <OfficeWorkflowPlaceholderPanel activeNav={activeNav} />;
   }
   return <ComingSoonPanel activeNav={activeNav} role="OFFICE_STAFF" />;
 }
@@ -1690,7 +1707,15 @@ function TenantAdminModule({
   return <ComingSoonPanel activeNav={activeNav} role="TENANT_ADMIN" />;
 }
 
-function SchoolAdminModule({ activeNav, onSelectNav }: { activeNav: string; onSelectNav: (navId: string) => void }) {
+function SchoolAdminModule({
+  activeNav,
+  onSelectNav,
+  storage,
+}: {
+  activeNav: string;
+  onSelectNav: (navId: string) => void;
+  storage?: AppStorage;
+}) {
   if (activeNav === 'ai-suggestions') {
     return <RoleAiPanel role="SCHOOL_ADMIN" />;
   }
@@ -1729,7 +1754,7 @@ function SchoolAdminModule({ activeNav, onSelectNav }: { activeNav: string; onSe
       </div>
     );
   }
-  if (activeNav === 'reports') return <ReportExportsPage />;
+  if (activeNav === 'reports') return <ReportExportsPage storage={storage} />;
   if (activeNav === 'settings') {
     return (
       <div className="workspace-grid">
@@ -1785,15 +1810,47 @@ function LearnerStaffModule({ activeNav, role }: { activeNav: string; role: User
 
 function DashboardWorkspacePanel({ role }: { role: UserRole }) {
   const endpoint = dashboardEndpoint(role);
+  const title = role === 'OFFICE_STAFF'
+    ? 'Office Staff Overview'
+    : role === 'FINANCE_STAFF'
+      ? 'Finance Staff Overview'
+      : `${roleTitle(role)} live summary`;
 
   return (
     <div className="workspace-grid">
-      <EndpointListPanel title={`${roleTitle(role)} live summary`} path={endpoint} />
+      <EndpointListPanel title={title} path={endpoint} />
       <EmptyState
         title="Production workspace"
         detail="Use the sidebar to open the tools available for this role."
       />
     </div>
+  );
+}
+
+function OfficeWorkflowPlaceholderPanel({ activeNav }: { activeNav: string }) {
+  const details: Record<string, string> = {
+    admissions: 'Admission record workflows are not wired to a backend API yet.',
+    enquiries: 'Enquiry workflows are not wired to a backend API yet.',
+    certificates: 'Certificate generation workflows are not wired to a backend API yet.',
+  };
+  const title = moduleTitle(activeNav);
+
+  return (
+    <section className="data-surface" aria-labelledby={`office-${activeNav}-title`}>
+      <div className="surface-toolbar">
+        <div>
+          <p className="eyebrow">Planned workflow</p>
+          <h3 id={`office-${activeNav}-title`}>{title}</h3>
+        </div>
+      </div>
+      <DeveloperDetails>
+        <span>{`No backend endpoint is currently configured for /v1/office/${activeNav}.`}</span>
+      </DeveloperDetails>
+      <div className="api-empty-state">
+        <strong>{title} is not enabled yet</strong>
+        <span>{details[activeNav] ?? 'This office workflow will appear after its API is implemented.'}</span>
+      </div>
+    </section>
   );
 }
 

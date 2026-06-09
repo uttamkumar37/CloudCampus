@@ -104,11 +104,49 @@ public class ReportExportService {
         return toResponse(exportJob);
     }
 
+    @Transactional
+    public ReportExportResponse requestFinanceExport(AuthenticatedUser actor, ReportExportRequest request) {
+        requireFinanceReportRequest(request);
+        School school = requireActiveFinanceSchool(actor);
+        BulkJobResponse bulkJob = bulkJobService.createForSchoolFinance(
+                actor,
+                new BulkJobCreateRequest(
+                        REPORT_JOB_TYPE,
+                        0,
+                        null,
+                        Map.of(
+                                "reportType", request.reportType().name(),
+                                "format", request.format().name()
+                        )
+                )
+        );
+        ReportExportJob exportJob = reportExportJobRepository.save(new ReportExportJob(
+                school,
+                actor.user(),
+                requireBulkJobReference(bulkJob.id()),
+                request.reportType(),
+                request.format(),
+                parametersJson(request.parameters())
+        ));
+        recordAudit(actor.user(), exportJob, AuditAction.REPORT_EXPORT_REQUESTED, "Finance report export requested.");
+        return toResponse(exportJob);
+    }
+
     @Transactional(readOnly = true)
     public List<ReportExportResponse> listExports(AuthenticatedUser actor) {
         School school = requireActiveSchoolLeadershipSchool(actor);
         return reportExportJobRepository.findBySchoolIdOrderByRequestedAtDesc(school.getId())
                 .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReportExportResponse> listFinanceExports(AuthenticatedUser actor) {
+        School school = requireActiveFinanceSchool(actor);
+        return reportExportJobRepository.findBySchoolIdOrderByRequestedAtDesc(school.getId())
+                .stream()
+                .filter(exportJob -> exportJob.getReportType() == ReportType.FEE_DEMANDS)
                 .map(this::toResponse)
                 .toList();
     }
@@ -120,6 +158,12 @@ public class ReportExportService {
     }
 
     @Transactional(readOnly = true)
+    public ReportExportResponse getFinanceExport(AuthenticatedUser actor, String exportId) {
+        ReportExportJob exportJob = requireAccessibleFinanceExport(actor, exportId);
+        return toResponse(exportJob);
+    }
+
+    @Transactional
     public ReportExportFileResponse downloadExport(AuthenticatedUser actor, String exportId) {
         ReportExportJob exportJob = requireAccessibleExport(actor, exportId);
         if (exportJob.getBulkJob().getStatus() != BulkJobStatus.COMPLETED) {
@@ -127,6 +171,25 @@ public class ReportExportService {
         }
         ReportExportFile file = reportExportFileRepository.findByReportExportJobId(exportJob.getId())
                 .orElseThrow(() -> new NotFoundException("Report export file was not found."));
+        recordAudit(actor.user(), exportJob, AuditAction.REPORT_EXPORT_DOWNLOADED, "Report export downloaded.");
+        return new ReportExportFileResponse(
+                file.getFileName(),
+                file.getContentType(),
+                file.getSizeBytes(),
+                file.getChecksumSha256(),
+                file.getContent()
+        );
+    }
+
+    @Transactional
+    public ReportExportFileResponse downloadFinanceExport(AuthenticatedUser actor, String exportId) {
+        ReportExportJob exportJob = requireAccessibleFinanceExport(actor, exportId);
+        if (exportJob.getBulkJob().getStatus() != BulkJobStatus.COMPLETED) {
+            throw new ConflictException("Report export file is not ready.");
+        }
+        ReportExportFile file = reportExportFileRepository.findByReportExportJobId(exportJob.getId())
+                .orElseThrow(() -> new NotFoundException("Report export file was not found."));
+        recordAudit(actor.user(), exportJob, AuditAction.REPORT_EXPORT_DOWNLOADED, "Finance report export downloaded.");
         return new ReportExportFileResponse(
                 file.getFileName(),
                 file.getContentType(),
@@ -183,11 +246,44 @@ public class ReportExportService {
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }
 
+    private School requireActiveFinanceSchool(AuthenticatedUser actor) {
+        String activeSchoolId = actor.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        schoolAccessService.requireSchoolFinanceAccess(actor.user().getId(), activeSchoolId);
+        return schoolRepository.findById(activeSchoolId)
+                .filter(School::isActive)
+                .orElseThrow(() -> new NotFoundException("Active school was not found."));
+    }
+
     private ReportExportJob requireAccessibleExport(AuthenticatedUser actor, String exportId) {
         ReportExportJob exportJob = reportExportJobRepository.findById(exportId)
                 .orElseThrow(() -> new NotFoundException("Report export was not found."));
+        if (exportJob.getSchool() == null) {
+            throw new ForbiddenException("Report export is not school-scoped.");
+        }
         schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), exportJob.getSchool().getId());
         return exportJob;
+    }
+
+    private ReportExportJob requireAccessibleFinanceExport(AuthenticatedUser actor, String exportId) {
+        School activeSchool = requireActiveFinanceSchool(actor);
+        ReportExportJob exportJob = reportExportJobRepository.findById(exportId)
+                .orElseThrow(() -> new NotFoundException("Report export was not found."));
+        if (exportJob.getSchool() == null || !exportJob.getSchool().getId().equals(activeSchool.getId())) {
+            throw new ForbiddenException("Report export does not belong to the active school.");
+        }
+        if (exportJob.getReportType() != ReportType.FEE_DEMANDS) {
+            throw new ForbiddenException("Finance staff can only access finance report exports.");
+        }
+        return exportJob;
+    }
+
+    private void requireFinanceReportRequest(ReportExportRequest request) {
+        if (request.reportType() != ReportType.FEE_DEMANDS) {
+            throw new BadRequestException("Finance exports only support fee demand reports.");
+        }
     }
 
     private com.cloudcampus.operations.bulk.BulkJob requireBulkJobReference(String bulkJobId) {

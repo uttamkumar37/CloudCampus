@@ -150,7 +150,7 @@ export function SchoolAdminResourcePanel({ resource }: SchoolAdminResourcePanelP
   async function loadItems() {
     if (!token) {
       setStatus('idle');
-      setError('School Admin login is required.');
+      setError('School login is required.');
       return;
     }
 
@@ -171,7 +171,7 @@ export function SchoolAdminResourcePanel({ resource }: SchoolAdminResourcePanelP
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) {
-      setError('School Admin login is required.');
+      setError('School login is required.');
       return;
     }
 
@@ -216,7 +216,7 @@ export function SchoolAdminResourcePanel({ resource }: SchoolAdminResourcePanelP
   async function confirmPublishRecord() {
     if (!confirmPublish) return;
     if (!token) {
-      setError('School Admin login is required.');
+      setError('School login is required.');
       setConfirmPublish(null);
       return;
     }
@@ -436,7 +436,7 @@ export function SchoolAdminResourcePanel({ resource }: SchoolAdminResourcePanelP
         <SchoolAdminConfirmDialog
           busy={status === 'saving'}
           confirmLabel={status === 'saving' ? 'Publishing...' : 'Publish record'}
-          detail={`This will publish "${confirmPublish.title}" through the active School Admin API. Published content may become visible to the intended audience.`}
+          detail={`This will publish "${confirmPublish.title}" through the active school API. Published content may become visible to the intended audience.`}
           onCancel={() => setConfirmPublish(null)}
           onConfirm={() => void confirmPublishRecord()}
           title={`Publish ${config.label} record?`}

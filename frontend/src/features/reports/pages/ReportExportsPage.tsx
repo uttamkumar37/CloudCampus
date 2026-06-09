@@ -12,10 +12,15 @@ import {
 const ACCESS_TOKEN_STORAGE_KEY = 'cloudcampus.auth.accessToken';
 
 type ReportExportsPageProps = {
+  eyebrow?: string;
+  initialReportType?: ReportType;
+  loginRequiredMessage?: string;
   onRequest?: (request: ReportExportRequest, accessToken: string) => Promise<ReportExportResponse>;
   onLoad?: (accessToken: string) => Promise<ReportExportResponse[]>;
   onDownload?: (exportId: string, accessToken: string) => Promise<string>;
+  reportTypes?: Array<{ value: ReportType; label: string }>;
   storage?: Pick<Storage, 'getItem'>;
+  title?: string;
 };
 
 const reportTypeOptions: Array<{ value: ReportType; label: string }> = [
@@ -24,17 +29,23 @@ const reportTypeOptions: Array<{ value: ReportType; label: string }> = [
 ];
 
 export function ReportExportsPage({
+  eyebrow = 'REP-001',
+  initialReportType = 'STUDENT_DIRECTORY',
+  loginRequiredMessage = 'School Admin login is required.',
   onRequest = requestReportExport,
   onLoad = listReportExports,
   onDownload = downloadReportExport,
+  reportTypes = reportTypeOptions,
   storage = globalThis.sessionStorage,
+  title = 'Report exports',
 }: ReportExportsPageProps) {
-  const [reportType, setReportType] = useState<ReportType>('STUDENT_DIRECTORY');
+  const [reportType, setReportType] = useState<ReportType>(initialReportType);
   const [exports, setExports] = useState<ReportExportResponse[]>([]);
   const [pendingExport, setPendingExport] = useState<ReportExportRequest | null>(null);
   const [status, setStatus] = useState<'idle' | 'requesting' | 'loading' | 'downloading'>('idle');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const labelForType = (type: ReportType) => reportTypes.find((option) => option.value === type)?.label ?? labelFor(type);
 
   function handleRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,7 +60,7 @@ export function ReportExportsPage({
       try {
         const response = await onRequest(pendingExport, accessToken);
         setExports((current) => [response, ...current.filter((item) => item.id !== response.id)]);
-        setMessage(`${labelFor(response.reportType)} export queued`);
+        setMessage(`${labelForType(response.reportType)} export queued`);
         setPendingExport(null);
       } finally {
         setStatus('idle');
@@ -85,7 +96,7 @@ export function ReportExportsPage({
   async function withToken(action: (accessToken: string) => Promise<void>) {
     const accessToken = storage.getItem(ACCESS_TOKEN_STORAGE_KEY);
     if (!accessToken) {
-      setError('School Admin login is required.');
+      setError(loginRequiredMessage);
       setMessage(null);
       return;
     }
@@ -101,8 +112,8 @@ export function ReportExportsPage({
 
   return (
     <section className="workflow-panel" aria-labelledby="report-exports-title">
-      <p className="eyebrow">REP-001</p>
-      <h2 id="report-exports-title">Report exports</h2>
+      <p className="eyebrow">{eyebrow}</p>
+      <h2 id="report-exports-title">{title}</h2>
 
       <form className="workflow-form" onSubmit={handleRequest}>
         <label>
@@ -112,7 +123,7 @@ export function ReportExportsPage({
             value={reportType}
             onChange={(event) => setReportType(event.target.value as ReportType)}
           >
-            {reportTypeOptions.map((option) => (
+            {reportTypes.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -132,7 +143,7 @@ export function ReportExportsPage({
         <ul className="compact-list" aria-label="Report export list">
           {exports.map((item) => (
             <li key={item.id}>
-              <span>{labelFor(item.reportType)}</span>
+              <span>{labelForType(item.reportType)}</span>
               <span>{item.status}</span>
               <span>{item.fileName ?? 'pending file'}</span>
               {item.status === 'COMPLETED' ? (
@@ -148,7 +159,7 @@ export function ReportExportsPage({
       {pendingExport ? (
         <ReportExportConfirmDialog
           busy={status === 'requesting'}
-          detail={`${labelFor(pendingExport.reportType)} will be queued as a CSV export for the active school.`}
+          detail={`${labelForType(pendingExport.reportType)} will be queued as a CSV export for the active school.`}
           onCancel={() => setPendingExport(null)}
           onConfirm={() => void confirmRequest()}
         />

@@ -7,6 +7,10 @@ Status: CURRENT_IMPLEMENTED for discovered controllers; NOT_FOUND_IN_CODEBASE fo
 | Method | Endpoint | Module | Roles | Frontend caller | Status |
 | --- | --- | --- | --- | --- | --- |
 | GET | /v1/finance/reports/collections | Report / Export | FINANCE_STAFF | frontend/src/features/finance/api/feeApi.ts | CURRENT_IMPLEMENTED |
+| GET | /v1/finance/reports/exports/{exportId}/download | Report / Export | FINANCE_STAFF | frontend/src/features/reports/api/reportExportsApi.ts | CURRENT_IMPLEMENTED |
+| GET | /v1/finance/reports/exports/{exportId} | Report / Export | FINANCE_STAFF | frontend/src/features/reports/api/reportExportsApi.ts | CURRENT_IMPLEMENTED |
+| GET | /v1/finance/reports/exports | Report / Export | FINANCE_STAFF | frontend/src/features/reports/api/reportExportsApi.ts | CURRENT_IMPLEMENTED |
+| POST | /v1/finance/reports/exports | Report / Export | FINANCE_STAFF | frontend/src/features/reports/api/reportExportsApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/finance/reports/summary | Report / Export | FINANCE_STAFF | frontend/src/features/finance/api/feeApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/school-admin/reports/exports/{exportId}/download | Report / Export | SCHOOL_ADMIN, PRINCIPAL | frontend/src/features/reports/api/reportExportsApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/school-admin/reports/exports/{exportId} | Report / Export | SCHOOL_ADMIN, PRINCIPAL | frontend/src/features/reports/api/reportExportsApi.ts | CURRENT_IMPLEMENTED |
@@ -20,6 +24,8 @@ Status: CURRENT_IMPLEMENTED for discovered controllers; NOT_FOUND_IN_CODEBASE fo
 | GET | /v1/super-admin/reports/tenants | Report / Export | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/tenant-admin/reports/schools/{schoolId}/summary | Report / Export | TENANT_ADMIN | frontend/src/features/tenant-admin/api/tenantReportsApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/tenant-admin/reports/summary | Report / Export | TENANT_ADMIN | frontend/src/features/tenant-admin/api/tenantReportsApi.ts | CURRENT_IMPLEMENTED |
+
+Finance export note: `/v1/finance/reports/exports*` uses the durable report-export pipeline, but service guards restrict FINANCE_STAFF to the active school and `FEE_DEMANDS` CSV exports only. Download records `REPORT_EXPORT_DOWNLOADED`.
 
 # GET /v1/finance/reports/collections
 
