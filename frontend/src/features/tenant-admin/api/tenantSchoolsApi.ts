@@ -80,14 +80,14 @@ export async function updateTenantSchool(
   payload: TenantSchoolUpdateRequest,
   accessToken: string,
 ): Promise<TenantSchoolResponse> {
-  return httpClient.patch<TenantSchoolResponse>(`/v1/tenant-admin/schools/${schoolId}`, payload, { accessToken });
+  return httpClient.patch<TenantSchoolResponse>(`/v1/tenant-admin/schools/${encodeURIComponent(schoolId)}`, payload, { accessToken });
 }
 
 export async function deactivateTenantSchool(
   schoolId: string,
   accessToken: string,
 ): Promise<TenantSchoolResponse> {
-  return httpClient.post<TenantSchoolResponse>(`/v1/tenant-admin/schools/${schoolId}/deactivate`, undefined, { accessToken });
+  return httpClient.post<TenantSchoolResponse>(`/v1/tenant-admin/schools/${encodeURIComponent(schoolId)}/deactivate`, undefined, { accessToken });
 }
 
 export async function inviteTenantSchoolAdmin(
@@ -95,14 +95,14 @@ export async function inviteTenantSchoolAdmin(
   payload: TenantSchoolAdminInviteRequest,
   accessToken: string,
 ): Promise<TenantSchoolAdminInviteResponse> {
-  return httpClient.post<TenantSchoolAdminInviteResponse>(`/v1/tenant-admin/schools/${schoolId}/admins/invite`, payload, { accessToken });
+  return httpClient.post<TenantSchoolAdminInviteResponse>(`/v1/tenant-admin/schools/${encodeURIComponent(schoolId)}/admins/invite`, payload, { accessToken });
 }
 
 export async function listTenantSchoolAdmins(
   schoolId: string,
   accessToken: string,
 ): Promise<TenantSchoolAdminSummary[]> {
-  return httpClient.get<TenantSchoolAdminSummary[]>(`/v1/tenant-admin/schools/${schoolId}/admins`, { accessToken });
+  return httpClient.get<TenantSchoolAdminSummary[]>(`/v1/tenant-admin/schools/${encodeURIComponent(schoolId)}/admins`, { accessToken });
 }
 
 export async function resendTenantSchoolAdminInvitation(
@@ -111,7 +111,7 @@ export async function resendTenantSchoolAdminInvitation(
   accessToken: string,
 ): Promise<TenantSchoolAdminInviteResponse> {
   return httpClient.post<TenantSchoolAdminInviteResponse>(
-    `/v1/tenant-admin/schools/${schoolId}/admins/${userId}/resend-invitation`,
+    `/v1/tenant-admin/schools/${encodeURIComponent(schoolId)}/admins/${encodeURIComponent(userId)}/resend-invitation`,
     undefined,
     { accessToken },
   );
@@ -123,7 +123,7 @@ export async function revokeTenantSchoolAdminAccess(
   accessToken: string,
 ): Promise<TenantSchoolAdminAccessRevokeResponse> {
   return httpClient.delete<TenantSchoolAdminAccessRevokeResponse>(
-    `/v1/tenant-admin/schools/${schoolId}/admins/${userId}/access`,
+    `/v1/tenant-admin/schools/${encodeURIComponent(schoolId)}/admins/${encodeURIComponent(userId)}/access`,
     { accessToken },
   );
 }

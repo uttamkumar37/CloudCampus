@@ -78,5 +78,5 @@ function listReportExportsAt(path: string, accessToken: string): Promise<ReportE
 }
 
 function downloadReportExportAt(path: string, exportId: string, accessToken: string): Promise<string> {
-  return httpClient.get<string>(`${path}/${exportId}/download`, { accessToken });
+  return httpClient.get<string>(`${path}/${encodeURIComponent(exportId)}/download`, { accessToken });
 }

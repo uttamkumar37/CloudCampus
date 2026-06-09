@@ -37,5 +37,5 @@ export async function getTenantSchoolReportSummary(
   schoolId: string,
   accessToken: string,
 ): Promise<TenantReportSummary> {
-  return httpClient.get<TenantReportSummary>(`/v1/tenant-admin/reports/schools/${schoolId}/summary`, { accessToken });
+  return httpClient.get<TenantReportSummary>(`/v1/tenant-admin/reports/schools/${encodeURIComponent(schoolId)}/summary`, { accessToken });
 }

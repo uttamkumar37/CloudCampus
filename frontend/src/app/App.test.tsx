@@ -58,8 +58,18 @@ function authClientFor(user: CurrentUser, schools: SchoolAccess[] = user.allowed
 
 describe('App', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
+      if (url.includes('/v1/auth/forgot-password') && init?.method === 'POST') {
+        return jsonResponse({
+          message: 'Password reset token created for scaffold delivery.',
+          resetToken: 'reset-token-1',
+          expiresAt: '2026-06-09T18:30:00Z',
+        });
+      }
+      if (url.includes('/v1/auth/reset-password') && init?.method === 'POST') {
+        return jsonResponse({ message: 'Password reset complete.' });
+      }
       if (url.includes('/v1/super-admin/search')) {
         return jsonResponse({
           results: [{
@@ -503,6 +513,40 @@ describe('App', () => {
     expect(screen.getAllByRole('heading', { name: /welcome back/i })).toHaveLength(2);
     expect(screen.getByText(/one login works for super admin/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /forgot password/i })).toBeInTheDocument();
+
+    const recoveryPanel = screen.getByRole('heading', { name: /forgot password/i }).closest('section');
+    expect(recoveryPanel).not.toBeNull();
+    const recovery = within(recoveryPanel as HTMLElement);
+    fireEvent.change(recovery.getByLabelText(/^email$/i), {
+      target: { value: 'parent@example.com' },
+    });
+    fireEvent.click(recovery.getByRole('button', { name: /send reset token/i }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      '/v1/auth/forgot-password',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ email: 'parent@example.com' }),
+      }),
+    ));
+    expect(await recovery.findByText(/local reset token: reset-token-1/i)).toBeInTheDocument();
+
+    fireEvent.change(recovery.getByLabelText(/new password/i), {
+      target: { value: 'NewStrongPassword123!' },
+    });
+    fireEvent.change(recovery.getByLabelText(/confirm password/i), {
+      target: { value: 'NewStrongPassword123!' },
+    });
+    fireEvent.click(recovery.getByRole('button', { name: /reset account password/i }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      '/v1/auth/reset-password',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ token: 'reset-token-1', password: 'NewStrongPassword123!' }),
+      }),
+    ));
+    expect(await recovery.findByText(/password reset complete/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /accept invitation/i }));
     expect(screen.getByRole('heading', { name: /accept school admin invitation/i })).toBeInTheDocument();

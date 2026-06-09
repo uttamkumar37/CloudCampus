@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -40,7 +40,8 @@ import { AcademicSetupPage } from '../features/academic/pages/AcademicSetupPage'
 import { SchoolSelector } from '../features/auth/components/SchoolSelector';
 import { AuthClient, AuthStateProvider, useAuthState } from '../features/auth/hooks/authState';
 import { InvitationAcceptPage } from '../features/auth/pages/InvitationAcceptPage';
-import { LoginPage } from '../features/auth/pages/LoginPage';
+import { LoginPage, shouldShowLocalAuthHints } from '../features/auth/pages/LoginPage';
+import { forgotPassword, resetPassword } from '../features/auth/api/authApi';
 import { createFinanceFeeDemand, recordFinanceFeePayment } from '../features/finance/api/feeApi';
 import { FeeLifecyclePage } from '../features/finance/pages/FeeLifecyclePage';
 import { FinanceReportsPage } from '../features/finance/pages/FinanceReportsPage';
@@ -81,7 +82,7 @@ import { TenantReportsPage } from '../features/tenant-admin/pages/TenantReportsP
 import { TenantSchoolManagementPage } from '../features/tenant-admin/pages/TenantSchoolManagementPage';
 import { TenantSettingsPage, TenantUsagePage } from '../features/tenant-admin/pages/TenantSettingsPage';
 import { TeacherPortalPage } from '../features/teacher/pages/TeacherPortalPage';
-import type { AuthSession, CurrentUser, UserRole } from '../features/auth/api/authApi';
+import type { AuthSession, CurrentUser, ForgotPasswordResponse, UserRole } from '../features/auth/api/authApi';
 
 type AppProps = {
   authClient?: Partial<AuthClient>;
@@ -2342,17 +2343,151 @@ function LoadingScreen() {
 }
 
 function PasswordResetCard() {
+  const [mode, setMode] = useState<'request' | 'reset'>('request');
+  const [email, setEmail] = useState('');
+  const [token, setToken] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [requestResult, setRequestResult] = useState<ForgotPasswordResponse | null>(null);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const showLocalResetToken = requestResult?.resetToken && shouldShowLocalAuthHints();
+
+  async function handleForgotPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Email is required.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await forgotPassword(trimmedEmail);
+      setRequestResult(result);
+      setToken(result.resetToken ?? '');
+      setMode('reset');
+      setMessage(result.message || 'Password reset instructions are ready.');
+    } catch (caught) {
+      setRequestResult(null);
+      setError(caught instanceof Error ? caught.message : 'Password reset request failed.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleResetPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmedToken = token.trim();
+    if (!trimmedToken) {
+      setError('Reset token is required.');
+      return;
+    }
+    if (password.length < 12) {
+      setError('Password must be at least 12 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await resetPassword(trimmedToken, password);
+      setMessage(result.message || 'Password reset complete.');
+      setPassword('');
+      setConfirmPassword('');
+      setToken('');
+      setRequestResult(null);
+      setMode('request');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Password reset failed.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <section className="workflow-panel compact-auth-card" aria-labelledby="forgot-password-title">
       <p className="eyebrow">Account recovery</p>
       <h2 id="forgot-password-title">Forgot password</h2>
-      <form className="workflow-form">
-        <label>
-          Email
-          <input autoComplete="email" name="resetEmail" type="email" />
-        </label>
-        <button type="button">Send reset link</button>
-      </form>
+      <div className="access-tabs compact-tabs" role="tablist" aria-label="Password recovery steps">
+        <button className={mode === 'request' ? 'active' : ''} onClick={() => setMode('request')} type="button">Request token</button>
+        <button className={mode === 'reset' ? 'active' : ''} onClick={() => setMode('reset')} type="button">Reset password</button>
+      </div>
+
+      {mode === 'request' ? (
+        <form className="workflow-form" onSubmit={handleForgotPassword}>
+          <label>
+            Email
+            <input
+              autoComplete="email"
+              name="resetEmail"
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="user@school.edu"
+              required
+              type="email"
+              value={email}
+            />
+          </label>
+          <button type="submit" disabled={submitting}>
+            {submitting ? 'Sending...' : 'Send reset token'}
+          </button>
+        </form>
+      ) : (
+        <form className="workflow-form" onSubmit={handleResetPassword}>
+          <label>
+            Reset token
+            <input
+              autoComplete="one-time-code"
+              name="resetToken"
+              onChange={(event) => setToken(event.target.value)}
+              placeholder="Paste reset token"
+              required
+              value={token}
+            />
+          </label>
+          <label>
+            New password
+            <input
+              autoComplete="new-password"
+              minLength={12}
+              name="newPassword"
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              type="password"
+              value={password}
+            />
+          </label>
+          <label>
+            Confirm password
+            <input
+              autoComplete="new-password"
+              minLength={12}
+              name="confirmPassword"
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              required
+              type="password"
+              value={confirmPassword}
+            />
+          </label>
+          <button type="submit" disabled={submitting}>
+            {submitting ? 'Resetting...' : 'Reset account password'}
+          </button>
+        </form>
+      )}
+
+      {showLocalResetToken ? (
+        <p className="form-hint">Local reset token: {requestResult.resetToken}</p>
+      ) : null}
+      {message ? <p className="form-result" role="status">{message}</p> : null}
+      {error ? <p className="form-error" role="alert">{error}</p> : null}
     </section>
   );
 }

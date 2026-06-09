@@ -104,5 +104,5 @@ export async function getMySchools(accessToken: string): Promise<SchoolAccess[]>
 }
 
 export async function activateSchool(accessToken: string, schoolId: string): Promise<AuthSession> {
-  return httpClient.post<AuthSession>(`/v1/me/schools/${schoolId}/activate`, undefined, { accessToken });
+  return httpClient.post<AuthSession>(`/v1/me/schools/${encodeURIComponent(schoolId)}/activate`, undefined, { accessToken });
 }

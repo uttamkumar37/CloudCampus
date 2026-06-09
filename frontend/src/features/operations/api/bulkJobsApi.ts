@@ -49,5 +49,5 @@ export async function listBulkJobs(accessToken: string): Promise<BulkJobResponse
 }
 
 export async function cancelBulkJob(bulkJobId: string, accessToken: string): Promise<BulkJobResponse> {
-  return httpClient.post<BulkJobResponse>(`/v1/school-admin/bulk-jobs/${bulkJobId}/cancel`, undefined, { accessToken });
+  return httpClient.post<BulkJobResponse>(`/v1/school-admin/bulk-jobs/${encodeURIComponent(bulkJobId)}/cancel`, undefined, { accessToken });
 }

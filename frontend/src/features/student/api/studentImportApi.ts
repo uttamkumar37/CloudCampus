@@ -111,7 +111,7 @@ export async function inviteStudentLogin(
   accessToken: string,
 ): Promise<StudentLoginInvitationResponse> {
   return httpClient.post<StudentLoginInvitationResponse>(
-    `/v1/school-admin/students/${studentId}/login-invitation`,
+    `/v1/school-admin/students/${encodeURIComponent(studentId)}/login-invitation`,
     { email },
     { accessToken },
   );

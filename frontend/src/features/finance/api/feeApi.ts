@@ -113,7 +113,7 @@ export async function recordFeePayment(
   request: FeePaymentCreateRequest,
   accessToken: string,
 ): Promise<FeeDemandResponse> {
-  return recordPaymentAt(`/v1/school-admin/fees/demands/${demandId}/payments`, request, accessToken);
+  return recordPaymentAt(`/v1/school-admin/fees/demands/${encodeURIComponent(demandId)}/payments`, request, accessToken);
 }
 
 export async function recordFinanceFeePayment(
@@ -121,7 +121,7 @@ export async function recordFinanceFeePayment(
   request: FeePaymentCreateRequest,
   accessToken: string,
 ): Promise<FeeDemandResponse> {
-  return recordPaymentAt(`/v1/finance/fees/demands/${demandId}/payments`, request, accessToken);
+  return recordPaymentAt(`/v1/finance/fees/demands/${encodeURIComponent(demandId)}/payments`, request, accessToken);
 }
 
 async function recordPaymentAt(
