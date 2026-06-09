@@ -7,14 +7,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogRepository;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
+import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.JwtAccessTokenService;
 import com.cloudcampus.platform.tenant.TenantRepository;
+import com.cloudcampus.platform.tenant.Tenant;
+import com.cloudcampus.school.School;
+import com.cloudcampus.school.SchoolRepository;
 import com.cloudcampus.testsupport.AuthTestSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +46,9 @@ class StaffProvisioningFlowTest {
 
     @Autowired
     private TenantRepository tenantRepository;
+
+    @Autowired
+    private SchoolRepository schoolRepository;
 
     @Autowired
     private UserAccountRepository userAccountRepository;
@@ -109,6 +118,44 @@ class StaffProvisioningFlowTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(schoolAdminToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].userId").value(teacherUserId));
+
+        Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
+        School school = schoolRepository.findById(schoolId).orElseThrow();
+        UserAccount principal = new UserAccount(
+                tenant,
+                "principal-review-" + schoolId + "@example.com",
+                "Principal Review",
+                UserRole.PRINCIPAL
+        );
+        principal.activate(passwordEncoder.encode("PrincipalReview123!"), "Principal Review", Instant.now());
+        userAccountRepository.save(principal);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, principal, UserRole.PRINCIPAL, true));
+        String principalToken = jwtAccessTokenService.issueToken(principal.getId(), tenantId, UserRole.PRINCIPAL, schoolId);
+
+        mockMvc.perform(get("/v1/school-admin/teachers")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(principalToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].userId").value(teacherUserId))
+                .andExpect(jsonPath("$.items[0].role").value("TEACHER"));
+
+        mockMvc.perform(get("/v1/school-admin/staff")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(principalToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(post("/v1/school-admin/staff/provision")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(principalToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "fullName": "Principal Blocked",
+                                  "email": "principal-blocked@example.com",
+                                  "role": "TEACHER",
+                                  "portalLoginRequired": true
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
 
         acceptInvitation(
                 provisionedTeacher.at("/invitationToken").asText(),

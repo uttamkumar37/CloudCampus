@@ -388,6 +388,15 @@ describe('App', () => {
           primarySchool: true,
         });
       }
+      if (url.includes('/v1/school-admin/students?')) {
+        return jsonResponse({
+          items: [],
+          page: 0,
+          size: 10,
+          totalItems: 0,
+          totalPages: 0,
+        });
+      }
       if (url.includes('/v1/school-admin/students')) {
         return jsonResponse([]);
       }
@@ -642,6 +651,53 @@ describe('App', () => {
     expect(screen.queryByText(/your role cannot access this route/i)).not.toBeInTheDocument();
   });
 
+  it('shows only the production Principal portal modules to a Principal', async () => {
+    const principalSchool: SchoolAccess = { ...schoolA, role: 'PRINCIPAL' };
+    const user: CurrentUser = {
+      userId: 'principal-1',
+      email: 'principal@example.com',
+      displayName: 'Principal',
+      role: 'PRINCIPAL',
+      tenantId: 'tenant-1',
+      activeSchool: principalSchool,
+      allowedSchools: [principalSchool],
+    };
+
+    render(<App authClient={authClientFor(user)} storage={storageWithToken('principal-token')} />);
+
+    expect(await screen.findByRole('heading', { name: /principal dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /principal area/i })).toBeInTheDocument();
+
+    const principalNav = screen.getByRole('navigation', { name: /principal navigation/i });
+    ['Dashboard', 'Teachers', 'Students', 'Attendance Review', 'Exams', 'Results Approval', 'AI Approvals', 'Reports'].forEach((label) => {
+      expect(within(principalNav).getByRole('button', { name: new RegExp(`^${label}$`, 'i') })).toBeInTheDocument();
+    });
+    expect(within(principalNav).queryByRole('button', { name: /tenants|subscriptions|billing|users|parents|staff|fees|settings/i })).not.toBeInTheDocument();
+
+    fireEvent.click(within(principalNav).getByRole('button', { name: /^teachers$/i }));
+
+    expect((await screen.findAllByRole('heading', { name: /^teachers$/i })).length).toBeGreaterThan(0);
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      '/v1/school-admin/teachers?page=0&size=50',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ Authorization: 'Bearer principal-token' }),
+      }),
+    ));
+
+    fireEvent.click(within(principalNav).getByRole('button', { name: /^students$/i }));
+
+    expect((await screen.findAllByRole('heading', { name: /^students$/i })).length).toBeGreaterThan(0);
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      '/v1/school-admin/students?page=0&size=10',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({ Authorization: 'Bearer principal-token' }),
+      }),
+    ));
+    expect(vi.mocked(fetch).mock.calls.some(([input]) => String(input).includes('/v1/super-admin'))).toBe(false);
+  });
+
   it.each(['TEACHER', 'FINANCE_STAFF', 'PARENT', 'STUDENT', 'STAFF'] as const)(
     'shows only the %s portal shell for non-admin roles',
     async (role) => {
@@ -811,7 +867,7 @@ describe('App', () => {
     await waitFor(() => expect(authClient.activateSchool).toHaveBeenCalledTimes(1));
     expect(authClient.activateSchool).toHaveBeenCalledWith('school-admin-token', 'school-a');
     expect(await screen.findByRole('heading', { name: /school admin dashboard/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /school admin workspace/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /school erp workspace/i })).toBeInTheDocument();
   });
 
   it('shows a clear error when school activation is denied', async () => {

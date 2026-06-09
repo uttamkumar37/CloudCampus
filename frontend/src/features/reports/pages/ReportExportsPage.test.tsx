@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { vi } from 'vitest';
 
 import { ReportExportsPage } from './ReportExportsPage';
@@ -57,6 +57,9 @@ describe('ReportExportsPage', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /request export/i }));
+    const dialog = screen.getByRole('dialog', { name: /queue report export/i });
+    fireEvent.click(within(dialog).getByRole('button', { name: /queue export/i }));
+
     await waitFor(() => expect(onRequest).toHaveBeenCalledWith(
       { reportType: 'STUDENT_DIRECTORY', format: 'CSV' },
       'school-admin-token',
@@ -77,6 +80,7 @@ describe('ReportExportsPage', () => {
     render(<ReportExportsPage onRequest={onRequest} storage={storageWithToken(null)} />);
 
     fireEvent.click(screen.getByRole('button', { name: /request export/i }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: /queue report export/i })).getByRole('button', { name: /queue export/i }));
 
     expect(await screen.findByText(/school admin login is required/i)).toBeInTheDocument();
     expect(onRequest).not.toHaveBeenCalled();

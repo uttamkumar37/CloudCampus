@@ -43,7 +43,7 @@ public class StaffDirectoryService {
 
     @Transactional(readOnly = true)
     public PageResponse<StaffDirectoryResponse> teachers(AuthenticatedUser actor, int page, int size) {
-        School school = requireActiveAdminSchool(actor);
+        School school = requireActiveLeadershipSchool(actor);
         return PageResponses.of(staffProfileRepository.findBySchoolIdAndRoleOrderByFullNameAsc(school.getId(), UserRole.TEACHER)
                 .stream()
                 .map(this::toResponse)
@@ -56,6 +56,16 @@ public class StaffDirectoryService {
             throw new ForbiddenException("An active school is required.");
         }
         schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), activeSchoolId);
+        return schoolRepository.findById(activeSchoolId)
+                .orElseThrow(() -> new NotFoundException("Active school was not found."));
+    }
+
+    private School requireActiveLeadershipSchool(AuthenticatedUser actor) {
+        String activeSchoolId = actor.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), activeSchoolId);
         return schoolRepository.findById(activeSchoolId)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }

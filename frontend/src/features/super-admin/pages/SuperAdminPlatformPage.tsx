@@ -154,6 +154,17 @@ type PlanFormField =
   | 'currency'
   | 'status';
 type PlanFormErrors = Partial<Record<PlanFormField, string>>;
+type ConfirmDialogModel = {
+  cancelLabel?: string;
+  confirmLabel: string;
+  detail: string;
+  onConfirm: (reason?: string) => Promise<void> | void;
+  reasonLabel?: string;
+  reasonPlaceholder?: string;
+  requireReason?: boolean;
+  title: string;
+  tone?: 'default' | 'danger';
+};
 
 export function SuperAdminPlatformPage({ onNavigate, section }: SuperAdminPlatformPageProps) {
   const { accessToken } = useAuthState();
@@ -340,20 +351,26 @@ function TenantManagement({ token, refreshKey, onRefresh }: { token: string; ref
   const [message, setMessage] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogModel | null>(null);
 
-  async function changeStatus(tenant: SuperAdminTenant) {
+  function changeStatus(tenant: SuperAdminTenant) {
     const nextStatus = tenant.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-    if (!globalThis.confirm(`Change ${tenant.name} to ${nextStatus}?`)) {
-      return;
-    }
-    setSavingId(tenant.tenantId);
-    try {
-      await updateSuperAdminTenantStatus(tenant.tenantId, nextStatus, token);
-      setMessage(`${tenant.name} is now ${nextStatus}.`);
-      onRefresh();
-    } finally {
-      setSavingId(null);
-    }
+    setConfirmDialog({
+      confirmLabel: nextStatus === 'SUSPENDED' ? 'Suspend organization' : 'Activate organization',
+      detail: `${tenant.name} will be moved to ${nextStatus}. This platform-wide status change is audited and can affect school access.`,
+      onConfirm: async () => {
+        setSavingId(tenant.tenantId);
+        try {
+          await updateSuperAdminTenantStatus(tenant.tenantId, nextStatus, token);
+          setMessage(`${tenant.name} is now ${nextStatus}.`);
+          onRefresh();
+        } finally {
+          setSavingId(null);
+        }
+      },
+      title: `${nextStatus === 'SUSPENDED' ? 'Suspend' : 'Activate'} ${tenant.name}?`,
+      tone: nextStatus === 'SUSPENDED' ? 'danger' : 'default',
+    });
   }
 
   return (
@@ -371,7 +388,7 @@ function TenantManagement({ token, refreshKey, onRefresh }: { token: string; ref
         statusOptions={['ACTIVE', 'SUSPENDED']}
         values={query}
       />
-      {message ? <p className="toast-message">{message}</p> : null}
+      {message ? <p className="toast-message" role="status">{message}</p> : null}
       <RemoteTable state={tenants} empty="No organizations yet. Create your first organization and school to start onboarding.">
         {(data) => (
           <>
@@ -387,7 +404,7 @@ function TenantManagement({ token, refreshKey, onRefresh }: { token: string; ref
                     <td>{tenant.planName}</td>
                     <td>{dateLabel(tenant.createdAt)}</td>
                     <td>
-                      <button disabled={savingId === tenant.tenantId} onClick={() => void changeStatus(tenant)} type="button">
+                      <button disabled={savingId === tenant.tenantId} onClick={() => changeStatus(tenant)} type="button">
                         {tenant.status === 'ACTIVE' ? 'Suspend' : 'Activate'}
                       </button>
                     </td>
@@ -418,6 +435,7 @@ function TenantManagement({ token, refreshKey, onRefresh }: { token: string; ref
           </section>
         </div>
       ) : null}
+      {confirmDialog ? <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} /> : null}
     </section>
   );
 }
@@ -472,6 +490,7 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
   const [rolePermissionRole, setRolePermissionRole] = useState('SUPER_ADMIN');
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogModel | null>(null);
   const users = useLoader(() => listSuperAdminUsers(query, token), [
     token,
     refreshKey,
@@ -577,32 +596,56 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
     );
   }
 
-  async function deactivateRole(user: AccessControlUser, roleAssignmentId: string) {
-    await runAction(
-      () => updateSuperAdminUserRole(user.userId, roleAssignmentId, { active: false, reason: 'Deactivated from Super Admin portal.' }, token),
-      'Role assignment deactivated.',
-    );
+  function deactivateRole(user: AccessControlUser, role: UserRoleAssignment) {
+    setConfirmDialog({
+      confirmLabel: 'Deactivate role',
+      detail: `${role.role} access for ${user.displayName} will be marked inactive. Existing audit history is preserved.`,
+      onConfirm: () => runAction(
+        () => updateSuperAdminUserRole(user.userId, role.roleAssignmentId, { active: false, reason: 'Deactivated from Super Admin portal.' }, token),
+        'Role assignment deactivated.',
+      ),
+      title: 'Deactivate role assignment?',
+      tone: 'danger',
+    });
   }
 
-  async function deleteRole(user: AccessControlUser, roleAssignmentId: string) {
-    await runAction(
-      () => deleteSuperAdminUserRole(user.userId, roleAssignmentId, token),
-      'Role assignment removed.',
-    );
+  function deleteRole(user: AccessControlUser, role: UserRoleAssignment) {
+    setConfirmDialog({
+      confirmLabel: 'Delete role',
+      detail: `This permanently removes the ${role.role} assignment from ${user.displayName}. Use this only when the assignment was created in error.`,
+      onConfirm: () => runAction(
+        () => deleteSuperAdminUserRole(user.userId, role.roleAssignmentId, token),
+        'Role assignment removed.',
+      ),
+      title: 'Delete role assignment?',
+      tone: 'danger',
+    });
   }
 
-  async function revokeOverride(user: AccessControlUser, overrideId: string) {
-    await runAction(
-      () => updateSuperAdminPermissionOverride(user.userId, overrideId, { active: false, reason: 'Revoked from Super Admin portal.' }, token),
-      'Permission override revoked.',
-    );
+  function revokeOverride(user: AccessControlUser, override: PermissionOverride) {
+    setConfirmDialog({
+      confirmLabel: 'Revoke override',
+      detail: `${override.permissionCode} override for ${user.displayName} will be made inactive and recorded in audit history.`,
+      onConfirm: () => runAction(
+        () => updateSuperAdminPermissionOverride(user.userId, override.overrideId, { active: false, reason: 'Revoked from Super Admin portal.' }, token),
+        'Permission override revoked.',
+      ),
+      title: 'Revoke permission override?',
+      tone: 'danger',
+    });
   }
 
-  async function deleteOverride(user: AccessControlUser, overrideId: string) {
-    await runAction(
-      () => deleteSuperAdminPermissionOverride(user.userId, overrideId, token),
-      'Permission override removed.',
-    );
+  function deleteOverride(user: AccessControlUser, override: PermissionOverride) {
+    setConfirmDialog({
+      confirmLabel: 'Delete override',
+      detail: `This permanently removes the ${override.permissionCode} override from ${user.displayName}. Keep a revocation instead when audit continuity matters.`,
+      onConfirm: () => runAction(
+        () => deleteSuperAdminPermissionOverride(user.userId, override.overrideId, token),
+        'Permission override removed.',
+      ),
+      title: 'Delete permission override?',
+      tone: 'danger',
+    });
   }
 
   async function saveTeacherAssignment(event: FormEvent<HTMLFormElement>) {
@@ -645,7 +688,13 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
       setActionError('Teacher user ID and assignment ID are required to remove an assignment.');
       return;
     }
-    await runAction(() => deleteSuperAdminTeacherAssignment(teacherUserId, assignmentId, token), 'Teacher assignment removed.', target);
+    setConfirmDialog({
+      confirmLabel: 'Remove assignment',
+      detail: 'This removes the selected teacher assignment from the platform access graph.',
+      onConfirm: () => runAction(() => deleteSuperAdminTeacherAssignment(teacherUserId, assignmentId, token), 'Teacher assignment removed.', target),
+      title: 'Remove teacher assignment?',
+      tone: 'danger',
+    });
   }
 
   async function saveGuardianLink(event: FormEvent<HTMLFormElement>) {
@@ -696,13 +745,19 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
       setActionError('Student ID and guardian link ID are required to remove a guardian link.');
       return;
     }
-    await runAction(() => deleteSuperAdminStudentGuardian(studentId, guardianLinkId, token), 'Guardian link removed.', target);
+    setConfirmDialog({
+      confirmLabel: 'Remove guardian',
+      detail: 'This removes the selected guardian relationship for the student record.',
+      onConfirm: () => runAction(() => deleteSuperAdminStudentGuardian(studentId, guardianLinkId, token), 'Guardian link removed.', target),
+      title: 'Remove guardian link?',
+      tone: 'danger',
+    });
   }
 
   return (
     <section className="super-admin-panel">
       <PanelTitle eyebrow="Manage" title="Users & Roles" detail="Manage platform users, role assignments, school access, and permission overrides." />
-      {message ? <p className="toast-message">{message}</p> : null}
+      {message ? <p className="toast-message" role="status">{message}</p> : null}
       {actionError ? <PanelState title="Action blocked" detail={actionError} tone="error" /> : null}
       <form
         className="super-admin-filters"
@@ -720,24 +775,36 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
           }));
         }}
       >
-        <input aria-label="Search users" defaultValue={query.search} name="search" placeholder="Name or email" />
-        <input aria-label="Organization ID" defaultValue={query.tenantId} name="tenantId" placeholder="Organization ID" />
-        <input aria-label="School ID" defaultValue={query.schoolId} name="schoolId" placeholder="School ID" />
-        <select aria-label="Role filter" defaultValue={query.role} name="role">
-          <option value="">All roles</option>
-          {ROLE_OPTIONS.map((role) => <option key={role} value={role}>{role}</option>)}
-        </select>
-        <select aria-label="Status filter" defaultValue={query.status} name="status">
-          <option value="">All statuses</option>
-          {['ACTIVE', 'INVITED', 'DISABLED'].map((status) => <option key={status} value={status}>{status}</option>)}
-        </select>
-        <select
-          aria-label="Page size"
-          onChange={(event) => setQuery((current) => ({ ...current, size: Number(event.target.value), page: 0 }))}
-          value={query.size}
-        >
-          {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size} rows</option>)}
-        </select>
+        <FilterField label="Search users">
+          <input aria-label="Search users" defaultValue={query.search} name="search" placeholder="Name or email" />
+        </FilterField>
+        <FilterField label="Organization ID">
+          <input aria-label="Organization ID" defaultValue={query.tenantId} name="tenantId" placeholder="tenant_123" />
+        </FilterField>
+        <FilterField label="School ID">
+          <input aria-label="School ID" defaultValue={query.schoolId} name="schoolId" placeholder="school_123" />
+        </FilterField>
+        <FilterField label="Role">
+          <select aria-label="Role filter" defaultValue={query.role} name="role">
+            <option value="">All roles</option>
+            {ROLE_OPTIONS.map((role) => <option key={role} value={role}>{role}</option>)}
+          </select>
+        </FilterField>
+        <FilterField label="Status">
+          <select aria-label="Status filter" defaultValue={query.status} name="status">
+            <option value="">All statuses</option>
+            {['ACTIVE', 'INVITED', 'DISABLED'].map((status) => <option key={status} value={status}>{status}</option>)}
+          </select>
+        </FilterField>
+        <FilterField label="Page size">
+          <select
+            aria-label="Page size"
+            onChange={(event) => setQuery((current) => ({ ...current, size: Number(event.target.value), page: 0 }))}
+            value={query.size}
+          >
+            {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size} rows</option>)}
+          </select>
+        </FilterField>
         <button type="submit">Apply filters</button>
       </form>
       <div className="super-admin-grid">
@@ -806,12 +873,20 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
                 <>
                   <form className="super-admin-form" onSubmit={(event) => void assignRole(event)}>
                     <h3>Assign role</h3>
-                    <select name="role" required>
-                      {ROLE_OPTIONS.filter((role) => role !== 'STAFF').map((role) => <option key={role} value={role}>{role}</option>)}
-                    </select>
-                    <input defaultValue={user.tenantId} name="tenantId" placeholder="Organization ID" />
-                    <input name="schoolId" placeholder="School ID for school roles" />
-                    <input name="reason" placeholder="Reason" />
+                    <FormField label="Role" required>
+                      <select name="role" required>
+                        {ROLE_OPTIONS.filter((role) => role !== 'STAFF').map((role) => <option key={role} value={role}>{role}</option>)}
+                      </select>
+                    </FormField>
+                    <FormField label="Organization ID" hint="Required for organization and school scoped roles.">
+                      <input defaultValue={user.tenantId} name="tenantId" placeholder="tenant_123" />
+                    </FormField>
+                    <FormField label="School ID" hint="Required for school-scoped roles.">
+                      <input name="schoolId" placeholder="school_123" />
+                    </FormField>
+                    <FormField label="Audit reason">
+                      <input name="reason" placeholder="Why this access is needed" />
+                    </FormField>
                     <label className="inline-check"><input name="primaryRole" type="checkbox" /> Make primary login role</label>
                     <button type="submit">Assign role</button>
                   </form>
@@ -835,7 +910,7 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
                     )}
                   </RemoteList>
                   <RemoteList state={selectedRoles} empty="No role assignments for this user.">
-                    {(items) => <RoleAssignmentsTable items={items} onDeactivate={(id) => void deactivateRole(user, id)} onDelete={(id) => void deleteRole(user, id)} />}
+                    {(items) => <RoleAssignmentsTable items={items} onDeactivate={(role) => deactivateRole(user, role)} onDelete={(role) => deleteRole(user, role)} />}
                   </RemoteList>
                 </>
               ) : null}
@@ -843,22 +918,32 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
                 <>
                   <form className="super-admin-form" onSubmit={(event) => void saveOverride(event)}>
                     <h3>Permission override</h3>
-                    <select name="permissionCode" required>
-                      {(permissions.data ?? []).map((permission: Permission) => (
-                        <option key={permission.code} value={permission.code}>{permission.code}</option>
-                      ))}
-                    </select>
-                    <select name="allowed">
-                      <option value="true">Grant</option>
-                      <option value="false">Deny</option>
-                    </select>
-                    <input defaultValue={user.tenantId} name="tenantId" placeholder="Organization ID" />
-                    <input name="schoolId" placeholder="School ID optional" />
-                    <input name="reason" placeholder="Required reason" required />
+                    <FormField label="Permission" required>
+                      <select name="permissionCode" required>
+                        {(permissions.data ?? []).map((permission: Permission) => (
+                          <option key={permission.code} value={permission.code}>{permission.code}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                    <FormField label="Decision">
+                      <select name="allowed">
+                        <option value="true">Grant</option>
+                        <option value="false">Deny</option>
+                      </select>
+                    </FormField>
+                    <FormField label="Organization ID">
+                      <input defaultValue={user.tenantId} name="tenantId" placeholder="tenant_123" />
+                    </FormField>
+                    <FormField label="School ID">
+                      <input name="schoolId" placeholder="Optional school scope" />
+                    </FormField>
+                    <FormField label="Audit reason" required wide>
+                      <input name="reason" placeholder="Required reason for the override" required />
+                    </FormField>
                     <button type="submit">Save override</button>
                   </form>
                   <RemoteList state={selectedOverrides} empty="No permission overrides for this user.">
-                    {(items) => <PermissionOverridesTable items={items} onDelete={(id) => void deleteOverride(user, id)} onRevoke={(id) => void revokeOverride(user, id)} />}
+                    {(items) => <PermissionOverridesTable items={items} onDelete={(override) => deleteOverride(user, override)} onRevoke={(override) => revokeOverride(user, override)} />}
                   </RemoteList>
                 </>
               ) : null}
@@ -866,29 +951,57 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
                 <div className="super-admin-grid">
                   <form className="super-admin-form" onSubmit={(event) => void saveTeacherAssignment(event)}>
                     <h3>Teacher assignment</h3>
-                    <input defaultValue={user.userId} name="teacherUserId" placeholder="Teacher user ID" required />
-                    <input name="assignmentId" placeholder="Assignment ID to update" />
-                    <input name="classSubjectAssignmentId" placeholder="Class-subject assignment ID" />
-                    <input name="sectionId" placeholder="Section ID optional" />
-                    <input defaultValue="SUBJECT_TEACHER" name="roleType" placeholder="Role type" />
-                    <input name="reason" placeholder="Reason" />
+                    <FormField label="Teacher user ID" required>
+                      <input defaultValue={user.userId} name="teacherUserId" placeholder="user_123" required />
+                    </FormField>
+                    <FormField label="Assignment ID">
+                      <input name="assignmentId" placeholder="Existing assignment to update" />
+                    </FormField>
+                    <FormField label="Class-subject assignment ID">
+                      <input name="classSubjectAssignmentId" placeholder="class_subject_123" />
+                    </FormField>
+                    <FormField label="Section ID">
+                      <input name="sectionId" placeholder="Optional section scope" />
+                    </FormField>
+                    <FormField label="Role type">
+                      <input defaultValue="SUBJECT_TEACHER" name="roleType" placeholder="SUBJECT_TEACHER" />
+                    </FormField>
+                    <FormField label="Audit reason">
+                      <input name="reason" placeholder="Why this assignment changed" />
+                    </FormField>
                     <label className="inline-check"><input defaultChecked name="active" type="checkbox" /> Active</label>
                     <button type="submit">Save assignment</button>
                   </form>
                   <form className="super-admin-form" onSubmit={(event) => void removeTeacherAssignment(event)}>
                     <h3>Remove teacher assignment</h3>
-                    <input defaultValue={user.userId} name="teacherUserId" placeholder="Teacher user ID" required />
-                    <input name="assignmentId" placeholder="Assignment ID" required />
+                    <FormField label="Teacher user ID" required>
+                      <input defaultValue={user.userId} name="teacherUserId" placeholder="user_123" required />
+                    </FormField>
+                    <FormField label="Assignment ID" required>
+                      <input name="assignmentId" placeholder="assignment_123" required />
+                    </FormField>
                     <button type="submit">Remove assignment</button>
                   </form>
                   <form className="super-admin-form" onSubmit={(event) => void saveGuardianLink(event)}>
                     <h3>Guardian link</h3>
-                    <input name="studentId" placeholder="Student ID" required />
-                    <input name="guardianLinkId" placeholder="Guardian link ID to update" />
-                    <input defaultValue={user.userId} name="guardianUserId" placeholder="Guardian user ID" />
-                    <input defaultValue="GUARDIAN" name="relation" placeholder="Relation" required />
-                    <input name="contactEmail" placeholder="Contact email" type="email" />
-                    <input name="contactMobile" placeholder="Contact mobile" />
+                    <FormField label="Student ID" required>
+                      <input name="studentId" placeholder="student_123" required />
+                    </FormField>
+                    <FormField label="Guardian link ID">
+                      <input name="guardianLinkId" placeholder="Existing link to update" />
+                    </FormField>
+                    <FormField label="Guardian user ID">
+                      <input defaultValue={user.userId} name="guardianUserId" placeholder="user_123" />
+                    </FormField>
+                    <FormField label="Relation" required>
+                      <input defaultValue="GUARDIAN" name="relation" placeholder="GUARDIAN" required />
+                    </FormField>
+                    <FormField label="Contact email">
+                      <input name="contactEmail" placeholder="guardian@example.com" type="email" />
+                    </FormField>
+                    <FormField label="Contact mobile">
+                      <input name="contactMobile" placeholder="+1 555 0100" />
+                    </FormField>
                     <label className="inline-check"><input name="primaryContact" type="checkbox" /> Primary</label>
                     <label className="inline-check"><input name="canPickup" type="checkbox" /> Pickup</label>
                     <label className="inline-check"><input name="emergencyContact" type="checkbox" /> Emergency</label>
@@ -897,8 +1010,12 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
                   </form>
                   <form className="super-admin-form" onSubmit={(event) => void removeGuardianLink(event)}>
                     <h3>Remove guardian link</h3>
-                    <input name="studentId" placeholder="Student ID" required />
-                    <input name="guardianLinkId" placeholder="Guardian link ID" required />
+                    <FormField label="Student ID" required>
+                      <input name="studentId" placeholder="student_123" required />
+                    </FormField>
+                    <FormField label="Guardian link ID" required>
+                      <input name="guardianLinkId" placeholder="guardian_link_123" required />
+                    </FormField>
                     <button type="submit">Remove guardian</button>
                   </form>
                 </div>
@@ -931,6 +1048,7 @@ function AccessControlPanel({ token, refreshKey, onRefresh }: { token: string; r
           <PanelState title="Select a user" detail="Open a row to view roles, school access and overrides." />
         )}
       </div>
+      {confirmDialog ? <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} /> : null}
     </section>
   );
 }
@@ -941,8 +1059,8 @@ function RoleAssignmentsTable({
   onDelete,
 }: {
   items: UserRoleAssignment[];
-  onDeactivate: (roleAssignmentId: string) => void;
-  onDelete: (roleAssignmentId: string) => void;
+  onDeactivate: (role: UserRoleAssignment) => void;
+  onDelete: (role: UserRoleAssignment) => void;
 }) {
   return (
     <table className="super-admin-table">
@@ -955,8 +1073,8 @@ function RoleAssignmentsTable({
             <td>{role.expiresAt ? `Expires ${dateLabel(role.expiresAt)}` : 'No expiry'}</td>
             <td><StatusBadge status={role.active ? 'ACTIVE' : 'INACTIVE'} /></td>
             <td>
-              <button disabled={!role.active} onClick={() => onDeactivate(role.roleAssignmentId)} type="button">Patch deactivate</button>
-              <button disabled={!role.active} onClick={() => onDelete(role.roleAssignmentId)} type="button">Delete</button>
+              <button disabled={!role.active} onClick={() => onDeactivate(role)} type="button">Deactivate</button>
+              <button disabled={!role.active} onClick={() => onDelete(role)} type="button">Delete</button>
             </td>
           </tr>
         ))}
@@ -971,8 +1089,8 @@ function PermissionOverridesTable({
   onRevoke,
 }: {
   items: PermissionOverride[];
-  onDelete: (overrideId: string) => void;
-  onRevoke: (overrideId: string) => void;
+  onDelete: (override: PermissionOverride) => void;
+  onRevoke: (override: PermissionOverride) => void;
 }) {
   return (
     <table className="super-admin-table">
@@ -985,8 +1103,8 @@ function PermissionOverridesTable({
             <td>{override.schoolName ?? override.tenantName ?? override.scopeType}</td>
             <td><StatusBadge status={override.active ? 'ACTIVE' : 'INACTIVE'} /></td>
             <td>
-              <button disabled={!override.active} onClick={() => onRevoke(override.overrideId)} type="button">Patch revoke</button>
-              <button disabled={!override.active} onClick={() => onDelete(override.overrideId)} type="button">Delete</button>
+              <button disabled={!override.active} onClick={() => onRevoke(override)} type="button">Revoke</button>
+              <button disabled={!override.active} onClick={() => onDelete(override)} type="button">Delete</button>
             </td>
           </tr>
         ))}
@@ -1004,6 +1122,7 @@ function SubscriptionPlans({ token, refreshKey, onRefresh }: { token: string; re
   const [planSubmitting, setPlanSubmitting] = useState(false);
   const [tenantId, setTenantId] = useState('');
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogModel | null>(null);
   const tenantSubscription = useLoader(
     () => selectedTenantId ? getSuperAdminTenantSubscription(selectedTenantId, token) : Promise.resolve(null),
     [selectedTenantId, token, refreshKey],
@@ -1138,20 +1257,29 @@ function SubscriptionPlans({ token, refreshKey, onRefresh }: { token: string; re
       setActionError('Organization ID and plan code are required to assign a subscription.');
       return;
     }
-    await runSubscriptionAction(
-      () => assignSuperAdminTenantSubscription(targetTenantId, {
-        planCode,
-        billingCycle: optionalFormValue(form, 'billingCycle') ?? 'MONTHLY',
-        currentPeriodStart: dateTimeFormValue(form, 'currentPeriodStart'),
-        currentPeriodEnd: dateTimeFormValue(form, 'currentPeriodEnd'),
-        issueInvoice: form.get('issueInvoice') === 'on',
-        invoiceDueAt: dateTimeFormValue(form, 'invoiceDueAt'),
-      }, token),
-      'Organization subscription assigned.',
-      target,
-    );
-    setTenantId(targetTenantId);
-    setSelectedTenantId(targetTenantId);
+    const payload = {
+      planCode,
+      billingCycle: optionalFormValue(form, 'billingCycle') ?? 'MONTHLY',
+      currentPeriodStart: dateTimeFormValue(form, 'currentPeriodStart'),
+      currentPeriodEnd: dateTimeFormValue(form, 'currentPeriodEnd'),
+      issueInvoice: form.get('issueInvoice') === 'on',
+      invoiceDueAt: dateTimeFormValue(form, 'invoiceDueAt'),
+    };
+    setConfirmDialog({
+      confirmLabel: payload.issueInvoice ? 'Assign and invoice' : 'Assign subscription',
+      detail: `${targetTenantId} will be assigned to ${planCode} on the ${payload.billingCycle} cycle${payload.issueInvoice ? ' and a subscription invoice will be issued.' : '.'}`,
+      onConfirm: async () => {
+        await runSubscriptionAction(
+          () => assignSuperAdminTenantSubscription(targetTenantId, payload, token),
+          'Organization subscription assigned.',
+          target,
+        );
+        setTenantId(targetTenantId);
+        setSelectedTenantId(targetTenantId);
+      },
+      title: 'Assign organization subscription?',
+      tone: payload.issueInvoice ? 'danger' : 'default',
+    });
   }
 
   async function runSubscriptionAction(action: () => Promise<unknown>, success: string, form?: HTMLFormElement) {
@@ -1223,13 +1351,15 @@ function SubscriptionPlans({ token, refreshKey, onRefresh }: { token: string; re
           <div>
             <form className="super-admin-form" onSubmit={(event) => void loadTenantSubscription(event)}>
               <h3>Inspect organization</h3>
-              <input
-                name="tenantId"
-                onChange={(event) => setTenantId(event.target.value)}
-                placeholder="Organization ID"
-                required
-                value={tenantId}
-              />
+              <FormField label="Organization ID" required>
+                <input
+                  name="tenantId"
+                  onChange={(event) => setTenantId(event.target.value)}
+                  placeholder="tenant_123"
+                  required
+                  value={tenantId}
+                />
+              </FormField>
               <button type="submit">Load subscription</button>
             </form>
             <TenantSubscriptionForm
@@ -1257,6 +1387,7 @@ function SubscriptionPlans({ token, refreshKey, onRefresh }: { token: string; re
           </div>
         </div>
       ) : null}
+      {confirmDialog ? <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} /> : null}
     </section>
   );
 }
@@ -1605,21 +1736,35 @@ function TenantSubscriptionForm({
   return (
     <form className="super-admin-form" key={subscription?.tenantId ?? tenantId} onSubmit={(event) => onSubmit(event)}>
       <h3>Assign subscription</h3>
-      <input defaultValue={subscription?.tenantId ?? tenantId} name="tenantId" placeholder="Organization ID" required />
+      <FormField label="Organization ID" required>
+        <input defaultValue={subscription?.tenantId ?? tenantId} name="tenantId" placeholder="tenant_123" required />
+      </FormField>
       {planCodes.length > 0 ? (
-        <select defaultValue={currentPlanCode ?? planCodes[0]} name="planCode">
-          {planCodes.map((code) => <option key={code} value={code}>{code}</option>)}
-        </select>
+        <FormField label="Plan code" required>
+          <select defaultValue={currentPlanCode ?? planCodes[0]} name="planCode">
+            {planCodes.map((code) => <option key={code} value={code}>{code}</option>)}
+          </select>
+        </FormField>
       ) : (
-        <input name="planCode" placeholder="Plan code" required />
+        <FormField label="Plan code" required>
+          <input name="planCode" placeholder="ENTERPRISE_PLUS" required />
+        </FormField>
       )}
-      <select defaultValue={subscription?.billingCycle ?? 'MONTHLY'} name="billingCycle">
-        <option value="MONTHLY">MONTHLY</option>
-        <option value="ANNUAL">ANNUAL</option>
-      </select>
-      <input defaultValue={dateInputValue(subscription?.currentPeriodStart)} name="currentPeriodStart" type="date" />
-      <input defaultValue={dateInputValue(subscription?.currentPeriodEnd)} name="currentPeriodEnd" type="date" />
-      <input name="invoiceDueAt" type="date" />
+      <FormField label="Billing cycle">
+        <select defaultValue={subscription?.billingCycle ?? 'MONTHLY'} name="billingCycle">
+          <option value="MONTHLY">MONTHLY</option>
+          <option value="ANNUAL">ANNUAL</option>
+        </select>
+      </FormField>
+      <FormField label="Current period start">
+        <input defaultValue={dateInputValue(subscription?.currentPeriodStart)} name="currentPeriodStart" type="date" />
+      </FormField>
+      <FormField label="Current period end">
+        <input defaultValue={dateInputValue(subscription?.currentPeriodEnd)} name="currentPeriodEnd" type="date" />
+      </FormField>
+      <FormField label="Invoice due date">
+        <input name="invoiceDueAt" type="date" />
+      </FormField>
       <label className="inline-check"><input defaultChecked name="issueInvoice" type="checkbox" /> Issue invoice</label>
       <button type="submit">Assign subscription</button>
     </form>
@@ -1820,6 +1965,7 @@ function AiUsagePanel({ token, refreshKey }: { token: string; refreshKey: number
   const [selectedPolicyTenantId, setSelectedPolicyTenantId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogModel | null>(null);
   const recommendations = useLoader(() => listSuperAdminAiRecommendations(recommendationQuery, token), [
     token,
     refreshKey,
@@ -1880,21 +2026,37 @@ function AiUsagePanel({ token, refreshKey }: { token: string; refreshKey: number
     }
   }
 
-  async function approve(item: AiRecommendation) {
-    await runAction(() => approveSuperAdminAiRecommendation(item.recommendationId, token), 'Recommendation approved and audited.');
+  function approve(item: AiRecommendation) {
+    setConfirmDialog({
+      confirmLabel: 'Approve recommendation',
+      detail: `${item.title} will move to approved status. Execution remains a separate audited action.`,
+      onConfirm: () => runAction(() => approveSuperAdminAiRecommendation(item.recommendationId, token), 'Recommendation approved and audited.'),
+      title: 'Approve AI recommendation?',
+      tone: item.riskLevel === 'HIGH' || item.riskLevel === 'CRITICAL' ? 'danger' : 'default',
+    });
   }
 
-  async function reject(item: AiRecommendation) {
-    const reason = globalThis.prompt('Reason for rejection');
-    if (!reason) return;
-    await runAction(() => rejectSuperAdminAiRecommendation(item.recommendationId, reason, token), 'Recommendation rejected and audited.');
+  function reject(item: AiRecommendation) {
+    setConfirmDialog({
+      confirmLabel: 'Reject recommendation',
+      detail: `${item.title} will be rejected. A reason is required for the audit trail.`,
+      onConfirm: (reason) => runAction(() => rejectSuperAdminAiRecommendation(item.recommendationId, reason ?? '', token), 'Recommendation rejected and audited.'),
+      reasonLabel: 'Rejection reason',
+      reasonPlaceholder: 'Explain why this recommendation should not proceed.',
+      requireReason: true,
+      title: 'Reject AI recommendation?',
+      tone: 'danger',
+    });
   }
 
-  async function execute(item: AiRecommendation) {
-    if ((item.riskLevel === 'HIGH' || item.riskLevel === 'CRITICAL') && !globalThis.confirm(`Execute ${item.riskLevel} AI recommendation?`)) {
-      return;
-    }
-    await runAction(() => executeSuperAdminAiRecommendation(item.recommendationId, token), 'Approved recommendation execution requested.');
+  function execute(item: AiRecommendation) {
+    setConfirmDialog({
+      confirmLabel: 'Execute recommendation',
+      detail: `${item.title} will be sent for execution with ${item.riskLevel} risk. Confirm the scope and audit trail before continuing.`,
+      onConfirm: () => runAction(() => executeSuperAdminAiRecommendation(item.recommendationId, token), 'Approved recommendation execution requested.'),
+      title: `Execute ${item.riskLevel} AI recommendation?`,
+      tone: item.riskLevel === 'LOW' || item.riskLevel === 'MEDIUM' ? 'default' : 'danger',
+    });
   }
 
   async function createRecommendation(event: FormEvent<HTMLFormElement>) {
@@ -1947,11 +2109,17 @@ function AiUsagePanel({ token, refreshKey }: { token: string; refreshKey: number
     );
   }
 
-  async function toggleRule(item: AutomationRule) {
-    await runAction(
-      () => updateSuperAdminAutomationRule(item.ruleId, { enabled: !item.enabled }, token),
-      item.enabled ? 'Automation rule disabled.' : 'Automation rule enabled.',
-    );
+  function toggleRule(item: AutomationRule) {
+    setConfirmDialog({
+      confirmLabel: item.enabled ? 'Disable rule' : 'Enable rule',
+      detail: `${item.name} controls automated ${item.actionType.toLowerCase().replace(/_/g, ' ')} actions at ${item.riskLevel} risk.`,
+      onConfirm: () => runAction(
+        () => updateSuperAdminAutomationRule(item.ruleId, { enabled: !item.enabled }, token),
+        item.enabled ? 'Automation rule disabled.' : 'Automation rule enabled.',
+      ),
+      title: item.enabled ? 'Disable automation rule?' : 'Enable automation rule?',
+      tone: item.riskLevel === 'HIGH' || item.riskLevel === 'CRITICAL' ? 'danger' : 'default',
+    });
   }
 
   async function updateEntitlement(event: FormEvent<HTMLFormElement>) {
@@ -2007,7 +2175,7 @@ function AiUsagePanel({ token, refreshKey }: { token: string; refreshKey: number
   return (
     <section className="super-admin-panel">
       <PanelTitle eyebrow="Intelligence" title="AI Governance" detail="Control AI usage, budgets, recommendations, automation, and safety across organizations." />
-      {message ? <p className="toast-message">{message}</p> : null}
+      {message ? <p className="toast-message" role="status">{message}</p> : null}
       {actionError ? <PanelState title="Action blocked" detail={actionError} tone="error" /> : null}
       <div className="super-admin-tabs" role="tablist" aria-label="AI governance tabs">
         {([
@@ -2104,16 +2272,36 @@ function AiUsagePanel({ token, refreshKey }: { token: string; refreshKey: number
           />
           <form className="super-admin-form" onSubmit={(event) => void createRecommendation(event)}>
             <h3>Create recommendation</h3>
-            <input name="tenantId" placeholder="Organization ID" required />
-            <input name="schoolId" placeholder="School ID optional" />
-            <input defaultValue="GENERAL" name="targetType" placeholder="Target type" />
-            <input name="targetId" placeholder="Target ID optional" />
-            <select name="recommendationType">{AI_RECOMMENDATION_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select>
-            <input name="title" placeholder="Title" required />
-            <input name="summary" placeholder="Summary" required />
-            <input name="rationale" placeholder="Rationale optional" />
-            <select name="riskLevel"><option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option><option value="CRITICAL">CRITICAL</option></select>
-            <input defaultValue="{}" name="metadataJson" placeholder="Sanitized metadata JSON" />
+            <FormField label="Organization ID" required>
+              <input name="tenantId" placeholder="tenant_123" required />
+            </FormField>
+            <FormField label="School ID">
+              <input name="schoolId" placeholder="Optional school scope" />
+            </FormField>
+            <FormField label="Target type">
+              <input defaultValue="GENERAL" name="targetType" placeholder="GENERAL" />
+            </FormField>
+            <FormField label="Target ID">
+              <input name="targetId" placeholder="Optional target record" />
+            </FormField>
+            <FormField label="Recommendation type">
+              <select name="recommendationType">{AI_RECOMMENDATION_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select>
+            </FormField>
+            <FormField label="Title" required>
+              <input name="title" placeholder="Short operator-facing title" required />
+            </FormField>
+            <FormField label="Summary" required wide>
+              <input name="summary" placeholder="What the recommendation proposes" required />
+            </FormField>
+            <FormField label="Rationale" wide>
+              <input name="rationale" placeholder="Optional model or operator rationale" />
+            </FormField>
+            <FormField label="Risk level">
+              <select name="riskLevel"><option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option><option value="CRITICAL">CRITICAL</option></select>
+            </FormField>
+            <FormField label="Metadata JSON" hint="Secrets and raw prompts must not be pasted here." wide>
+              <input defaultValue="{}" name="metadataJson" placeholder='{"source":"super-admin"}' />
+            </FormField>
             <label className="inline-check"><input defaultChecked name="approvalRequired" type="checkbox" /> Approval required</label>
             <button type="submit">Create recommendation</button>
           </form>
@@ -2131,9 +2319,9 @@ function AiUsagePanel({ token, refreshKey }: { token: string; refreshKey: number
                         <td><StatusBadge status={item.status} /></td>
                         <td>
                           <button onClick={() => setSelectedRecommendationId(item.recommendationId)} type="button">View details</button>
-                          <button disabled={item.status !== 'PENDING_REVIEW' && item.status !== 'DRAFT'} onClick={() => void approve(item)} type="button">Approve</button>
-                          <button disabled={item.status !== 'PENDING_REVIEW' && item.status !== 'DRAFT'} onClick={() => void reject(item)} type="button">Reject</button>
-                          <button disabled={item.status !== 'APPROVED'} onClick={() => void execute(item)} type="button">Execute</button>
+                          <button disabled={item.status !== 'PENDING_REVIEW' && item.status !== 'DRAFT'} onClick={() => approve(item)} type="button">Approve</button>
+                          <button disabled={item.status !== 'PENDING_REVIEW' && item.status !== 'DRAFT'} onClick={() => reject(item)} type="button">Reject</button>
+                          <button disabled={item.status !== 'APPROVED'} onClick={() => execute(item)} type="button">Execute</button>
                         </td>
                       </tr>
                     ))}
@@ -2168,24 +2356,46 @@ function AiUsagePanel({ token, refreshKey }: { token: string; refreshKey: number
             <RemoteTable state={rules} empty="No automation rules yet.">
               {(data) => (
                 <>
-                  <AutomationRulesTable items={data.items} onToggle={(item) => void toggleRule(item)} />
+                  <AutomationRulesTable items={data.items} onToggle={(item) => toggleRule(item)} />
                   <PaginationControls data={data} onPageChange={(page) => setRuleQuery((current) => ({ ...current, page }))} />
                 </>
               )}
             </RemoteTable>
             <form className="super-admin-form" onSubmit={(event) => void createRule(event)}>
               <h3>Create automation rule</h3>
-              <input name="tenantId" placeholder="Organization ID optional" />
-              <input name="schoolId" placeholder="School ID optional" />
-              <input name="code" placeholder="Rule code" required />
-              <input name="name" placeholder="Rule name" required />
-              <input name="description" placeholder="Description" />
-              <select name="triggerType"><option value="SCHEDULED">SCHEDULED</option><option value="EVENT">EVENT</option></select>
-              <input defaultValue="{}" name="triggerConfigJson" placeholder="Trigger JSON" />
-              <select name="actionType"><option value="CREATE_RECOMMENDATION">CREATE_RECOMMENDATION</option><option value="DRAFT_MESSAGE">DRAFT_MESSAGE</option></select>
-              <input defaultValue="{}" name="actionConfigJson" placeholder="Action JSON" />
-              <select name="riskLevel"><option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option><option value="CRITICAL">CRITICAL</option></select>
-              <input name="approvalRole" placeholder="Approval role optional" />
+              <FormField label="Organization ID">
+                <input name="tenantId" placeholder="Optional organization scope" />
+              </FormField>
+              <FormField label="School ID">
+                <input name="schoolId" placeholder="Optional school scope" />
+              </FormField>
+              <FormField label="Rule code" required>
+                <input name="code" placeholder="FEE_RISK_REVIEW" required />
+              </FormField>
+              <FormField label="Rule name" required>
+                <input name="name" placeholder="Fee risk review" required />
+              </FormField>
+              <FormField label="Description" wide>
+                <input name="description" placeholder="What this automation rule does" />
+              </FormField>
+              <FormField label="Trigger type">
+                <select name="triggerType"><option value="SCHEDULED">SCHEDULED</option><option value="EVENT">EVENT</option></select>
+              </FormField>
+              <FormField label="Trigger config JSON" hint="Invalid JSON is ignored and replaced with an empty object." wide>
+                <input defaultValue="{}" name="triggerConfigJson" placeholder='{"cron":"0 8 * * *"}' />
+              </FormField>
+              <FormField label="Action type">
+                <select name="actionType"><option value="CREATE_RECOMMENDATION">CREATE_RECOMMENDATION</option><option value="DRAFT_MESSAGE">DRAFT_MESSAGE</option></select>
+              </FormField>
+              <FormField label="Action config JSON" hint="Keep action payloads free of secrets." wide>
+                <input defaultValue="{}" name="actionConfigJson" placeholder='{"template":"fee-reminder"}' />
+              </FormField>
+              <FormField label="Risk level">
+                <select name="riskLevel"><option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option><option value="CRITICAL">CRITICAL</option></select>
+              </FormField>
+              <FormField label="Approval role">
+                <input name="approvalRole" placeholder="Optional approving role" />
+              </FormField>
               <label className="inline-check"><input name="enabled" type="checkbox" /> Enabled</label>
               <label className="inline-check"><input defaultChecked name="requiresApproval" type="checkbox" /> Requires approval</label>
               <button type="submit">Create rule</button>
@@ -2232,6 +2442,7 @@ function AiUsagePanel({ token, refreshKey }: { token: string; refreshKey: number
           )}
         </RemoteData>
       ) : null}
+      {confirmDialog ? <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} /> : null}
     </section>
   );
 }
@@ -2282,9 +2493,15 @@ function AiEntitlementForm({
   return (
     <form className="super-admin-form" key={entitlement?.tenantId ?? 'new-entitlement'} onSubmit={(event) => onSubmit(event)}>
       <h3>{entitlement ? 'Update entitlement' : 'Configure entitlement'}</h3>
-      <input defaultValue={entitlement?.tenantId ?? ''} name="tenantId" placeholder="Organization ID" required />
-      <input defaultValue={entitlement?.monthlyUnitBudget ?? 1000} min="0" name="monthlyUnitBudget" placeholder="Monthly unit budget" type="number" />
-      <input defaultValue={entitlement?.retentionDays ?? 90} min="1" name="retentionDays" placeholder="Retention days" type="number" />
+      <FormField label="Organization ID" required>
+        <input defaultValue={entitlement?.tenantId ?? ''} name="tenantId" placeholder="tenant_123" required />
+      </FormField>
+      <FormField label="Monthly unit budget">
+        <input defaultValue={entitlement?.monthlyUnitBudget ?? 1000} min="0" name="monthlyUnitBudget" placeholder="1000" type="number" />
+      </FormField>
+      <FormField label="Retention days">
+        <input defaultValue={entitlement?.retentionDays ?? 90} min="1" name="retentionDays" placeholder="90" type="number" />
+      </FormField>
       <label className="inline-check"><input defaultChecked={entitlement?.enabled ?? true} name="enabled" type="checkbox" /> Enabled</label>
       <label className="inline-check"><input defaultChecked={entitlement?.humanApprovalRequired ?? true} name="humanApprovalRequired" type="checkbox" /> Human approval</label>
       <div className="super-admin-checkbox-grid">
@@ -2329,11 +2546,21 @@ function AiPolicyForm({
   return (
     <form className="super-admin-form" key={policy?.policyId ?? 'new-policy'} onSubmit={(event) => onSubmit(event)}>
       <h3>{policy ? 'Update policy' : 'Create policy'}</h3>
-      <input defaultValue={policy?.tenantId ?? ''} name="tenantId" placeholder="Organization ID" required />
-      <input defaultValue={policy?.schoolId ?? ''} name="schoolId" placeholder="School ID optional" />
-      <input defaultValue={policy?.monthlyBudgetUnits ?? 1000} min="0" name="monthlyBudgetUnits" placeholder="Monthly budget units" type="number" />
-      <input defaultValue={policy?.retentionDays ?? 90} min="1" name="retentionDays" placeholder="Retention days" type="number" />
-      <input defaultValue={policy?.allowedFeaturesJson ?? '[]'} name="allowedFeaturesJson" placeholder="Allowed features JSON" />
+      <FormField label="Organization ID" required>
+        <input defaultValue={policy?.tenantId ?? ''} name="tenantId" placeholder="tenant_123" required />
+      </FormField>
+      <FormField label="School ID">
+        <input defaultValue={policy?.schoolId ?? ''} name="schoolId" placeholder="Optional school scope" />
+      </FormField>
+      <FormField label="Monthly budget units">
+        <input defaultValue={policy?.monthlyBudgetUnits ?? 1000} min="0" name="monthlyBudgetUnits" placeholder="1000" type="number" />
+      </FormField>
+      <FormField label="Retention days">
+        <input defaultValue={policy?.retentionDays ?? 90} min="1" name="retentionDays" placeholder="90" type="number" />
+      </FormField>
+      <FormField label="Allowed features JSON" hint="Use an array of feature names. Invalid JSON falls back to an empty array." wide>
+        <input defaultValue={policy?.allowedFeaturesJson ?? '[]'} name="allowedFeaturesJson" placeholder='["NOTICE_DRAFTING"]' />
+      </FormField>
       <label className="inline-check"><input defaultChecked={policy?.enabled ?? true} name="enabled" type="checkbox" /> Enabled</label>
       <label className="inline-check"><input defaultChecked={policy?.humanApprovalRequiredDefault ?? true} name="humanApprovalRequiredDefault" type="checkbox" /> Human approval</label>
       <label className="inline-check"><input defaultChecked={policy?.allowLowRiskAutoPublish ?? false} name="allowLowRiskAutoPublish" type="checkbox" /> Low risk auto-publish</label>
@@ -2414,29 +2641,40 @@ function ReportsPanel({ token, refreshKey, onRefresh }: { token: string; refresh
   );
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogModel | null>(null);
 
   async function requestExport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const target = event.currentTarget;
+    const form = new FormData(target);
+    const payload = {
+      reportType: String(form.get('reportType') ?? 'PLATFORM_SUMMARY'),
+      format: 'CSV',
+      tenantId: optionalFormValue(form, 'tenantId'),
+      schoolId: optionalFormValue(form, 'schoolId'),
+      filters: {
+        requestedFrom: 'super-admin-portal',
+        dateFrom: optionalFormValue(form, 'dateFrom'),
+        dateTo: optionalFormValue(form, 'dateTo'),
+      },
+    };
     setActionError(null);
-    try {
-      await requestSuperAdminReportExport({
-        reportType: String(form.get('reportType') ?? 'PLATFORM_SUMMARY'),
-        format: 'CSV',
-        tenantId: optionalFormValue(form, 'tenantId'),
-        schoolId: optionalFormValue(form, 'schoolId'),
-        filters: {
-          requestedFrom: 'super-admin-portal',
-          dateFrom: optionalFormValue(form, 'dateFrom'),
-          dateTo: optionalFormValue(form, 'dateTo'),
-        },
-      }, token);
-      setMessage('Export request accepted. Existing export jobs are shown below.');
-      event.currentTarget.reset();
-      onRefresh();
-    } catch (caught) {
-      setActionError(errorMessage(caught));
-    }
+    setConfirmDialog({
+      confirmLabel: 'Create export',
+      detail: `${payload.reportType} will be queued as a CSV export. Completed files may contain sensitive platform data.`,
+      onConfirm: async () => {
+        try {
+          await requestSuperAdminReportExport(payload, token);
+          setMessage('Export request accepted. Existing export jobs are shown below.');
+          target.reset();
+          onRefresh();
+        } catch (caught) {
+          setActionError(errorMessage(caught));
+        }
+      },
+      title: 'Create sensitive export?',
+      tone: 'danger',
+    });
   }
 
   return (
@@ -2446,7 +2684,7 @@ function ReportsPanel({ token, refreshKey, onRefresh }: { token: string; refresh
         title="Reports"
         detail="Request, monitor, and download platform exports."
       />
-      {message ? <p className="toast-message">{message}</p> : null}
+      {message ? <p className="toast-message" role="status">{message}</p> : null}
       {actionError ? <PanelState title="Export request failed" detail={actionError} tone="error" /> : null}
       <RemoteData state={reports}>
         {(data) => (
@@ -2459,11 +2697,21 @@ function ReportsPanel({ token, refreshKey, onRefresh }: { token: string; refresh
       </RemoteData>
       <form className="super-admin-form" onSubmit={(event) => void requestExport(event)}>
         <h3>Create export</h3>
-        <select name="reportType">{REPORT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select>
-        <input name="tenantId" placeholder="Organization ID optional" />
-        <input name="schoolId" placeholder="School ID optional" />
-        <input name="dateFrom" placeholder="Date from" type="date" />
-        <input name="dateTo" placeholder="Date to" type="date" />
+        <FormField label="Report type">
+          <select name="reportType">{REPORT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select>
+        </FormField>
+        <FormField label="Organization ID">
+          <input name="tenantId" placeholder="Optional organization scope" />
+        </FormField>
+        <FormField label="School ID">
+          <input name="schoolId" placeholder="Optional school scope" />
+        </FormField>
+        <FormField label="Date from">
+          <input name="dateFrom" type="date" />
+        </FormField>
+        <FormField label="Date to">
+          <input name="dateTo" type="date" />
+        </FormField>
         <span className="super-admin-warning">Exports can contain sensitive platform data. Share completed files only through approved channels.</span>
         <button type="submit">Create export</button>
       </form>
@@ -2533,6 +2781,7 @@ function ReportsPanel({ token, refreshKey, onRefresh }: { token: string; refresh
           )}
         </RemoteTable>
       </div>
+      {confirmDialog ? <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} /> : null}
     </section>
   );
 }
@@ -2678,33 +2927,58 @@ function NotificationsPanel({ token, refreshKey }: { token: string; refreshKey: 
 function SettingsPanel({ token, refreshKey, onRefresh }: { token: string; refreshKey: number; onRefresh: () => void }) {
   const settings = useLoader(() => getSuperAdminSettings(token), [token, refreshKey]);
   const [message, setMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogModel | null>(null);
 
   async function saveSettings(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    await updateSuperAdminSettings({
+    const payload = {
       platformName: String(form.get('platformName') ?? ''),
       supportEmail: String(form.get('supportEmail') ?? ''),
       defaultTimezone: String(form.get('defaultTimezone') ?? ''),
       maintenanceMode: form.get('maintenanceMode') === 'on',
-    }, token);
-    setMessage('Settings updated and audited.');
-    onRefresh();
+    };
+    setConfirmDialog({
+      confirmLabel: 'Save settings',
+      detail: payload.maintenanceMode
+        ? 'Maintenance mode is enabled in this update. Platform operators should confirm this is intentional.'
+        : 'These platform settings will be saved and audited.',
+      onConfirm: async () => {
+        setActionError(null);
+        try {
+          await updateSuperAdminSettings(payload, token);
+          setMessage('Settings updated and audited.');
+          onRefresh();
+        } catch (caught) {
+          setActionError(errorMessage(caught));
+        }
+      },
+      title: 'Save platform settings?',
+      tone: payload.maintenanceMode ? 'danger' : 'default',
+    });
   }
 
   return (
     <section className="super-admin-panel">
       <PanelTitle eyebrow="Configuration" title="Settings" detail="Manage safe platform preferences and runtime visibility." />
-      {message ? <p className="toast-message">{message}</p> : null}
+      {message ? <p className="toast-message" role="status">{message}</p> : null}
+      {actionError ? <PanelState title="Settings update failed" detail={actionError} tone="error" /> : null}
       <RemoteData state={settings}>
         {(data: PlatformSettings) => (
           <>
             <form className="super-admin-form" onSubmit={(event) => void saveSettings(event)}>
               <h3>General</h3>
-              <input defaultValue={data.platformName} name="platformName" placeholder="Platform name" />
-              <input defaultValue={data.defaultTimezone} name="defaultTimezone" placeholder="Default timezone" />
+              <FormField label="Platform name">
+                <input defaultValue={data.platformName} name="platformName" placeholder="CloudCampus" />
+              </FormField>
+              <FormField label="Default timezone">
+                <input defaultValue={data.defaultTimezone} name="defaultTimezone" placeholder="Asia/Kolkata" />
+              </FormField>
               <h3>Support</h3>
-              <input defaultValue={data.supportEmail} name="supportEmail" placeholder="Support email" type="email" />
+              <FormField label="Support email">
+                <input defaultValue={data.supportEmail} name="supportEmail" placeholder="support@example.com" type="email" />
+              </FormField>
               <h3>Maintenance</h3>
               <label className="inline-check">
                 <input defaultChecked={data.maintenanceMode} name="maintenanceMode" type="checkbox" />
@@ -2727,6 +3001,7 @@ function SettingsPanel({ token, refreshKey, onRefresh }: { token: string; refres
           </>
         )}
       </RemoteData>
+      {confirmDialog ? <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} /> : null}
     </section>
   );
 }
@@ -2787,6 +3062,92 @@ function RemoteTable<T>({ state, empty, children }: { state: LoadState<PageRespo
     <RemoteData state={state}>
       {(data) => (data.items.length === 0 ? <PanelState title="Nothing here yet" detail={empty} /> : children(data))}
     </RemoteData>
+  );
+}
+
+function FormField({
+  children,
+  hint,
+  label,
+  required = false,
+  wide = false,
+}: {
+  children: ReactElement;
+  hint?: string;
+  label: string;
+  required?: boolean;
+  wide?: boolean;
+}) {
+  return (
+    <label className={`super-admin-form-field${wide ? ' wide' : ''}`}>
+      <span>{label}{required ? <em aria-hidden="true">*</em> : null}</span>
+      {children}
+      {hint ? <small>{hint}</small> : null}
+    </label>
+  );
+}
+
+function FilterField({ children, label }: { children: ReactElement; label: string }) {
+  return (
+    <label className="super-admin-filter-field">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function ConfirmDialog({ dialog, onClose }: { dialog: ConfirmDialogModel; onClose: () => void }) {
+  const titleId = useId();
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const reasonInvalid = Boolean(dialog.requireReason && reason.trim().length === 0);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (reasonInvalid) {
+      setSubmitError(`${dialog.reasonLabel ?? 'Reason'} is required.`);
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await dialog.onConfirm(reason.trim() || undefined);
+      onClose();
+    } catch (caught) {
+      setSubmitError(errorMessage(caught));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="super-admin-confirm" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <button className="super-admin-confirm-backdrop" aria-label="Cancel confirmation" disabled={submitting} onClick={onClose} type="button" />
+      <form className={`super-admin-confirm-panel ${dialog.tone === 'danger' ? 'danger' : ''}`} onSubmit={(event) => void submit(event)}>
+        <div>
+          <p className="eyebrow">{dialog.tone === 'danger' ? 'High-risk action' : 'Confirm action'}</p>
+          <h3 id={titleId}>{dialog.title}</h3>
+          <span>{dialog.detail}</span>
+        </div>
+        {dialog.reasonLabel ? (
+          <FormField label={dialog.reasonLabel} required={dialog.requireReason}>
+            <textarea
+              aria-invalid={reasonInvalid}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder={dialog.reasonPlaceholder ?? 'Add an audit reason'}
+              rows={4}
+              value={reason}
+            />
+          </FormField>
+        ) : null}
+        {submitError ? <p className="toast-message error" role="alert">{submitError}</p> : null}
+        <footer className="super-admin-confirm-actions">
+          <button className="secondary" disabled={submitting} onClick={onClose} type="button">{dialog.cancelLabel ?? 'Cancel'}</button>
+          <button disabled={submitting || reasonInvalid} type="submit">{submitting ? 'Working...' : dialog.confirmLabel}</button>
+        </footer>
+      </form>
+    </div>
   );
 }
 
@@ -2856,94 +3217,116 @@ function QueryControls({
       }}
     >
       {searchPlaceholder ? (
-        <input
-          aria-label={searchPlaceholder}
-          onChange={(event) => update('search', event.target.value)}
-          placeholder={searchPlaceholder}
-          value={draft.search}
-        />
+        <FilterField label="Search">
+          <input
+            aria-label={searchPlaceholder}
+            onChange={(event) => update('search', event.target.value)}
+            placeholder={searchPlaceholder}
+            value={draft.search}
+          />
+        </FilterField>
       ) : null}
       {includeTenant ? (
-        <input
-          aria-label="Organization ID"
-          onChange={(event) => update('tenantId', event.target.value)}
-          placeholder="Organization ID"
-          value={draft.tenantId}
-        />
+        <FilterField label="Organization ID">
+          <input
+            aria-label="Organization ID"
+            onChange={(event) => update('tenantId', event.target.value)}
+            placeholder="tenant_123"
+            value={draft.tenantId}
+          />
+        </FilterField>
       ) : null}
       {includeSchool ? (
-        <input
-          aria-label="School ID"
-          onChange={(event) => update('schoolId', event.target.value)}
-          placeholder="School ID"
-          value={draft.schoolId}
-        />
+        <FilterField label="School ID">
+          <input
+            aria-label="School ID"
+            onChange={(event) => update('schoolId', event.target.value)}
+            placeholder="school_123"
+            value={draft.schoolId}
+          />
+        </FilterField>
       ) : null}
       {includeDates ? (
         <>
-          <input
-            aria-label="From date"
-            onChange={(event) => update('from', event.target.value)}
-            type="date"
-            value={draft.from}
-          />
-          <input
-            aria-label="To date"
-            onChange={(event) => update('to', event.target.value)}
-            type="date"
-            value={draft.to}
-          />
+          <FilterField label="From date">
+            <input
+              aria-label="From date"
+              onChange={(event) => update('from', event.target.value)}
+              type="date"
+              value={draft.from}
+            />
+          </FilterField>
+          <FilterField label="To date">
+            <input
+              aria-label="To date"
+              onChange={(event) => update('to', event.target.value)}
+              type="date"
+              value={draft.to}
+            />
+          </FilterField>
         </>
       ) : null}
       {includeRole ? (
-        <input
-          aria-label="Actor role"
-          onChange={(event) => update('role', event.target.value)}
-          placeholder="Actor role"
-          value={draft.role}
-        />
+        <FilterField label="Actor role">
+          <input
+            aria-label="Actor role"
+            onChange={(event) => update('role', event.target.value)}
+            placeholder="SUPER_ADMIN"
+            value={draft.role}
+          />
+        </FilterField>
       ) : null}
       {includeAction ? (
-        <input
-          aria-label="Audit action"
-          onChange={(event) => update('action', event.target.value)}
-          placeholder="Audit action"
-          value={draft.action}
-        />
+        <FilterField label="Audit action">
+          <input
+            aria-label="Audit action"
+            onChange={(event) => update('action', event.target.value)}
+            placeholder="LOGIN"
+            value={draft.action}
+          />
+        </FilterField>
       ) : null}
       {statusOptions.length > 0 ? (
-        <select aria-label="Status filter" onChange={(event) => update('status', event.target.value)} value={draft.status}>
-          <option value="">All statuses</option>
-          {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
-        </select>
+        <FilterField label="Status">
+          <select aria-label="Status filter" onChange={(event) => update('status', event.target.value)} value={draft.status}>
+            <option value="">All statuses</option>
+            {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
+          </select>
+        </FilterField>
       ) : null}
       {extraFilterName && extraFilterOptions.length > 0 ? (
-        <select
-          aria-label={extraFilterLabel ?? extraFilterName}
-          onChange={(event) => update(extraFilterName, event.target.value)}
-          value={draft[extraFilterName] ?? ''}
-        >
-          <option value="">All {extraFilterLabel?.toLowerCase() ?? extraFilterName}</option>
-          {extraFilterOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-        </select>
+        <FilterField label={extraFilterLabel ?? extraFilterName}>
+          <select
+            aria-label={extraFilterLabel ?? extraFilterName}
+            onChange={(event) => update(extraFilterName, event.target.value)}
+            value={draft[extraFilterName] ?? ''}
+          >
+            <option value="">All {extraFilterLabel?.toLowerCase() ?? extraFilterName}</option>
+            {extraFilterOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+          </select>
+        </FilterField>
       ) : null}
       {secondExtraFilterName && secondExtraFilterOptions.length > 0 ? (
-        <select
-          aria-label={secondExtraFilterLabel ?? secondExtraFilterName}
-          onChange={(event) => update(secondExtraFilterName, event.target.value)}
-          value={draft[secondExtraFilterName] ?? ''}
-        >
-          <option value="">All {secondExtraFilterLabel?.toLowerCase() ?? secondExtraFilterName}</option>
-          {secondExtraFilterOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-        </select>
+        <FilterField label={secondExtraFilterLabel ?? secondExtraFilterName}>
+          <select
+            aria-label={secondExtraFilterLabel ?? secondExtraFilterName}
+            onChange={(event) => update(secondExtraFilterName, event.target.value)}
+            value={draft[secondExtraFilterName] ?? ''}
+          >
+            <option value="">All {secondExtraFilterLabel?.toLowerCase() ?? secondExtraFilterName}</option>
+            {secondExtraFilterOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+          </select>
+        </FilterField>
       ) : null}
-      <select
-        aria-label="Page size"
-        onChange={(event) => onSizeChange(Number(event.target.value))}
-        value={String(values.size ?? 25)}
-      >
-        {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size} rows</option>)}
-      </select>
+      <FilterField label="Page size">
+        <select
+          aria-label="Page size"
+          onChange={(event) => onSizeChange(Number(event.target.value))}
+          value={String(values.size ?? 25)}
+        >
+          {[10, 25, 50, 100].map((size) => <option key={size} value={size}>{size} rows</option>)}
+        </select>
+      </FilterField>
       <button type="submit">Apply filters</button>
       <button
         className="secondary"

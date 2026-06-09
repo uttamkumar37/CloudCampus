@@ -20,6 +20,11 @@ type FeeLifecyclePageProps = {
   storage?: Pick<Storage, 'getItem'>;
 };
 
+type PendingPayment = {
+  demandId: string;
+  request: FeePaymentCreateRequest;
+};
+
 export function FeeLifecyclePage({
   onCreateDemand = createFeeDemand,
   onRecordPayment = recordFeePayment,
@@ -34,34 +39,60 @@ export function FeeLifecyclePage({
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentReference, setPaymentReference] = useState('');
   const [lastDemand, setLastDemand] = useState<FeeDemandResponse | null>(null);
+  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(null);
+  const [status, setStatus] = useState<'idle' | 'creating' | 'recording'>('idle');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleCreateDemand(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await withToken(async (accessToken) => {
-      const response = await onCreateDemand({
-        studentId: studentId.trim(),
-        description: description.trim(),
-        amount: Number(amount),
-        dueDate,
-      }, accessToken);
-      setLastDemand(response);
-      setDemandId(response.id);
-      setMessage('Fee demand created');
+      setStatus('creating');
+      try {
+        const response = await onCreateDemand({
+          studentId: studentId.trim(),
+          description: description.trim(),
+          amount: Number(amount),
+          dueDate,
+        }, accessToken);
+        setLastDemand(response);
+        setDemandId(response.id);
+        setMessage('Fee demand created');
+      } finally {
+        setStatus('idle');
+      }
     });
   }
 
-  async function handleRecordPayment(event: FormEvent<HTMLFormElement>) {
+  function handleRecordPayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await withToken(async (accessToken) => {
-      const response = await onRecordPayment(demandId.trim(), {
+    if (!demandId.trim()) {
+      setError('Demand ID is required before recording a payment.');
+      return;
+    }
+    setError(null);
+    setPendingPayment({
+      demandId: demandId.trim(),
+      request: {
         amount: Number(paymentAmount),
         paymentMethod: paymentMethod.trim(),
         paymentReference: paymentReference.trim() || undefined,
-      }, accessToken);
-      setLastDemand(response);
-      setMessage('Receipt issued');
+      },
+    });
+  }
+
+  async function confirmRecordPayment() {
+    if (!pendingPayment) return;
+    await withToken(async (accessToken) => {
+      setStatus('recording');
+      try {
+        const response = await onRecordPayment(pendingPayment.demandId, pendingPayment.request, accessToken);
+        setLastDemand(response);
+        setMessage('Receipt issued');
+        setPendingPayment(null);
+      } finally {
+        setStatus('idle');
+      }
     });
   }
 
@@ -124,7 +155,7 @@ export function FeeLifecyclePage({
             onChange={(event) => setDueDate(event.target.value)}
           />
         </label>
-        <button type="submit">Create fee demand</button>
+        <button disabled={status !== 'idle'} type="submit">{status === 'creating' ? 'Creating...' : 'Create fee demand'}</button>
       </form>
 
       <form className="workflow-form" onSubmit={handleRecordPayment}>
@@ -163,7 +194,7 @@ export function FeeLifecyclePage({
             onChange={(event) => setPaymentReference(event.target.value)}
           />
         </label>
-        <button type="submit">Record payment</button>
+        <button disabled={status !== 'idle'} type="submit">Record payment</button>
       </form>
 
       {error ? <p className="form-error">{error}</p> : null}
@@ -179,6 +210,49 @@ export function FeeLifecyclePage({
           </li>
         </ul>
       ) : null}
+
+      {pendingPayment ? (
+        <FeePaymentConfirmDialog
+          busy={status === 'recording'}
+          demandId={pendingPayment.demandId}
+          onCancel={() => setPendingPayment(null)}
+          onConfirm={() => void confirmRecordPayment()}
+          payment={pendingPayment.request}
+        />
+      ) : null}
     </section>
+  );
+}
+
+function FeePaymentConfirmDialog({
+  busy,
+  demandId,
+  onCancel,
+  onConfirm,
+  payment,
+}: {
+  busy: boolean;
+  demandId: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  payment: FeePaymentCreateRequest;
+}) {
+  return (
+    <div className="school-admin-confirm" role="presentation">
+      <button aria-label="Close payment confirmation" className="school-admin-confirm-scrim" onClick={onCancel} type="button" />
+      <section aria-labelledby="fee-payment-confirm-title" aria-modal="true" className="school-admin-confirm-panel" role="dialog">
+        <div>
+          <p className="eyebrow">Confirm payment</p>
+          <h3 id="fee-payment-confirm-title">Record payment?</h3>
+          <span>
+            This will record {payment.amount} against demand {demandId} and may issue a receipt for the active school.
+          </span>
+        </div>
+        <div className="school-admin-confirm-actions">
+          <button className="secondary" disabled={busy} onClick={onCancel} type="button">Cancel</button>
+          <button disabled={busy} onClick={onConfirm} type="button">{busy ? 'Recording...' : 'Record payment'}</button>
+        </div>
+      </section>
+    </div>
   );
 }

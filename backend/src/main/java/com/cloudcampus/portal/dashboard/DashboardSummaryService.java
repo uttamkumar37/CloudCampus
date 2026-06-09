@@ -179,8 +179,8 @@ public class DashboardSummaryService {
 
     @Transactional(readOnly = true)
     public DashboardSummaryResponse schoolAdmin(AuthenticatedUser actor) {
-        requireRole(actor, UserRole.SCHOOL_ADMIN);
-        String schoolId = requireActiveSchool(actor);
+        requireAnyRole(actor, UserRole.SCHOOL_ADMIN, UserRole.PRINCIPAL);
+        String schoolId = requireActiveSchoolLeadership(actor);
         return schoolScopedSummary(schoolId);
     }
 
@@ -316,11 +316,28 @@ public class DashboardSummaryService {
         }
     }
 
+    private void requireAnyRole(AuthenticatedUser actor, UserRole first, UserRole second) {
+        if (actor.user().getRole() != first && actor.user().getRole() != second) {
+            throw new ForbiddenException(first.name() + " or " + second.name() + " access is required.");
+        }
+    }
+
     private String requireActiveSchool(AuthenticatedUser actor) {
         if (actor.activeSchoolId() == null || actor.activeSchoolId().isBlank()) {
             throw new ForbiddenException("Active school context is required.");
         }
         return actor.activeSchoolId();
+    }
+
+    private String requireActiveSchoolLeadership(AuthenticatedUser actor) {
+        String schoolId = requireActiveSchool(actor);
+        boolean allowed = userSchoolAccessRepository.findByUserIdAndSchoolId(actor.user().getId(), schoolId)
+                .map(access -> access.getRole() == UserRole.SCHOOL_ADMIN || access.getRole() == UserRole.PRINCIPAL)
+                .orElse(false);
+        if (!allowed) {
+            throw new ForbiddenException("School leadership access is required.");
+        }
+        return schoolId;
     }
 
     private DashboardSummaryResponse response(List<DashboardMetricResponse> metrics) {

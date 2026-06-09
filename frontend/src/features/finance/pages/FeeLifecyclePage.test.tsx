@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { FeeLifecyclePage } from './FeeLifecyclePage';
@@ -74,6 +74,8 @@ describe('FeeLifecyclePage', () => {
 
     fireEvent.change(screen.getByLabelText(/payment amount/i), { target: { value: '1200' } });
     fireEvent.click(screen.getByRole('button', { name: /record payment/i }));
+    const dialog = screen.getByRole('dialog', { name: /record payment/i });
+    fireEvent.click(within(dialog).getByRole('button', { name: /record payment/i }));
 
     await waitFor(() => expect(onRecordPayment).toHaveBeenCalledTimes(1));
     expect(onRecordPayment).toHaveBeenCalledWith('demand-1', {

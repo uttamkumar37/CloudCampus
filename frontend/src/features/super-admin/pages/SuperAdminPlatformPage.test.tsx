@@ -6,6 +6,7 @@ import {
   assignSuperAdminTenantSubscription,
   assignSuperAdminUserRole,
   createSuperAdminSubscriptionPlan,
+  deleteSuperAdminUserRole,
   getSuperAdminTenantSubscription,
   getSuperAdminNotificationDelivery,
   getSuperAdminNotifications,
@@ -33,6 +34,7 @@ vi.mock('../api/platformApi', async (importOriginal) => {
     assignSuperAdminTenantSubscription: vi.fn(),
     assignSuperAdminUserRole: vi.fn(),
     createSuperAdminSubscriptionPlan: vi.fn(),
+    deleteSuperAdminUserRole: vi.fn(),
     getSuperAdminTenantSubscription: vi.fn(),
     getSuperAdminNotifications: vi.fn(),
     getSuperAdminNotificationDelivery: vi.fn(),
@@ -166,6 +168,37 @@ describe('SuperAdminPlatformPage', () => {
     expect(assignSuperAdminUserRole).not.toHaveBeenCalled();
   });
 
+  it('requires confirmation before deleting a role assignment', async () => {
+    vi.mocked(listSuperAdminUserRoles).mockResolvedValue([{
+      roleAssignmentId: 'role-1',
+      role: 'TENANT_ADMIN',
+      tenantId: 'tenant-1',
+      tenantName: 'Platform Tenant',
+      schoolId: null,
+      schoolName: null,
+      scopeType: 'TENANT',
+      scopeId: 'tenant-1',
+      active: true,
+      startsAt: null,
+      expiresAt: null,
+      reason: 'Initial admin',
+      createdAt: '2026-06-01T00:00:00Z',
+    }]);
+    vi.mocked(deleteSuperAdminUserRole).mockResolvedValue(undefined);
+
+    render(<SuperAdminPlatformPage section="access-control" />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /view details/i }));
+    fireEvent.click(await screen.findByRole('tab', { name: /roles/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^delete$/i }));
+
+    expect(deleteSuperAdminUserRole).not.toHaveBeenCalled();
+    const dialog = await screen.findByRole('dialog', { name: /delete role assignment/i });
+    fireEvent.click(within(dialog).getByRole('button', { name: /^delete role$/i }));
+
+    await waitFor(() => expect(deleteSuperAdminUserRole).toHaveBeenCalledWith('user-1', 'role-1', 'super-token'));
+  });
+
   it('opens notification delivery details from the real detail API', async () => {
     const delivery = {
       deliveryId: 'delivery-1',
@@ -253,7 +286,7 @@ describe('SuperAdminPlatformPage', () => {
     render(<SuperAdminPlatformPage section="subscriptions" />);
 
     fireEvent.click(await screen.findByRole('tab', { name: /organization subscription/i }));
-    fireEvent.change(screen.getAllByPlaceholderText(/organization id/i)[0], { target: { value: 'tenant-1' } });
+    fireEvent.change(screen.getAllByLabelText(/organization id/i)[0], { target: { value: 'tenant-1' } });
     fireEvent.click(screen.getByRole('button', { name: /load subscription/i }));
 
     await waitFor(() => expect(getSuperAdminTenantSubscription).toHaveBeenCalledWith('tenant-1', 'super-token'));
@@ -262,6 +295,8 @@ describe('SuperAdminPlatformPage', () => {
     expect(await screen.findByRole('option', { name: 'STARTER' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /assign subscription/i }));
+    const confirmDialog = await screen.findByRole('dialog', { name: /assign organization subscription/i });
+    fireEvent.click(within(confirmDialog).getByRole('button', { name: /assign and invoice/i }));
 
     await waitFor(() => expect(assignSuperAdminTenantSubscription).toHaveBeenCalledWith(
       'tenant-1',

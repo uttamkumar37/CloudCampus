@@ -104,6 +104,20 @@ class DashboardSummaryFlowTest {
     }
 
     @Test
+    void principalCanReadSchoolScopedDashboardSummary() throws Exception {
+        Fixture fixture = fixture("dash-principal", UserRole.PRINCIPAL, true);
+        studentRepository.save(new Student(fixture.tenant(), fixture.school(), "DASH-PRN-100", "Principal Dashboard Student"));
+
+        JsonNode body = jsonBody(mockMvc.perform(get("/v1/school-admin/dashboard/summary")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(fixture.token())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metrics").isArray())
+                .andReturn());
+
+        assertMetric(body, "Students", "1");
+    }
+
+    @Test
     void allRoleDashboardSummaryEndpointsReturnFrontendContract() throws Exception {
         Fixture superAdmin = fixture("dash-super", UserRole.SUPER_ADMIN, false);
         Fixture tenantAdmin = fixture("dash-tenant", UserRole.TENANT_ADMIN, false);

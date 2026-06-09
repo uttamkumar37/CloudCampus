@@ -4,7 +4,6 @@ import { ApiError } from '../../../shared/api/apiError';
 import {
   getTenantReportSummary,
   getTenantSchoolReportSummary,
-  type TenantReportMetrics,
   type TenantReportSchoolSummary,
   type TenantReportSummary,
 } from '../api/tenantReportsApi';

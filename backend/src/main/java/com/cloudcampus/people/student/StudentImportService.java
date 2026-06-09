@@ -20,6 +20,8 @@ import com.cloudcampus.audit.AuditLogService;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.web.PageResponse;
+import com.cloudcampus.common.web.PageResponses;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
@@ -126,11 +128,25 @@ public class StudentImportService {
 
     @Transactional(readOnly = true)
     public List<StudentResponse> students(AuthenticatedUser actor) {
-        School school = requireActiveSchoolAdminSchool(actor);
+        School school = requireActiveSchoolLeadershipSchool(actor);
         return studentRepository.findBySchoolIdOrderByAdmissionNumberAsc(school.getId())
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<StudentResponse> students(AuthenticatedUser actor, int page, int size, String search, String status) {
+        School school = requireActiveSchoolLeadershipSchool(actor);
+        String normalizedSearch = normalizeOptional(search);
+        String normalizedStatus = normalizeOptional(status);
+        List<StudentResponse> rows = studentRepository.findBySchoolIdOrderByAdmissionNumberAsc(school.getId())
+                .stream()
+                .map(this::toResponse)
+                .filter(student -> matchesStatus(student, normalizedStatus))
+                .filter(student -> matchesSearch(student, normalizedSearch))
+                .toList();
+        return PageResponses.of(rows, page, size);
     }
 
     @Transactional
@@ -209,6 +225,48 @@ public class StudentImportService {
         schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), activeSchoolId);
         return schoolRepository.findById(activeSchoolId)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
+    }
+
+    private School requireActiveSchoolLeadershipSchool(AuthenticatedUser actor) {
+        String activeSchoolId = actor.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), activeSchoolId);
+        return schoolRepository.findById(activeSchoolId)
+                .orElseThrow(() -> new NotFoundException("Active school was not found."));
+    }
+
+    private boolean matchesStatus(StudentResponse student, String status) {
+        if (status == null || status.equalsIgnoreCase("all")) {
+            return true;
+        }
+        if (status.equalsIgnoreCase("active")) {
+            return student.active();
+        }
+        if (status.equalsIgnoreCase("inactive")) {
+            return !student.active();
+        }
+        return true;
+    }
+
+    private boolean matchesSearch(StudentResponse student, String search) {
+        if (search == null) {
+            return true;
+        }
+        String query = search.toLowerCase(Locale.ROOT);
+        return contains(student.fullName(), query)
+                || contains(student.admissionNumber(), query)
+                || contains(student.rollNumber(), query)
+                || contains(student.guardianName(), query)
+                || contains(student.guardianEmail(), query)
+                || contains(student.guardianMobile(), query)
+                || contains(student.classLevelId(), query)
+                || contains(student.sectionId(), query);
+    }
+
+    private boolean contains(String value, String query) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(query);
     }
 
     private ResolvedImportRows validateRows(AuthenticatedUser actor, School school, List<StudentImportRow> rows) {

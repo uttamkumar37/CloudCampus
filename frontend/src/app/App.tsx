@@ -59,7 +59,9 @@ import {
   type ParentChild,
 } from '../features/parent/api/parentPortalApi';
 import { getDashboardSummary, type DashboardSummary } from '../features/portal/api/dashboardApi';
+import { PrincipalPortalPage } from '../features/principal/pages/PrincipalPortalPage';
 import { ReportExportsPage } from '../features/reports/pages/ReportExportsPage';
+import { SchoolAdminDashboardPage } from '../features/school-admin/pages/SchoolAdminDashboardPage';
 import { SchoolAdminResourcePanel } from '../features/school-admin/pages/SchoolAdminResourcePanel';
 import { SchoolSettingsPage } from '../features/school-admin/pages/SchoolSettingsPage';
 import type { SchoolAdminResourceKey } from '../features/school-admin/api/schoolAdminResourcesApi';
@@ -1506,7 +1508,7 @@ function RoleWorkspace({
         <WorkspaceHeader title="School ERP workspace" activeNav={activeNav} />
         <SchoolSelector />
         {user.activeSchool ? (
-          <SchoolAdminModule activeNav={activeNav} />
+          <SchoolAdminModule activeNav={activeNav} onSelectNav={onSelectNav} />
         ) : (
           <EmptyState title="Select active school" detail="Choose an assigned school to open the School Admin tools." />
         )}
@@ -1520,7 +1522,7 @@ function RoleWorkspace({
         <WorkspaceHeader title="Principal workspace" activeNav={activeNav} />
         <SchoolSelector />
         {user.activeSchool ? (
-          <PrincipalModule activeNav={activeNav} />
+          <PrincipalModule activeNav={activeNav} onSelectNav={onSelectNav} />
         ) : (
           <EmptyState title="Select active school" detail="Choose an assigned school to open Principal approvals and academic tools." />
         )}
@@ -1596,19 +1598,8 @@ function FinanceStaffModule({ activeNav }: { activeNav: string }) {
   return <ComingSoonPanel activeNav={activeNav} role="FINANCE_STAFF" />;
 }
 
-function PrincipalModule({ activeNav }: { activeNav: string }) {
-  if (activeNav === 'dashboard') {
-    return <DashboardWorkspacePanel role="PRINCIPAL" />;
-  }
-  if (activeNav === 'ai-suggestions') {
-    return <RoleAiPanel role="PRINCIPAL" />;
-  }
-  if (activeNav === 'students') return <SchoolAdminResourcePanel resource="students" />;
-  if (activeNav === 'teachers') return <SchoolAdminResourcePanel resource="teachers" />;
-  if (activeNav === 'attendance') return <SchoolAdminResourcePanel resource="attendance" />;
-  if (activeNav === 'exams' || activeNav === 'results') return <SchoolAdminResourcePanel resource="exams" />;
-  if (activeNav === 'reports') return <ReportExportsPage />;
-  return <ComingSoonPanel activeNav={activeNav} role="PRINCIPAL" />;
+function PrincipalModule({ activeNav, onSelectNav }: { activeNav: string; onSelectNav: (navId: string) => void }) {
+  return <PrincipalPortalPage onNavigate={onSelectNav} section={activeNav} />;
 }
 
 function OfficeStaffModule({ activeNav }: { activeNav: string }) {
@@ -1671,7 +1662,7 @@ function TenantAdminModule({
   return <ComingSoonPanel activeNav={activeNav} role="TENANT_ADMIN" />;
 }
 
-function SchoolAdminModule({ activeNav }: { activeNav: string }) {
+function SchoolAdminModule({ activeNav, onSelectNav }: { activeNav: string; onSelectNav: (navId: string) => void }) {
   if (activeNav === 'ai-suggestions') {
     return <RoleAiPanel role="SCHOOL_ADMIN" />;
   }
@@ -1733,12 +1724,7 @@ function SchoolAdminModule({ activeNav }: { activeNav: string }) {
   }
 
   if (activeNav === 'dashboard') {
-    return (
-      <div className="workspace-grid">
-        <SchoolAdminResourcePanel resource="students" />
-        <EmptyState title="School Admin workspace" detail="Use the connected sidebar modules for student import, academic setup, attendance, homework, exams, fees, notices, documents and website pages." />
-      </div>
-    );
+    return <SchoolAdminDashboardPage onNavigate={onSelectNav} />;
   }
 
   return <ComingSoonPanel activeNav={activeNav} role="SCHOOL_ADMIN" />;

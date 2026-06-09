@@ -76,6 +76,29 @@ public class BulkJobService {
     }
 
     @Transactional
+    public BulkJobResponse createForSchoolLeadership(AuthenticatedUser actor, BulkJobCreateRequest request) {
+        School school = requireActiveSchoolLeadershipSchool(actor);
+        String jobType = normalizeJobType(request.jobType());
+        int totalRecords = request.totalRecords() == null ? 0 : request.totalRecords();
+        if (totalRecords < 0) {
+            throw new BadRequestException("Bulk job total records cannot be negative.");
+        }
+
+        BulkJob job = bulkJobRepository.save(new BulkJob(
+                school.getTenant(),
+                school,
+                actor.user(),
+                jobType,
+                totalRecords,
+                normalizeOptional(request.inputFileReference()),
+                metadataJson(request.metadata())
+        ));
+        recordAudit(actor.user(), job, AuditAction.BULK_JOB_CREATED, "Bulk job queued.");
+        recordOutbox(job, "BulkJobCreated", "bulk-job:" + job.getId() + ":created", safePayload(job));
+        return toResponse(job);
+    }
+
+    @Transactional
     public BulkJobResponse createPlatformJob(AuthenticatedUser actor, BulkJobCreateRequest request) {
         if (actor.user().getRole() != UserRole.SUPER_ADMIN) {
             throw new ForbiddenException("Only SUPER_ADMIN can create platform bulk jobs.");
@@ -175,6 +198,16 @@ public class BulkJobService {
             throw new ForbiddenException("An active school is required.");
         }
         schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), activeSchoolId);
+        return schoolRepository.findById(activeSchoolId)
+                .orElseThrow(() -> new NotFoundException("Active school was not found."));
+    }
+
+    private School requireActiveSchoolLeadershipSchool(AuthenticatedUser actor) {
+        String activeSchoolId = actor.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), activeSchoolId);
         return schoolRepository.findById(activeSchoolId)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }

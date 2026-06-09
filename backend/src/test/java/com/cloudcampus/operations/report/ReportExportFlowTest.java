@@ -217,6 +217,33 @@ class ReportExportFlowTest {
     }
 
     @Test
+    void principalCanRequestAndListSchoolScopedReportExports() throws Exception {
+        SchoolUserContext context = schoolUserContext(UserRole.PRINCIPAL, UserRole.PRINCIPAL);
+        studentRepository.save(new Student(context.tenant(), context.school(), "REP-PRN-100", "Principal Report Student"));
+
+        JsonNode created = jsonBody(mockMvc.perform(post("/v1/school-admin/reports/exports")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(context.accessToken()))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "reportType": "STUDENT_DIRECTORY",
+                                  "format": "CSV"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tenantId").value(context.tenant().getId()))
+                .andExpect(jsonPath("$.schoolId").value(context.school().getId()))
+                .andExpect(jsonPath("$.status").value("QUEUED"))
+                .andReturn());
+        String exportId = created.at("/id").asText();
+
+        mockMvc.perform(get("/v1/school-admin/reports/exports")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(context.accessToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(exportId));
+    }
+
+    @Test
     void schoolAdminCannotReadOrDownloadAnotherSchoolsReportExport() throws Exception {
         SchoolUserContext first = schoolUserContext(UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_ADMIN);
         SchoolUserContext second = schoolUserContext(UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_ADMIN);

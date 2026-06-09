@@ -90,7 +90,7 @@ public class AttendanceService {
 
     @Transactional(readOnly = true)
     public List<AttendanceSessionResponse> schoolAdminSessions(AuthenticatedUser actor) {
-        School school = requireActiveSchoolAdminSchool(actor);
+        School school = requireActiveSchoolLeadershipSchool(actor);
         return attendanceSessionRepository.findBySchoolIdOrderByAttendanceDateDescCreatedAtDesc(school.getId())
                 .stream()
                 .map(this::toResponse)
@@ -100,7 +100,7 @@ public class AttendanceService {
     @Transactional(readOnly = true)
     public AttendanceSessionResponse schoolAdminSession(AuthenticatedUser actor, String sessionId) {
         AttendanceSession session = requireSession(sessionId);
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), session.getSchool().getId());
+        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), session.getSchool().getId());
         return toResponse(session);
     }
 
@@ -199,6 +199,16 @@ public class AttendanceService {
             throw new ForbiddenException("An active school is required.");
         }
         schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), activeSchoolId);
+        return schoolRepository.findById(activeSchoolId)
+                .orElseThrow(() -> new NotFoundException("Active school was not found."));
+    }
+
+    private School requireActiveSchoolLeadershipSchool(AuthenticatedUser actor) {
+        String activeSchoolId = actor.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), activeSchoolId);
         return schoolRepository.findById(activeSchoolId)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }

@@ -79,8 +79,8 @@ public class ReportExportService {
 
     @Transactional
     public ReportExportResponse requestExport(AuthenticatedUser actor, ReportExportRequest request) {
-        School school = requireActiveSchoolAdminSchool(actor);
-        BulkJobResponse bulkJob = bulkJobService.create(
+        School school = requireActiveSchoolLeadershipSchool(actor);
+        BulkJobResponse bulkJob = bulkJobService.createForSchoolLeadership(
                 actor,
                 new BulkJobCreateRequest(
                         REPORT_JOB_TYPE,
@@ -106,7 +106,7 @@ public class ReportExportService {
 
     @Transactional(readOnly = true)
     public List<ReportExportResponse> listExports(AuthenticatedUser actor) {
-        School school = requireActiveSchoolAdminSchool(actor);
+        School school = requireActiveSchoolLeadershipSchool(actor);
         return reportExportJobRepository.findBySchoolIdOrderByRequestedAtDesc(school.getId())
                 .stream()
                 .map(this::toResponse)
@@ -173,12 +173,12 @@ public class ReportExportService {
         }
     }
 
-    private School requireActiveSchoolAdminSchool(AuthenticatedUser actor) {
+    private School requireActiveSchoolLeadershipSchool(AuthenticatedUser actor) {
         String activeSchoolId = actor.activeSchoolId();
         if (activeSchoolId == null || activeSchoolId.isBlank()) {
             throw new ForbiddenException("An active school is required.");
         }
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), activeSchoolId);
+        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), activeSchoolId);
         return schoolRepository.findById(activeSchoolId)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }
@@ -186,7 +186,7 @@ public class ReportExportService {
     private ReportExportJob requireAccessibleExport(AuthenticatedUser actor, String exportId) {
         ReportExportJob exportJob = reportExportJobRepository.findById(exportId)
                 .orElseThrow(() -> new NotFoundException("Report export was not found."));
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), exportJob.getSchool().getId());
+        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), exportJob.getSchool().getId());
         return exportJob;
     }
 

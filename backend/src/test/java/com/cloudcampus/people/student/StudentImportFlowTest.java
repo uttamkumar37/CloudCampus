@@ -7,15 +7,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 
 import com.cloudcampus.academic.ClassLevelRepository;
 import com.cloudcampus.academic.SectionRepository;
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogRepository;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
+import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.JwtAccessTokenService;
+import com.cloudcampus.platform.tenant.Tenant;
 import com.cloudcampus.platform.tenant.TenantRepository;
+import com.cloudcampus.school.School;
 import com.cloudcampus.school.SchoolRepository;
 import com.cloudcampus.testsupport.AuthTestSupport;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -48,6 +54,9 @@ class StudentImportFlowTest {
 
     @Autowired
     private UserAccountRepository userAccountRepository;
+
+    @Autowired
+    private UserSchoolAccessRepository userSchoolAccessRepository;
 
     @Autowired
     private StudentRepository studentRepository;
@@ -127,6 +136,43 @@ class StudentImportFlowTest {
                     assertThat(auditLog.getMetadataJson()).doesNotContain("Anaya");
                 });
         assertThat(importResult.at("/students").size()).isEqualTo(2);
+    }
+
+    @Test
+    void principalCanReadPaginatedStudentDirectoryWithoutImportAccess() throws Exception {
+        JsonNode onboarding = onboard("stu-import-principal", "stu-school-principal", "stu-admin-principal@example.com");
+        String schoolAdminToken = activateSchoolAdmin(onboarding);
+        AcademicSetup academicSetup = academicSetup(schoolAdminToken, "2026-2027", "Class 1", "A");
+
+        mockMvc.perform(post("/v1/school-admin/students/import")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(schoolAdminToken))
+                        .contentType("application/json")
+                        .content(validImportPayload(academicSetup.classLevelId(), academicSetup.sectionId())))
+                .andExpect(status().isCreated());
+
+        String principalToken = principalToken(onboarding);
+
+        mockMvc.perform(get("/v1/school-admin/students?page=0&size=1")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(principalToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].admissionNumber").value("ADM-1001"))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(1))
+                .andExpect(jsonPath("$.totalItems").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2));
+
+        mockMvc.perform(get("/v1/school-admin/students?page=0&size=10&search=anaya&status=active")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(principalToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].fullName").value("Anaya Rao"))
+                .andExpect(jsonPath("$.totalItems").value(1));
+
+        mockMvc.perform(post("/v1/school-admin/students/import")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(principalToken))
+                        .contentType("application/json")
+                        .content(validImportPayload(academicSetup.classLevelId(), academicSetup.sectionId())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
     @Test
@@ -334,6 +380,23 @@ class StudentImportFlowTest {
         String email = onboarding.at("/schoolAdminInvitation/email").asText();
         acceptInvitation(onboarding.at("/schoolAdminInvitation/token").asText(), "StudentImportStrong123!");
         return login(email, "StudentImportStrong123!").at("/accessToken").asText();
+    }
+
+    private String principalToken(JsonNode onboarding) {
+        String tenantId = onboarding.at("/tenant/id").asText();
+        String schoolId = onboarding.at("/school/id").asText();
+        Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
+        School school = schoolRepository.findById(schoolId).orElseThrow();
+        UserAccount principal = new UserAccount(
+                tenant,
+                "principal-students-" + schoolId + "@example.com",
+                "Student Review Principal",
+                UserRole.PRINCIPAL
+        );
+        principal.activate(passwordEncoder.encode("StudentPrincipal123!"), "Student Review Principal", Instant.now());
+        userAccountRepository.save(principal);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, principal, UserRole.PRINCIPAL, true));
+        return jwtAccessTokenService.issueToken(principal.getId(), tenantId, UserRole.PRINCIPAL, schoolId);
     }
 
     private void acceptInvitation(String token, String password) throws Exception {

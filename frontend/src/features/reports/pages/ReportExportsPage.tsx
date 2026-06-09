@@ -31,30 +31,54 @@ export function ReportExportsPage({
 }: ReportExportsPageProps) {
   const [reportType, setReportType] = useState<ReportType>('STUDENT_DIRECTORY');
   const [exports, setExports] = useState<ReportExportResponse[]>([]);
+  const [pendingExport, setPendingExport] = useState<ReportExportRequest | null>(null);
+  const [status, setStatus] = useState<'idle' | 'requesting' | 'loading' | 'downloading'>('idle');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleRequest(event: FormEvent<HTMLFormElement>) {
+  function handleRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
+    setPendingExport({ reportType, format: 'CSV' });
+  }
+
+  async function confirmRequest() {
+    if (!pendingExport) return;
     await withToken(async (accessToken) => {
-      const response = await onRequest({ reportType, format: 'CSV' }, accessToken);
-      setExports((current) => [response, ...current.filter((item) => item.id !== response.id)]);
-      setMessage(`${labelFor(response.reportType)} export queued`);
+      setStatus('requesting');
+      try {
+        const response = await onRequest(pendingExport, accessToken);
+        setExports((current) => [response, ...current.filter((item) => item.id !== response.id)]);
+        setMessage(`${labelFor(response.reportType)} export queued`);
+        setPendingExport(null);
+      } finally {
+        setStatus('idle');
+      }
     });
   }
 
   async function handleLoad() {
     await withToken(async (accessToken) => {
-      const response = await onLoad(accessToken);
-      setExports(response);
-      setMessage(`${response.length} report exports loaded`);
+      setStatus('loading');
+      try {
+        const response = await onLoad(accessToken);
+        setExports(response);
+        setMessage(`${response.length} report exports loaded`);
+      } finally {
+        setStatus('idle');
+      }
     });
   }
 
   async function handleDownload(exportId: string) {
     await withToken(async (accessToken) => {
-      const content = await onDownload(exportId, accessToken);
-      setMessage(`Downloaded ${content.length} characters`);
+      setStatus('downloading');
+      try {
+        const content = await onDownload(exportId, accessToken);
+        setMessage(`Downloaded ${content.length} characters`);
+      } finally {
+        setStatus('idle');
+      }
     });
   }
 
@@ -95,9 +119,9 @@ export function ReportExportsPage({
             ))}
           </select>
         </label>
-        <button type="submit">Request export</button>
-        <button type="button" onClick={handleLoad}>
-          Load exports
+        <button disabled={status !== 'idle'} type="submit">Request export</button>
+        <button disabled={status !== 'idle'} type="button" onClick={handleLoad}>
+          {status === 'loading' ? 'Loading exports...' : 'Load exports'}
         </button>
       </form>
 
@@ -112,13 +136,22 @@ export function ReportExportsPage({
               <span>{item.status}</span>
               <span>{item.fileName ?? 'pending file'}</span>
               {item.status === 'COMPLETED' ? (
-                <button type="button" onClick={() => void handleDownload(item.id)}>
-                  Download
+                <button disabled={status !== 'idle'} type="button" onClick={() => void handleDownload(item.id)}>
+                  {status === 'downloading' ? 'Downloading...' : 'Download'}
                 </button>
               ) : null}
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {pendingExport ? (
+        <ReportExportConfirmDialog
+          busy={status === 'requesting'}
+          detail={`${labelFor(pendingExport.reportType)} will be queued as a CSV export for the active school.`}
+          onCancel={() => setPendingExport(null)}
+          onConfirm={() => void confirmRequest()}
+        />
       ) : null}
     </section>
   );
@@ -126,4 +159,33 @@ export function ReportExportsPage({
 
 function labelFor(reportType: ReportType) {
   return reportTypeOptions.find((option) => option.value === reportType)?.label ?? reportType;
+}
+
+function ReportExportConfirmDialog({
+  busy,
+  detail,
+  onCancel,
+  onConfirm,
+}: {
+  busy: boolean;
+  detail: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="school-admin-confirm" role="presentation">
+      <button aria-label="Close report export confirmation" className="school-admin-confirm-scrim" onClick={onCancel} type="button" />
+      <section aria-labelledby="report-export-confirm-title" aria-modal="true" className="school-admin-confirm-panel" role="dialog">
+        <div>
+          <p className="eyebrow">Confirm export</p>
+          <h3 id="report-export-confirm-title">Queue report export?</h3>
+          <span>{detail}</span>
+        </div>
+        <div className="school-admin-confirm-actions">
+          <button className="secondary" disabled={busy} onClick={onCancel} type="button">Cancel</button>
+          <button disabled={busy} onClick={onConfirm} type="button">{busy ? 'Queueing...' : 'Queue export'}</button>
+        </div>
+      </section>
+    </div>
+  );
 }

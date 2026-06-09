@@ -96,7 +96,7 @@ public class ExamService {
 
     @Transactional(readOnly = true)
     public List<ExamResponse> schoolExams(AuthenticatedUser actor) {
-        School school = requireActiveSchoolAdminSchool(actor);
+        School school = requireActiveSchoolLeadershipSchool(actor);
         return examRepository.findBySchoolIdOrderByExamDateAscCreatedAtAsc(school.getId())
                 .stream()
                 .map(this::toResponseWithResults)
@@ -106,7 +106,7 @@ public class ExamService {
     @Transactional(readOnly = true)
     public ExamResponse schoolExam(AuthenticatedUser actor, String examId) {
         Exam exam = requireExam(examId);
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), exam.getSchool().getId());
+        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), exam.getSchool().getId());
         return toResponseWithResults(exam);
     }
 
@@ -121,7 +121,7 @@ public class ExamService {
     @Transactional
     public ExamResponse publishSchoolAdminExam(AuthenticatedUser actor, String examId) {
         Exam exam = requireExam(examId);
-        schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), exam.getSchool().getId());
+        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), exam.getSchool().getId());
         exam.publish(actor.user(), Instant.now());
         recordExamResultsPublished(actor.user(), exam);
         return toResponseWithResults(exam);
@@ -218,6 +218,16 @@ public class ExamService {
             throw new ForbiddenException("An active school is required.");
         }
         schoolAccessService.requireSchoolAdminAccess(actor.user().getId(), activeSchoolId);
+        return schoolRepository.findById(activeSchoolId)
+                .orElseThrow(() -> new NotFoundException("Active school was not found."));
+    }
+
+    private School requireActiveSchoolLeadershipSchool(AuthenticatedUser actor) {
+        String activeSchoolId = actor.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), activeSchoolId);
         return schoolRepository.findById(activeSchoolId)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }

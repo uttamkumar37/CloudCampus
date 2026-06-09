@@ -193,6 +193,7 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
     private void seedSchool(Tenant tenant, School school) {
         String prefix = school.getCode().toLowerCase(Locale.ROOT).replace("-", ".");
         UserAccount schoolAdmin = activeUser(tenant, "principal@" + prefix + ".demo", "Dr. Uttam Kumar", UserRole.SCHOOL_ADMIN);
+        UserAccount principal = activeUser(tenant, "principal.user@" + prefix + ".demo", "Principal User", UserRole.PRINCIPAL);
         UserAccount mathTeacher = activeUser(tenant, "teacher.math@" + prefix + ".demo", "Asha Mathur", UserRole.TEACHER);
         UserAccount englishTeacher = activeUser(tenant, "teacher.english@" + prefix + ".demo", "Rohan Sen", UserRole.TEACHER);
         UserAccount scienceTeacher = activeUser(tenant, "teacher.science@" + prefix + ".demo", "Farah Khan", UserRole.TEACHER);
@@ -202,6 +203,7 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
         UserAccount studentLogin = activeUser(tenant, "student@" + prefix + ".demo", "Aarav Sharma", UserRole.STUDENT);
 
         grant(tenant, school, schoolAdmin, UserRole.SCHOOL_ADMIN, true);
+        grant(tenant, school, principal, UserRole.PRINCIPAL, true);
         grant(tenant, school, mathTeacher, UserRole.TEACHER, true);
         grant(tenant, school, englishTeacher, UserRole.TEACHER, true);
         grant(tenant, school, scienceTeacher, UserRole.TEACHER, true);

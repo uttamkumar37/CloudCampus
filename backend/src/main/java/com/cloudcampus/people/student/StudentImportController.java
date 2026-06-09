@@ -2,6 +2,7 @@ package com.cloudcampus.people.student;
 
 import java.util.List;
 
+import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,11 +10,13 @@ import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -79,7 +82,23 @@ public class StudentImportController {
     }
 
     @GetMapping
-    ResponseEntity<List<StudentResponse>> students(HttpServletRequest request) {
-        return ResponseEntity.ok(studentImportService.students(authenticatedUserResolver.requireUser(request)));
+    ResponseEntity<?> students(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            HttpServletRequest request
+    ) {
+        if (page == null && size == null && !StringUtils.hasText(search) && !StringUtils.hasText(status)) {
+            return ResponseEntity.ok(studentImportService.students(authenticatedUserResolver.requireUser(request)));
+        }
+        PageResponse<StudentResponse> response = studentImportService.students(
+                authenticatedUserResolver.requireUser(request),
+                page == null ? 0 : page,
+                size == null ? 50 : size,
+                search,
+                status
+        );
+        return ResponseEntity.ok(response);
     }
 }

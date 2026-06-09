@@ -1435,6 +1435,1010 @@ p {
   font-style: normal;
 }
 
+.school-admin-panel {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.school-admin-title,
+.school-admin-card,
+.school-admin-api-note,
+.school-admin-dev-form {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.school-admin-title {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.school-admin-title h2 {
+  margin: 2px 0 6px;
+  color: var(--text);
+  font-size: clamp(1.3rem, 2vw, 1.9rem);
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.school-admin-title span,
+.school-admin-card span,
+.school-admin-api-note span,
+.school-admin-dev-form span {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.school-admin-title-actions,
+.school-admin-actions,
+.school-admin-pagination,
+.school-admin-confirm-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.school-admin-title-actions {
+  justify-content: flex-end;
+}
+
+.school-admin-title button,
+.school-admin-card button,
+.school-admin-toolbar button,
+.school-admin-pagination button,
+.school-admin-dev-form button,
+.school-admin-empty button,
+.school-admin-confirm-actions button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #fff;
+  background: var(--primary);
+  font-weight: 850;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.16);
+}
+
+.school-admin-title button.secondary,
+.school-admin-card button.secondary,
+.school-admin-toolbar button.secondary,
+.school-admin-pagination button.secondary,
+.school-admin-dev-form button.secondary,
+.school-admin-empty button.secondary,
+.school-admin-confirm-actions button.secondary {
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.school-admin-title button:disabled,
+.school-admin-card button:disabled,
+.school-admin-toolbar button:disabled,
+.school-admin-pagination button:disabled,
+.school-admin-dev-form button:disabled,
+.school-admin-empty button:disabled,
+.school-admin-confirm-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+  box-shadow: none;
+}
+
+.school-admin-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px) minmax(120px, 160px);
+  gap: 12px;
+  align-items: end;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--surface);
+}
+
+.school-admin-toolbar label,
+.school-admin-dev-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.school-admin-toolbar input,
+.school-admin-toolbar select,
+.school-admin-dev-form input,
+.school-admin-dev-form textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: var(--surface);
+  outline: 0;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.school-admin-dev-form textarea {
+  min-height: 180px;
+  resize: vertical;
+}
+
+.school-admin-toolbar input:focus,
+.school-admin-toolbar select:focus,
+.school-admin-dev-form input:focus,
+.school-admin-dev-form textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(49, 87, 216, 0.14);
+}
+
+.school-admin-card {
+  overflow: hidden;
+}
+
+.school-admin-card.wide {
+  grid-column: 1 / -1;
+}
+
+.school-admin-card-heading {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding: 16px;
+}
+
+.school-admin-card-heading h3,
+.school-admin-dev-form h3,
+.school-admin-confirm-panel h3 {
+  margin: 0 0 4px;
+  color: var(--text);
+}
+
+.school-admin-table-shell {
+  max-width: 100%;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.school-admin-table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+}
+
+.school-admin-table th,
+.school-admin-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 14px;
+  color: var(--text);
+  font-size: 0.9rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.school-admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.school-admin-table td strong,
+.school-admin-table td span,
+.school-admin-table td em {
+  display: block;
+}
+
+.school-admin-table td > span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.school-admin-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #155e75;
+  background: #ecfeff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.school-admin-status.status-active,
+.school-admin-status.status-paid,
+.school-admin-status.status-published,
+.school-admin-status.status-completed,
+.school-admin-status.status-present {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.school-admin-status.status-inactive,
+.school-admin-status.status-disabled,
+.school-admin-status.status-draft {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.school-admin-status.status-open,
+.school-admin-status.status-queued,
+.school-admin-status.status-pending {
+  color: #92400e;
+  background: #fffbeb;
+}
+
+.school-admin-status.status-failed,
+.school-admin-status.status-overdue,
+.school-admin-status.status-absent {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.school-admin-empty,
+.school-admin-api-note {
+  display: grid;
+  gap: 8px;
+  margin: 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  padding: 16px;
+  color: var(--muted);
+  background: var(--surface-soft);
+}
+
+.school-admin-api-note {
+  margin: 0;
+}
+
+.school-admin-empty.compact {
+  margin: 0;
+}
+
+.school-admin-empty strong,
+.school-admin-api-note strong {
+  color: var(--text);
+}
+
+.school-admin-skeleton {
+  display: grid;
+  gap: 12px;
+}
+
+.school-admin-card .api-skeleton {
+  padding: 16px;
+}
+
+.school-admin-skeleton span {
+  min-height: 58px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--surface-soft), var(--surface-muted), var(--surface-soft));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.school-admin-metrics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.school-admin-metric {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  min-height: 120px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  padding: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.school-admin-metric span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.school-admin-metric strong {
+  color: var(--text);
+  font-size: 1.65rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.school-admin-metric em {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.school-admin-dashboard-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.school-admin-action-list,
+.school-admin-record-list {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.school-admin-action-list button,
+.school-admin-record-list article {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px;
+  text-align: left;
+  background: var(--surface-soft);
+  box-shadow: none;
+}
+
+.school-admin-action-list button {
+  color: var(--text);
+}
+
+.school-admin-action-list button span,
+.school-admin-record-list span,
+.school-admin-record-list em {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-style: normal;
+}
+
+.school-admin-pagination {
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding: 14px 16px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.school-admin-pagination > div {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.school-admin-dev-form {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.school-admin-dev-form.compact {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.school-admin-row-details {
+  min-width: min(220px, 100%);
+  max-width: 360px;
+  margin-top: 0;
+}
+
+.school-admin-row-details pre {
+  max-height: 180px;
+  overflow: auto;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.school-admin-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.school-admin-confirm-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  color: inherit;
+  background: rgba(15, 23, 42, 0.44);
+  box-shadow: none;
+  backdrop-filter: blur(5px);
+}
+
+.school-admin-confirm-panel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 14px;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.school-admin-confirm-panel span {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.school-admin-confirm-actions {
+  justify-content: flex-end;
+}
+
+.principal-panel {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.principal-title,
+.principal-card,
+.principal-note {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.principal-title {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.principal-title h2 {
+  margin: 2px 0 6px;
+  color: var(--text);
+  font-size: clamp(1.3rem, 2vw, 1.9rem);
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.principal-title span,
+.principal-card span,
+.principal-note span {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.principal-title-actions,
+.principal-actions,
+.principal-pagination,
+.principal-drawer-footer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.principal-title-actions {
+  justify-content: flex-end;
+}
+
+.principal-title button,
+.principal-card button,
+.principal-toolbar button,
+.principal-pagination button,
+.principal-empty button,
+.principal-drawer button,
+.principal-form button,
+.principal-actions button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #fff;
+  background: var(--primary);
+  font-weight: 850;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.16);
+}
+
+.principal-title button.secondary,
+.principal-card button.secondary,
+.principal-toolbar button.secondary,
+.principal-pagination button.secondary,
+.principal-empty button.secondary,
+.principal-drawer button.secondary,
+.principal-form button.secondary,
+.principal-actions button.secondary {
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: none;
+}
+
+.principal-title button:disabled,
+.principal-card button:disabled,
+.principal-toolbar button:disabled,
+.principal-pagination button:disabled,
+.principal-empty button:disabled,
+.principal-drawer button:disabled,
+.principal-form button:disabled,
+.principal-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+  box-shadow: none;
+}
+
+.principal-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(170px, 240px);
+  gap: 12px;
+  align-items: end;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--surface);
+}
+
+.principal-toolbar label,
+.principal-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.principal-field span em {
+  margin-left: 4px;
+  color: var(--rose);
+  font-style: normal;
+}
+
+.principal-toolbar input,
+.principal-toolbar select,
+.principal-field input,
+.principal-field select,
+.principal-field textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: var(--surface);
+  outline: 0;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.principal-field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.principal-toolbar input:focus,
+.principal-toolbar select:focus,
+.principal-field input:focus,
+.principal-field select:focus,
+.principal-field textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(49, 87, 216, 0.14);
+}
+
+.principal-field small {
+  color: var(--rose);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.principal-metrics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.principal-metrics.compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.principal-metric {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  min-height: 120px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  padding: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.principal-metric span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.principal-metric strong {
+  color: var(--text);
+  font-size: 1.55rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.principal-metric em {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.principal-dashboard-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.principal-card {
+  overflow: hidden;
+}
+
+.principal-card.wide {
+  grid-column: 1 / -1;
+}
+
+.principal-card-heading {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding: 16px;
+}
+
+.principal-card-heading h3,
+.principal-drawer-header h3,
+.principal-note strong {
+  margin: 0 0 4px;
+  color: var(--text);
+}
+
+.principal-action-list,
+.principal-record-list {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.principal-action-list button,
+.principal-record-list article {
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px;
+  text-align: left;
+  background: var(--surface-soft);
+  box-shadow: none;
+}
+
+.principal-action-list button {
+  color: var(--text);
+}
+
+.principal-action-list button span,
+.principal-record-list span,
+.principal-record-list em {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-style: normal;
+}
+
+.principal-table-shell {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  scrollbar-gutter: stable;
+}
+
+.principal-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+}
+
+.principal-table th,
+.principal-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 14px;
+  color: var(--text);
+  font-size: 0.9rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.principal-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.principal-table td strong,
+.principal-table td span,
+.principal-table td em {
+  display: block;
+}
+
+.principal-table td > span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.principal-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #155e75;
+  background: #ecfeff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.principal-status.status-active,
+.principal-status.status-healthy,
+.principal-status.status-approved,
+.principal-status.status-published,
+.principal-status.status-completed,
+.principal-status.status-executed,
+.principal-status.status-present {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.principal-status.status-inactive,
+.principal-status.status-draft,
+.principal-status.status-cancelled,
+.principal-status.status-disabled {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.principal-status.status-needs-review,
+.principal-status.status-pending-review,
+.principal-status.status-queued,
+.principal-status.status-processing,
+.principal-status.status-low,
+.principal-status.status-medium {
+  color: #92400e;
+  background: #fffbeb;
+}
+
+.principal-status.status-high,
+.principal-status.status-critical,
+.principal-status.status-rejected,
+.principal-status.status-failed,
+.principal-status.status-absent {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.principal-empty,
+.principal-note {
+  display: grid;
+  gap: 8px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  padding: 16px;
+  color: var(--muted);
+  background: var(--surface-soft);
+}
+
+.principal-empty {
+  margin: 0;
+}
+
+.principal-empty.compact {
+  margin: 16px;
+}
+
+.principal-empty.error {
+  border-color: color-mix(in srgb, var(--rose) 35%, var(--border));
+  background: #fff1f2;
+}
+
+.principal-empty strong {
+  color: var(--text);
+}
+
+.principal-note {
+  margin: 0;
+}
+
+.principal-note.warning {
+  border-color: color-mix(in srgb, var(--amber) 40%, var(--border));
+  background: #fffbeb;
+}
+
+.principal-skeleton {
+  display: grid;
+  gap: 12px;
+}
+
+.principal-skeleton span {
+  min-height: 58px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--surface-soft), var(--surface-muted), var(--surface-soft));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.principal-skeleton.compact span {
+  min-height: 42px;
+}
+
+.principal-pagination {
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.principal-pagination > div {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.principal-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 86;
+  display: grid;
+  justify-items: end;
+  pointer-events: none;
+}
+
+.principal-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  color: inherit;
+  background: rgba(15, 23, 42, 0.44);
+  box-shadow: none;
+  backdrop-filter: blur(5px);
+  pointer-events: auto;
+}
+
+.principal-drawer-panel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(620px, calc(100vw - 32px));
+  height: calc(100vh - 32px);
+  margin: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  pointer-events: auto;
+}
+
+.principal-drawer-header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  padding: 18px 20px;
+  background: var(--surface);
+}
+
+.principal-drawer-body {
+  display: grid;
+  gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 20px 22px;
+}
+
+.principal-drawer-footer {
+  position: sticky;
+  bottom: 0;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  padding: 14px 0 0;
+  background: var(--surface);
+}
+
+.principal-form {
+  display: grid;
+  gap: 16px;
+}
+
+.principal-detail-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.principal-detail-grid div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--surface-soft);
+}
+
+.principal-detail-grid dt {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.principal-detail-grid dd {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  font-weight: 800;
+}
+
 .tenant-admin-drawer,
 .tenant-admin-modal {
   position: fixed;
@@ -1810,7 +2814,8 @@ p {
 .super-admin-table button,
 .super-admin-form button,
 .super-admin-filters button,
-.super-admin-pagination button {
+.super-admin-pagination button,
+.super-admin-confirm-actions button {
   border: 0;
   border-radius: 8px;
   background: var(--primary);
@@ -1826,7 +2831,8 @@ p {
 .super-admin-form button:disabled,
 .super-admin-filters button:disabled,
 .super-admin-pagination button:disabled,
-.super-admin-drawer button:disabled {
+.super-admin-drawer button:disabled,
+.super-admin-confirm-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.62;
   box-shadow: none;
@@ -1836,7 +2842,8 @@ p {
 .super-admin-form button.secondary,
 .super-admin-filters button.secondary,
 .super-admin-pagination button.secondary,
-.super-admin-drawer button.secondary {
+.super-admin-drawer button.secondary,
+.super-admin-confirm-actions button.secondary {
   border: 1px solid var(--border);
   color: var(--text);
   background: var(--surface);
@@ -2292,6 +3299,70 @@ p {
   padding: 11px 12px;
 }
 
+.super-admin-form-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.super-admin-form-field.wide {
+  grid-column: 1 / -1;
+}
+
+.super-admin-form-field > span,
+.super-admin-filter-field > span {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.super-admin-form-field > span em {
+  margin-left: 4px;
+  color: var(--rose);
+  font-style: normal;
+}
+
+.super-admin-form-field small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.super-admin-form-field input,
+.super-admin-form-field select,
+.super-admin-form-field textarea,
+.super-admin-filter-field input,
+.super-admin-filter-field select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: var(--surface);
+  outline: 0;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.super-admin-form-field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.super-admin-form-field input:focus,
+.super-admin-form-field select:focus,
+.super-admin-form-field textarea:focus,
+.super-admin-filter-field input:focus,
+.super-admin-filter-field select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(49, 87, 216, 0.14);
+}
+
+.super-admin-form-field [aria-invalid="true"] {
+  border-color: var(--rose);
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
+}
+
 .super-admin-tabs,
 .super-admin-inline-controls {
   display: flex;
@@ -2388,6 +3459,12 @@ p {
   background: var(--surface);
 }
 
+.super-admin-filter-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
 .super-admin-pagination {
   display: flex;
   align-items: center;
@@ -2411,7 +3488,7 @@ p {
 .super-admin-modal {
   position: fixed;
   inset: 0;
-  z-index: 70;
+  z-index: 90;
   display: grid;
   place-items: center;
   padding: 24px;
@@ -2420,8 +3497,13 @@ p {
 .super-admin-modal-scrim {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   border: 0;
+  border-radius: 0;
+  padding: 0;
   background: rgba(15, 23, 42, 0.48);
+  box-shadow: none;
   backdrop-filter: blur(8px);
 }
 
@@ -2470,7 +3552,7 @@ p {
 .super-admin-drawer {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 90;
   display: grid;
   justify-items: end;
   pointer-events: none;
@@ -2480,8 +3562,13 @@ p {
   position: absolute;
   inset: 0;
   z-index: 0;
+  width: 100%;
+  height: 100%;
   border: 0;
+  border-radius: 0;
+  padding: 0;
   background: rgba(15, 23, 42, 0.44);
+  box-shadow: none;
   backdrop-filter: blur(5px);
   pointer-events: auto;
 }
@@ -2547,6 +3634,70 @@ p {
   padding: 14px 20px;
   background: color-mix(in srgb, var(--surface) 94%, transparent);
   box-shadow: 0 -10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.super-admin-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.super-admin-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: rgba(15, 23, 42, 0.5);
+  box-shadow: none;
+  backdrop-filter: blur(7px);
+}
+
+.super-admin-confirm-panel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 16px;
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.super-admin-confirm-panel.danger {
+  border-color: color-mix(in srgb, var(--rose) 30%, var(--border));
+}
+
+.super-admin-confirm-panel h3 {
+  margin: 2px 0 6px;
+  color: var(--text);
+  font-size: 1.15rem;
+}
+
+.super-admin-confirm-panel span {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.super-admin-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.enterprise-shell:has(.super-admin-drawer, .super-admin-modal, .super-admin-confirm, .school-admin-confirm, .principal-drawer, .principal-confirm) .ai-fab {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
 }
 
 .plan-form-section {
@@ -5677,11 +6828,20 @@ tr:last-child td {
   .tenant-admin-toolbar,
   .tenant-admin-metrics,
   .tenant-admin-metrics.compact,
-  .tenant-admin-dashboard-grid {
+  .tenant-admin-dashboard-grid,
+  .school-admin-toolbar,
+  .school-admin-metrics,
+  .school-admin-dashboard-grid,
+  .principal-toolbar,
+  .principal-metrics,
+  .principal-metrics.compact,
+  .principal-dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .tenant-admin-toolbar button {
+  .tenant-admin-toolbar button,
+  .school-admin-toolbar button,
+  .principal-toolbar button {
     align-self: stretch;
   }
 
@@ -5701,7 +6861,12 @@ tr:last-child td {
 
   .tenant-admin-title,
   .tenant-admin-card-heading,
-  .tenant-admin-drawer-header {
+  .tenant-admin-drawer-header,
+  .school-admin-title,
+  .school-admin-card-heading,
+  .principal-title,
+  .principal-card-heading,
+  .principal-drawer-header {
     display: grid;
   }
 
@@ -5711,12 +6876,26 @@ tr:last-child td {
   .tenant-admin-metrics,
   .tenant-admin-metrics.compact,
   .tenant-admin-dashboard-grid,
-  .tenant-admin-form-grid.two {
+  .tenant-admin-form-grid.two,
+  .school-admin-title-actions,
+  .school-admin-title-actions button,
+  .school-admin-toolbar,
+  .school-admin-metrics,
+  .school-admin-dashboard-grid,
+  .principal-title-actions,
+  .principal-title-actions button,
+  .principal-toolbar,
+  .principal-metrics,
+  .principal-metrics.compact,
+  .principal-dashboard-grid,
+  .principal-detail-grid {
     grid-template-columns: 1fr;
     width: 100%;
   }
 
-  .tenant-admin-title-actions {
+  .tenant-admin-title-actions,
+  .school-admin-title-actions,
+  .principal-title-actions {
     display: grid;
   }
 
@@ -5802,6 +6981,32 @@ tr:last-child td {
     padding: 16px;
   }
 
+  .principal-drawer-panel {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .principal-drawer-body {
+    padding: 16px;
+  }
+
+  .principal-drawer-footer,
+  .principal-pagination,
+  .principal-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .principal-drawer-footer button,
+  .principal-pagination button,
+  .principal-actions button {
+    width: 100%;
+  }
+
   .super-admin-drawer-footer {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -5809,6 +7014,25 @@ tr:last-child td {
   }
 
   .super-admin-drawer-footer button {
+    width: 100%;
+  }
+
+  .super-admin-confirm {
+    align-items: end;
+    padding: 12px;
+  }
+
+  .super-admin-confirm-panel {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+  }
+
+  .super-admin-confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .super-admin-confirm-actions button {
     width: 100%;
   }
 
