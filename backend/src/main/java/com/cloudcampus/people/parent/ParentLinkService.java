@@ -13,6 +13,8 @@ import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
@@ -37,6 +39,7 @@ public class ParentLinkService {
     private final InvitationRepository invitationRepository;
     private final InvitationTokenService invitationTokenService;
     private final SchoolAccessService schoolAccessService;
+    private final UserSchoolAccessRepository userSchoolAccessRepository;
     private final AuditLogService auditLogService;
     private final InvitationEmailDeliveryService invitationEmailDeliveryService;
 
@@ -47,6 +50,7 @@ public class ParentLinkService {
             InvitationRepository invitationRepository,
             InvitationTokenService invitationTokenService,
             SchoolAccessService schoolAccessService,
+            UserSchoolAccessRepository userSchoolAccessRepository,
             AuditLogService auditLogService,
             InvitationEmailDeliveryService invitationEmailDeliveryService
     ) {
@@ -56,6 +60,7 @@ public class ParentLinkService {
         this.invitationRepository = invitationRepository;
         this.invitationTokenService = invitationTokenService;
         this.schoolAccessService = schoolAccessService;
+        this.userSchoolAccessRepository = userSchoolAccessRepository;
         this.auditLogService = auditLogService;
         this.invitationEmailDeliveryService = invitationEmailDeliveryService;
     }
@@ -72,6 +77,7 @@ public class ParentLinkService {
         if (parent.getRole() != UserRole.PARENT) {
             throw new ConflictException("The existing user for this email is not a parent.");
         }
+        grantParentSchoolAccessIfMissing(student, parent);
         if (parentStudentLinkRepository.existsByParentUserIdAndStudentId(parent.getId(), student.getId())) {
             throw new ConflictException("Parent is already linked to this student.");
         }
@@ -101,9 +107,11 @@ public class ParentLinkService {
     public List<ParentChildResponse> children(AuthenticatedUser parentUser) {
         requireParent(parentUser);
         String tenantId = parentUser.user().getTenant().getId();
+        String activeSchoolId = requireActiveParentSchool(parentUser);
         return parentStudentLinkRepository.findByParentUserId(parentUser.user().getId())
                 .stream()
                 .filter(link -> tenantConsistent(link, tenantId))
+                .filter(link -> link.getSchool().getId().equals(activeSchoolId))
                 .sorted(Comparator.comparing(link -> link.getStudent().getFullName()))
                 .map(this::toParentChildResponse)
                 .toList();
@@ -113,9 +121,11 @@ public class ParentLinkService {
     public ParentChildResponse child(AuthenticatedUser parentUser, String studentId) {
         requireParent(parentUser);
         String tenantId = parentUser.user().getTenant().getId();
+        String activeSchoolId = requireActiveParentSchool(parentUser);
         ParentStudentLink link = parentStudentLinkRepository
                 .findByParentUserIdAndStudentId(parentUser.user().getId(), studentId)
                 .filter(candidate -> tenantConsistent(candidate, tenantId))
+                .filter(candidate -> candidate.getSchool().getId().equals(activeSchoolId))
                 .orElseThrow(() -> new ForbiddenException("Parent is not linked to this child."));
         return toParentChildResponse(link);
     }
@@ -142,6 +152,28 @@ public class ParentLinkService {
         ));
         invitationEmailDeliveryService.queueInvitation(invitation, "/invitations/accept?token=" + rawToken);
         return new IssuedInvitation(invitation, rawToken);
+    }
+
+    private void grantParentSchoolAccessIfMissing(Student student, UserAccount parent) {
+        var existingAccess = userSchoolAccessRepository.findByUserIdAndSchoolId(parent.getId(), student.getSchool().getId());
+        if (existingAccess.isPresent()) {
+            UserSchoolAccess access = existingAccess.get();
+            if (access.getRole() != UserRole.PARENT) {
+                throw new ConflictException("Existing school access role does not match the parent role.");
+            }
+            if (!access.getTenant().getId().equals(parent.getTenant().getId())
+                    || !access.getSchool().getTenant().getId().equals(parent.getTenant().getId())) {
+                throw new ForbiddenException("School access grant tenant scope is invalid.");
+            }
+            return;
+        }
+        userSchoolAccessRepository.save(new UserSchoolAccess(
+                student.getTenant(),
+                student.getSchool(),
+                parent,
+                UserRole.PARENT,
+                userSchoolAccessRepository.findByUserId(parent.getId()).isEmpty()
+        ));
     }
 
     private ParentLinkResponse toParentLinkResponse(ParentStudentLink link, IssuedInvitation issuedInvitation) {
@@ -183,6 +215,14 @@ public class ParentLinkService {
         if (authenticatedUser.user().getRole() != UserRole.PARENT) {
             throw new ForbiddenException("Parent access is required.");
         }
+    }
+
+    private String requireActiveParentSchool(AuthenticatedUser authenticatedUser) {
+        String activeSchoolId = authenticatedUser.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required for parent access.");
+        }
+        return activeSchoolId;
     }
 
     private boolean tenantConsistent(ParentStudentLink link, String tenantId) {

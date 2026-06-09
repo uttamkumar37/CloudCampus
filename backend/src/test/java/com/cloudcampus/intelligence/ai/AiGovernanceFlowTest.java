@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 import com.cloudcampus.audit.AuditAction;
@@ -17,6 +18,10 @@ import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.JwtAccessTokenService;
+import com.cloudcampus.people.parent.ParentStudentLink;
+import com.cloudcampus.people.parent.ParentStudentLinkRepository;
+import com.cloudcampus.people.student.Student;
+import com.cloudcampus.people.student.StudentRepository;
 import com.cloudcampus.platform.tenant.Tenant;
 import com.cloudcampus.platform.tenant.TenantRepository;
 import com.cloudcampus.school.School;
@@ -55,6 +60,21 @@ class AiGovernanceFlowTest {
 
     @Autowired
     private AiRequestAuditRepository aiRequestAuditRepository;
+
+    @Autowired
+    private AiRecommendationRepository aiRecommendationRepository;
+
+    @Autowired
+    private AutomationRuleRepository automationRuleRepository;
+
+    @Autowired
+    private AutomationRunRepository automationRunRepository;
+
+    @Autowired
+    private ParentStudentLinkRepository parentStudentLinkRepository;
+
+    @Autowired
+    private StudentRepository studentRepository;
 
     @Autowired
     private AuditLogRepository auditLogRepository;
@@ -285,6 +305,152 @@ class AiGovernanceFlowTest {
         assertThat(auditLogRepository.findByTenantId(tenantA.getId()))
                 .filteredOn(auditLog -> auditLog.getAction() == AuditAction.AI_USAGE_DENIED)
                 .hasSize(3);
+    }
+
+    @Test
+    void parentAiPortalIsApprovedLinkedChildReadOnlyAndNoAutomationOrUsageAudit() throws Exception {
+        Tenant tenant = tenant("ai-parent-portal-a", "AI Parent Portal A");
+        School school = school(tenant, "AI-PARENT-PORTAL", "AI Parent Portal School");
+        UserAccount parent = user(tenant, "ai-parent-portal@example.com", UserRole.PARENT);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, parent, UserRole.PARENT, true));
+        Student child = studentRepository.save(new Student(tenant, school, "AI-PAR-001", "AI Parent Child"));
+        parentStudentLinkRepository.save(new ParentStudentLink(
+                tenant,
+                school,
+                child,
+                parent,
+                "Guardian",
+                parent.getEmail(),
+                null,
+                true
+        ));
+        String parentToken = jwtAccessTokenService.issueToken(
+                parent.getId(),
+                tenant.getId(),
+                UserRole.PARENT,
+                school.getId()
+        );
+        AiRecommendation approvedChild = aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "STUDENT",
+                child.getId(),
+                AiRecommendationType.STUDENT_RISK_ATTENDANCE,
+                "Approved child insight",
+                "Approved child summary",
+                "Linked child attendance trend.",
+                new BigDecimal("0.80"),
+                AiRecommendationRiskLevel.LOW,
+                AiRecommendationStatus.APPROVED,
+                "SYSTEM",
+                "system",
+                null,
+                false,
+                null,
+                null,
+                "{}"
+        ));
+        AiRecommendation pendingChild = aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "STUDENT",
+                child.getId(),
+                AiRecommendationType.STUDENT_RISK_ACADEMIC,
+                "Pending child insight",
+                "Pending child summary",
+                "Pending review should not be visible.",
+                new BigDecimal("0.72"),
+                AiRecommendationRiskLevel.MEDIUM,
+                AiRecommendationStatus.PENDING_REVIEW,
+                "SYSTEM",
+                "system",
+                null,
+                true,
+                null,
+                null,
+                "{}"
+        ));
+        AiRecommendation schoolWide = aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "SCHOOL",
+                school.getId(),
+                AiRecommendationType.PLATFORM_HEALTH_INSIGHT,
+                "School-wide insight",
+                "School-wide summary",
+                "Parents should not see school-wide AI recommendations.",
+                new BigDecimal("0.90"),
+                AiRecommendationRiskLevel.LOW,
+                AiRecommendationStatus.APPROVED,
+                "SYSTEM",
+                "system",
+                null,
+                false,
+                null,
+                null,
+                "{}"
+        ));
+        AutomationRule rule = automationRuleRepository.save(new AutomationRule(
+                tenant,
+                school,
+                "PARENT_RULE_DENIED",
+                "Parent denied rule",
+                "Automation configuration is not parent-facing.",
+                "EVENT",
+                "{}",
+                "ACTION",
+                "{}",
+                true,
+                true,
+                UserRole.SCHOOL_ADMIN,
+                AiRecommendationRiskLevel.MEDIUM,
+                parent
+        ));
+        automationRunRepository.save(new AutomationRun(
+                rule,
+                AutomationRunStatus.COMPLETED,
+                "SYSTEM",
+                "system",
+                "{}"
+        ));
+
+        mockMvc.perform(get("/v1/ai/recommendations")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].recommendationId").value(approvedChild.getId()))
+                .andExpect(jsonPath("$.items[0].targetId").value(child.getId()));
+
+        mockMvc.perform(get("/v1/ai/recommendations/{id}", pendingChild.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/recommendations/{id}", schoolWide.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(post("/v1/ai/recommendations/{id}/dismiss", pendingChild.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/automation-rules")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/automation-runs")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/entitlement")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(post("/v1/ai/usage/audit")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken))
+                        .contentType("application/json")
+                        .content(usagePayload("NOTICE_DRAFTING", 1, 1)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
     private void enableAi(String superAdminToken, Tenant tenant, long budget, String feature) throws Exception {

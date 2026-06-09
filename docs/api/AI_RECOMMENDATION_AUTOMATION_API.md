@@ -6,18 +6,18 @@ Status: CURRENT_IMPLEMENTED for discovered controllers; NOT_FOUND_IN_CODEBASE fo
 
 | Method | Endpoint | Module | Roles | Frontend caller | Status |
 | --- | --- | --- | --- | --- | --- |
-| PATCH | /v1/ai/automation-rules/{id} | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/ai/automation-rules | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/ai/automation-runs | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/ai/entitlement | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/ai/knowledge/search | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/ai/recommendations/{id}/accept | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/ai/recommendations/{id}/approve | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/ai/recommendations/{id}/dismiss | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/ai/recommendations/{id}/execute | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| POST | /v1/ai/recommendations/{id}/reject | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/ai/recommendations/{id} | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
-| GET | /v1/ai/recommendations | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| PATCH | /v1/ai/automation-rules/{id} | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, FINANCE_STAFF, OFFICE_STAFF; PARENT denied | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/ai/automation-rules | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, FINANCE_STAFF, OFFICE_STAFF; PARENT denied | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/ai/automation-runs | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, FINANCE_STAFF, OFFICE_STAFF; PARENT denied | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/ai/entitlement | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, FINANCE_STAFF, OFFICE_STAFF; PARENT denied | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| POST | /v1/ai/knowledge/search | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT child-scoped, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| POST | /v1/ai/recommendations/{id}/accept | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, FINANCE_STAFF, OFFICE_STAFF; PARENT denied | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| POST | /v1/ai/recommendations/{id}/approve | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, FINANCE_STAFF, OFFICE_STAFF; PARENT denied | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| POST | /v1/ai/recommendations/{id}/dismiss | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, FINANCE_STAFF, OFFICE_STAFF; PARENT denied | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| POST | /v1/ai/recommendations/{id}/execute | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, FINANCE_STAFF, OFFICE_STAFF; PARENT denied | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| POST | /v1/ai/recommendations/{id}/reject | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, FINANCE_STAFF, OFFICE_STAFF; PARENT denied | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/ai/recommendations/{id} | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT read-only approved linked child, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+| GET | /v1/ai/recommendations | AI Recommendation / Automation | SUPER_ADMIN, SCHOOL_ADMIN, PRINCIPAL, TEACHER, STUDENT, PARENT read-only approved linked child, FINANCE_STAFF, OFFICE_STAFF | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
 | PATCH | /v1/super-admin/ai/automation-rules/{id} | AI Recommendation / Automation | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/super-admin/ai/automation-rules | AI Recommendation / Automation | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | POST | /v1/super-admin/ai/automation-rules | AI Recommendation / Automation | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
@@ -36,6 +36,8 @@ Status: CURRENT_IMPLEMENTED for discovered controllers; NOT_FOUND_IN_CODEBASE fo
 | PUT | /v1/super-admin/ai/tenants/{tenantId}/entitlement | AI Recommendation / Automation | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
 | GET | /v1/super-admin/ai/usage/summary | AI Recommendation / Automation | SUPER_ADMIN | frontend/src/features/super-admin/api/platformApi.ts | CURRENT_IMPLEMENTED |
 | GET | /v1/super-admin/ai/usage/tenants | AI Recommendation / Automation | SUPER_ADMIN | NOT_FOUND_IN_CODEBASE | BACKEND_EXISTS_UI_NOT_SURFACED |
+
+Parent guard: PARENT is intentionally limited to approved recommendations for linked children in the active school and child-scoped knowledge search with a linked `studentId`. PARENT receives 403 for AI entitlement details, usage audit submission, automation rules/runs, and recommendation mutation actions.
 
 # PATCH /v1/ai/automation-rules/{id}
 

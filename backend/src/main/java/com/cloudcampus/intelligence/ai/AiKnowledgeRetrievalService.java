@@ -168,7 +168,7 @@ public class AiKnowledgeRetrievalService {
         return switch (actor.getRole()) {
             case SCHOOL_ADMIN, PRINCIPAL, STAFF, OFFICE_STAFF, FINANCE_STAFF -> schoolFromActiveGrant(authenticatedUser);
             case TEACHER -> schoolForTeacher(authenticatedUser);
-            case PARENT -> schoolForLinkedChild(actor, request.studentId());
+            case PARENT -> schoolForLinkedChild(authenticatedUser, request.studentId());
             case STUDENT -> schoolForStudent(actor);
             case SUPER_ADMIN, TENANT_ADMIN -> throw new ForbiddenException("Portal user school context is required for AI retrieval.");
             case GUEST, SYSTEM, AI_AGENT -> throw new ForbiddenException("This role cannot use school-scoped AI retrieval.");
@@ -202,16 +202,21 @@ public class AiKnowledgeRetrievalService {
         return school;
     }
 
-    private School schoolForLinkedChild(UserAccount parent, String studentId) {
+    private School schoolForLinkedChild(AuthenticatedUser authenticatedUser, String studentId) {
         if (studentId == null || studentId.isBlank()) {
             throw new ForbiddenException("A linked child is required for parent AI retrieval.");
         }
+        School activeSchool = schoolFromActiveGrant(authenticatedUser);
+        UserAccount parent = authenticatedUser.user();
         ParentStudentLink link = parentStudentLinkRepository
                 .findByParentUserIdAndStudentId(parent.getId(), studentId)
                 .orElseThrow(() -> new ForbiddenException("Parent is not linked to this child."));
         if (!link.getTenant().getId().equals(parent.getTenant().getId())
                 || !link.getStudent().getTenant().getId().equals(parent.getTenant().getId())) {
             throw new ForbiddenException("Parent-child tenant scope is invalid.");
+        }
+        if (!link.getSchool().getId().equals(activeSchool.getId())) {
+            throw new ForbiddenException("Parent is not linked to this child in the active school.");
         }
         return link.getSchool();
     }

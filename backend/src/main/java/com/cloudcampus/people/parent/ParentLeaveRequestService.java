@@ -139,6 +139,13 @@ public class ParentLeaveRequestService {
                 || !linkedChild.getSchool().getTenant().getId().equals(actor.user().getTenant().getId())) {
             throw new ForbiddenException("Parent link tenant scope is invalid.");
         }
+        String activeSchoolId = actor.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required for parent access.");
+        }
+        if (!linkedChild.getSchool().getId().equals(activeSchoolId)) {
+            throw new ForbiddenException("Parent is not linked to this child in the active school.");
+        }
         return linkedChild;
     }
 

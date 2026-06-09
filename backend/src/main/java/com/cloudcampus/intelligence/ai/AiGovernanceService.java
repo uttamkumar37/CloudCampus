@@ -99,6 +99,9 @@ public class AiGovernanceService {
 
     @Transactional(readOnly = true)
     public AiEntitlementResponse currentTenantEntitlement(AuthenticatedUser authenticatedUser) {
+        if (authenticatedUser.user().getRole() == UserRole.PARENT) {
+            throw new ForbiddenException("Parents cannot access AI entitlement details.");
+        }
         Tenant tenant = authenticatedUser.user().getTenant();
         return entitlementResponse(tenant, aiTenantEntitlementRepository.findById(tenant.getId()).orElse(null));
     }
@@ -106,6 +109,9 @@ public class AiGovernanceService {
     @Transactional(noRollbackFor = {ForbiddenException.class, ConflictException.class})
     public AiUsageAuditResponse recordUsageAudit(AuthenticatedUser authenticatedUser, AiUsageAuditRequest request) {
         UserAccount actor = authenticatedUser.user();
+        if (actor.getRole() == UserRole.PARENT) {
+            throw new ForbiddenException("Parents cannot submit AI usage audits.");
+        }
         Tenant tenant = actor.getTenant();
         School activeSchool = activeSchool(authenticatedUser, tenant);
         AiTenantEntitlement entitlement = aiTenantEntitlementRepository.findById(tenant.getId()).orElse(null);

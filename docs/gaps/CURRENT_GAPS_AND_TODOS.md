@@ -26,6 +26,8 @@ Status: CURRENT_IMPLEMENTED
 
 ## Backend Exists UI Not Surfaced
 
+Parent AI guard note: these shared AI endpoints remain backend-present but not parent UI/admin affordances. Service guards deny PARENT access to AI automation, entitlement, usage-audit, and recommendation mutation actions; PARENT read access is limited to approved active-school linked-child recommendations and active-school linked-child knowledge search.
+
 | Method | Endpoint | Backend controller | Status |
 | --- | --- | --- | --- |
 | PATCH | /v1/ai/automation-rules/{id} | backend/src/main/java/com/cloudcampus/intelligence/ai/AiRecommendationPortalController.java | BACKEND_EXISTS_UI_NOT_SURFACED |

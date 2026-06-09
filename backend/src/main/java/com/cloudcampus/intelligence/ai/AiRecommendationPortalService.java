@@ -14,6 +14,7 @@ import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.common.web.PageResponses;
 import com.cloudcampus.identity.accesscontrol.AuthorizationService;
 import com.cloudcampus.identity.auth.UserAccount;
+import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
 
 import org.springframework.stereotype.Service;
@@ -45,7 +46,7 @@ public class AiRecommendationPortalService {
     @Transactional(readOnly = true)
     public PageResponse<AiRecommendationPortalResponse> recommendations(AuthenticatedUser actor, int page, int size) {
         List<AiRecommendationPortalResponse> rows = aiRecommendationRepository.findAll().stream()
-                .filter(recommendation -> canAccess(actor.user(), recommendation))
+                .filter(recommendation -> canAccess(actor, recommendation))
                 .sorted(Comparator.comparing(AiRecommendation::getCreatedAt).reversed())
                 .map(this::response)
                 .toList();
@@ -55,7 +56,7 @@ public class AiRecommendationPortalService {
     @Transactional(readOnly = true)
     public AiRecommendationPortalResponse recommendation(AuthenticatedUser actor, String id) {
         AiRecommendation recommendation = requireRecommendation(id);
-        if (!canAccess(actor.user(), recommendation)) {
+        if (!canAccess(actor, recommendation)) {
             throw new ForbiddenException("User cannot access this AI recommendation.");
         }
         return response(recommendation);
@@ -127,6 +128,7 @@ public class AiRecommendationPortalService {
 
     @Transactional(readOnly = true)
     public PageResponse<AiAutomationRulePortalResponse> automationRules(AuthenticatedUser actor, int page, int size) {
+        denyParentAutomation(actor.user());
         List<AiAutomationRulePortalResponse> rows = automationRuleRepository.findAll().stream()
                 .filter(rule -> rule.getTenant() == null || authorizationService.canAccessTenant(actor.user(), rule.getTenant().getId()))
                 .filter(rule -> rule.getSchool() == null || authorizationService.canAccessSchool(actor.user(), rule.getSchool().getId()))
@@ -149,6 +151,7 @@ public class AiRecommendationPortalService {
 
     @Transactional(readOnly = true)
     public PageResponse<AiAutomationRunPortalResponse> automationRuns(AuthenticatedUser actor, int page, int size) {
+        denyParentAutomation(actor.user());
         List<AiAutomationRunPortalResponse> rows = automationRunRepository.findAll().stream()
                 .filter(run -> run.getTenant() == null || authorizationService.canAccessTenant(actor.user(), run.getTenant().getId()))
                 .filter(run -> run.getSchool() == null || authorizationService.canAccessSchool(actor.user(), run.getSchool().getId()))
@@ -169,6 +172,9 @@ public class AiRecommendationPortalService {
     }
 
     private AiRecommendation requireMutableRecommendation(UserAccount actor, String id) {
+        if (actor.getRole() == UserRole.PARENT) {
+            throw new ForbiddenException("Parents can only view approved child AI recommendations.");
+        }
         AiRecommendation recommendation = requireRecommendation(id);
         if (!canAccess(actor, recommendation)) {
             throw new ForbiddenException("User cannot access this AI recommendation.");
@@ -191,17 +197,42 @@ public class AiRecommendationPortalService {
                 .orElseThrow(() -> new NotFoundException("AI recommendation was not found."));
     }
 
+    private boolean canAccess(AuthenticatedUser actor, AiRecommendation recommendation) {
+        return canAccess(actor.user(), actor.activeSchoolId(), recommendation);
+    }
+
     private boolean canAccess(UserAccount user, AiRecommendation recommendation) {
+        return canAccess(user, null, recommendation);
+    }
+
+    private boolean canAccess(UserAccount user, String activeSchoolId, AiRecommendation recommendation) {
         if (!authorizationService.canAccessTenant(user, recommendation.getTenant().getId())) {
             return false;
         }
         if (recommendation.getSchool() != null && !authorizationService.canAccessSchool(user, recommendation.getSchool().getId())) {
             return false;
         }
+        if (user.getRole() == UserRole.PARENT) {
+            if (activeSchoolId == null || activeSchoolId.isBlank()) {
+                return false;
+            }
+            return recommendation.getStatus() == AiRecommendationStatus.APPROVED
+                    && recommendation.getSchool() != null
+                    && recommendation.getSchool().getId().equals(activeSchoolId)
+                    && "STUDENT".equalsIgnoreCase(recommendation.getTargetType())
+                    && recommendation.getTargetId() != null
+                    && authorizationService.canAccessStudent(user, recommendation.getTargetId());
+        }
         if ("STUDENT".equalsIgnoreCase(recommendation.getTargetType()) && recommendation.getTargetId() != null) {
             return authorizationService.canAccessStudent(user, recommendation.getTargetId());
         }
         return true;
+    }
+
+    private void denyParentAutomation(UserAccount actor) {
+        if (actor.getRole() == UserRole.PARENT) {
+            throw new ForbiddenException("Parents cannot access AI automation controls.");
+        }
     }
 
     private AiRecommendationPortalResponse response(AiRecommendation recommendation) {

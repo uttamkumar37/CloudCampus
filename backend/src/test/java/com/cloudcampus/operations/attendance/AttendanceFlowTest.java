@@ -416,11 +416,12 @@ class AttendanceFlowTest {
                 null,
                 true
         ));
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, parent, UserRole.PARENT, true));
         UserAccount studentUser = createStudentUser(tenant, "attendance-student@example.com", "Attendance Student");
         linkedStudent.attachUser(studentUser);
         studentRepository.save(linkedStudent);
         userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, studentUser, UserRole.STUDENT, true));
-        String parentToken = jwtAccessTokenService.issueToken(parent.getId(), tenant.getId(), UserRole.PARENT, null);
+        String parentToken = jwtAccessTokenService.issueToken(parent.getId(), tenant.getId(), UserRole.PARENT, school.getId());
         String studentToken = jwtAccessTokenService.issueToken(studentUser.getId(), tenant.getId(), UserRole.STUDENT, school.getId());
 
         createAttendance(

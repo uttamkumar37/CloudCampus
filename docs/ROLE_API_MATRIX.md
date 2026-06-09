@@ -12,7 +12,7 @@ Status: CURRENT_IMPLEMENTED
 | PRINCIPAL | 87 | PATCH /v1/ai/automation-rules/{id}<br>GET /v1/ai/automation-rules<br>GET /v1/ai/automation-runs<br>GET /v1/ai/entitlement<br>POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/execute<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
 | TEACHER | 32 | PATCH /v1/ai/automation-rules/{id}<br>GET /v1/ai/automation-rules<br>GET /v1/ai/automation-runs<br>GET /v1/ai/entitlement<br>POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/execute<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
 | STUDENT | 27 | PATCH /v1/ai/automation-rules/{id}<br>GET /v1/ai/automation-rules<br>GET /v1/ai/automation-runs<br>GET /v1/ai/entitlement<br>POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/execute<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
-| PARENT | 30 | PATCH /v1/ai/automation-rules/{id}<br>GET /v1/ai/automation-rules<br>GET /v1/ai/automation-runs<br>GET /v1/ai/entitlement<br>POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/execute<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
+| PARENT | 20 | POST /v1/ai/knowledge/search<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations<br>POST /v1/me/change-password<br>POST /v1/me/logout<br>POST /v1/me/schools/{schoolId}/activate<br>GET /v1/me/schools<br>GET /v1/me<br>GET /v1/parent/children/{studentId}/attendance<br>POST /v1/parent/children/{studentId}/fees/{demandId}/payments<br>GET /v1/parent/children/{studentId}/fees<br>GET /v1/parent/children/{studentId}/homework | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | 26 | PATCH /v1/ai/automation-rules/{id}<br>GET /v1/ai/automation-rules<br>GET /v1/ai/automation-runs<br>GET /v1/ai/entitlement<br>POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/execute<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
 | OFFICE_STAFF | 19 | PATCH /v1/ai/automation-rules/{id}<br>GET /v1/ai/automation-rules<br>GET /v1/ai/automation-runs<br>GET /v1/ai/entitlement<br>POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/execute<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations | CURRENT_IMPLEMENTED |
 | GUEST | 6 | POST /v1/auth/forgot-password<br>POST /v1/auth/login<br>POST /v1/auth/mfa/verify<br>POST /v1/auth/refresh<br>POST /v1/auth/reset-password<br>POST /v1/invitations/accept | CURRENT_IMPLEMENTED |
@@ -1367,19 +1367,19 @@ Status: CURRENT_IMPLEMENTED
 | STUDENT | GET | /v1/tenant-admin/settings | No | SETTINGS_VIEW | tenant | CURRENT_IMPLEMENTED denied |
 | STUDENT | PATCH | /v1/tenant-admin/settings | No | SETTINGS_MANAGE | tenant | CURRENT_IMPLEMENTED denied |
 | STUDENT | GET | /v1/tenant-admin/subscription/usage | No | TENANT_VIEW | tenant | CURRENT_IMPLEMENTED denied |
-| PARENT | PATCH | /v1/ai/automation-rules/{id} | Yes | MANAGE_AI_AUTOMATION | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/ai/automation-rules | Yes | VIEW_AI_AUTOMATION | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/ai/automation-runs | Yes | VIEW_AI_AUTOMATION | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/ai/entitlement | Yes | VIEW_AI_USAGE_OR_POLICY | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | POST | /v1/ai/knowledge/search | Yes | MANAGE_AI_POLICY | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | POST | /v1/ai/recommendations/{id}/accept | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | POST | /v1/ai/recommendations/{id}/approve | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | POST | /v1/ai/recommendations/{id}/dismiss | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | POST | /v1/ai/recommendations/{id}/execute | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | POST | /v1/ai/recommendations/{id}/reject | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | CURRENT_IMPLEMENTED |
-| PARENT | POST | /v1/ai/usage/audit | Yes | MANAGE_AI_POLICY | role AI policy scope | CURRENT_IMPLEMENTED |
+| PARENT | PATCH | /v1/ai/automation-rules/{id} | No | MANAGE_AI_AUTOMATION | AI automation/admin | CURRENT_IMPLEMENTED denied |
+| PARENT | GET | /v1/ai/automation-rules | No | VIEW_AI_AUTOMATION | AI automation/admin | CURRENT_IMPLEMENTED denied |
+| PARENT | GET | /v1/ai/automation-runs | No | VIEW_AI_AUTOMATION | AI automation/admin | CURRENT_IMPLEMENTED denied |
+| PARENT | GET | /v1/ai/entitlement | No | VIEW_AI_USAGE_OR_POLICY | AI entitlement/admin | CURRENT_IMPLEMENTED denied |
+| PARENT | POST | /v1/ai/knowledge/search | Yes | VIEW_AI_RECOMMENDATIONS | active school + linked child | CURRENT_IMPLEMENTED |
+| PARENT | POST | /v1/ai/recommendations/{id}/accept | No | AI_RECOMMENDATION_ACTION | AI recommendation mutation | CURRENT_IMPLEMENTED denied |
+| PARENT | POST | /v1/ai/recommendations/{id}/approve | No | AI_RECOMMENDATION_ACTION | AI recommendation mutation | CURRENT_IMPLEMENTED denied |
+| PARENT | POST | /v1/ai/recommendations/{id}/dismiss | No | AI_RECOMMENDATION_ACTION | AI recommendation mutation | CURRENT_IMPLEMENTED denied |
+| PARENT | POST | /v1/ai/recommendations/{id}/execute | No | AI_RECOMMENDATION_ACTION | AI recommendation mutation | CURRENT_IMPLEMENTED denied |
+| PARENT | POST | /v1/ai/recommendations/{id}/reject | No | AI_RECOMMENDATION_ACTION | AI recommendation mutation | CURRENT_IMPLEMENTED denied |
+| PARENT | GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | active school + approved linked child recommendation | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | active school + approved linked child recommendations | CURRENT_IMPLEMENTED |
+| PARENT | POST | /v1/ai/usage/audit | No | MANAGE_AI_POLICY | AI usage/admin | CURRENT_IMPLEMENTED denied |
 | PARENT | POST | /v1/auth/forgot-password | No | PUBLIC_AUTH_FLOW | public/auth flow | CURRENT_IMPLEMENTED denied |
 | PARENT | POST | /v1/auth/login | No | PUBLIC_AUTH_FLOW | public/auth flow | CURRENT_IMPLEMENTED denied |
 | PARENT | POST | /v1/auth/mfa/verify | No | PUBLIC_AUTH_FLOW | public/auth flow | CURRENT_IMPLEMENTED denied |
@@ -1399,18 +1399,18 @@ Status: CURRENT_IMPLEMENTED
 | PARENT | POST | /v1/me/schools/{schoolId}/activate | Yes | SESSION_SELF_MANAGE | current user/session | CURRENT_IMPLEMENTED |
 | PARENT | GET | /v1/me/schools | Yes | SESSION_SELF_MANAGE | current user/session | CURRENT_IMPLEMENTED |
 | PARENT | GET | /v1/me | Yes | SESSION_SELF_MANAGE | current user/session | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/parent/children/{studentId}/attendance | Yes | PARENT_VIEW | linked child | CURRENT_IMPLEMENTED |
-| PARENT | POST | /v1/parent/children/{studentId}/fees/{demandId}/payments | Yes | FINANCE_MANAGE | linked child | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/parent/children/{studentId}/fees | Yes | FINANCE_VIEW | linked child | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/parent/children/{studentId}/homework | Yes | PARENT_VIEW | linked child | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/parent/children/{studentId}/leave-requests | Yes | PARENT_VIEW | linked child | CURRENT_IMPLEMENTED |
-| PARENT | POST | /v1/parent/children/{studentId}/leave-requests | Yes | PARENT_MANAGE | linked child | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/parent/children/{studentId}/notices | Yes | PARENT_VIEW | linked child | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/parent/children/{studentId}/results | Yes | PARENT_VIEW | linked child | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/parent/children/{studentId}/timetable | Yes | PARENT_VIEW | linked child | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/parent/children/{studentId} | Yes | PARENT_VIEW | linked child | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/parent/children | Yes | PARENT_VIEW | linked child | CURRENT_IMPLEMENTED |
-| PARENT | GET | /v1/parent/dashboard/summary | Yes | PARENT_VIEW | linked child | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/parent/children/{studentId}/attendance | Yes | PARENT_VIEW | active school + linked child | CURRENT_IMPLEMENTED |
+| PARENT | POST | /v1/parent/children/{studentId}/fees/{demandId}/payments | Yes | FINANCE_MANAGE | active school + linked child + valid demand | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/parent/children/{studentId}/fees | Yes | FINANCE_VIEW | active school + linked child | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/parent/children/{studentId}/homework | Yes | PARENT_VIEW | active school + linked child | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/parent/children/{studentId}/leave-requests | Yes | PARENT_VIEW | active school + linked child | CURRENT_IMPLEMENTED |
+| PARENT | POST | /v1/parent/children/{studentId}/leave-requests | Yes | PARENT_MANAGE | active school + linked child | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/parent/children/{studentId}/notices | Yes | PARENT_VIEW | active school + linked child | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/parent/children/{studentId}/results | Yes | PARENT_VIEW | active school + linked child | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/parent/children/{studentId}/timetable | Yes | PARENT_VIEW | active school + linked child | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/parent/children/{studentId} | Yes | PARENT_VIEW | active school + linked child | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/parent/children | Yes | PARENT_VIEW | active school linked children only | CURRENT_IMPLEMENTED |
+| PARENT | GET | /v1/parent/dashboard/summary | Yes | PARENT_VIEW | active school linked children only | CURRENT_IMPLEMENTED |
 | PARENT | POST | /v1/school-admin/academic-years/{academicYearId}/activate | No | SCHOOL_MANAGE | school | CURRENT_IMPLEMENTED denied |
 | PARENT | GET | /v1/school-admin/academic-years | No | SCHOOL_VIEW | school | CURRENT_IMPLEMENTED denied |
 | PARENT | POST | /v1/school-admin/academic-years | No | SCHOOL_MANAGE | school | CURRENT_IMPLEMENTED denied |

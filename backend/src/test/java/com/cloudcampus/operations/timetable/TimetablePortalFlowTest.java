@@ -102,8 +102,8 @@ class TimetablePortalFlowTest {
     @Test
     void teacherParentAndStudentTimetableEndpointsReturnOnlyAuthorizedClassScope() throws Exception {
         Fixture fixture = fixture();
-        String parentToken = token(fixture.parent(), UserRole.PARENT, null);
-        String unlinkedParentToken = token(fixture.unlinkedParent(), UserRole.PARENT, null);
+        String parentToken = token(fixture.parent(), UserRole.PARENT, fixture.school().getId());
+        String unlinkedParentToken = token(fixture.unlinkedParent(), UserRole.PARENT, fixture.school().getId());
         String studentToken = token(fixture.studentUser(), UserRole.STUDENT, fixture.school().getId());
         String teacherToken = token(fixture.teacher(), UserRole.TEACHER, fixture.school().getId());
 
@@ -157,6 +157,8 @@ class TimetablePortalFlowTest {
         teacherAssignmentRepository.save(new TeacherAssignment(teacher, classSubject));
         UserAccount parent = createUser(tenant, "parent-" + suffix + "@example.com", "Parent", UserRole.PARENT);
         UserAccount unlinkedParent = createUser(tenant, "unlinked-parent-" + suffix + "@example.com", "Other Parent", UserRole.PARENT);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, parent, UserRole.PARENT, true));
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, unlinkedParent, UserRole.PARENT, true));
         UserAccount studentUser = createUser(tenant, "student-" + suffix + "@example.com", "Student", UserRole.STUDENT);
         Student student = new Student(
                 tenant,

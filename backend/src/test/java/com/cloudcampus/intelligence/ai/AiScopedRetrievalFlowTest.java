@@ -201,6 +201,8 @@ class AiScopedRetrievalFlowTest {
         UserAccount studentUser = user(tenant, "ai-student@example.com", UserRole.STUDENT);
         UserAccount unlinkedParent = user(tenant, "ai-unlinked-parent@example.com", UserRole.PARENT);
         grant(school, schoolAdmin, UserRole.SCHOOL_ADMIN);
+        grant(school, parent, UserRole.PARENT);
+        grant(school, unlinkedParent, UserRole.PARENT);
         Student linkedStudent = studentRepository.save(new Student(tenant, school, "AI-001", "AI Student"));
         linkedStudent.attachUser(studentUser);
         studentRepository.save(linkedStudent);
@@ -231,7 +233,7 @@ class AiScopedRetrievalFlowTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/v1/ai/knowledge/search")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(token(parent, null)))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token(parent, school)))
                         .contentType("application/json")
                         .content("""
                                 {
@@ -258,7 +260,7 @@ class AiScopedRetrievalFlowTest {
                 .andExpect(jsonPath("$.resultCount").value(1));
 
         mockMvc.perform(post("/v1/ai/knowledge/search")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(token(unlinkedParent, null)))
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token(unlinkedParent, school)))
                         .contentType("application/json")
                         .content("""
                                 {

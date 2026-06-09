@@ -4,6 +4,8 @@
 
 Status: CURRENT_IMPLEMENTED for discovered controllers; NOT_FOUND_IN_CODEBASE for planned/missing cards.
 
+Parent endpoints require the authenticated parent, an active/allowed school context, and a server-side parent-child link. The frontend may provide `studentId`, but tenant and school scope are derived from the session and verified by the backend.
+
 | Method | Endpoint | Module | Roles | Frontend caller | Status |
 | --- | --- | --- | --- | --- | --- |
 | GET | /v1/parent/children/{studentId}/attendance | Student / Parent | PARENT | frontend/src/features/parent/api/parentPortalApi.ts | CURRENT_IMPLEMENTED |
@@ -311,7 +313,7 @@ curl -X POST "http://127.0.0.1:18080/v1/parent/children/sample-studentId/fees/sa
 ```
 
 ## Audit events
-- FEE_DEMAND_CREATED
+- FEE_PAYMENT_RECORDED
 
 ## Side effects
 - May create/update/deactivate records, enqueue background work, write audit logs, or emit outbox events depending on service.

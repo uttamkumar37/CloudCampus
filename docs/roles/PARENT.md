@@ -77,38 +77,40 @@
 ## 8. API access matrix
 | Method | Endpoint | Allowed? | Required permission | Required scope | Request params/body | Response DTO | Audit event | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| PATCH | /v1/ai/automation-rules/{id} | Yes | MANAGE_AI_AUTOMATION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AUTOMATION_RULE_UPDATED | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/automation-rules | Yes | VIEW_AI_AUTOMATION | role AI policy scope | query params | AiRecommendationPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/automation-runs | Yes | VIEW_AI_AUTOMATION | role AI policy scope | query params | AiRecommendationPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/entitlement | Yes | VIEW_AI_USAGE_OR_POLICY | role AI policy scope | query params | AiUsage response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/knowledge/search | Yes | MANAGE_AI_POLICY | role AI policy scope | path params / JSON body | AiRetrieval response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/accept | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_CREATED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/approve | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_APPROVED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/dismiss | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_DISMISSED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/execute | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_EXECUTED | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/recommendations/{id}/reject | Yes | AI_RECOMMENDATION_ACTION | role AI policy scope | path params / JSON body | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_REJECTED | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | query params | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_VIEWED where service records views; otherwise read audit is CURRENT_PARTIAL. | CURRENT_IMPLEMENTED |
-| GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | role AI policy scope | query params | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_VIEWED where service records views; otherwise read audit is CURRENT_PARTIAL. | CURRENT_IMPLEMENTED |
-| POST | /v1/ai/usage/audit | Yes | MANAGE_AI_POLICY | role AI policy scope | path params / JSON body | AiUsage response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
+| PATCH | /v1/ai/automation-rules/{id} | No | MANAGE_AI_AUTOMATION | AI automation/admin | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied for PARENT |
+| GET | /v1/ai/automation-rules | No | VIEW_AI_AUTOMATION | AI automation/admin | query params | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied for PARENT |
+| GET | /v1/ai/automation-runs | No | VIEW_AI_AUTOMATION | AI automation/admin | query params | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied for PARENT |
+| GET | /v1/ai/entitlement | No | VIEW_AI_USAGE_OR_POLICY | AI entitlement/admin | query params | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied for PARENT |
+| POST | /v1/ai/knowledge/search | Yes | VIEW_AI_RECOMMENDATIONS | active school + linked child | path params / JSON body with linked studentId | AiRetrieval response/DTO | AI_RETRIEVAL_AUDITED / AI_RETRIEVAL_DENIED | CURRENT_IMPLEMENTED child-scoped only |
+| POST | /v1/ai/recommendations/{id}/accept | No | AI_RECOMMENDATION_ACTION | AI recommendation mutation | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied for PARENT |
+| POST | /v1/ai/recommendations/{id}/approve | No | AI_RECOMMENDATION_ACTION | AI recommendation mutation | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied for PARENT |
+| POST | /v1/ai/recommendations/{id}/dismiss | No | AI_RECOMMENDATION_ACTION | AI recommendation mutation | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied for PARENT |
+| POST | /v1/ai/recommendations/{id}/execute | No | AI_RECOMMENDATION_ACTION | AI recommendation mutation | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied for PARENT |
+| POST | /v1/ai/recommendations/{id}/reject | No | AI_RECOMMENDATION_ACTION | AI recommendation mutation | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied for PARENT |
+| GET | /v1/ai/recommendations/{id} | Yes | VIEW_AI_RECOMMENDATIONS | active school + approved linked child recommendation | query params | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_VIEWED where service records views; otherwise read audit is CURRENT_PARTIAL. | CURRENT_IMPLEMENTED read-only |
+| GET | /v1/ai/recommendations | Yes | VIEW_AI_RECOMMENDATIONS | active school + approved linked child recommendations | query params | AiRecommendationPortal response/DTO | AI_RECOMMENDATION_VIEWED where service records views; otherwise read audit is CURRENT_PARTIAL. | CURRENT_IMPLEMENTED read-only |
+| POST | /v1/ai/usage/audit | No | MANAGE_AI_POLICY | AI usage/admin | path params / JSON body | ApiErrorResponse | none | CURRENT_IMPLEMENTED denied for PARENT |
 | POST | /v1/me/change-password | Yes | SESSION_SELF_MANAGE | current user/session | path params / JSON body | CurrentUser response/DTO | PASSWORD_CHANGED | CURRENT_IMPLEMENTED |
 | POST | /v1/me/logout | Yes | SESSION_SELF_MANAGE | current user/session | path params / JSON body | CurrentUser response/DTO | USER_LOGGED_OUT | CURRENT_IMPLEMENTED |
 | POST | /v1/me/schools/{schoolId}/activate | Yes | SESSION_SELF_MANAGE | current user/session | path params / JSON body | CurrentUser response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
 | GET | /v1/me/schools | Yes | SESSION_SELF_MANAGE | current user/session | query params | CurrentUser response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
 | GET | /v1/me | Yes | SESSION_SELF_MANAGE | current user/session | query params | CurrentUser response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/parent/children/{studentId}/attendance | Yes | PARENT_VIEW | linked child | query params | Attendance response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| POST | /v1/parent/children/{studentId}/fees/{demandId}/payments | Yes | FINANCE_MANAGE | linked child | path params / JSON body | Fee response/DTO | FEE_DEMAND_CREATED | CURRENT_IMPLEMENTED |
-| GET | /v1/parent/children/{studentId}/fees | Yes | FINANCE_VIEW | linked child | query params | Fee response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/parent/children/{studentId}/homework | Yes | PARENT_VIEW | linked child | query params | Homework response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/parent/children/{studentId}/leave-requests | Yes | PARENT_VIEW | linked child | query params | ParentLeaveRequest response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| POST | /v1/parent/children/{studentId}/leave-requests | Yes | PARENT_MANAGE | linked child | path params / JSON body | ParentLeaveRequest response/DTO | Audit action inferred from module; verify service for exact enum. | CURRENT_IMPLEMENTED |
-| GET | /v1/parent/children/{studentId}/notices | Yes | PARENT_VIEW | linked child | query params | Notice response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/parent/children/{studentId}/results | Yes | PARENT_VIEW | linked child | query params | Exam response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/parent/children/{studentId}/timetable | Yes | PARENT_VIEW | linked child | query params | Timetable response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/parent/children/{studentId} | Yes | PARENT_VIEW | linked child | query params | ParentPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/parent/children | Yes | PARENT_VIEW | linked child | query params | ParentPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
-| GET | /v1/parent/dashboard/summary | Yes | PARENT_VIEW | linked child | query params | DashboardSummary response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/parent/children/{studentId}/attendance | Yes | PARENT_VIEW | active school + linked child | query params | Attendance response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| POST | /v1/parent/children/{studentId}/fees/{demandId}/payments | Yes | FINANCE_MANAGE | active school + linked child + valid demand | path params / JSON body | Fee response/DTO | FEE_PAYMENT_RECORDED | CURRENT_IMPLEMENTED |
+| GET | /v1/parent/children/{studentId}/fees | Yes | FINANCE_VIEW | active school + linked child | query params | Fee response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/parent/children/{studentId}/homework | Yes | PARENT_VIEW | active school + linked child | query params | Homework response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/parent/children/{studentId}/leave-requests | Yes | PARENT_VIEW | active school + linked child | query params | ParentLeaveRequest response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| POST | /v1/parent/children/{studentId}/leave-requests | Yes | PARENT_MANAGE | active school + linked child | path params / JSON body | ParentLeaveRequest response/DTO | PARENT_LEAVE_REQUESTED | CURRENT_IMPLEMENTED |
+| GET | /v1/parent/children/{studentId}/notices | Yes | PARENT_VIEW | active school + linked child | query params | Notice response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/parent/children/{studentId}/results | Yes | PARENT_VIEW | active school + linked child | query params | Exam response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/parent/children/{studentId}/timetable | Yes | PARENT_VIEW | active school + linked child | query params | Timetable response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/parent/children/{studentId} | Yes | PARENT_VIEW | active school + linked child | query params | ParentPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/parent/children | Yes | PARENT_VIEW | active school linked children only | query params | ParentPortal response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
+| GET | /v1/parent/dashboard/summary | Yes | PARENT_VIEW | active school linked children only | query params | DashboardSummary response/DTO | Read-only endpoint; explicit audit is CURRENT_PARTIAL unless service records read access. | CURRENT_IMPLEMENTED |
 
 ## 9. Detailed API behavior
+Parent-specific AI enforcement note: the shared AI endpoint cards below are generated from common controllers. For PARENT, service-level guards deny AI automation rules/runs, AI entitlement details, AI usage audit submission, and all AI recommendation mutation actions. PARENT can only read approved recommendations for linked children in the active school and can run child-scoped knowledge search with a linked `studentId`.
+
 ### PATCH /v1/ai/automation-rules/{id}
 - Method: PATCH
 - Full endpoint: /v1/ai/automation-rules/{id}
@@ -783,7 +785,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: PARENT_VIEW
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: studentId
 - Query params: page, size, search/q, status/filter where supported
@@ -820,7 +822,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: FINANCE_MANAGE
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: studentId, demandId
 - Query params: none by default
@@ -832,7 +834,7 @@
 - Response field descriptions: see API doc card.
 - Error status codes: 400, 401, 403, 404, 409, 429 for login, 500.
 - Error response examples: standard ApiErrorResponse.
-- Audit events: FEE_DEMAND_CREATED
+- Audit events: FEE_PAYMENT_RECORDED
 - Side effects: state/audit/job/outbox changes possible
 - Pagination: n/a
 - Sorting: CURRENT_PARTIAL endpoint-specific.
@@ -857,7 +859,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: FINANCE_VIEW
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: studentId
 - Query params: page, size, search/q, status/filter where supported
@@ -894,7 +896,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: PARENT_VIEW
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: studentId
 - Query params: page, size, search/q, status/filter where supported
@@ -931,7 +933,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: PARENT_VIEW
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: studentId
 - Query params: page, size, search/q, status/filter where supported
@@ -968,7 +970,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: PARENT_MANAGE
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: studentId
 - Query params: none by default
@@ -1005,7 +1007,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: PARENT_VIEW
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: studentId
 - Query params: page, size, search/q, status/filter where supported
@@ -1042,7 +1044,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: PARENT_VIEW
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: studentId
 - Query params: page, size, search/q, status/filter where supported
@@ -1079,7 +1081,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: PARENT_VIEW
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: studentId
 - Query params: page, size, search/q, status/filter where supported
@@ -1116,7 +1118,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: PARENT_VIEW
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: studentId
 - Query params: page, size, search/q, status/filter where supported
@@ -1153,7 +1155,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: PARENT_VIEW
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: none
 - Query params: page, size, search/q, status/filter where supported
@@ -1190,7 +1192,7 @@
 - Auth required: Yes
 - Role required: PARENT
 - Permission required: PARENT_VIEW
-- Scope checks: linked child
+- Scope checks: active school + linked child
 - Request headers: Authorization except public auth; Content-Type for JSON writes.
 - Path params: none
 - Query params: page, size, search/q, status/filter where supported

@@ -383,9 +383,15 @@ public class AttendanceService {
         if (actor.user().getRole() != UserRole.PARENT) {
             throw new ForbiddenException("Parent access is required.");
         }
+        String activeSchoolId = actor.activeSchoolId();
+        if (activeSchoolId == null || activeSchoolId.isBlank()) {
+            throw new ForbiddenException("An active school is required for parent access.");
+        }
         return parentStudentLinkRepository.findByParentUserIdAndStudentId(actor.user().getId(), studentId)
                 .filter(link -> link.getTenant().getId().equals(actor.user().getTenant().getId()))
                 .filter(link -> link.getStudent().getTenant().getId().equals(actor.user().getTenant().getId()))
+                .filter(link -> link.getSchool().getTenant().getId().equals(actor.user().getTenant().getId()))
+                .filter(link -> link.getSchool().getId().equals(activeSchoolId))
                 .map(link -> link.getStudent())
                 .orElseThrow(() -> new ForbiddenException("Parent is not linked to this child."));
     }

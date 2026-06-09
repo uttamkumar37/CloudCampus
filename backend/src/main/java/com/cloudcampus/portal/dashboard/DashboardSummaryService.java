@@ -232,7 +232,14 @@ public class DashboardSummaryService {
     @Transactional(readOnly = true)
     public DashboardSummaryResponse parent(AuthenticatedUser actor) {
         requireRole(actor, UserRole.PARENT);
-        List<ParentStudentLink> children = parentStudentLinkRepository.findByParentUserId(actor.user().getId());
+        String activeSchoolId = requireActiveSchool(actor);
+        List<ParentStudentLink> children = parentStudentLinkRepository.findByParentUserId(actor.user().getId())
+                .stream()
+                .filter(link -> link.getTenant().getId().equals(actor.user().getTenant().getId()))
+                .filter(link -> link.getStudent().getTenant().getId().equals(actor.user().getTenant().getId()))
+                .filter(link -> link.getSchool().getTenant().getId().equals(actor.user().getTenant().getId()))
+                .filter(link -> link.getSchool().getId().equals(activeSchoolId))
+                .toList();
         List<FeeDemand> demands = new ArrayList<>();
         long leaveRequests = 0;
         long results = 0;
