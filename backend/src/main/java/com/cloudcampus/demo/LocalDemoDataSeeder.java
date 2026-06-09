@@ -209,6 +209,8 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
         grant(tenant, school, scienceTeacher, UserRole.TEACHER, true);
         grant(tenant, school, finance, UserRole.FINANCE_STAFF, true);
         grant(tenant, school, staff, UserRole.STAFF, true);
+        grant(tenant, school, parent, UserRole.PARENT, true);
+        grant(tenant, school, studentLogin, UserRole.STUDENT, true);
 
         staffProfile(tenant, school, mathTeacher, UserRole.TEACHER, "JNV-KNP-T001", "Asha Mathur", "Mathematics", "PGT Mathematics");
         staffProfile(tenant, school, englishTeacher, UserRole.TEACHER, "JNV-KNP-T002", "Rohan Sen", "English", "TGT English");

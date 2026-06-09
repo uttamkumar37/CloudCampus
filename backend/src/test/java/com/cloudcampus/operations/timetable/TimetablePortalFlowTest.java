@@ -175,6 +175,7 @@ class TimetablePortalFlowTest {
         );
         student.attachUser(studentUser);
         studentRepository.save(student);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, studentUser, UserRole.STUDENT, true));
         parentStudentLinkRepository.save(new ParentStudentLink(
                 tenant,
                 school,

@@ -15,6 +15,8 @@ import com.cloudcampus.academic.Section;
 import com.cloudcampus.academic.SectionRepository;
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogRepository;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
+import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
@@ -79,6 +81,9 @@ class AttendanceFlowTest {
 
     @Autowired
     private UserAccountRepository userAccountRepository;
+
+    @Autowired
+    private UserSchoolAccessRepository userSchoolAccessRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -414,6 +419,7 @@ class AttendanceFlowTest {
         UserAccount studentUser = createStudentUser(tenant, "attendance-student@example.com", "Attendance Student");
         linkedStudent.attachUser(studentUser);
         studentRepository.save(linkedStudent);
+        userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, studentUser, UserRole.STUDENT, true));
         String parentToken = jwtAccessTokenService.issueToken(parent.getId(), tenant.getId(), UserRole.PARENT, null);
         String studentToken = jwtAccessTokenService.issueToken(studentUser.getId(), tenant.getId(), UserRole.STUDENT, school.getId());
 

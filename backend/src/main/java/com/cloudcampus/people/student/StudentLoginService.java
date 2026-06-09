@@ -101,8 +101,10 @@ public class StudentLoginService {
                 .filter(candidate -> candidate.getTenant().getId().equals(actor.user().getTenant().getId()))
                 .filter(candidate -> candidate.getUser() != null && candidate.getUser().getId().equals(actor.user().getId()))
                 .orElseThrow(() -> new ForbiddenException("Student profile is not linked to this user."));
-        if (actor.activeSchoolId() != null && !actor.activeSchoolId().isBlank()
-                && !student.getSchool().getId().equals(actor.activeSchoolId())) {
+        if (actor.activeSchoolId() == null || actor.activeSchoolId().isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        if (!student.getSchool().getId().equals(actor.activeSchoolId())) {
             throw new ForbiddenException("Student profile is not linked to the active school.");
         }
         return toSelfProfileResponse(student);

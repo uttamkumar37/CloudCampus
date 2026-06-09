@@ -446,7 +446,27 @@ describe('App', () => {
         return jsonResponse([]);
       }
       if (url.includes('/v1/student/profile')) {
-        return jsonResponse({ id: 'student-profile' });
+        return jsonResponse({
+          id: 'student-profile',
+          tenantId: 'tenant-1',
+          schoolId: 'school-a',
+          admissionNumber: 'ADM-001',
+          fullName: 'Aarav Sharma',
+          classLevelId: 'class-6',
+          sectionId: 'section-a',
+          rollNumber: '12',
+          dateOfBirth: '2014-04-10',
+          gender: 'MALE',
+          active: true,
+        });
+      }
+      if (url.includes('/v1/student/homework')
+        || url.includes('/v1/student/results')
+        || url.includes('/v1/student/fees')
+        || url.includes('/v1/student/notices')
+        || url.includes('/v1/student/attendance')
+        || url.includes('/v1/student/timetable')) {
+        return jsonResponse([]);
       }
       return jsonResponse([]);
     }));
@@ -717,7 +737,11 @@ describe('App', () => {
         .split('_')
         .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
         .join(' ');
-      const heading = role === 'TEACHER' ? /teacher overview/i : new RegExp(`${title} dashboard`, 'i');
+      const heading = role === 'TEACHER'
+        ? /teacher overview/i
+        : role === 'STUDENT'
+          ? /student overview/i
+          : new RegExp(`${title} dashboard`, 'i');
       expect((await screen.findAllByRole('heading', { name: heading })).length).toBeGreaterThan(0);
       expect(screen.getByRole('region', { name: new RegExp(`${title} area`, 'i') })).toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: /create organization with first school/i })).not.toBeInTheDocument();
@@ -747,7 +771,11 @@ describe('App', () => {
         .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
         .join(' ');
 
-      const heading = role === 'TEACHER' ? /teacher overview/i : new RegExp(`${title} dashboard`, 'i');
+      const heading = role === 'TEACHER'
+        ? /teacher overview/i
+        : role === 'STUDENT'
+          ? /student overview/i
+          : new RegExp(`${title} dashboard`, 'i');
       expect((await screen.findAllByRole('heading', { name: heading })).length).toBeGreaterThan(0);
       expect(screen.queryByText(/partial api/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/^partial$/i)).not.toBeInTheDocument();

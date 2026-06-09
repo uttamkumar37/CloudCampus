@@ -157,6 +157,11 @@ public class AuthorizationService {
             return true;
         }
         if (rolesFor(user).contains(UserRole.STUDENT)
+                && student.getUser() != null
+                && student.getUser().getId().equals(user.getId())) {
+            return true;
+        }
+        if (rolesFor(user).contains(UserRole.STUDENT)
                 && studentUserLinkRepository.existsByUserIdAndStudentIdAndActiveTrue(user.getId(), studentId)) {
             return true;
         }

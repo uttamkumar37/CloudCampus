@@ -242,9 +242,20 @@ public class TimetableService {
         if (actor.user().getRole() != UserRole.STUDENT) {
             throw new ForbiddenException("Student access is required.");
         }
-        return studentRepository.findByUserId(actor.user().getId())
-                .filter(student -> student.getTenant().getId().equals(actor.user().getTenant().getId()))
+        Student student = studentRepository.findByUserId(actor.user().getId())
+                .filter(candidate -> candidate.getTenant().getId().equals(actor.user().getTenant().getId()))
                 .orElseThrow(() -> new ForbiddenException("Student profile is not linked to this user."));
+        requireActiveStudentSchool(actor, student);
+        return student;
+    }
+
+    private void requireActiveStudentSchool(AuthenticatedUser actor, Student student) {
+        if (actor.activeSchoolId() == null || actor.activeSchoolId().isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        if (!student.getSchool().getId().equals(actor.activeSchoolId())) {
+            throw new ForbiddenException("Student profile is not linked to the active school.");
+        }
     }
 
     private void recordCreated(UserAccount actor, TimetableEntry entry) {

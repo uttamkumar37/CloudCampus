@@ -266,7 +266,10 @@ public class DashboardSummaryService {
     public DashboardSummaryResponse student(AuthenticatedUser actor) {
         requireRole(actor, UserRole.STUDENT);
         Student student = studentRepository.findByUserId(actor.user().getId())
+                .filter(candidate -> candidate.getTenant().getId().equals(actor.user().getTenant().getId()))
+                .filter(candidate -> candidate.getUser() != null && candidate.getUser().getId().equals(actor.user().getId()))
                 .orElseThrow(() -> new NotFoundException("Student profile was not found."));
+        requireActiveStudentSchool(actor, student);
         List<FeeDemand> demands = feeDemandRepository.findByStudentIdOrderByDueDateAscCreatedAtAsc(student.getId());
         long homework = 0;
         if (student.getClassLevel() != null) {
@@ -282,6 +285,15 @@ public class DashboardSummaryService {
                 metric("Results", examResultRepository.findByStudentIdAndExamStatusOrderByExamExamDateAsc(student.getId(), com.cloudcampus.operations.exam.ExamStatus.PUBLISHED).size(), "Published results"),
                 metric("Fee due", money(outstanding(demands)), "Outstanding student fee demand amount")
         ));
+    }
+
+    private void requireActiveStudentSchool(AuthenticatedUser actor, Student student) {
+        if (actor.activeSchoolId() == null || actor.activeSchoolId().isBlank()) {
+            throw new ForbiddenException("An active school is required.");
+        }
+        if (!student.getSchool().getId().equals(actor.activeSchoolId())) {
+            throw new ForbiddenException("Student profile is not linked to the active school.");
+        }
     }
 
     private DashboardSummaryResponse schoolScopedSummary(String schoolId) {

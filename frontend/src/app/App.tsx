@@ -68,6 +68,7 @@ import type { SchoolAdminResourceKey } from '../features/school-admin/api/school
 import { httpClient } from '../shared/api/httpClient';
 import { StaffProvisioningPage } from '../features/staff/pages/StaffProvisioningPage';
 import { StudentImportPage } from '../features/student/pages/StudentImportPage';
+import { StudentPortalPage } from '../features/student/pages/StudentPortalPage';
 import { getSuperAdminNotifications, searchSuperAdmin, type SuperAdminSearchResponse } from '../features/super-admin/api/platformApi';
 import { SuperAdminPlatformPage } from '../features/super-admin/pages/SuperAdminPlatformPage';
 import { TenantAdminDashboardPage } from '../features/tenant-admin/pages/TenantAdminDashboardPage';
@@ -901,7 +902,7 @@ function AuthenticatedExperience({ storage, user }: { storage?: AppStorage; user
               : null
             : user.role === 'TENANT_ADMIN'
               ? null
-              : user.role === 'TEACHER'
+              : user.role === 'TEACHER' || user.role === 'STUDENT'
                 ? null
                 : <PortalDashboard navItems={navItems} onSelectNav={setActiveNav} user={user} />}
           <RoleWorkspace activeNav={activeNav} onSelectNav={setActiveNav} storage={storage} user={user} />
@@ -1535,6 +1536,20 @@ function RoleWorkspace({
     );
   }
 
+  if (user.role === 'STUDENT') {
+    return (
+      <section className="role-workspace" aria-label="Student area">
+        <WorkspaceHeader title="Student workspace" activeNav={activeNav} />
+        <SchoolSelector />
+        {user.activeSchool ? (
+          <StudentModule activeNav={activeNav} onSelectNav={onSelectNav} />
+        ) : (
+          <EmptyState title="Select active school" detail="Choose your school to open your Student workspace." />
+        )}
+      </section>
+    );
+  }
+
   if (user.role === 'FINANCE_STAFF') {
     return (
       <section className="role-workspace" aria-label="Finance Staff area">
@@ -1609,6 +1624,10 @@ function PrincipalModule({ activeNav, onSelectNav }: { activeNav: string; onSele
 
 function TeacherModule({ activeNav, onSelectNav }: { activeNav: string; onSelectNav: (navId: string) => void }) {
   return <TeacherPortalPage onNavigate={onSelectNav} section={activeNav} />;
+}
+
+function StudentModule({ activeNav, onSelectNav }: { activeNav: string; onSelectNav: (navId: string) => void }) {
+  return <StudentPortalPage onNavigate={onSelectNav} section={activeNav} />;
 }
 
 function OfficeStaffModule({ activeNav }: { activeNav: string }) {
