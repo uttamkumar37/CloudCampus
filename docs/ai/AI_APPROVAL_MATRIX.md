@@ -12,3 +12,5 @@ Status: CURRENT_IMPLEMENTED
 | CRITICAL | Super Admin only | Super Admin only | SYSTEM after explicit approval | MFA freshness, dual control recommended | PLANNED_RECOMMENDED |
 
 Finance Staff note: `FINANCE_STAFF` approval is implemented only for active-school `FEE_REMINDER_SUGGESTION` recommendations where `APPROVE_AI_RECOMMENDATIONS` applies. Finance Staff cannot execute recommendation automation without a separate automation-policy permission, and it is denied AI entitlement, usage-audit, and automation controls by default.
+
+Guest note: `GUEST` has no AI permissions. Shared AI recommendation, approval, execution, automation, policy, knowledge-search, entitlement, and usage-audit endpoints return 401 without a token and 403 for authenticated GUEST sessions.

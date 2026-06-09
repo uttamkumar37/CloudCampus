@@ -99,10 +99,10 @@ export function AuthStateProvider({
 
   const hydrate = useCallback(async (token: string) => {
     try {
-      const [user, schools] = await Promise.all([
-        authClient.getCurrentUser(token),
-        authClient.getMySchools(token),
-      ]);
+      const user = await authClient.getCurrentUser(token);
+      const schools = user.role === 'GUEST' || user.role === 'SYSTEM' || user.role === 'AI_AGENT'
+        ? []
+        : await authClient.getMySchools(token);
       setAccessToken(token);
       setCurrentUser({ ...user, allowedSchools: schools });
       setAllowedSchools(schools);

@@ -817,6 +817,8 @@ function AuthenticatedExperience({ storage, user }: { storage?: AppStorage; user
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const navItems = useMemo(() => visibleNavItems(user.role), [user.role]);
   const portalTitle = roleTitle(user.role);
+  const aiNavTarget = aiNavForRole(user.role);
+  const aiAssistAvailable = Boolean(aiNavTarget && navItems.some((item) => item.id === aiNavTarget));
 
   useEffect(() => {
     if (!navItems.some((item) => item.id === activeNav)) {
@@ -884,10 +886,16 @@ function AuthenticatedExperience({ storage, user }: { storage?: AppStorage; user
             </div>
           ))}
         </nav>
-        <AIAssistCard
-          onOpen={() => setActiveNav(aiNavForRole(user.role))}
-          role={user.role}
-        />
+        {aiAssistAvailable ? (
+          <AIAssistCard
+            onOpen={() => {
+              if (aiNavTarget) {
+                setActiveNav(aiNavTarget);
+              }
+            }}
+            role={user.role}
+          />
+        ) : null}
       </aside>
 
       <section className="enterprise-main">
@@ -917,14 +925,20 @@ function AuthenticatedExperience({ storage, user }: { storage?: AppStorage; user
       {mobileOpen ? (
         <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} type="button" />
       ) : null}
-      <button
-        className="ai-fab"
-        aria-label="Open CloudCampus AI governance"
-        onClick={() => setActiveNav(aiNavForRole(user.role))}
-        type="button"
-      >
-        AI
-      </button>
+      {aiAssistAvailable ? (
+        <button
+          className="ai-fab"
+          aria-label="Open CloudCampus AI governance"
+          onClick={() => {
+            if (aiNavTarget) {
+              setActiveNav(aiNavTarget);
+            }
+          }}
+          type="button"
+        >
+          AI
+        </button>
+      ) : null}
     </main>
   );
 }
@@ -941,10 +955,19 @@ function visibleNavItems(role: UserRole) {
   return NAV_BY_ROLE[role].filter((item) => item.status === 'CONNECTED_REAL_API');
 }
 
-function aiNavForRole(role: UserRole) {
+function aiNavForRole(role: UserRole): string | null {
   if (role === 'SUPER_ADMIN') return 'ai-usage';
-  if (role === 'SYSTEM' || role === 'AI_AGENT' || role === 'GUEST') return 'dashboard';
-  return 'ai-suggestions';
+  if (
+    role === 'PRINCIPAL'
+    || role === 'TEACHER'
+    || role === 'FINANCE_STAFF'
+    || role === 'OFFICE_STAFF'
+    || role === 'PARENT'
+    || role === 'STUDENT'
+  ) {
+    return 'ai-suggestions';
+  }
+  return null;
 }
 
 function groupedNavItems(role: UserRole, navItems: NavItem[]) {
@@ -2500,6 +2523,15 @@ function roleInfoItems(user: CurrentUser): RoleInfoItem[] {
     ];
   }
 
+  if (user.role === 'GUEST') {
+    return [
+      { label: 'Your role', value: 'Guest', detail: 'Public auth-only access', icon: ShieldCheck, tone: 'blue' },
+      { label: 'Internal data', value: 'Not available', detail: 'No school, tenant, report, finance, or AI access', icon: FileText, tone: 'emerald' },
+      { label: 'Available action', value: 'Dashboard', detail: 'Review account access status only', icon: Home, tone: 'violet' },
+      { label: 'Assigned schools', value: assignedSchoolCount, detail: 'No school access is granted to Guest', icon: Users, tone: 'amber' },
+    ];
+  }
+
   return [
     { label: 'Your role', value: roleTitle(user.role), detail: 'Staff workspace', icon: ShieldCheck, tone: 'blue' },
     { label: 'School', value: currentSchool, detail: 'Your active school', icon: School, tone: 'emerald' },
@@ -2512,6 +2544,9 @@ function sessionSummaryLine(user: CurrentUser) {
   if (user.role === 'SUPER_ADMIN') {
     return 'Platform-wide access';
   }
+  if (user.role === 'GUEST') {
+    return 'Public auth-only access';
+  }
   return user.activeSchool?.name ?? 'Choose a school to open your workspace';
 }
 
@@ -2522,6 +2557,7 @@ function roleAccessLevel(user: CurrentUser) {
   if (user.role === 'PRINCIPAL') return 'Academic approval';
   if (user.role === 'FINANCE_STAFF') return 'Finance access enabled';
   if (user.role === 'OFFICE_STAFF') return 'Office access enabled';
+  if (user.role === 'GUEST') return 'Public/auth only';
   return roleTitle(user.role);
 }
 
@@ -2530,6 +2566,7 @@ function emptySummaryMessage(role: UserRole) {
   if (role === 'TENANT_ADMIN') return 'Organization activity will appear after schools and users are added.';
   if (role === 'PARENT') return 'Child activity will appear after your account is linked by the school.';
   if (role === 'STUDENT') return 'Class activity will appear after your school publishes updates.';
+  if (role === 'GUEST') return 'Guest sessions only expose account status. Sign in with an assigned role to access a workspace.';
   return 'Workspace activity will appear as your team starts using this module.';
 }
 

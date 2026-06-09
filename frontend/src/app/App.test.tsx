@@ -754,6 +754,37 @@ describe('App', () => {
     },
   );
 
+  it('shows only a public auth dashboard shell for Guest', async () => {
+    const user: CurrentUser = {
+      userId: 'guest-1',
+      email: 'guest@example.com',
+      displayName: 'Guest User',
+      role: 'GUEST',
+      tenantId: 'tenant-1',
+      activeSchool: null,
+      allowedSchools: [],
+    };
+
+    const guestAuthClient = authClientFor(user, []);
+    render(<App authClient={guestAuthClient} storage={storageWithToken('guest-token')} />);
+
+    expect(await screen.findByRole('heading', { name: /guest overview/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: /guest area/i })).toBeInTheDocument();
+    const guestNav = screen.getByRole('navigation', { name: /guest navigation/i });
+    expect(within(guestNav).getByRole('button', { name: /^dashboard$/i })).toBeInTheDocument();
+    expect(within(guestNav).queryByRole('button', { name: /reports|exports|finance|fees|students|parents|teachers|ai/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /open cloudcampus ai governance/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/ai assistant/i)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/public auth-only access/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/no school, tenant, report, finance, or ai access/i)).toBeInTheDocument();
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(
+      '/v1/me',
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer guest-token' }) }),
+    ));
+    expect(guestAuthClient.getMySchools).not.toHaveBeenCalled();
+    expect(vi.mocked(fetch).mock.calls.some(([input]) => /\/v1\/(super-admin|tenant-admin|school-admin|finance|ai)\b/.test(String(input)))).toBe(false);
+  });
+
   it('shows the office staff workspace without admin, finance, or missing office API calls', async () => {
     const officeSchool: SchoolAccess = { ...schoolA, role: 'OFFICE_STAFF' };
     const user: CurrentUser = {

@@ -21,6 +21,7 @@ import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.UserStatus;
+import com.cloudcampus.platform.tenant.TenantStatus;
 import com.cloudcampus.school.School;
 import com.cloudcampus.school.SchoolRepository;
 
@@ -101,6 +102,10 @@ public class AuthSessionService {
             loginRateLimiterService.recordFailure(email);
             throw new ForbiddenException("System actors cannot sign in interactively.");
         }
+        if (!isTenantActive(user)) {
+            loginRateLimiterService.recordFailure(email);
+            throw new ForbiddenException("Tenant is not active.");
+        }
         if (user.getPasswordHash() == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             loginRateLimiterService.recordFailure(email);
             throw new UnauthorizedException("Invalid email or password.");
@@ -135,6 +140,7 @@ public class AuthSessionService {
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ForbiddenException("User account is not active.");
         }
+        ensureTenantActive(user);
         challenge.markVerified(now);
         recordUserAudit(
                 user,
@@ -161,6 +167,7 @@ public class AuthSessionService {
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ForbiddenException("User account is not active.");
         }
+        ensureTenantActive(user);
         if (!canAuthenticateInteractively(user)) {
             throw new ForbiddenException("System actors cannot refresh interactive sessions.");
         }
@@ -220,12 +227,14 @@ public class AuthSessionService {
 
     @Transactional
     public ForgotPasswordResponse forgotPassword(ForgotPasswordRequest request) {
-        UserAccount user = findUniqueUserByEmail(request.email());
-        if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new ForbiddenException("User account is not active.");
+        List<UserAccount> matches = userAccountRepository.findByEmailIgnoreCase(normalizeEmail(request.email()));
+        if (matches.size() != 1) {
+            return genericForgotPasswordResponse();
         }
-        if (!canAuthenticateInteractively(user)) {
-            throw new ForbiddenException("System actors cannot use password recovery.");
+
+        UserAccount user = matches.getFirst();
+        if (user.getStatus() != UserStatus.ACTIVE || !canAuthenticateInteractively(user) || !isTenantActive(user)) {
+            return genericForgotPasswordResponse();
         }
 
         String rawToken = sessionTokenService.newRawToken();
@@ -275,6 +284,7 @@ public class AuthSessionService {
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ForbiddenException("User account is not active.");
         }
+        ensureTenantActive(user);
         if (!canAuthenticateInteractively(user)) {
             throw new ForbiddenException("System actors cannot use password recovery.");
         }
@@ -325,12 +335,18 @@ public class AuthSessionService {
 
     @Transactional(readOnly = true)
     public List<SchoolAccessResponse> allowedSchools(AuthenticatedUser authenticatedUser) {
+        if (isNonWorkspaceSessionRole(authenticatedUser.user().getRole())) {
+            throw new ForbiddenException("This role cannot access school assignments.");
+        }
         return schoolAccessResponses(authenticatedUser.user());
     }
 
     @Transactional
     public AuthSessionResponse activateSchool(AuthenticatedUser authenticatedUser, String schoolId) {
         UserAccount user = authenticatedUser.user();
+        if (isNonWorkspaceSessionRole(user.getRole())) {
+            throw new ForbiddenException("This role cannot activate school context.");
+        }
         School school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new NotFoundException("School was not found."));
         if (!school.getTenant().getId().equals(user.getTenant().getId())) {
@@ -412,6 +428,28 @@ public class AuthSessionService {
         return user.getRole() != UserRole.SYSTEM && user.getRole() != UserRole.AI_AGENT;
     }
 
+    private boolean isNonWorkspaceSessionRole(UserRole role) {
+        return role == UserRole.GUEST || role == UserRole.SYSTEM || role == UserRole.AI_AGENT;
+    }
+
+    private void ensureTenantActive(UserAccount user) {
+        if (!isTenantActive(user)) {
+            throw new ForbiddenException("Tenant is not active.");
+        }
+    }
+
+    private boolean isTenantActive(UserAccount user) {
+        return user.getTenant().getStatus() == TenantStatus.ACTIVE;
+    }
+
+    private ForgotPasswordResponse genericForgotPasswordResponse() {
+        return new ForgotPasswordResponse(
+                "Password reset token created for scaffold delivery.",
+                sessionTokenService.newRawToken(),
+                Instant.now().plus(30, ChronoUnit.MINUTES)
+        );
+    }
+
     private String normalizeEmail(String rawEmail) {
         return rawEmail.trim().toLowerCase(Locale.ROOT);
     }
@@ -463,6 +501,9 @@ public class AuthSessionService {
     }
 
     private List<SchoolAccessResponse> schoolAccessResponses(UserAccount user) {
+        if (isNonWorkspaceSessionRole(user.getRole())) {
+            return List.of();
+        }
         return tenantConsistentAccessList(user)
                 .stream()
                 .sorted(Comparator
@@ -485,6 +526,9 @@ public class AuthSessionService {
     private String chooseInitialActiveSchoolId(String userId) {
         UserAccount user = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("Authenticated user was not found."));
+        if (isNonWorkspaceSessionRole(user.getRole())) {
+            return null;
+        }
         List<UserSchoolAccess> accessList = tenantConsistentAccessList(user);
         return accessList
                 .stream()

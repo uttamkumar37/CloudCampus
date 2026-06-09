@@ -8,7 +8,9 @@ import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
+import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.UserStatus;
+import com.cloudcampus.platform.tenant.TenantStatus;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -52,6 +54,9 @@ public class AuthenticatedUserResolver {
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ForbiddenException("Authenticated user is not active.");
         }
+        if (user.getTenant().getStatus() != TenantStatus.ACTIVE) {
+            throw new ForbiddenException("Authenticated user's tenant is not active.");
+        }
         if (!user.getTenant().getId().equals(claims.tenantId()) || user.getRole() != claims.role()) {
             throw new UnauthorizedException("Access token identity no longer matches the user.");
         }
@@ -73,6 +78,9 @@ public class AuthenticatedUserResolver {
     }
 
     private String resolveActiveSchoolId(UserAccount user, String requestedActiveSchoolId) {
+        if (isNonWorkspaceSessionRole(user.getRole())) {
+            return null;
+        }
         List<UserSchoolAccess> accessList = tenantConsistentAccessList(user);
         if (accessList.isEmpty()) {
             return null;
@@ -103,5 +111,9 @@ public class AuthenticatedUserResolver {
                 .filter(access -> access.getTenant().getId().equals(tenantId))
                 .filter(access -> access.getSchool().getTenant().getId().equals(tenantId))
                 .toList();
+    }
+
+    private boolean isNonWorkspaceSessionRole(UserRole role) {
+        return role == UserRole.GUEST || role == UserRole.SYSTEM || role == UserRole.AI_AGENT;
     }
 }

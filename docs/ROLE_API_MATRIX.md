@@ -15,7 +15,7 @@ Status: CURRENT_IMPLEMENTED
 | PARENT | 20 | POST /v1/ai/knowledge/search<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations<br>POST /v1/me/change-password<br>POST /v1/me/logout<br>POST /v1/me/schools/{schoolId}/activate<br>GET /v1/me/schools<br>GET /v1/me<br>GET /v1/parent/children/{studentId}/attendance<br>POST /v1/parent/children/{studentId}/fees/{demandId}/payments<br>GET /v1/parent/children/{studentId}/fees<br>GET /v1/parent/children/{studentId}/homework | CURRENT_IMPLEMENTED |
 | FINANCE_STAFF | 24 | POST /v1/ai/knowledge/search<br>POST /v1/ai/recommendations/{id}/accept<br>POST /v1/ai/recommendations/{id}/approve<br>POST /v1/ai/recommendations/{id}/dismiss<br>POST /v1/ai/recommendations/{id}/reject<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations<br>GET/POST /v1/finance/reports/exports... | CURRENT_IMPLEMENTED |
 | OFFICE_STAFF | 13 | POST /v1/ai/knowledge/search<br>GET /v1/ai/recommendations/{id}<br>GET /v1/ai/recommendations<br>POST /v1/me/change-password<br>POST /v1/me/logout<br>POST /v1/me/schools/{schoolId}/activate<br>GET /v1/me/schools<br>GET /v1/me<br>GET /v1/school-admin/documents/{documentId}<br>GET /v1/school-admin/documents<br>POST /v1/school-admin/documents<br>GET /v1/school-admin/students<br>GET /v1/staff/dashboard/summary | CURRENT_IMPLEMENTED |
-| GUEST | 6 | POST /v1/auth/forgot-password<br>POST /v1/auth/login<br>POST /v1/auth/mfa/verify<br>POST /v1/auth/refresh<br>POST /v1/auth/reset-password<br>POST /v1/invitations/accept | CURRENT_IMPLEMENTED |
+| GUEST | 7 | POST /v1/auth/forgot-password<br>POST /v1/auth/login<br>POST /v1/auth/mfa/verify<br>POST /v1/auth/refresh<br>POST /v1/auth/reset-password<br>POST /v1/invitations/accept<br>GET /v1/me | CURRENT_IMPLEMENTED |
 | SYSTEM | 1 | GET /v1/system/readiness | CURRENT_IMPLEMENTED |
 | AI_AGENT | 0 | none | CURRENT_PARTIAL |
 
@@ -2074,7 +2074,7 @@ Status: CURRENT_IMPLEMENTED
 | GUEST | POST | /v1/me/logout | No | SESSION_SELF_MANAGE | current user/session | CURRENT_IMPLEMENTED denied |
 | GUEST | POST | /v1/me/schools/{schoolId}/activate | No | SESSION_SELF_MANAGE | current user/session | CURRENT_IMPLEMENTED denied |
 | GUEST | GET | /v1/me/schools | No | SESSION_SELF_MANAGE | current user/session | CURRENT_IMPLEMENTED denied |
-| GUEST | GET | /v1/me | No | SESSION_SELF_MANAGE | current user/session | CURRENT_IMPLEMENTED denied |
+| GUEST | GET | /v1/me | Yes | SESSION_SELF_MANAGE | current user/session; account status only | CURRENT_IMPLEMENTED |
 | GUEST | GET | /v1/parent/children/{studentId}/attendance | No | PARENT_VIEW | linked child | CURRENT_IMPLEMENTED denied |
 | GUEST | POST | /v1/parent/children/{studentId}/fees/{demandId}/payments | No | FINANCE_MANAGE | linked child | CURRENT_IMPLEMENTED denied |
 | GUEST | GET | /v1/parent/children/{studentId}/fees | No | FINANCE_VIEW | linked child | CURRENT_IMPLEMENTED denied |

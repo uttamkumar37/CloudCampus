@@ -45,6 +45,7 @@ public class AiRecommendationPortalService {
 
     @Transactional(readOnly = true)
     public PageResponse<AiRecommendationPortalResponse> recommendations(AuthenticatedUser actor, int page, int size) {
+        denyPublicAiAccess(actor.user());
         List<AiRecommendationPortalResponse> rows = aiRecommendationRepository.findAll().stream()
                 .filter(recommendation -> canAccess(actor, recommendation))
                 .sorted(Comparator.comparing(AiRecommendation::getCreatedAt).reversed())
@@ -55,6 +56,7 @@ public class AiRecommendationPortalService {
 
     @Transactional(readOnly = true)
     public AiRecommendationPortalResponse recommendation(AuthenticatedUser actor, String id) {
+        denyPublicAiAccess(actor.user());
         AiRecommendation recommendation = requireRecommendation(id);
         if (!canAccess(actor, recommendation)) {
             throw new ForbiddenException("User cannot access this AI recommendation.");
@@ -173,6 +175,7 @@ public class AiRecommendationPortalService {
 
     private AiRecommendation requireMutableRecommendation(AuthenticatedUser actor, String id) {
         UserAccount user = actor.user();
+        denyPublicAiAccess(user);
         if (user.getRole() == UserRole.PARENT) {
             throw new ForbiddenException("Parents can only view approved child AI recommendations.");
         }
@@ -249,6 +252,7 @@ public class AiRecommendationPortalService {
     }
 
     private void denyRestrictedAutomation(UserAccount actor) {
+        denyPublicAiAccess(actor);
         if (actor.getRole() == UserRole.PARENT) {
             throw new ForbiddenException("Parents cannot access AI automation controls.");
         }
@@ -257,6 +261,12 @@ public class AiRecommendationPortalService {
         }
         if (actor.getRole() == UserRole.FINANCE_STAFF) {
             throw new ForbiddenException("Finance staff cannot access AI automation controls.");
+        }
+    }
+
+    private void denyPublicAiAccess(UserAccount actor) {
+        if (actor.getRole() == UserRole.GUEST || actor.getRole() == UserRole.SYSTEM || actor.getRole() == UserRole.AI_AGENT) {
+            throw new ForbiddenException("This role cannot access AI portal APIs.");
         }
     }
 

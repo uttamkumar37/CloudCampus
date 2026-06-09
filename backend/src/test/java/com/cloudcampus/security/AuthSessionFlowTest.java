@@ -7,10 +7,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLog;
 import com.cloudcampus.audit.AuditLogRepository;
+import com.cloudcampus.identity.accesscontrol.RolePermissionRepository;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
@@ -19,6 +21,7 @@ import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
 import com.cloudcampus.identity.auth.session.JwtAccessTokenService;
 import com.cloudcampus.platform.tenant.Tenant;
 import com.cloudcampus.platform.tenant.TenantRepository;
+import com.cloudcampus.platform.tenant.TenantStatus;
 import com.cloudcampus.school.School;
 import com.cloudcampus.school.SchoolRepository;
 import com.cloudcampus.testsupport.AuthTestSupport;
@@ -55,6 +58,9 @@ class AuthSessionFlowTest {
 
     @Autowired
     private UserSchoolAccessRepository userSchoolAccessRepository;
+
+    @Autowired
+    private RolePermissionRepository rolePermissionRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -196,8 +202,8 @@ class AuthSessionFlowTest {
                                   "email": "auth-ai-agent@example.com"
                                 }
                                 """))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resetToken").isNotEmpty());
     }
 
     @Test
@@ -241,6 +247,77 @@ class AuthSessionFlowTest {
     }
 
     @Test
+    void guestHasNoInternalPermissionsAndProtectedApisDenyGuestOrMissingTokens() throws Exception {
+        assertThat(rolePermissionRepository.existsByRoleInAndPermissionCode(
+                Set.of(UserRole.GUEST),
+                "MANAGE_ENQUIRIES"
+        )).isFalse();
+
+        var guest = AuthTestSupport.issueAccessTokenForRole(
+                UserRole.GUEST,
+                tenantRepository,
+                userAccountRepository,
+                passwordEncoder,
+                jwtAccessTokenService
+        );
+
+        mockMvc.perform(get("/v1/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(guest.accessToken())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("GUEST"))
+                .andExpect(jsonPath("$.allowedSchools").isEmpty());
+        mockMvc.perform(get("/v1/me/schools")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(guest.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(get("/v1/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+        mockMvc.perform(get("/v1/finance/fees/demands"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+        mockMvc.perform(get("/v1/ai/recommendations"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        mockMvc.perform(get("/v1/super-admin/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(guest.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/tenant-admin/reports/summary")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(guest.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/school-admin/students")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(guest.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/finance/fees/demands")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(guest.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/school-admin/reports/exports")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(guest.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/ai/recommendations")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(guest.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(post("/v1/ai/knowledge/search")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(guest.accessToken()))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "query": "school fees"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
     void inactiveUserIsRejected() throws Exception {
         onboard("auth-login-c", "auth-school-c", "login-admin-c@example.com");
 
@@ -252,6 +329,95 @@ class AuthSessionFlowTest {
                 """)
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    void suspendedTenantBlocksLoginAndAuthenticatedSessionHydration() throws Exception {
+        Tenant tenant = tenantRepository.save(new Tenant("auth-suspended-a", "Suspended Auth Tenant"));
+        UserAccount user = activeUser(tenant, "auth-suspended@example.com", "Suspended User", UserRole.GUEST, "GuestStrong123!");
+        tenant.updateStatus(TenantStatus.SUSPENDED);
+        tenantRepository.save(tenant);
+
+        loginWithBody("""
+                {
+                  "email": "auth-suspended@example.com",
+                  "password": "GuestStrong123!"
+                }
+                """)
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        String suspendedToken = jwtAccessTokenService.issueToken(
+                user.getId(),
+                tenant.getId(),
+                UserRole.GUEST,
+                null
+        );
+        mockMvc.perform(get("/v1/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(suspendedToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    void forgotPasswordDoesNotRevealUnknownOrIneligibleAccounts() throws Exception {
+        Tenant tenant = tenantRepository.save(new Tenant("auth-reset-safe-a", "Auth Reset Safe"));
+        userAccountRepository.save(new UserAccount(
+                tenant,
+                "inactive-reset@example.com",
+                "Inactive Reset",
+                UserRole.SCHOOL_ADMIN
+        ));
+        long auditCountBefore = auditLogRepository.findByTenantId(tenant.getId()).stream()
+                .filter(log -> log.getAction() == AuditAction.PASSWORD_RESET_REQUESTED)
+                .count();
+
+        JsonNode unknown = jsonBody(mockMvc.perform(post("/v1/auth/forgot-password")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "email": "unknown-reset@example.com"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resetToken").isNotEmpty())
+                .andReturn());
+        mockMvc.perform(post("/v1/auth/reset-password")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "token": "%s",
+                                  "password": "UnusedStrong123!"
+                                }
+                                """.formatted(unknown.at("/resetToken").asText())))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        JsonNode inactive = jsonBody(mockMvc.perform(post("/v1/auth/forgot-password")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "email": "inactive-reset@example.com"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resetToken").isNotEmpty())
+                .andReturn());
+        mockMvc.perform(post("/v1/auth/reset-password")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "token": "%s",
+                                  "password": "UnusedStrong123!"
+                                }
+                                """.formatted(inactive.at("/resetToken").asText())))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+        long auditCountAfter = auditLogRepository.findByTenantId(tenant.getId()).stream()
+                .filter(log -> log.getAction() == AuditAction.PASSWORD_RESET_REQUESTED)
+                .count();
+        assertThat(auditCountAfter).isEqualTo(auditCountBefore);
     }
 
     @Test

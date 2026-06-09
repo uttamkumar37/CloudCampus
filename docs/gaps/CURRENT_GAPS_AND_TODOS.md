@@ -32,6 +32,10 @@ Office workflow gap note: the OFFICE_STAFF navigation intentionally shows Admiss
 
 Finance workflow gap note: FINANCE_STAFF fee demands, payments, receipts, finance reports, and fee-demand exports are wired to backend and frontend. Fee structures, concessions/discounts, refunds, and reminder sending remain CURRENT_PARTIAL/PLANNED_RECOMMENDED unless their modules are added.
 
+Guest/public enquiry note: the inventory's `GUEST -> MANAGE_ENQUIRIES` row was treated as an overgrant and removed from the live role mapping by migration `V30__remove_guest_enquiry_management.sql`. No safe public enquiry/application submission endpoint was found, so public enquiry remains NOT_FOUND_IN_CODEBASE/PLANNED_RECOMMENDED. Future work should add a dedicated public submit-only endpoint with validation, rate limiting, spam controls, and no list/read/update/manage access to internal enquiry records.
+
+Guest AI guard note: GUEST is denied all shared AI recommendation, automation, policy, knowledge-search, entitlement, usage-audit, and execution endpoints. Missing tokens receive 401; authenticated GUEST tokens receive 403.
+
 | Method | Endpoint | Backend controller | Status |
 | --- | --- | --- | --- |
 | PATCH | /v1/ai/automation-rules/{id} | backend/src/main/java/com/cloudcampus/intelligence/ai/AiRecommendationPortalController.java | BACKEND_EXISTS_UI_NOT_SURFACED |

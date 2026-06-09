@@ -9,11 +9,13 @@ Status: CURRENT_IMPLEMENTED
 | Role enum | UserRole includes requested roles plus legacy STAFF. | CURRENT_IMPLEMENTED |
 | Primary login role | UserAccount.role drives session role. | CURRENT_IMPLEMENTED |
 | Role assignments | UserRoleAssignment adds scoped roles. | CURRENT_IMPLEMENTED |
-| Permissions | Permission and RolePermission seeded by V29. | CURRENT_IMPLEMENTED |
+| Permissions | Permission and RolePermission seeded by V29; V30 removes the accidental `GUEST:MANAGE_ENQUIRIES` grant. | CURRENT_IMPLEMENTED |
 | Overrides | UserPermissionOverride supports allow/deny. | CURRENT_IMPLEMENTED |
 | Super Admin | Platform-wide high privilege. | CURRENT_IMPLEMENTED |
 | System/AI boundary | Interactive login blocked. | CURRENT_IMPLEMENTED |
 | OpenAPI RBAC contract | Not discovered. | NOT_FOUND_IN_CODEBASE |
+
+GUEST note: GUEST has no internal tenant/school permissions by default. Public auth and invitation endpoints use the documented `PUBLIC_AUTH_FLOW` convention, and an authenticated GUEST may hydrate only the minimal `/v1/me` account shell. GUEST is not granted `MANAGE_ENQUIRIES`, AI, finance, report/export, admin, staff, student, parent, teacher, or office-management permissions.
 
 ## Permission Catalog
 
