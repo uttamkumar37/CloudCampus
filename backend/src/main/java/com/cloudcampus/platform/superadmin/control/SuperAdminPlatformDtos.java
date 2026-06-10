@@ -278,7 +278,7 @@ record SuperAdminSettingsResponse(
         String platformName,
         String supportEmail,
         String defaultTimezone,
-        String publicFrontendUrl,
+        String publicAppBaseUrl,
         List<String> corsAllowedOrigins,
         String notificationMode,
         String aiDefaultPolicy,

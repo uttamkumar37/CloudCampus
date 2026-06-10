@@ -94,7 +94,7 @@ public class ProductionReadinessValidator {
     private void validateCors(List<String> failures) {
         String origins = property("cloudcampus.cors.allowed-origins");
         if (isBlank(origins)) {
-            failures.add("CLOUDCAMPUS_CORS_ALLOWED_ORIGINS or CLOUDCAMPUS_FRONTEND_ORIGIN must be explicitly configured in production.");
+            failures.add("CLOUDCAMPUS_CORS_ALLOWED_ORIGINS must be explicitly configured in production.");
             return;
         }
         for (String origin : splitCommaList(origins)) {

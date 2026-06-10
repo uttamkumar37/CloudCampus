@@ -1,9 +1,4 @@
 .git
-.github
-**/node_modules
-**/dist
 **/target
 **/.DS_Store
 backend/.mvn
-frontend/coverage
-mobile/coverage

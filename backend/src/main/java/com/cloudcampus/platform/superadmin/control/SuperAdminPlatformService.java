@@ -118,7 +118,7 @@ public class SuperAdminPlatformService {
     private final PlatformStatsRepository platformStatsRepository;
     private final PlatformSettingsRepository platformSettingsRepository;
     private final ObjectMapper objectMapper;
-    private final String frontendUrl;
+    private final String appBaseUrl;
     private final String corsAllowedOrigins;
     private final String notificationMode;
 
@@ -145,8 +145,8 @@ public class SuperAdminPlatformService {
             PlatformStatsRepository platformStatsRepository,
             PlatformSettingsRepository platformSettingsRepository,
             ObjectMapper objectMapper,
-            @Value("${cloudcampus.frontend.public-url:${cloudcampus.notifications.email.app-base-url:http://localhost:5173}}") String frontendUrl,
-            @Value("${cloudcampus.cors.allowed-origins:http://localhost:5173}") String corsAllowedOrigins,
+            @Value("${cloudcampus.notifications.email.app-base-url:http://localhost:8080}") String appBaseUrl,
+            @Value("${cloudcampus.cors.allowed-origins:http://localhost:8080}") String corsAllowedOrigins,
             @Value("${cloudcampus.notifications.email.mode:log}") String notificationMode
     ) {
         this.tenantRepository = tenantRepository;
@@ -171,7 +171,7 @@ public class SuperAdminPlatformService {
         this.platformStatsRepository = platformStatsRepository;
         this.platformSettingsRepository = platformSettingsRepository;
         this.objectMapper = objectMapper;
-        this.frontendUrl = frontendUrl;
+        this.appBaseUrl = appBaseUrl;
         this.corsAllowedOrigins = corsAllowedOrigins;
         this.notificationMode = notificationMode;
     }
@@ -986,7 +986,7 @@ public class SuperAdminPlatformService {
                 platformName,
                 supportEmail,
                 defaultTimezone,
-                frontendUrl,
+                appBaseUrl,
                 splitCsv(corsAllowedOrigins),
                 notificationMode,
                 "Tenant entitlement controls enabled; raw prompts are never exposed.",
