@@ -8,11 +8,20 @@ services:
       POSTGRES_PASSWORD: ${CLOUDCAMPUS_DB_PASSWORD:?Set CLOUDCAMPUS_DB_PASSWORD}
     volumes:
       - cloudcampus-prod-postgres-data:/var/lib/postgresql/data
+    networks:
+      - cloudcampus-private
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${CLOUDCAMPUS_DB_USERNAME:?Set CLOUDCAMPUS_DB_USERNAME} -d ${CLOUDCAMPUS_DB_NAME:?Set CLOUDCAMPUS_DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 12
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
 
   backend:
     image: ${CLOUDCAMPUS_BACKEND_IMAGE:?Set CLOUDCAMPUS_BACKEND_IMAGE}
@@ -41,13 +50,30 @@ services:
       CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_EMAIL: ""
       CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD: ""
       CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_DISPLAY_NAME: ${CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_DISPLAY_NAME:-CloudCampus Super Admin}
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError}
     ports:
       - "127.0.0.1:${CLOUDCAMPUS_BACKEND_PORT:-18080}:8080"
+    networks:
+      - cloudcampus-private
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 12
       start_period: 45s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    stop_grace_period: 45s
 volumes:
   cloudcampus-prod-postgres-data:
+networks:
+  cloudcampus-private:
+    driver: bridge

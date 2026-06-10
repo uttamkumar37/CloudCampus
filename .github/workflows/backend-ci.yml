@@ -1,0 +1,37 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - "backup/**"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Test backend
+        working-directory: backend
+        run: mvn -B test
+
+      - name: Validate Compose files
+        run: |
+          docker compose -f docker-compose.local.yml config >/tmp/cloudcampus-compose-local.yml
+          docker compose --env-file .env.staging.example -f docker-compose.staging.yml config >/tmp/cloudcampus-compose-staging.yml
+          docker compose --env-file .env.production.example -f docker-compose.prod.yml config >/tmp/cloudcampus-compose-prod.yml
+
+      - name: Build backend image
+        run: docker build -f backend/Dockerfile -t cloudcampus-backend:ci .

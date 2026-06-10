@@ -13,5 +13,6 @@ RUN addgroup --system cloudcampus && adduser --system --ingroup cloudcampus clou
 COPY --from=build /workspace/backend/target/cloudcampus-backend-*.jar /app/cloudcampus-backend.jar
 USER cloudcampus
 EXPOSE 8080
-ENV JAVA_OPTS=""
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=5 CMD curl -fsS http://localhost:8080/actuator/health/readiness || exit 1
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/cloudcampus-backend.jar"]
