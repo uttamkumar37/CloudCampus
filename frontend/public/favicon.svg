@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CloudCampus">
+  <rect width="64" height="64" rx="12" fill="#0f766e"/>
+  <path d="M18 42V25.5L32 17l14 8.5V42" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M24 42V31h16v11" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M18 42h28" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+</svg>

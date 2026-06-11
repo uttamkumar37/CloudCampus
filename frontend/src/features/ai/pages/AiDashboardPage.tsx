@@ -1,4 +1,15 @@
-import { ArrowRight, BarChart3, BookOpenCheck, FileQuestion, Lightbulb, Megaphone, NotebookPen } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart3,
+  BookOpenCheck,
+  CheckCircle2,
+  FileQuestion,
+  Lightbulb,
+  Megaphone,
+  NotebookPen,
+  ShieldCheck,
+  Sparkles
+} from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
 import { navigationForRole, quickPromptsByRole } from "../aiConfig";
 import { AiDisclaimer } from "../components/AiDisclaimer";
@@ -15,42 +26,109 @@ const actionIconMap = {
   recommendations: Lightbulb
 };
 
+const trustSignals = [
+  {
+    label: "Role-aware access",
+    icon: ShieldCheck
+  },
+  {
+    label: "Review before use",
+    icon: CheckCircle2
+  },
+  {
+    label: "Audit metadata",
+    icon: Sparkles
+  }
+];
+
 export function AiDashboardPage() {
   const { role, authenticated, currentUser } = useAuth();
   const { recommendations, loading } = useAiRecommendations();
   const quickActions = navigationForRole(role).filter((item) =>
     ["notice", "homework", "lessonPlan", "quiz", "reportSummary", "recommendations"].includes(item.key)
   );
+  const roleLabel = role.replaceAll("_", " ");
+  const recommendationCount = loading ? "..." : recommendations.length.toString();
+  const metrics = [
+    {
+      label: "Session",
+      value: authenticated ? "Live" : "Demo",
+      detail: authenticated ? "Uses your signed-in CloudCampus role." : "Safe sample data for walkthroughs.",
+      icon: CheckCircle2
+    },
+    {
+      label: "AI tools",
+      value: quickActions.length.toString(),
+      detail: "Available workflows for this role.",
+      icon: Sparkles
+    },
+    {
+      label: "Review queue",
+      value: recommendationCount,
+      detail: "Suggestions waiting for attention.",
+      icon: ShieldCheck
+    }
+  ];
 
   return (
     <div className="page-stack">
       <AiPageHeader
-        title="AI workspace"
-        description="A role-aware assistant surface for school operations, teaching, finance, parent support, and safe student learning."
+        title="CloudCampus AI workspace"
+        description="Turn daily school work into clear actions, safer drafts, and quick role-aware summaries."
       >
         <span className={authenticated ? "status-pill status-pill--success" : "status-pill status-pill--demo"}>
-          {authenticated ? "Backend connected" : "Demo mode"}
+          {authenticated ? "Live school data" : "Demo mode"}
         </span>
       </AiPageHeader>
 
       <section className="welcome-band">
         <div>
-          <p className="eyebrow">{role.replaceAll("_", " ")}</p>
-          <h2>{currentUser ? `Welcome, ${currentUser.displayName}` : "Preview the CloudCampus AI experience"}</h2>
+          <p className="eyebrow">{roleLabel}</p>
+          <h2>{currentUser ? `Welcome, ${currentUser.displayName}` : "Preview a smarter school workspace"}</h2>
           <p>
             {authenticated
-              ? "Your AI pages use the signed-in backend session. Tenant and school scope stay server-side."
-              : "Use the role preview and sample prompts, then sign in to fetch real tenant-scoped AI data."}
+              ? "Your tools, recommendations, and prompts follow your CloudCampus role and school access."
+              : "Switch roles, try safe sample prompts, and sign in when you want to use live school data."}
           </p>
         </div>
         <AiDisclaimer />
+      </section>
+
+      <section className="trust-strip" aria-label="AI trust signals">
+        {trustSignals.map((signal) => {
+          const Icon = signal.icon;
+          return (
+            <div className="trust-strip__item" key={signal.label}>
+              <Icon size={17} aria-hidden="true" />
+              <span>{signal.label}</span>
+            </div>
+          );
+        })}
+      </section>
+
+      <section className="metric-grid" aria-label="AI workspace summary">
+        {metrics.map((metric) => {
+          const Icon = metric.icon;
+          return (
+            <article className="metric-card" key={metric.label}>
+              <div className="metric-card__icon">
+                <Icon size={18} aria-hidden="true" />
+              </div>
+              <div>
+                <span>{metric.label}</span>
+                <strong>{metric.value}</strong>
+                <p>{metric.detail}</p>
+              </div>
+            </article>
+          );
+        })}
       </section>
 
       <section className="dashboard-section">
         <div className="section-heading">
           <div>
             <h2>Role-specific prompts</h2>
-            <p>Start with common questions for this role.</p>
+            <p>Start with the questions this role asks most often.</p>
           </div>
         </div>
         <AiPromptChips
@@ -66,7 +144,7 @@ export function AiDashboardPage() {
         <div className="section-heading">
           <div>
             <h2>AI actions</h2>
-            <p>Focused workflows for generating and reviewing school-ready drafts.</p>
+            <p>Focused workflows for reviewing, drafting, and explaining school work.</p>
           </div>
         </div>
         <div className="action-grid">
@@ -88,7 +166,7 @@ export function AiDashboardPage() {
         <div className="section-heading">
           <div>
             <h2>Recent recommendations</h2>
-            <p>Priority-ranked suggestions from the backend recommendation workflow.</p>
+            <p>Priority-ranked suggestions for the next useful follow-up.</p>
           </div>
           <a className="text-link" href="#recommendations">
             View all

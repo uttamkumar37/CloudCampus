@@ -50,11 +50,19 @@ export function AiAssistantDrawer({ open, onClose }: AiAssistantDrawerProps) {
   }
 
   return (
-    <aside className={open ? "assistant-drawer assistant-drawer--open" : "assistant-drawer"} aria-hidden={!open}>
+    <>
+      {open ? <button className="assistant-scrim" type="button" aria-label="Close AI assistant" onClick={onClose} /> : null}
+      <aside
+        className={open ? "assistant-drawer assistant-drawer--open" : "assistant-drawer"}
+        aria-hidden={!open}
+        aria-modal={open}
+        aria-labelledby="assistant-title"
+        role="dialog"
+      >
       <div className="assistant-drawer__header">
         <div>
           <p className="eyebrow">CloudCampus AI</p>
-          <h2>{role.replaceAll("_", " ")} assistant</h2>
+          <h2 id="assistant-title">{role.replaceAll("_", " ")} assistant</h2>
         </div>
         <button className="icon-only" type="button" onClick={onClose} aria-label="Close AI assistant">
           <X size={20} aria-hidden="true" />
@@ -65,10 +73,10 @@ export function AiAssistantDrawer({ open, onClose }: AiAssistantDrawerProps) {
         <section className="assistant-welcome">
           <p>
             {authenticated
-              ? "Ask a role-aware question. The backend resolves your tenant, school, role, and permissions."
-              : "Demo mode shows safe sample responses. Sign in to call tenant-aware backend AI."}
+              ? "Ask for a summary, draft, or next step. CloudCampus keeps answers aligned with your role."
+              : "Try safe sample prompts, then sign in to use your school workspace."}
           </p>
-          {!canCallBackend ? <span className="status-pill status-pill--demo">Demo-only prompts</span> : null}
+          {!canCallBackend ? <span className="status-pill status-pill--demo">Demo prompts</span> : null}
         </section>
 
         <AiPromptChips prompts={quickPromptsByRole[role]} onPrompt={(nextPrompt) => void sendPrompt(nextPrompt)} />
@@ -135,5 +143,6 @@ export function AiAssistantDrawer({ open, onClose }: AiAssistantDrawerProps) {
         <small>{reviewDisclaimer(role)}</small>
       </form>
     </aside>
+    </>
   );
 }

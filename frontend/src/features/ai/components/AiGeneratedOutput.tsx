@@ -66,7 +66,7 @@ export function AiGeneratedOutput({ title = "Generated output", response, loadin
       <div className="output-panel__header">
         <div>
           <h3>{title}</h3>
-          {response.feature ? <p>{response.feature.replaceAll("_", " ")}</p> : null}
+          <p>Review before sharing or saving.</p>
         </div>
         <div className="button-row">
           <button className="icon-button" type="button" onClick={onCopy} disabled={!text}>

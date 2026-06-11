@@ -59,7 +59,7 @@ export function AiRecommendationsPage() {
     <div className="page-stack">
       <AiPageHeader
         title="AI recommendations"
-        description="Review AI suggestions grouped by priority, with server-authorized actions for approval, dismissal, and completion."
+        description="Review priority suggestions, decide what matters, and keep every action under human control."
       >
         <button className="icon-button" type="button" onClick={() => void reload()}>
           <RefreshCw size={16} aria-hidden="true" />
@@ -122,8 +122,8 @@ export function AiRecommendationsPage() {
           <section className="recommendation-group" key={group}>
             <div className="section-heading">
               <div>
-                <h2>{group} priority</h2>
-                <p>{rows.length} recommendation{rows.length === 1 ? "" : "s"}</p>
+            <h2>{group} priority</h2>
+                <p>{rows.length} item{rows.length === 1 ? "" : "s"} need review</p>
               </div>
             </div>
             <div className="recommendation-grid">

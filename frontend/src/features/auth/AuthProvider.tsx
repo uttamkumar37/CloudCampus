@@ -7,7 +7,7 @@ import {
   useMemo,
   useState
 } from "react";
-import { apiBaseUrl, apiRequest } from "../../lib/http";
+import { ApiError, apiBaseUrl, apiRequest } from "../../lib/http";
 import type { AuthSessionResponse, CurrentUser, StoredSession, UserRole } from "./auth.types";
 
 type AuthContextValue = {
@@ -19,16 +19,31 @@ type AuthContextValue = {
   previewRole: UserRole;
   apiBase: string;
   setPreviewRole: (role: UserRole) => void;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthSessionResponse>;
+  verifyMfa: (challengeId: string, code: string) => Promise<void>;
   logout: () => void;
   refreshCurrentUser: () => Promise<void>;
   activateSchool: (schoolId: string) => Promise<void>;
+};
+
+type AuthState = {
+  session: StoredSession | null;
+  sessionValidated: boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const SESSION_STORAGE_KEY = "cloudcampus.ai.session";
 const ROLE_STORAGE_KEY = "cloudcampus.ai.previewRole";
+const EXPIRY_SKEW_MS = 30_000;
+
+function isExpired(expiresAt: string | null) {
+  if (!expiresAt) {
+    return false;
+  }
+  const expiresAtMs = Date.parse(expiresAt);
+  return Number.isNaN(expiresAtMs) || expiresAtMs <= Date.now() + EXPIRY_SKEW_MS;
+}
 
 function readStoredSession(): StoredSession | null {
   const raw = localStorage.getItem(SESSION_STORAGE_KEY);
@@ -37,6 +52,10 @@ function readStoredSession(): StoredSession | null {
   }
   try {
     const parsed = JSON.parse(raw) as StoredSession;
+    if (isExpired(parsed.expiresAt)) {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      return null;
+    }
     return parsed.accessToken ? parsed : null;
   } catch {
     localStorage.removeItem(SESSION_STORAGE_KEY);
@@ -47,6 +66,14 @@ function readStoredSession(): StoredSession | null {
 function readStoredRole(): UserRole {
   const role = localStorage.getItem(ROLE_STORAGE_KEY) as UserRole | null;
   return role || "SCHOOL_ADMIN";
+}
+
+function readInitialAuthState(): AuthState {
+  const session = readStoredSession();
+  return {
+    session,
+    sessionValidated: !session
+  };
 }
 
 function toStoredSession(response: AuthSessionResponse): StoredSession {
@@ -62,11 +89,15 @@ function toStoredSession(response: AuthSessionResponse): StoredSession {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<StoredSession | null>(() => readStoredSession());
+  const [authState, setAuthState] = useState<AuthState>(() => readInitialAuthState());
   const [previewRole, setPreviewRoleState] = useState<UserRole>(() => readStoredRole());
+  const { session, sessionValidated } = authState;
 
   const persistSession = useCallback((nextSession: StoredSession | null) => {
-    setSession(nextSession);
+    setAuthState({
+      session: nextSession,
+      sessionValidated: true
+    });
     if (nextSession) {
       localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(nextSession));
     } else {
@@ -86,8 +117,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: { email, password }
       });
       if (response.mfaRequired) {
-        throw new Error("MFA is required. Use the backend MFA flow before continuing in this UI.");
+        return response;
       }
+      const nextSession = toStoredSession(response);
+      persistSession(nextSession);
+      if (nextSession.user?.role) {
+        setPreviewRole(nextSession.user.role);
+      }
+      return response;
+    },
+    [persistSession, setPreviewRole]
+  );
+
+  const verifyMfa = useCallback(
+    async (challengeId: string, code: string) => {
+      const response = await apiRequest<AuthSessionResponse>("/v1/auth/mfa/verify", {
+        method: "POST",
+        body: { challengeId, code }
+      });
       const nextSession = toStoredSession(response);
       persistSession(nextSession);
       if (nextSession.user?.role) {
@@ -101,11 +148,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!session?.accessToken) {
       return;
     }
-    const user = await apiRequest<CurrentUser>("/v1/me", {
-      token: session.accessToken
-    });
-    persistSession({ ...session, user });
-    setPreviewRole(user.role);
+    try {
+      const user = await apiRequest<CurrentUser>("/v1/me", {
+        token: session.accessToken
+      });
+      persistSession({ ...session, user });
+      setPreviewRole(user.role);
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        persistSession(null);
+      }
+      throw error;
+    }
   }, [persistSession, session, setPreviewRole]);
 
   const activateSchool = useCallback(
@@ -131,27 +185,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [persistSession]);
 
   useEffect(() => {
-    if (session?.accessToken && !session.user) {
-      void refreshCurrentUser();
+    const accessToken = session?.accessToken;
+    if (!accessToken) {
+      return;
     }
-  }, [refreshCurrentUser, session]);
+    let cancelled = false;
+    void apiRequest<CurrentUser>("/v1/me", { token: accessToken })
+      .then((user) => {
+        if (cancelled) {
+          return;
+        }
+        persistSession({ ...session, user });
+        setPreviewRole(user.role);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          persistSession(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.accessToken]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
-      currentUser: session?.user || null,
-      accessToken: session?.accessToken || null,
-      authenticated: Boolean(session?.accessToken),
-      role: session?.user?.role || previewRole,
+      currentUser: sessionValidated ? session?.user || null : null,
+      accessToken: sessionValidated ? session?.accessToken || null : null,
+      authenticated: Boolean(sessionValidated && session?.accessToken),
+      role: sessionValidated ? session?.user?.role || previewRole : previewRole,
       previewRole,
       apiBase: apiBaseUrl || "same-origin / Vite proxy",
       setPreviewRole,
       login,
+      verifyMfa,
       logout,
       refreshCurrentUser,
       activateSchool
     }),
-    [activateSchool, login, logout, previewRole, refreshCurrentUser, session, setPreviewRole]
+    [activateSchool, login, logout, previewRole, refreshCurrentUser, session, sessionValidated, setPreviewRole, verifyMfa]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

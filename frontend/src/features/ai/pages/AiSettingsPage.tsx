@@ -46,7 +46,7 @@ export function AiSettingsPage() {
     <div className="page-stack">
       <AiPageHeader
         title="AI settings"
-        description="Read current AI entitlement, feature availability, budget usage, and role capability information."
+        description="Review AI availability, usage budget, approval rules, and enabled capabilities."
       >
         <button className="icon-button" type="button" onClick={() => void load()}>
           <RefreshCw size={16} aria-hidden="true" />
@@ -75,7 +75,7 @@ export function AiSettingsPage() {
                 <span>Human approval required</span>
                 <input checked={settings.humanApprovalRequired} type="checkbox" disabled readOnly />
               </label>
-              <span className="pending-label">Backend support pending for saving from portal settings.</span>
+              <span className="pending-label">Read-only for this demo.</span>
             </article>
             <article className="settings-card">
               <AlertCircle size={22} aria-hidden="true" />
@@ -99,7 +99,7 @@ export function AiSettingsPage() {
             <div className="section-heading">
               <div>
                 <h2>Feature flags</h2>
-                <p>Enabled by backend entitlement; portal save controls are intentionally disabled until update APIs are exposed.</p>
+                <p>Capabilities currently enabled for this workspace.</p>
               </div>
             </div>
             <div className="flag-grid">
@@ -116,7 +116,7 @@ export function AiSettingsPage() {
             <div className="section-heading">
               <div>
                 <h2>Role controls</h2>
-                <p>School-level teacher, student, and parent toggles need backend support before saving.</p>
+                <p>Role-level access is visible here and remains controlled by administrators.</p>
               </div>
             </div>
             <div className="flag-grid">
@@ -124,7 +124,7 @@ export function AiSettingsPage() {
                 <label className="toggle-row" key={label}>
                   <span>{label}</span>
                   <input checked={settings.enabled} type="checkbox" disabled readOnly />
-                  <em>Backend support pending</em>
+                  <em>Read-only</em>
                 </label>
               ))}
             </div>

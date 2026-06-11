@@ -69,7 +69,7 @@ export function AiRecommendationCard({ recommendation, onAction, busy, demoMode 
           type="button"
           onClick={() => onAction(recommendation.recommendationId, "execute")}
           disabled={busy || !isApproved}
-          title={isApproved ? "Mark completed by executing the approved recommendation" : "Backend requires approval before completion"}
+          title={isApproved ? "Mark this approved suggestion as completed" : "Approve this suggestion before marking it completed"}
         >
           <Play size={16} aria-hidden="true" />
           <span>Completed</span>

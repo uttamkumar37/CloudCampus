@@ -152,15 +152,15 @@ export function demoAssistantResponse(role: UserRole, prompt: string): AiAssista
     answer:
       role === "STUDENT"
         ? `Here is a learning-friendly plan for: ${prompt}. Start with the concept, try two practice questions, and ask your teacher if a step feels unclear.`
-        : `Here is a safe demo response for: ${prompt}. Connect a real CloudCampus token to fetch tenant-aware data from the backend AI service.`,
+        : `Here is a safe demo response for: ${prompt}. Sign in to use recommendations and summaries from your CloudCampus workspace.`,
     highlights: [
-      "Role-aware examples are available without sending tenant or school context from the browser.",
-      "Real responses require a bearer token and are authorized by the backend.",
-      "Prompt and response content is not shown in audit logs."
+      "Examples adjust to the role you are previewing.",
+      "Signed-in users only see actions allowed for their role.",
+      "Audit records keep usage metadata without exposing full prompt text."
     ],
     recommendedActions: [
       "Sign in with a local demo user.",
-      "Choose an active school when your role is school-scoped.",
+      "Choose an active school when your role works across schools.",
       "Review generated content before sending or publishing."
     ],
     quickActions: quickPromptsByRole[role].slice(0, 3).map((label) => ({ label, prompt: label })),
