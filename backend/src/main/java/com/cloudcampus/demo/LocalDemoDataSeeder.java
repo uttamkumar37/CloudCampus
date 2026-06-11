@@ -5,6 +5,7 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 
@@ -25,6 +26,14 @@ import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
+import com.cloudcampus.intelligence.ai.AiFeature;
+import com.cloudcampus.intelligence.ai.AiRecommendation;
+import com.cloudcampus.intelligence.ai.AiRecommendationRepository;
+import com.cloudcampus.intelligence.ai.AiRecommendationRiskLevel;
+import com.cloudcampus.intelligence.ai.AiRecommendationStatus;
+import com.cloudcampus.intelligence.ai.AiRecommendationType;
+import com.cloudcampus.intelligence.ai.AiTenantEntitlement;
+import com.cloudcampus.intelligence.ai.AiTenantEntitlementRepository;
 import com.cloudcampus.operations.attendance.AttendanceRecord;
 import com.cloudcampus.operations.attendance.AttendanceRecordRepository;
 import com.cloudcampus.operations.attendance.AttendanceSession;
@@ -104,6 +113,8 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
     private final TimetableEntryRepository timetableEntryRepository;
     private final SchoolDocumentRepository schoolDocumentRepository;
     private final WebsitePageRepository websitePageRepository;
+    private final AiTenantEntitlementRepository aiTenantEntitlementRepository;
+    private final AiRecommendationRepository aiRecommendationRepository;
     private final PasswordEncoder passwordEncoder;
 
     public LocalDemoDataSeeder(
@@ -133,6 +144,8 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
             TimetableEntryRepository timetableEntryRepository,
             SchoolDocumentRepository schoolDocumentRepository,
             WebsitePageRepository websitePageRepository,
+            AiTenantEntitlementRepository aiTenantEntitlementRepository,
+            AiRecommendationRepository aiRecommendationRepository,
             PasswordEncoder passwordEncoder
     ) {
         this.enabled = enabled;
@@ -161,6 +174,8 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
         this.timetableEntryRepository = timetableEntryRepository;
         this.schoolDocumentRepository = schoolDocumentRepository;
         this.websitePageRepository = websitePageRepository;
+        this.aiTenantEntitlementRepository = aiTenantEntitlementRepository;
+        this.aiRecommendationRepository = aiRecommendationRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -285,6 +300,136 @@ public class LocalDemoDataSeeder implements ApplicationRunner {
         schoolDocumentRepository.save(new SchoolDocument(school, null, null, schoolAdmin, "Hostel Duty Roster", "hostel-duty-roster.pdf", "demo/jnv-kanpur/hostel-duty-roster.pdf"));
         WebsitePage about = websitePageRepository.save(new WebsitePage(school, schoolAdmin, "about", "About " + school.getName(), school.getName() + " is a residential JNV-style CloudCampus demo school with academics, hostel routines, staff, students, fees and one month of operations data."));
         about.publish(schoolAdmin, Instant.now());
+        seedAiDemo(tenant, school, schoolAdmin, principal, mathTeacher, finance, parent, gradeSix, students);
+    }
+
+    private void seedAiDemo(
+            Tenant tenant,
+            School school,
+            UserAccount schoolAdmin,
+            UserAccount principal,
+            UserAccount teacher,
+            UserAccount finance,
+            UserAccount parent,
+            ClassLevel gradeSix,
+            List<Student> students
+    ) {
+        if (aiTenantEntitlementRepository.findById(tenant.getId()).isEmpty()) {
+            aiTenantEntitlementRepository.save(new AiTenantEntitlement(
+                    tenant,
+                    true,
+                    50000,
+                    EnumSet.allOf(AiFeature.class),
+                    true,
+                    180,
+                    schoolAdmin
+            ));
+        }
+
+        aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "STUDENT",
+                students.get(2).getId(),
+                AiRecommendationType.STUDENT_RISK_ATTENDANCE,
+                "Follow up repeated absence pattern",
+                "Naman Yadav has multiple absence/late markers in the demo attendance month.",
+                "Class teacher should call home, check hostel/health context, and record a follow-up note.",
+                new BigDecimal("0.86"),
+                AiRecommendationRiskLevel.HIGH,
+                AiRecommendationStatus.PENDING_REVIEW,
+                "DEMO_SEED",
+                schoolAdmin.getId(),
+                principal,
+                true,
+                Instant.now().plusSeconds(86400L * 14),
+                null,
+                "{\"demoUse\":\"attendance-risk\",\"roleTarget\":\"PRINCIPAL\"}"
+        ));
+
+        aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "STUDENT",
+                students.get(0).getId(),
+                AiRecommendationType.FEE_REMINDER_SUGGESTION,
+                "Send polite fee reminder",
+                "Aarav Sharma has a partially paid May mess and activity contribution.",
+                "Finance staff can send a respectful reminder with payment options after review.",
+                new BigDecimal("0.78"),
+                AiRecommendationRiskLevel.MEDIUM,
+                AiRecommendationStatus.APPROVED,
+                "DEMO_SEED",
+                finance.getId(),
+                finance,
+                false,
+                Instant.now().plusSeconds(86400L * 10),
+                null,
+                "{\"demoUse\":\"fee-reminder\",\"roleTarget\":\"FINANCE_STAFF\"}"
+        ));
+
+        aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "CLASS_LEVEL",
+                gradeSix.getId(),
+                AiRecommendationType.LESSON_PLAN_SUGGESTION,
+                "Prepare fractions recap",
+                "Class VI Mathematics can benefit from a short fractions recap before the monthly test.",
+                "Use a 10 minute warm-up, 20 minute guided examples, and 10 minute exit quiz.",
+                new BigDecimal("0.82"),
+                AiRecommendationRiskLevel.LOW,
+                AiRecommendationStatus.APPROVED,
+                "DEMO_SEED",
+                teacher.getId(),
+                teacher,
+                false,
+                Instant.now().plusSeconds(86400L * 7),
+                null,
+                "{\"demoUse\":\"lesson-plan\",\"roleTarget\":\"TEACHER\"}"
+        ));
+
+        aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "STUDENT",
+                students.get(0).getId(),
+                AiRecommendationType.PARENT_MESSAGE_DRAFT,
+                "Parent meeting preparation",
+                "Aarav Sharma is performing well in Mathematics and can improve revision consistency.",
+                "Parent can ask about revision habits, homework completion, and one weak topic to practice.",
+                new BigDecimal("0.80"),
+                AiRecommendationRiskLevel.LOW,
+                AiRecommendationStatus.APPROVED,
+                "DEMO_SEED",
+                parent.getId(),
+                parent,
+                false,
+                Instant.now().plusSeconds(86400L * 21),
+                null,
+                "{\"demoUse\":\"parent-progress\",\"roleTarget\":\"PARENT\"}"
+        ));
+
+        aiRecommendationRepository.save(new AiRecommendation(
+                tenant,
+                school,
+                "SCHOOL",
+                school.getId(),
+                AiRecommendationType.PLATFORM_HEALTH_INSIGHT,
+                "Demo school activity is healthy",
+                "Attendance, homework, timetable, fee, notice, document, and website data are available for a polished product demo.",
+                "Use this school to demonstrate role-wise AI assistant, reports, and recommendations.",
+                new BigDecimal("0.91"),
+                AiRecommendationRiskLevel.LOW,
+                AiRecommendationStatus.APPROVED,
+                "DEMO_SEED",
+                schoolAdmin.getId(),
+                schoolAdmin,
+                false,
+                Instant.now().plusSeconds(86400L * 30),
+                null,
+                "{\"demoUse\":\"tenant-health\",\"roleTarget\":\"SCHOOL_ADMIN\"}"
+        ));
     }
 
     private UserAccount activeUser(Tenant tenant, String email, String displayName, UserRole role) {

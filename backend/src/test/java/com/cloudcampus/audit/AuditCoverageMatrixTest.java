@@ -116,6 +116,14 @@ class AuditCoverageMatrixTest {
                     )
             ),
             Map.entry(
+                    "com/cloudcampus/intelligence/ai/AiAssistantController.java",
+                    evidence(
+                            "com/cloudcampus/intelligence/ai/AiAssistantService.java",
+                            "AI_USAGE_AUDITED",
+                            "AI_USAGE_DENIED"
+                    )
+            ),
+            Map.entry(
                     "com/cloudcampus/intelligence/ai/SchoolAdminAiKnowledgeController.java",
                     evidence(
                             "com/cloudcampus/intelligence/ai/AiKnowledgeRetrievalService.java",

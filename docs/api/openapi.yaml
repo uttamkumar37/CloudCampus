@@ -9,6 +9,207 @@ servers:
 security:
 - Bearer JWT: []
 paths:
+  /v1/ai/assistant/query:
+    post:
+      operationId: assistant
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiAssistantQueryRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AiAssistantResponse"
+          description: OK
+        "400":
+          content:
+            application/json:
+              examples:
+                "400":
+                  summary: Bad Request
+                  value:
+                    code: BAD_REQUEST
+                    message: Bad request or validation failure.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad request or validation failure.
+        "401":
+          content:
+            application/json:
+              examples:
+                "401":
+                  summary: Unauthorized
+                  value:
+                    code: UNAUTHORIZED
+                    message: "Missing, expired, or invalid bearer token."
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Missing, expired, or invalid bearer token."
+        "403":
+          content:
+            application/json:
+              examples:
+                "403":
+                  summary: Forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: Authenticated user is not authorized for this resource.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Authenticated user is not authorized for this resource.
+        "404":
+          content:
+            application/json:
+              examples:
+                "404":
+                  summary: Not Found
+                  value:
+                    code: NOT_FOUND
+                    message: Requested resource was not found.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Requested resource was not found.
+        "409":
+          content:
+            application/json:
+              examples:
+                "409":
+                  summary: Conflict
+                  value:
+                    code: CONFLICT
+                    message: Request conflicts with current resource state.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request conflicts with current resource state.
+        "429":
+          content:
+            application/json:
+              examples:
+                "429":
+                  summary: Too Many Requests
+                  value:
+                    code: TOO_MANY_REQUESTS
+                    message: Request was rejected by a rate limit.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request was rejected by a rate limit.
+      tags:
+      - ai-assistant-controller
+  /v1/ai/audit-logs:
+    get:
+      operationId: auditLogs_1
+      parameters:
+      - in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 25
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseAiPortalAuditLogResponse"
+          description: OK
+        "400":
+          content:
+            application/json:
+              examples:
+                "400":
+                  summary: Bad Request
+                  value:
+                    code: BAD_REQUEST
+                    message: Bad request or validation failure.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad request or validation failure.
+        "401":
+          content:
+            application/json:
+              examples:
+                "401":
+                  summary: Unauthorized
+                  value:
+                    code: UNAUTHORIZED
+                    message: "Missing, expired, or invalid bearer token."
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Missing, expired, or invalid bearer token."
+        "403":
+          content:
+            application/json:
+              examples:
+                "403":
+                  summary: Forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: Authenticated user is not authorized for this resource.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Authenticated user is not authorized for this resource.
+        "404":
+          content:
+            application/json:
+              examples:
+                "404":
+                  summary: Not Found
+                  value:
+                    code: NOT_FOUND
+                    message: Requested resource was not found.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Requested resource was not found.
+        "409":
+          content:
+            application/json:
+              examples:
+                "409":
+                  summary: Conflict
+                  value:
+                    code: CONFLICT
+                    message: Request conflicts with current resource state.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request conflicts with current resource state.
+        "429":
+          content:
+            application/json:
+              examples:
+                "429":
+                  summary: Too Many Requests
+                  value:
+                    code: TOO_MANY_REQUESTS
+                    message: Request was rejected by a rate limit.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request was rejected by a rate limit.
+      tags:
+      - ai-assistant-controller
   /v1/ai/automation-rules:
     get:
       operationId: automationRules_1
@@ -401,6 +602,390 @@ paths:
           description: Request was rejected by a rate limit.
       tags:
       - ai-usage-controller
+  /v1/ai/generate/homework:
+    post:
+      operationId: homework
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiHomeworkGenerationRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AiAssistantResponse"
+          description: OK
+        "400":
+          content:
+            application/json:
+              examples:
+                "400":
+                  summary: Bad Request
+                  value:
+                    code: BAD_REQUEST
+                    message: Bad request or validation failure.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad request or validation failure.
+        "401":
+          content:
+            application/json:
+              examples:
+                "401":
+                  summary: Unauthorized
+                  value:
+                    code: UNAUTHORIZED
+                    message: "Missing, expired, or invalid bearer token."
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Missing, expired, or invalid bearer token."
+        "403":
+          content:
+            application/json:
+              examples:
+                "403":
+                  summary: Forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: Authenticated user is not authorized for this resource.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Authenticated user is not authorized for this resource.
+        "404":
+          content:
+            application/json:
+              examples:
+                "404":
+                  summary: Not Found
+                  value:
+                    code: NOT_FOUND
+                    message: Requested resource was not found.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Requested resource was not found.
+        "409":
+          content:
+            application/json:
+              examples:
+                "409":
+                  summary: Conflict
+                  value:
+                    code: CONFLICT
+                    message: Request conflicts with current resource state.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request conflicts with current resource state.
+        "429":
+          content:
+            application/json:
+              examples:
+                "429":
+                  summary: Too Many Requests
+                  value:
+                    code: TOO_MANY_REQUESTS
+                    message: Request was rejected by a rate limit.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request was rejected by a rate limit.
+      tags:
+      - ai-assistant-controller
+  /v1/ai/generate/lesson-plan:
+    post:
+      operationId: lessonPlan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiLessonPlanGenerationRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AiAssistantResponse"
+          description: OK
+        "400":
+          content:
+            application/json:
+              examples:
+                "400":
+                  summary: Bad Request
+                  value:
+                    code: BAD_REQUEST
+                    message: Bad request or validation failure.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad request or validation failure.
+        "401":
+          content:
+            application/json:
+              examples:
+                "401":
+                  summary: Unauthorized
+                  value:
+                    code: UNAUTHORIZED
+                    message: "Missing, expired, or invalid bearer token."
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Missing, expired, or invalid bearer token."
+        "403":
+          content:
+            application/json:
+              examples:
+                "403":
+                  summary: Forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: Authenticated user is not authorized for this resource.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Authenticated user is not authorized for this resource.
+        "404":
+          content:
+            application/json:
+              examples:
+                "404":
+                  summary: Not Found
+                  value:
+                    code: NOT_FOUND
+                    message: Requested resource was not found.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Requested resource was not found.
+        "409":
+          content:
+            application/json:
+              examples:
+                "409":
+                  summary: Conflict
+                  value:
+                    code: CONFLICT
+                    message: Request conflicts with current resource state.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request conflicts with current resource state.
+        "429":
+          content:
+            application/json:
+              examples:
+                "429":
+                  summary: Too Many Requests
+                  value:
+                    code: TOO_MANY_REQUESTS
+                    message: Request was rejected by a rate limit.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request was rejected by a rate limit.
+      tags:
+      - ai-assistant-controller
+  /v1/ai/generate/notice:
+    post:
+      operationId: notice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiNoticeGenerationRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AiAssistantResponse"
+          description: OK
+        "400":
+          content:
+            application/json:
+              examples:
+                "400":
+                  summary: Bad Request
+                  value:
+                    code: BAD_REQUEST
+                    message: Bad request or validation failure.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad request or validation failure.
+        "401":
+          content:
+            application/json:
+              examples:
+                "401":
+                  summary: Unauthorized
+                  value:
+                    code: UNAUTHORIZED
+                    message: "Missing, expired, or invalid bearer token."
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Missing, expired, or invalid bearer token."
+        "403":
+          content:
+            application/json:
+              examples:
+                "403":
+                  summary: Forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: Authenticated user is not authorized for this resource.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Authenticated user is not authorized for this resource.
+        "404":
+          content:
+            application/json:
+              examples:
+                "404":
+                  summary: Not Found
+                  value:
+                    code: NOT_FOUND
+                    message: Requested resource was not found.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Requested resource was not found.
+        "409":
+          content:
+            application/json:
+              examples:
+                "409":
+                  summary: Conflict
+                  value:
+                    code: CONFLICT
+                    message: Request conflicts with current resource state.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request conflicts with current resource state.
+        "429":
+          content:
+            application/json:
+              examples:
+                "429":
+                  summary: Too Many Requests
+                  value:
+                    code: TOO_MANY_REQUESTS
+                    message: Request was rejected by a rate limit.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request was rejected by a rate limit.
+      tags:
+      - ai-assistant-controller
+  /v1/ai/generate/quiz:
+    post:
+      operationId: quiz
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiQuizGenerationRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AiAssistantResponse"
+          description: OK
+        "400":
+          content:
+            application/json:
+              examples:
+                "400":
+                  summary: Bad Request
+                  value:
+                    code: BAD_REQUEST
+                    message: Bad request or validation failure.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad request or validation failure.
+        "401":
+          content:
+            application/json:
+              examples:
+                "401":
+                  summary: Unauthorized
+                  value:
+                    code: UNAUTHORIZED
+                    message: "Missing, expired, or invalid bearer token."
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Missing, expired, or invalid bearer token."
+        "403":
+          content:
+            application/json:
+              examples:
+                "403":
+                  summary: Forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: Authenticated user is not authorized for this resource.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Authenticated user is not authorized for this resource.
+        "404":
+          content:
+            application/json:
+              examples:
+                "404":
+                  summary: Not Found
+                  value:
+                    code: NOT_FOUND
+                    message: Requested resource was not found.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Requested resource was not found.
+        "409":
+          content:
+            application/json:
+              examples:
+                "409":
+                  summary: Conflict
+                  value:
+                    code: CONFLICT
+                    message: Request conflicts with current resource state.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request conflicts with current resource state.
+        "429":
+          content:
+            application/json:
+              examples:
+                "429":
+                  summary: Too Many Requests
+                  value:
+                    code: TOO_MANY_REQUESTS
+                    message: Request was rejected by a rate limit.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request was rejected by a rate limit.
+      tags:
+      - ai-assistant-controller
   /v1/ai/knowledge/search:
     post:
       operationId: search
@@ -1183,6 +1768,192 @@ paths:
           description: Request was rejected by a rate limit.
       tags:
       - ai-recommendation-portal-controller
+  /v1/ai/reports/summary:
+    post:
+      operationId: reportSummary
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiReportSummaryRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AiAssistantResponse"
+          description: OK
+        "400":
+          content:
+            application/json:
+              examples:
+                "400":
+                  summary: Bad Request
+                  value:
+                    code: BAD_REQUEST
+                    message: Bad request or validation failure.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad request or validation failure.
+        "401":
+          content:
+            application/json:
+              examples:
+                "401":
+                  summary: Unauthorized
+                  value:
+                    code: UNAUTHORIZED
+                    message: "Missing, expired, or invalid bearer token."
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Missing, expired, or invalid bearer token."
+        "403":
+          content:
+            application/json:
+              examples:
+                "403":
+                  summary: Forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: Authenticated user is not authorized for this resource.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Authenticated user is not authorized for this resource.
+        "404":
+          content:
+            application/json:
+              examples:
+                "404":
+                  summary: Not Found
+                  value:
+                    code: NOT_FOUND
+                    message: Requested resource was not found.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Requested resource was not found.
+        "409":
+          content:
+            application/json:
+              examples:
+                "409":
+                  summary: Conflict
+                  value:
+                    code: CONFLICT
+                    message: Request conflicts with current resource state.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request conflicts with current resource state.
+        "429":
+          content:
+            application/json:
+              examples:
+                "429":
+                  summary: Too Many Requests
+                  value:
+                    code: TOO_MANY_REQUESTS
+                    message: Request was rejected by a rate limit.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request was rejected by a rate limit.
+      tags:
+      - ai-assistant-controller
+  /v1/ai/settings:
+    get:
+      operationId: settings_2
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AiPortalSettingsResponse"
+          description: OK
+        "400":
+          content:
+            application/json:
+              examples:
+                "400":
+                  summary: Bad Request
+                  value:
+                    code: BAD_REQUEST
+                    message: Bad request or validation failure.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad request or validation failure.
+        "401":
+          content:
+            application/json:
+              examples:
+                "401":
+                  summary: Unauthorized
+                  value:
+                    code: UNAUTHORIZED
+                    message: "Missing, expired, or invalid bearer token."
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Missing, expired, or invalid bearer token."
+        "403":
+          content:
+            application/json:
+              examples:
+                "403":
+                  summary: Forbidden
+                  value:
+                    code: FORBIDDEN
+                    message: Authenticated user is not authorized for this resource.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Authenticated user is not authorized for this resource.
+        "404":
+          content:
+            application/json:
+              examples:
+                "404":
+                  summary: Not Found
+                  value:
+                    code: NOT_FOUND
+                    message: Requested resource was not found.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Requested resource was not found.
+        "409":
+          content:
+            application/json:
+              examples:
+                "409":
+                  summary: Conflict
+                  value:
+                    code: CONFLICT
+                    message: Request conflicts with current resource state.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request conflicts with current resource state.
+        "429":
+          content:
+            application/json:
+              examples:
+                "429":
+                  summary: Too Many Requests
+                  value:
+                    code: TOO_MANY_REQUESTS
+                    message: Request was rejected by a rate limit.
+                    timestamp: 2026-06-11T10:15:30Z
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Request was rejected by a rate limit.
+      tags:
+      - ai-assistant-controller
   /v1/ai/usage/audit:
     post:
       operationId: auditUsage
@@ -22427,6 +23198,60 @@ components:
           type: string
         userId:
           type: string
+    AiAssistantQueryRequest:
+      type: object
+      properties:
+        language:
+          type: string
+          maxLength: 40
+          minLength: 0
+        module:
+          type: string
+          maxLength: 80
+          minLength: 0
+        prompt:
+          type: string
+          maxLength: 8000
+          minLength: 0
+        tone:
+          type: string
+          maxLength: 40
+          minLength: 0
+      required:
+      - prompt
+    AiAssistantResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+        disclaimer:
+          type: string
+        feature:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        model:
+          type: string
+        provider:
+          type: string
+        quickActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiQuickActionResponse"
+        recommendedActions:
+          type: array
+          items:
+            type: string
+        role:
+          type: string
+        schoolId:
+          type: string
+        tenantId:
+          type: string
+        usageAuditId:
+          type: string
     AiAutomationRulePortalResponse:
       type: object
       properties:
@@ -22483,10 +23308,16 @@ components:
           items:
             type: string
             enum:
+            - ASSISTANT_QUERY
             - NOTICE_DRAFTING
             - HOMEWORK_DRAFTING
             - LESSON_PLAN_DRAFTING
+            - QUIZ_DRAFTING
             - REPORT_EXPLANATION
+            - REPORT_SUMMARY
+            - STUDY_PLAN_DRAFTING
+            - PARENT_PROGRESS_SUMMARY
+            - FINANCE_SUMMARY
             - NOTICE_TRANSLATION
             - ADMISSION_ENQUIRY_ASSISTANT
             - SCHOOL_POLICY_QA
@@ -22520,10 +23351,16 @@ components:
           items:
             type: string
             enum:
+            - ASSISTANT_QUERY
             - NOTICE_DRAFTING
             - HOMEWORK_DRAFTING
             - LESSON_PLAN_DRAFTING
+            - QUIZ_DRAFTING
             - REPORT_EXPLANATION
+            - REPORT_SUMMARY
+            - STUDY_PLAN_DRAFTING
+            - PARENT_PROGRESS_SUMMARY
+            - FINANCE_SUMMARY
             - NOTICE_TRANSLATION
             - ADMISSION_ENQUIRY_ASSISTANT
             - SCHOOL_POLICY_QA
@@ -22548,16 +23385,57 @@ components:
           format: date-time
         updatedByUserId:
           type: string
+    AiHomeworkGenerationRequest:
+      type: object
+      properties:
+        chapter:
+          type: string
+          maxLength: 180
+          minLength: 0
+        className:
+          type: string
+          maxLength: 80
+          minLength: 0
+        difficulty:
+          type: string
+          maxLength: 60
+          minLength: 0
+        instructions:
+          type: string
+          maxLength: 3000
+          minLength: 0
+        section:
+          type: string
+          maxLength: 80
+          minLength: 0
+        studentLevel:
+          type: string
+          maxLength: 40
+          minLength: 0
+        subject:
+          type: string
+          maxLength: 120
+          minLength: 0
+      required:
+      - chapter
+      - className
+      - subject
     AiKnowledgeDocumentRequest:
       type: object
       properties:
         category:
           type: string
           enum:
+          - ASSISTANT_QUERY
           - NOTICE_DRAFTING
           - HOMEWORK_DRAFTING
           - LESSON_PLAN_DRAFTING
+          - QUIZ_DRAFTING
           - REPORT_EXPLANATION
+          - REPORT_SUMMARY
+          - STUDY_PLAN_DRAFTING
+          - PARENT_PROGRESS_SUMMARY
+          - FINANCE_SUMMARY
           - NOTICE_TRANSLATION
           - ADMISSION_ENQUIRY_ASSISTANT
           - SCHOOL_POLICY_QA
@@ -22599,10 +23477,16 @@ components:
         category:
           type: string
           enum:
+          - ASSISTANT_QUERY
           - NOTICE_DRAFTING
           - HOMEWORK_DRAFTING
           - LESSON_PLAN_DRAFTING
+          - QUIZ_DRAFTING
           - REPORT_EXPLANATION
+          - REPORT_SUMMARY
+          - STUDY_PLAN_DRAFTING
+          - PARENT_PROGRESS_SUMMARY
+          - FINANCE_SUMMARY
           - NOTICE_TRANSLATION
           - ADMISSION_ENQUIRY_ASSISTANT
           - SCHOOL_POLICY_QA
@@ -22648,10 +23532,16 @@ components:
         category:
           type: string
           enum:
+          - ASSISTANT_QUERY
           - NOTICE_DRAFTING
           - HOMEWORK_DRAFTING
           - LESSON_PLAN_DRAFTING
+          - QUIZ_DRAFTING
           - REPORT_EXPLANATION
+          - REPORT_SUMMARY
+          - STUDY_PLAN_DRAFTING
+          - PARENT_PROGRESS_SUMMARY
+          - FINANCE_SUMMARY
           - NOTICE_TRANSLATION
           - ADMISSION_ENQUIRY_ASSISTANT
           - SCHOOL_POLICY_QA
@@ -22665,6 +23555,79 @@ components:
           type: string
         title:
           type: string
+    AiLessonPlanGenerationRequest:
+      type: object
+      properties:
+        boardType:
+          type: string
+          maxLength: 80
+          minLength: 0
+        chapter:
+          type: string
+          maxLength: 180
+          minLength: 0
+        className:
+          type: string
+          maxLength: 80
+          minLength: 0
+        difficulty:
+          type: string
+          maxLength: 60
+          minLength: 0
+        durationMinutes:
+          type: integer
+          format: int32
+          maximum: 180
+          minimum: 10
+        instructions:
+          type: string
+          maxLength: 3000
+          minLength: 0
+        section:
+          type: string
+          maxLength: 80
+          minLength: 0
+        studentLevel:
+          type: string
+          maxLength: 40
+          minLength: 0
+        subject:
+          type: string
+          maxLength: 120
+          minLength: 0
+      required:
+      - chapter
+      - className
+      - subject
+    AiNoticeGenerationRequest:
+      type: object
+      properties:
+        audience:
+          type: string
+          maxLength: 80
+          minLength: 0
+        channel:
+          type: string
+          maxLength: 40
+          minLength: 0
+        details:
+          type: string
+          maxLength: 3000
+          minLength: 0
+        language:
+          type: string
+          maxLength: 40
+          minLength: 0
+        tone:
+          type: string
+          maxLength: 40
+          minLength: 0
+        topic:
+          type: string
+          maxLength: 180
+          minLength: 0
+      required:
+      - topic
     AiPolicyUpdateRequest:
       type: object
       properties:
@@ -22688,6 +23651,121 @@ components:
           format: int32
         schoolId:
           type: string
+    AiPortalAuditLogResponse:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        denialReason:
+          type: string
+        estimatedCostCents:
+          type: integer
+          format: int64
+        estimatedUnits:
+          type: integer
+          format: int64
+        feature:
+          type: string
+        id:
+          type: string
+        promptLength:
+          type: integer
+          format: int32
+        promptSha256:
+          type: string
+        requestType:
+          type: string
+        role:
+          type: string
+        schoolId:
+          type: string
+        scopeId:
+          type: string
+        scopeType:
+          type: string
+        status:
+          type: string
+        tenantId:
+          type: string
+        userId:
+          type: string
+    AiPortalSettingsResponse:
+      type: object
+      properties:
+        capabilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiRoleCapabilityResponse"
+        enabled:
+          type: boolean
+        enabledFeatures:
+          type: array
+          items:
+            type: string
+        humanApprovalRequired:
+          type: boolean
+        monthlyUnitBudget:
+          type: integer
+          format: int64
+        remainingUnitsThisMonth:
+          type: integer
+          format: int64
+        retentionDays:
+          type: integer
+          format: int32
+        schoolId:
+          type: string
+        tenantId:
+          type: string
+        unitsUsedThisMonth:
+          type: integer
+          format: int64
+    AiQuickActionResponse:
+      type: object
+      properties:
+        endpoint:
+          type: string
+        label:
+          type: string
+        prompt:
+          type: string
+    AiQuizGenerationRequest:
+      type: object
+      properties:
+        chapter:
+          type: string
+          maxLength: 180
+          minLength: 0
+        className:
+          type: string
+          maxLength: 80
+          minLength: 0
+        difficulty:
+          type: string
+          maxLength: 60
+          minLength: 0
+        instructions:
+          type: string
+          maxLength: 3000
+          minLength: 0
+        questionCount:
+          type: integer
+          format: int32
+          maximum: 50
+          minimum: 1
+        section:
+          type: string
+          maxLength: 80
+          minLength: 0
+        subject:
+          type: string
+          maxLength: 120
+          minLength: 0
+      required:
+      - chapter
+      - className
+      - subject
     AiRecommendationCreateRequest:
       type: object
       properties:
@@ -22800,6 +23878,45 @@ components:
       properties:
         reason:
           type: string
+    AiReportSummaryRequest:
+      type: object
+      properties:
+        language:
+          type: string
+          maxLength: 40
+          minLength: 0
+        reportScope:
+          type: string
+          maxLength: 120
+          minLength: 0
+        reportText:
+          type: string
+          maxLength: 8000
+          minLength: 0
+        reportType:
+          type: string
+          maxLength: 120
+          minLength: 0
+        tone:
+          type: string
+          maxLength: 40
+          minLength: 0
+      required:
+      - reportText
+      - reportType
+    AiRoleCapabilityResponse:
+      type: object
+      properties:
+        features:
+          type: array
+          items:
+            type: string
+        quickActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiQuickActionResponse"
+        role:
+          type: string
     AiScopedRetrievalRequest:
       type: object
       properties:
@@ -22854,10 +23971,16 @@ components:
         feature:
           type: string
           enum:
+          - ASSISTANT_QUERY
           - NOTICE_DRAFTING
           - HOMEWORK_DRAFTING
           - LESSON_PLAN_DRAFTING
+          - QUIZ_DRAFTING
           - REPORT_EXPLANATION
+          - REPORT_SUMMARY
+          - STUDY_PLAN_DRAFTING
+          - PARENT_PROGRESS_SUMMARY
+          - FINANCE_SUMMARY
           - NOTICE_TRANSLATION
           - ADMISSION_ENQUIRY_ASSISTANT
           - SCHOOL_POLICY_QA
@@ -22911,10 +24034,16 @@ components:
         feature:
           type: string
           enum:
+          - ASSISTANT_QUERY
           - NOTICE_DRAFTING
           - HOMEWORK_DRAFTING
           - LESSON_PLAN_DRAFTING
+          - QUIZ_DRAFTING
           - REPORT_EXPLANATION
+          - REPORT_SUMMARY
+          - STUDY_PLAN_DRAFTING
+          - PARENT_PROGRESS_SUMMARY
+          - FINANCE_SUMMARY
           - NOTICE_TRANSLATION
           - ADMISSION_ENQUIRY_ASSISTANT
           - SCHOOL_POLICY_QA
@@ -23985,6 +25114,25 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AiAutomationRunPortalResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    PageResponseAiPortalAuditLogResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiPortalAuditLogResponse"
         page:
           type: integer
           format: int32
