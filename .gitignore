@@ -8,6 +8,9 @@
 build/
 coverage/
 target/
+node_modules/
+dist/
+*.tsbuildinfo
 *.class
 *.log
 infra/backup/local/
