@@ -28,6 +28,8 @@ import com.cloudcampus.platform.tenant.TenantStatus;
 import com.cloudcampus.school.School;
 import com.cloudcampus.school.SchoolRepository;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +59,8 @@ public class AuthSessionService {
     private final LoginRateLimiterService loginRateLimiterService;
     private final AuditLogService auditLogService;
     private final AuthorizationGuard authorizationGuard;
+    private final boolean exposeMfaCodeOutsideProduction;
+    private final Environment environment;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public AuthSessionService(
@@ -72,7 +76,9 @@ public class AuthSessionService {
             MfaChallengeRepository mfaChallengeRepository,
             LoginRateLimiterService loginRateLimiterService,
             AuditLogService auditLogService,
-            AuthorizationGuard authorizationGuard
+            AuthorizationGuard authorizationGuard,
+            @Value("${cloudcampus.auth.expose-mfa-code:false}") boolean exposeMfaCodeOutsideProduction,
+            Environment environment
     ) {
         this.userAccountRepository = userAccountRepository;
         this.userSchoolAccessRepository = userSchoolAccessRepository;
@@ -87,6 +93,8 @@ public class AuthSessionService {
         this.loginRateLimiterService = loginRateLimiterService;
         this.auditLogService = auditLogService;
         this.authorizationGuard = authorizationGuard;
+        this.exposeMfaCodeOutsideProduction = exposeMfaCodeOutsideProduction;
+        this.environment = environment;
     }
 
     @Transactional
@@ -428,9 +436,21 @@ public class AuthSessionService {
                 null,
                 true,
                 challenge.getId(),
-                code,
+                shouldExposeMfaCode() ? code : null,
                 expiresAt
         );
+    }
+
+    private boolean shouldExposeMfaCode() {
+        if (!exposeMfaCodeOutsideProduction) {
+            return false;
+        }
+        for (String profile : environment.getActiveProfiles()) {
+            if ("prod".equalsIgnoreCase(profile) || "production".equalsIgnoreCase(profile)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean requiresMfa(UserAccount user) {

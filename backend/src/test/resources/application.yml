@@ -1,0 +1,3 @@
+cloudcampus:
+  auth:
+    expose-mfa-code: true

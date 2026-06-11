@@ -1,4 +1,6 @@
 cloudcampus:
+  auth:
+    expose-mfa-code: ${CLOUDCAMPUS_AUTH_EXPOSE_MFA_CODE:true}
   bootstrap:
     super-admin:
       enabled: ${CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED:true}

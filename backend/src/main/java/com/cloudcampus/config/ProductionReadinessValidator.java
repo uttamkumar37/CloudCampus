@@ -48,6 +48,7 @@ public class ProductionReadinessValidator {
         validateMail(failures);
         validateBootstrap(failures);
         validateActuatorExposure(failures);
+        validateMfaCodeExposure(failures);
 
         if (!failures.isEmpty()) {
             throw new IllegalStateException(
@@ -72,6 +73,12 @@ public class ProductionReadinessValidator {
         }
         if (secret.length() < 64) {
             failures.add("CLOUDCAMPUS_AUTH_JWT_SECRET must be at least 64 characters.");
+        }
+    }
+
+    private void validateMfaCodeExposure(List<String> failures) {
+        if (environment.getProperty("cloudcampus.auth.expose-mfa-code", Boolean.class, false)) {
+            failures.add("CLOUDCAMPUS_AUTH_EXPOSE_MFA_CODE must be false in production.");
         }
     }
 

@@ -34,6 +34,7 @@ class ProductionReadinessValidatorTest {
                 .withProperty("cloudcampus.cors.allowed-origins", "*")
                 .withProperty("cloudcampus.notifications.email.app-base-url", "http://localhost:5173")
                 .withProperty("cloudcampus.notifications.email.mode", "log")
+                .withProperty("cloudcampus.auth.expose-mfa-code", "true")
                 .withProperty("cloudcampus.bootstrap.super-admin.enabled", "true")
                 .withProperty("cloudcampus.bootstrap.super-admin.password", "SuperAdmin123!")
                 .withProperty("management.endpoints.web.exposure.include", "health,env,beans");
@@ -47,6 +48,7 @@ class ProductionReadinessValidatorTest {
                 .hasMessageContaining("CLOUDCAMPUS_CORS_ALLOWED_ORIGINS must not contain '*'")
                 .hasMessageContaining("CLOUDCAMPUS_APP_BASE_URL must be an HTTPS URL")
                 .hasMessageContaining("CLOUDCAMPUS_EMAIL_MODE=log is not allowed")
+                .hasMessageContaining("CLOUDCAMPUS_AUTH_EXPOSE_MFA_CODE must be false")
                 .hasMessageContaining("CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED must be false")
                 .hasMessageContaining("CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD must be blank")
                 .hasMessageContaining("unsafe actuator endpoint 'env'")
@@ -106,6 +108,7 @@ class ProductionReadinessValidatorTest {
                 .withProperty("cloudcampus.cors.allowed-origins", "https://app.cloudcampus.com")
                 .withProperty("cloudcampus.notifications.email.app-base-url", "https://app.cloudcampus.com")
                 .withProperty("cloudcampus.notifications.email.mode", "smtp")
+                .withProperty("cloudcampus.auth.expose-mfa-code", "false")
                 .withProperty("spring.mail.host", "smtp.mailgun.org")
                 .withProperty("spring.mail.username", "smtp-user")
                 .withProperty("spring.mail.password", "smtp-password")

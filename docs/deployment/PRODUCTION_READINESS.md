@@ -2,11 +2,13 @@
 
 ## Ready
 
-- Backend-only repository structure on `main`.
+- Modular backend plus React/Vite frontend structure on `main`.
 - Java 21 Spring Boot backend with Maven tests.
+- React/Vite frontend with production build validation and staging/production API-base templates.
 - Docker image build path in `backend/Dockerfile`.
 - Local, staging, and production Compose files.
-- Production startup validation for secrets, database, CORS, public URL, mail mode, bootstrap account, and actuator exposure.
+- Production startup validation for secrets, database, CORS, public URL, mail mode, bootstrap account, MFA-code exposure, and actuator exposure.
+- Production startup validation rejects MFA-code exposure in API login responses.
 - OpenAPI contract generated at `/v3/api-docs`, committed in `docs/api/openapi.yaml`, and verified in CI.
 - Request correlation is centralized through `CorrelationIdFilter`; responses include `X-Correlation-Id`.
 - Route authorization metadata is centralized in `RoutePolicyRegistry`, enforced by `RoutePolicyEnforcementInterceptor`, and verified by `RouteAuthorizationMatrixTest` plus runtime interceptor tests.
@@ -19,6 +21,8 @@
 - `backend/Dockerfile` builds a Java 21 runtime image.
 - `docker-compose.prod.yml` runs PostgreSQL and the backend on a private Docker network.
 - The backend binds to `127.0.0.1:${CLOUDCAMPUS_BACKEND_PORT:-18080}` so a reverse proxy or load balancer can terminate HTTPS in front of it.
+- The frontend builds to static files under `frontend/dist`; deploy those files through HTTPS static hosting or a reverse proxy.
+- `frontend/.env.production.example` and `frontend/.env.staging.example` define `VITE_CLOUDCAMPUS_API_BASE_URL` for build-time API routing.
 - Production startup validation fails fast when unsafe secrets, local databases, placeholder domains, wildcard CORS, or unsafe actuator exposure are detected.
 - Client-supplied tenant/school context headers are rejected, while correlation IDs are preserved or generated before the rejection response is written.
 - `/v1/**` requests pass through route policy enforcement: public auth/readiness routes remain open, protected routes require `RequestContext`, role namespaces require matching roles, and unknown versioned routes fail closed.
@@ -26,13 +30,15 @@
 ## Still Required Before Real Production Traffic
 
 - Real `.env.production` stored outside git.
+- Real frontend build environment with `VITE_CLOUDCAMPUS_API_BASE_URL=https://api.your-domain.example`.
 - HTTPS reverse proxy or cloud load balancer.
 - Real PostgreSQL backup/restore runbook tested against a staging restore.
 - Container image publishing to a private or trusted registry.
 - Monitoring and alerting for health, logs, database disk, JVM memory, and failed logins.
 - Structured log pipeline that indexes `correlationId` from MDC and response headers.
 - External SMTP credentials or a transactional email provider.
-- Domain-specific CORS allow-list.
+- `CLOUDCAMPUS_AUTH_EXPOSE_MFA_CODE=false` outside local developer demos.
+- Domain-specific CORS allow-list that includes the frontend origin, not the API origin.
 - Product sign-off before enabling Swagger UI in production; it is disabled by default.
 
 ## Suggested Server Layout
@@ -61,6 +67,8 @@ Start from `.env.production.example` and replace every placeholder.
 1. Build and test:
 
    ```bash
+   cd frontend && npm ci && npm run typecheck && npm run build
+   cd ..
    make test
    make image
    ```
@@ -76,6 +84,7 @@ Start from `.env.production.example` and replace every placeholder.
 3. Deploy:
 
    ```bash
+   # Publish frontend/dist to HTTPS static hosting or your reverse proxy.
    docker compose --env-file .env.production -f docker-compose.prod.yml pull
    docker compose --env-file .env.production -f docker-compose.prod.yml up -d
    ./scripts/deploy/smoke.sh https://api.your-domain.example

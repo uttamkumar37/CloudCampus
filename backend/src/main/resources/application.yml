@@ -61,6 +61,7 @@ cloudcampus:
   auth:
     jwt-secret: ${CLOUDCAMPUS_AUTH_JWT_SECRET:dev-only-cloudcampus-auth-token-secret-change-me}
     access-token-ttl-minutes: ${CLOUDCAMPUS_AUTH_ACCESS_TOKEN_TTL_MINUTES:60}
+    expose-mfa-code: ${CLOUDCAMPUS_AUTH_EXPOSE_MFA_CODE:false}
   cors:
     allowed-origins: ${CLOUDCAMPUS_CORS_ALLOWED_ORIGINS:}
   notifications:
