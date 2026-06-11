@@ -69,3 +69,8 @@ cloudcampus:
       from: ${CLOUDCAMPUS_EMAIL_FROM:no-reply@cloudcampus.local}
       app-base-url: ${CLOUDCAMPUS_APP_BASE_URL:http://localhost:8080}
       allow-log-mode-in-production: ${CLOUDCAMPUS_ALLOW_LOG_EMAIL_IN_PRODUCTION:false}
+  ai:
+    enabled: ${CLOUDCAMPUS_AI_ENABLED:true}
+    provider: ${CLOUDCAMPUS_AI_PROVIDER:mock}
+    model: ${CLOUDCAMPUS_AI_MODEL:mock-school-helper}
+    api-key: ${CLOUDCAMPUS_AI_API_KEY:}
