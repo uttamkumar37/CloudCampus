@@ -1,18 +1,19 @@
 # CloudCampus Backend Architecture and API Report
 
 Generated on: 2026-06-11
-Branch reviewed: `world-ready-teacher-finance-admin-scale-foundation`
-Current repository shape: backend-only production deployment structure
+Branch reviewed: `world-ready-finance-admin-scale-foundation`
+Current repository shape: backend production deployment structure plus isolated AI frontend workspace
 
 ## 1. Executive Summary
 
-CloudCampus is currently a Java 21 Spring Boot backend for a school ERP SaaS platform. The `main` branch has intentionally been reduced to backend-only code so frontend, mobile, broader infrastructure, and performance surfaces can be reintroduced later in separate phases.
+CloudCampus is currently a Java 21 Spring Boot backend for a school ERP SaaS platform with an isolated React/Vite AI portal frontend workspace. Backend deployment, tenant isolation, route policy, OpenAPI, Docker, and production readiness remain the primary architecture surface; the frontend is a focused client layer for the AI experience.
 
-The backend is already more than a simple starter service. It contains multi-tenant onboarding, school administration, user/session management, RBAC-style access control, academic setup, student/staff/parent workflows, finance, attendance, homework, exams, notices, reports, AI governance, dashboard summaries, platform administration, OpenAPI contract generation, deployment scripts, Docker Compose files, and CI.
+The backend is already more than a simple starter service. It contains multi-tenant onboarding, school administration, user/session management, RBAC-style access control, academic setup, student/staff/parent workflows, finance, attendance, homework, exams, notices, reports, AI governance, dashboard summaries, platform administration, OpenAPI contract generation, deployment scripts, Docker Compose files, and CI. The frontend AI portal now gives those AI APIs a demo-ready SaaS user experience without moving security decisions into the browser.
 
 Current verified state:
 
-- Backend tests: `214` passing after the current authorization/correlation and teacher-flow hardening slices.
+- Backend tests: `226` passing after the current authorization/correlation, teacher-flow, finance/report-export, and AI assistant foundation slices.
+- Frontend AI portal: React/Vite/TypeScript workspace added under `frontend/`; `npm run typecheck` and `npm run build` pass.
 - OpenAPI generation: verified by `OpenApiContractTest`.
 - Generated API contract: committed at `docs/api/openapi.yaml`.
 - API examples and docs: committed under `docs/api/`.
@@ -21,6 +22,7 @@ Current verified state:
 - Route authorization metadata: centralized through `RoutePolicyRegistry`, enforced at runtime by `RoutePolicyEnforcementInterceptor`, and verified by `RouteAuthorizationMatrixTest`.
 - Authorization guard foundation: implemented through `AuthorizationGuard` with negative tests for tenant, school, parent-child, student-self, teacher-assignment, and finance boundaries.
 - Teacher portal object authorization: teacher assignment, attendance, homework, exam, notice, and timetable flows now accept `RequestContext` at the controller/service boundary where relevant and use `AuthorizationGuard` plus assignment checks for class/section/subject scope.
+- Finance object authorization: finance dashboard, fee demand, payment, receipt/report summary, and school/finance report-export paths now use `RequestContext` and `AuthorizationGuard` for active-school and object-scope enforcement where relevant.
 - Docker image build: verified.
 - Docker Compose config validation: verified.
 - Human documentation is intentionally consolidated into the API guide, production readiness guide, and this backend architecture/report. Generated API artifacts remain under `docs/api/`.
@@ -31,7 +33,7 @@ World-ready planning target:
 - Target scale: `10,000+` schools and `10 million` students.
 - Keep the modular monolith as the main deployable until measured traffic proves a service split is worth the operational cost.
 - Main pressure points at that scale are attendance, audit logs, notification deliveries, report exports, AI audits, fee/payment flows, and student search.
-- The highest-value next foundations are finance/admin object-level authorization migration, PostgreSQL-scale data design, async workers, observability, backup/restore drills, and object storage.
+- The highest-value next foundations are remaining admin object-level authorization migration, PostgreSQL-scale data design, async workers, observability, backup/restore drills, and object storage.
 
 ## 2. Technology Stack
 
@@ -51,6 +53,8 @@ World-ready planning target:
 | Container | Multi-stage Dockerfile |
 | Orchestration | Docker Compose for local/staging/prod |
 | CI | GitHub Actions backend workflow |
+| Frontend | React 18, Vite, TypeScript |
+| Frontend styling | Plain CSS with Lucide React icons |
 
 ## 3. Repository Structure
 
@@ -62,6 +66,12 @@ CloudCampus/
     src/main/java/com/cloudcampus/
     src/main/resources/
     src/test/java/com/cloudcampus/
+  frontend/
+    package.json
+    src/
+      components/
+      features/
+      lib/
   docs/
     api/
       examples/
@@ -94,6 +104,7 @@ Important deployment files:
 - `Makefile`: standard entry points for tests, image build, compose validation, preflight, and smoke checks.
 - `docs/api/openapi.yaml`: generated OpenAPI contract for frontend/mobile and integration teams.
 - `docs/api/examples/`: representative request/response examples for major role flows.
+- `frontend/`: focused React/Vite AI portal that consumes authenticated backend APIs.
 
 ## 4. Runtime Configuration
 
@@ -369,6 +380,9 @@ Responsibilities:
 - Recommendation approval/reject/accept/execute/dismiss flows.
 - Automation rules and runs.
 - AI policy governance.
+- Role-aware AI assistant and generator endpoints backed by an `AiProvider` abstraction.
+- Mock AI provider for local, test, and demo behavior without external AI keys.
+- AI safety checks and audit metadata for generation requests.
 
 Main entities:
 
@@ -380,8 +394,35 @@ Main entities:
 - `AutomationRule`
 - `AutomationRun`
 - `AiPolicy`
+- `AiAssistantService`
+- `AiProvider`
+- `MockAiProvider`
+- `AiSafetyService`
 
-### 6.7 Audit, Events, Notifications, Health
+### 6.7 Frontend AI Portal
+
+Package/workspace:
+
+- `frontend/`
+
+Responsibilities:
+
+- Authenticated AI portal shell.
+- Global assistant drawer.
+- Role-aware prompt and navigation visibility.
+- AI dashboard.
+- AI recommendations filtering and action workflow.
+- Notice, homework, lesson plan, quiz, and report-summary generators.
+- AI settings visibility with disabled pending-save controls where backend support is not present.
+- AI audit metadata view without raw prompt/response exposure.
+
+Security boundary:
+
+- The frontend sends bearer authentication and correlation IDs only.
+- Frontend role selection is for demo preview and navigation convenience, not authorization.
+- Backend route policy, `RequestContext`, AI entitlement, and object authorization remain authoritative.
+
+### 6.8 Audit, Events, Notifications, Health
 
 Packages:
 
@@ -779,6 +820,14 @@ Key DTOs:
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| POST | `/v1/ai/assistant/query` | Role-aware AI assistant answer. |
+| POST | `/v1/ai/generate/notice` | Generate notice, message, or reminder draft. |
+| POST | `/v1/ai/generate/homework` | Generate teacher-reviewed homework draft. |
+| POST | `/v1/ai/generate/lesson-plan` | Generate teacher-reviewed lesson plan draft. |
+| POST | `/v1/ai/generate/quiz` | Generate teacher-reviewed quiz draft. |
+| POST | `/v1/ai/reports/summary` | Generate plain-language report summary. |
+| GET | `/v1/ai/settings` | Current AI settings and role capabilities. |
+| GET | `/v1/ai/audit-logs` | Scoped AI audit metadata for tenant/school leadership. |
 | GET | `/v1/ai/entitlement` | Current tenant/user AI entitlement. |
 | POST | `/v1/ai/usage/audit` | Record AI usage audit. |
 | POST | `/v1/ai/knowledge/search` | Scoped AI knowledge search. |
@@ -794,6 +843,12 @@ Key DTOs:
 | GET | `/v1/ai/automation-rules` | List automation rules. |
 | PATCH | `/v1/ai/automation-rules/{id}` | Update automation rule. |
 | GET | `/v1/ai/automation-runs` | List automation runs. |
+
+Frontend integration status:
+
+- Integrated in `frontend/`: assistant query, notice/homework/lesson-plan/quiz generation, report summary, settings read, audit logs, recommendations list/detail/actions.
+- Not faked in `frontend/`: settings save controls and direct generic recommendation status updates. The UI labels those gaps instead of pretending persistence exists.
+- Generated content "Use this" actions are currently review markers in the frontend; publishing or saving to notices/homework/quizzes/lesson plans should be wired to domain APIs in a future phase.
 
 ## 9. Database and Migrations
 
@@ -902,8 +957,9 @@ Security strengths:
 - School-scoped controller guard coverage exists.
 - Route authorization matrix coverage exists for every `/v1` controller route.
 - Runtime route policy enforcement now fail-closes unknown `/v1` routes, allows only explicitly public routes without authentication, and checks roles/permissions for protected route families.
-- `AuthorizationGuardTest` covers negative security checks for tenant scope, active school scope, parent/student relationship, student self access, teacher class-section assignment, and finance permission boundaries.
+- `AuthorizationGuardTest` covers negative security checks for tenant scope, active school scope, parent/student relationship, student self access, teacher class-section assignment, finance permission boundaries, and report-export active-school object boundaries.
 - Teacher portal flow tests now cover class/subject assignment boundaries plus same-class section spoofing for attendance and section-scoped notice visibility.
+- Finance/report flow tests now cover denied finance write permissions, active-school fee demand boundaries, finance report exports from granted but non-active schools, and school-admin report exports from granted but non-active schools.
 - `RoutePolicyEnforcementInterceptorTest` covers public-route access, missing authentication, wrong role, required role, permission-only AI access, unknown-route fail-closed behavior, and tenant/school/finance role separation.
 - `CorrelationIdFilterTest` covers generated, preserved, rejected, and MDC-cleared correlation IDs.
 - Passwords are not represented as plaintext in account model.
@@ -953,8 +1009,10 @@ Security strengths:
 - Student record visibility across school admin, staff, parent, student, and teacher roles.
 - Teacher class, school, section, and subject scope checks through `requireTeacherAssignedToScope`.
 - Fee demand/payment visibility across finance staff, school admin, parent, and student roles.
+- Finance dashboard, fee-demand create/manage/read, receipt/report, and finance report-export checks.
+- School report-export active-school object checks.
 
-The guard is deliberately additive in this phase. Existing service-level checks remain in place; migrated workflows should adopt this guard one flow at a time and keep negative tests near each workflow. Active-school switching now resolves a `RequestContext`, checks tenant and user-school grant scope through `AuthorizationGuard`, and rejects inactive schools even when an old grant still exists. Parent-facing child detail, attendance, fees, homework, results, notices, timetable, and leave-request flows now receive `RequestContext` and authorize `studentId` path parameters through `AuthorizationGuard`. Student-facing profile, attendance, fee, homework, homework-submission, result, notice, and timetable flows now also receive `RequestContext`, require an active student-user link, and verify the linked student remains inside the authenticated tenant and active school. Teacher-facing assignment, attendance, homework, exam, notice, and timetable flows now receive `RequestContext` where relevant and enforce active-school, tenant, class, section, and subject boundaries through `AuthorizationGuard` plus assignment-aware service checks.
+The guard is deliberately additive in this phase. Existing service-level checks remain in place; migrated workflows should adopt this guard one flow at a time and keep negative tests near each workflow. Active-school switching now resolves a `RequestContext`, checks tenant and user-school grant scope through `AuthorizationGuard`, and rejects inactive schools even when an old grant still exists. Parent-facing child detail, attendance, fees, homework, results, notices, timetable, and leave-request flows now receive `RequestContext` and authorize `studentId` path parameters through `AuthorizationGuard`. Student-facing profile, attendance, fee, homework, homework-submission, result, notice, and timetable flows now also receive `RequestContext`, require an active student-user link, and verify the linked student remains inside the authenticated tenant and active school. Teacher-facing assignment, attendance, homework, exam, notice, and timetable flows now receive `RequestContext` where relevant and enforce active-school, tenant, class, section, and subject boundaries through `AuthorizationGuard` plus assignment-aware service checks. Finance dashboard, fee demand, payment, receipt/report summary, and finance/school report export flows now use `RequestContext` and `AuthorizationGuard` for active-school and object-level boundaries where relevant.
 
 ### 10.3 Correlation IDs
 
@@ -998,10 +1056,11 @@ Implemented:
 - Parent-facing student-resource flows now use `RequestContextResolver` at the controller boundary and `AuthorizationGuard` inside services for linked-child and active-school object checks.
 - Student-facing self-service flows now use `RequestContextResolver` at the controller boundary and `AuthorizationGuard` inside services for active student-user link, tenant, and active-school object checks.
 - Teacher-facing assignment, attendance, homework, exam, notice, and timetable flows now use `RequestContextResolver` at the controller boundary and assignment-aware `AuthorizationGuard` checks in service logic.
+- Finance fee/payment/receipt/report summary, finance dashboard, and finance/school report-export flows now use `RequestContextResolver` at the controller boundary and `AuthorizationGuard` inside services for active-school and object checks.
 
 Future improvement:
 
-- Continue migrating finance, school-admin, tenant-admin, and super-admin ID-based services to accept `RequestContext` directly instead of extracting request/user state independently.
+- Continue migrating remaining school-admin, tenant-admin, and super-admin ID-based services to accept `RequestContext` directly instead of extracting request/user state independently.
 - Add repository-level tenant/school guard helpers to reduce risk of missing filters.
 
 ## 12. Audit and Eventing
@@ -1038,7 +1097,7 @@ Future improvement:
 Current production deployment structure:
 
 ```text
-Client / future frontend
+Client / frontend
   -> HTTPS reverse proxy or load balancer
   -> cloudcampus-backend container
   -> PostgreSQL
@@ -1144,8 +1203,13 @@ Current test suite covers:
 - Route authorization metadata is centrally declared, tested against Spring MVC handler mappings, and enforced before protected controller execution.
 - Authorization guard foundation exists for reusable object-level security checks.
 - Teacher portal workflows now use `RequestContext` and assignment-aware object checks across assignments, attendance, homework, exams, notices, and timetable.
+- Finance workflows now use `RequestContext` and `AuthorizationGuard` for dashboard, fee demand, payment, receipt/report summary, and finance/school report-export object checks where relevant.
 - Correlation IDs are resolved once per request and exposed to logs, responses, and `RequestContext`.
 - AI governance is modeled as a first-class area, not an afterthought.
+- AI assistant and generator endpoints now exist for role-aware mock-provider output, feature entitlement checks, student safety checks, and safe audit metadata.
+- Local demo data now seeds AI entitlements and sample recommendations for attendance risk, fee reminder, lesson planning, parent progress, and school health demos.
+- AI product architecture docs now define the provider abstraction, role-aware UX, governance rules, demo flow, and current frontend/backend boundaries.
+- AI frontend portal now exists with dashboard, assistant drawer, recommendations, generators, settings visibility, and audit metadata views.
 - OpenAPI contract generation and API examples are now committed.
 - CI verifies that the OpenAPI contract can be generated without boot errors.
 
@@ -1153,12 +1217,12 @@ Current test suite covers:
 
 ### High Priority
 
-- Route-level authorization is now centrally enforced, and active-school switching plus parent-facing, student-facing, and teacher-facing flows have adopted `RequestContext` plus `AuthorizationGuard` where relevant; finance/admin ID-based endpoints still need broader service-level guard adoption for object boundaries.
-- ID-based endpoints need broader adoption of `AuthorizationGuard` for finance, school-admin, tenant-admin, super-admin, report/export, bulk/import, document, and AI knowledge-document scope.
+- Route-level authorization is now centrally enforced, and active-school switching plus parent-facing, student-facing, teacher-facing, and finance/report-export flows have adopted `RequestContext` plus `AuthorizationGuard` where relevant.
+- ID-based endpoints still need broader adoption of `AuthorizationGuard` for remaining school-admin, tenant-admin, super-admin, bulk/import, document, website, and AI knowledge-document scope.
 - Production secrets and SMTP are placeholders until real values are configured.
 - Real backup restore has not been proven in a staging restore drill.
 - No external observability stack is committed.
-- No frontend/mobile clients currently exist on `main`.
+- No mobile client currently exists on `main`; the frontend is currently focused on the AI portal, not the full ERP workflow surface.
 
 ### Medium Priority
 
@@ -1173,7 +1237,7 @@ Current test suite covers:
 ### Lower Priority
 
 - Some empty package placeholders remain.
-- API examples now cover major role flows; coverage should be expanded toward every endpoint as frontend/mobile work starts.
+- API examples now cover major role flows; coverage should be expanded toward every endpoint as frontend/mobile work continues.
 - Architecture diagrams should be generated from this report.
 - Developer onboarding docs can be improved after frontend/mobile return.
 
@@ -1207,7 +1271,8 @@ Scale target: 10,000+ schools and 10 million students. The roadmap keeps CloudCa
 - Completed: migrate parent-facing child detail, attendance, fee, homework, result, notice, timetable, and leave-request flows to accept `RequestContext` and use `AuthorizationGuard` for student object authorization.
 - Completed: migrate student-facing profile, attendance, fee, homework, homework-submission, result, notice, and timetable flows to accept `RequestContext` and use `AuthorizationGuard` for active student-user link, tenant, and active-school object authorization.
 - Completed: migrate teacher assignment, attendance, homework, exam, notice, and timetable flows to accept `RequestContext` and use assignment-aware `AuthorizationGuard` checks for active school, class, section, and subject scope.
-- Next: migrate finance, school-admin, tenant-admin, and super-admin ID-based flows to accept `RequestContext` and `AuthorizationGuard` directly.
+- Completed: migrate finance dashboard, fee demand, fee payment, receipt/report summary, and finance/school report-export flows to accept `RequestContext` and use `AuthorizationGuard` for active-school and object authorization where relevant.
+- Next: migrate remaining school-admin, tenant-admin, and super-admin ID-based flows to accept `RequestContext` and `AuthorizationGuard` directly.
 - Add object-level authorization tests for every ID-based endpoint as services migrate.
 - Add account lockout/unlock workflow.
 - Add MFA enrollment/disable flow.
@@ -1241,7 +1306,8 @@ Scale target: 10,000+ schools and 10 million students. The roadmap keeps CloudCa
 
 ### Phase 5: Frontend and Mobile Reintroduction
 
-- Reintroduce frontend as a separate app directory or separate repo.
+- Completed: reintroduce frontend as a separate `frontend/` app directory for the AI portal.
+- Completed: build role-aware AI dashboard, assistant drawer, recommendations, generators, settings visibility, and audit metadata screens.
 - Generate typed API clients from OpenAPI.
 - Build role-specific UI shells:
   - Super admin
@@ -1267,7 +1333,7 @@ Scale target: 10,000+ schools and 10 million students. The roadmap keeps CloudCa
 
 | Period | Theme | Deliverables |
 | --- | --- | --- |
-| Months 1-2 | Contract and security foundation | Completed OpenAPI baseline, `RequestContext`, route policy metadata, runtime policy enforcement, authorization matrix, correlation ID filter, guard foundation, and teacher-flow object authorization; next deliver finance/admin object-level auth and PostgreSQL Testcontainers. |
+| Months 1-2 | Contract and security foundation | Completed OpenAPI baseline, `RequestContext`, route policy metadata, runtime policy enforcement, authorization matrix, correlation ID filter, guard foundation, teacher-flow object authorization, and finance/report-export object authorization; next deliver remaining admin object-level auth and PostgreSQL Testcontainers. |
 | Months 3-4 | Scale foundation | Redis/Valkey, object storage, outbox/notification/report workers, cursor pagination, indexes, load tests, structured logs, and OpenTelemetry. |
 | Months 5-6 | Production operations | Managed PostgreSQL, read replica, restore drills, CI/CD, registry, secrets manager, WAF/CDN, dashboards, alerts, and SLOs. |
 | Months 7-9 | UX and client apps | Admin web app, teacher attendance flow, finance collection flow, parent mobile-first portal, student portal, localization, and accessibility. |
@@ -1297,20 +1363,23 @@ Suggested tool:
 
 Best next engineering tasks:
 
-1. Migrate finance fee/payment/receipt/report flows to accept `RequestContext` and `AuthorizationGuard` directly.
-2. Add object-level authorization tests for every ID-based endpoint.
-3. Persist correlation IDs into audit, outbox, report export, and notification delivery records.
-4. Add PostgreSQL Testcontainers for migration and persistence correctness.
-5. Add cursor pagination for large collections.
-6. Add load tests for login, dashboard, student search, attendance, fee list, and report export.
-7. Add Redis/Valkey for rate limiting, idempotency keys, and short-lived caches.
-8. Add object storage abstraction for reports, imports, receipts, documents, and media.
-9. Add outbox, report export, import, and notification workers with retry/dead-letter handling.
-10. Add structured JSON logging, OpenTelemetry tracing, dashboards, and alerts.
-11. Add production restore drill documentation.
+1. Generate a typed frontend API client from `docs/api/openapi.yaml`.
+2. Add backend save APIs for role/module AI settings if product wants in-portal administration.
+3. Wire generated AI drafts into domain create/publish flows with idempotency and review gates.
+4. Migrate high-risk school-admin ID-based flows beyond finance/report export to accept `RequestContext` and `AuthorizationGuard` directly.
+5. Add object-level authorization tests for every ID-based endpoint.
+6. Persist correlation IDs into audit, outbox, report export, and notification delivery records.
+7. Add PostgreSQL Testcontainers for migration and persistence correctness.
+8. Add cursor pagination for large collections.
+9. Add load tests for login, dashboard, student search, attendance, fee list, and report export.
+10. Add Redis/Valkey for rate limiting, idempotency keys, and short-lived caches.
+11. Add object storage abstraction for reports, imports, receipts, documents, and media.
+12. Add outbox, report export, import, and notification workers with retry/dead-letter handling.
+13. Add structured JSON logging, OpenTelemetry tracing, dashboards, and alerts.
+14. Add production restore drill documentation.
 
 ## 20. Final Assessment
 
-CloudCampus backend is in a good position for future improvement. The strongest decision so far is keeping the backend-only codebase clean while preserving a production-oriented deployment structure. The codebase already has enough domain depth to support real product planning. Recent updates now add API contract discipline plus centralized request/security foundations: generated OpenAPI, committed examples, merged API guidance, CI verification, request-scoped authenticated-user caching, effective role/permission snapshots, enforced route authorization metadata, correlation IDs, reusable authorization guard helpers, and teacher portal object authorization.
+CloudCampus is in a good position for future improvement. The strongest decision so far is keeping the backend security and deployment surface disciplined while adding the frontend AI portal as a focused client workspace. The codebase already has enough domain depth to support real product planning. Recent updates now add API contract discipline plus centralized request/security foundations: generated OpenAPI, committed examples, merged API guidance, CI verification, request-scoped authenticated-user caching, effective role/permission snapshots, enforced route authorization metadata, correlation IDs, reusable authorization guard helpers, teacher portal object authorization, finance/report-export object authorization, and a demo-ready AI user experience.
 
-For a 10-million-student target, the next biggest unlock is service and scale discipline: finish finance/admin/super-admin adoption of `RequestContext` and `AuthorizationGuard`, add PostgreSQL-scale pagination/indexing, async workers, object storage, observability, restore drills, and negative tests for every cross-tenant, cross-school, finance, report/export, bulk/import, document, AI, and super-admin boundary.
+For a 10-million-student target, the next biggest unlock is service and scale discipline: finish remaining school-admin/tenant-admin/super-admin adoption of `RequestContext` and `AuthorizationGuard`, add PostgreSQL-scale pagination/indexing, async workers, object storage, observability, restore drills, and negative tests for every cross-tenant, cross-school, bulk/import, document, AI, and super-admin boundary.
