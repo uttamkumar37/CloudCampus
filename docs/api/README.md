@@ -69,6 +69,23 @@ Runtime route policy behavior:
 
 Representative request/response examples are in `docs/api/examples/`. They cover authentication, current user, system readiness, tenant onboarding, school creation, student listing/import validation, attendance, fees, homework, exam results, notices, report exports, parent/student flows, and AI recommendation approval.
 
+## AI Portal APIs
+
+The AI portal group includes role-aware assistant and generator endpoints in addition to the existing recommendation, entitlement, usage audit, and scoped knowledge APIs.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/v1/ai/assistant/query` | Role-aware AI assistant answer with highlights, quick actions, disclaimer, and audit metadata. |
+| `POST` | `/v1/ai/generate/notice` | Draft school notices, parent messages, email/SMS style content, and reminders. |
+| `POST` | `/v1/ai/generate/homework` | Draft teacher-reviewed homework. |
+| `POST` | `/v1/ai/generate/lesson-plan` | Draft teacher-reviewed lesson plan. |
+| `POST` | `/v1/ai/generate/quiz` | Draft teacher-reviewed quiz. |
+| `POST` | `/v1/ai/reports/summary` | Explain report highlights, risks, and recommended actions. |
+| `GET` | `/v1/ai/settings` | Return current tenant AI settings and role capabilities. |
+| `GET` | `/v1/ai/audit-logs` | Return scoped AI audit metadata for tenant/school leadership. |
+
+AI generation uses the `AiProvider` abstraction. Local/test/demo behavior uses the mock provider by default and stores safe metadata only; raw prompts and responses are not stored.
+
 ## Client Generation
 
 Generate frontend, mobile, or integration clients from the committed contract for repeatable builds:
