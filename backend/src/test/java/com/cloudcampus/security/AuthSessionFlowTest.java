@@ -491,6 +491,39 @@ class AuthSessionFlowTest {
     }
 
     @Test
+    void userCannotActivateInactiveSchoolWithStaleGrant() throws Exception {
+        JsonNode onboarding = onboard("auth-inactive-school-a", "auth-inactive-primary-a", "inactive-admin-a@example.com");
+        String tenantId = onboarding.at("/tenant/id").asText();
+        String userId = onboarding.at("/schoolAdminInvitation/userId").asText();
+        acceptInvitation(onboarding.at("/schoolAdminInvitation/token").asText(), "StrongerPass123!");
+
+        Tenant tenant = tenantRepository.findById(tenantId).orElseThrow();
+        School inactiveSchool = schoolRepository.save(new School(
+                tenant,
+                "AUTH-INACTIVE-GRANT",
+                "Auth Inactive Grant",
+                false
+        ));
+        inactiveSchool.deactivate();
+        schoolRepository.save(inactiveSchool);
+
+        UserAccount user = userAccountRepository.findById(userId).orElseThrow();
+        userSchoolAccessRepository.save(new UserSchoolAccess(
+                tenant,
+                inactiveSchool,
+                user,
+                UserRole.SCHOOL_ADMIN,
+                false
+        ));
+        String accessToken = login("inactive-admin-a@example.com", "StrongerPass123!").at("/accessToken").asText();
+
+        mockMvc.perform(post("/v1/me/schools/{schoolId}/activate", inactiveSchool.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
     void tenantAUserCannotUseUrlQueryOrBodyToActivateTenantBSchool() throws Exception {
         JsonNode firstTenant = onboard("auth-login-h1", "auth-school-h1", "login-admin-h1@example.com");
         JsonNode secondTenant = onboard("auth-login-h2", "auth-school-h2", "login-admin-h2@example.com");

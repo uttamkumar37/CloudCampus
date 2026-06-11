@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/v1/school-admin/notices/35b59593-32b1-450c-9f9c-0ca40342a001/publish"
+  },
+  "response": {
+    "id": "35b59593-32b1-450c-9f9c-0ca40342a001",
+    "tenantId": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+    "schoolId": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+    "classLevelId": null,
+    "className": null,
+    "sectionId": null,
+    "sectionName": null,
+    "title": "Campus closed for maintenance",
+    "body": "The campus will remain closed on Saturday for scheduled maintenance.",
+    "audience": "ALL",
+    "status": "PUBLISHED",
+    "createdByUserId": "8ee5ac7e-8b5f-42d3-a5f1-1ff1a12aa001",
+    "publishedByUserId": "8ee5ac7e-8b5f-42d3-a5f1-1ff1a12aa001",
+    "createdAt": "2026-06-11T10:15:30Z",
+    "publishedAt": "2026-06-11T10:20:30Z"
+  }
+}

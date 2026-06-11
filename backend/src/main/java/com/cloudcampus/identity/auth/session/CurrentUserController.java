@@ -2,6 +2,8 @@ package com.cloudcampus.identity.auth.session;
 
 import java.util.List;
 
+import com.cloudcampus.common.context.RequestContextResolver;
+
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -18,13 +20,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class CurrentUserController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final AuthSessionService authSessionService;
 
     public CurrentUserController(
             AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             AuthSessionService authSessionService
     ) {
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.authSessionService = authSessionService;
     }
 
@@ -44,7 +49,7 @@ public class CurrentUserController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(authSessionService.activateSchool(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 schoolId
         ));
     }

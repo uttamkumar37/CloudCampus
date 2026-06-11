@@ -1,0 +1,30 @@
+{
+  "request": {
+    "refreshToken": "cc_refresh_redacted"
+  },
+  "response": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.redacted",
+    "refreshToken": "cc_refresh_rotated_redacted",
+    "tokenType": "Bearer",
+    "expiresAt": "2026-06-11T12:15:30Z",
+    "user": {
+      "userId": "8ee5ac7e-8b5f-42d3-a5f1-1ff1a12aa001",
+      "email": "school.admin@greenvalley.edu",
+      "displayName": "Asha Rao",
+      "role": "SCHOOL_ADMIN",
+      "tenantId": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+      "activeSchool": {
+        "schoolId": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+        "code": "green-valley-main",
+        "name": "Green Valley School",
+        "role": "SCHOOL_ADMIN",
+        "primaryAccess": true
+      },
+      "allowedSchools": []
+    },
+    "mfaRequired": false,
+    "mfaChallengeId": null,
+    "mfaCode": null,
+    "mfaExpiresAt": null
+  }
+}

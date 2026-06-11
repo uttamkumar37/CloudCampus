@@ -1,0 +1,14 @@
+{
+  "request": {
+    "studentId": "63b5bf91-bfb7-43d6-a391-eac71d4fa001",
+    "marksObtained": 87.50
+  },
+  "response": {
+    "id": "a2b5fb0e-6284-4248-9023-1821ce5ea001",
+    "studentId": "63b5bf91-bfb7-43d6-a391-eac71d4fa001",
+    "studentName": "Nisha Iyer",
+    "recordedByUserId": "62e2fb80-9877-4e80-8b15-163ffdf3a001",
+    "marksObtained": 87.50,
+    "recordedAt": "2026-06-11T10:15:30Z"
+  }
+}

@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class ClientTenantContextSpoofingFilter extends OncePerRequestFilter {
 
     static final String ERROR_CODE = "TENANT_CONTEXT_SPOOFING_BLOCKED";

@@ -32,6 +32,8 @@ import com.cloudcampus.people.parent.ParentStudentLink;
 import com.cloudcampus.people.parent.ParentStudentLinkRepository;
 import com.cloudcampus.people.student.Student;
 import com.cloudcampus.people.student.StudentRepository;
+import com.cloudcampus.people.student.StudentUserLink;
+import com.cloudcampus.people.student.StudentUserLinkRepository;
 import com.cloudcampus.platform.tenant.Tenant;
 import com.cloudcampus.platform.tenant.TenantRepository;
 import com.cloudcampus.school.School;
@@ -83,6 +85,9 @@ class TimetablePortalFlowTest {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private StudentUserLinkRepository studentUserLinkRepository;
 
     @Autowired
     private ParentStudentLinkRepository parentStudentLinkRepository;
@@ -177,6 +182,7 @@ class TimetablePortalFlowTest {
         );
         student.attachUser(studentUser);
         studentRepository.save(student);
+        studentUserLinkRepository.save(new StudentUserLink(student, studentUser, studentUser));
         userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, studentUser, UserRole.STUDENT, true));
         parentStudentLinkRepository.save(new ParentStudentLink(
                 tenant,

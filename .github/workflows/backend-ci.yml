@@ -23,6 +23,10 @@ jobs:
           java-version: "21"
           cache: maven
 
+      - name: Verify OpenAPI generation
+        working-directory: backend
+        run: mvn -B -Dtest=OpenApiContractTest test
+
       - name: Test backend
         working-directory: backend
         run: mvn -B test

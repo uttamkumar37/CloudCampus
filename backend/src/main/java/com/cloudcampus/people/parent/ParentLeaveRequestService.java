@@ -6,12 +6,13 @@ import java.util.Map;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
-import com.cloudcampus.identity.auth.UserRole;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
 
 import org.springframework.stereotype.Service;
@@ -24,22 +25,25 @@ public class ParentLeaveRequestService {
     private final ParentStudentLinkRepository parentStudentLinkRepository;
     private final SchoolAccessService schoolAccessService;
     private final AuditLogService auditLogService;
+    private final AuthorizationGuard authorizationGuard;
 
     public ParentLeaveRequestService(
             ParentLeaveRequestRepository parentLeaveRequestRepository,
             ParentStudentLinkRepository parentStudentLinkRepository,
             SchoolAccessService schoolAccessService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            AuthorizationGuard authorizationGuard
     ) {
         this.parentLeaveRequestRepository = parentLeaveRequestRepository;
         this.parentStudentLinkRepository = parentStudentLinkRepository;
         this.schoolAccessService = schoolAccessService;
         this.auditLogService = auditLogService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional
     public ParentLeaveRequestResponse create(
-            AuthenticatedUser parent,
+            RequestContext parent,
             String studentId,
             ParentLeaveRequestCreateRequest request
     ) {
@@ -54,14 +58,14 @@ public class ParentLeaveRequestService {
         auditLogService.record(
                 leaveRequest.getTenant().getId(),
                 leaveRequest.getSchool().getId(),
-                parent.user().getRole().name(),
-                parent.user().getId(),
+                "PARENT",
+                parent.userId().toString(),
                 AuditAction.PARENT_LEAVE_REQUESTED,
                 "ParentLeaveRequest",
                 leaveRequest.getId(),
                 "Parent requested student leave.",
                 Map.of(
-                        "actorRole", parent.user().getRole().name(),
+                        "actorRole", "PARENT",
                         "studentId", leaveRequest.getStudent().getId(),
                         "parentUserId", leaveRequest.getParentUser().getId(),
                         "startDate", leaveRequest.getStartDate().toString(),
@@ -72,10 +76,10 @@ public class ParentLeaveRequestService {
     }
 
     @Transactional(readOnly = true)
-    public List<ParentLeaveRequestResponse> parentRequests(AuthenticatedUser parent, String studentId) {
+    public List<ParentLeaveRequestResponse> parentRequests(RequestContext parent, String studentId) {
         requireLinkedChild(parent, studentId);
         return parentLeaveRequestRepository.findByParentUserIdAndStudentIdOrderByCreatedAtDesc(
-                        parent.user().getId(),
+                        parent.userId().toString(),
                         studentId
                 )
                 .stream()
@@ -127,23 +131,19 @@ public class ParentLeaveRequestService {
         return ParentLeaveRequestResponse.from(leaveRequest);
     }
 
-    private ParentStudentLink requireLinkedChild(AuthenticatedUser actor, String studentId) {
-        if (actor.user().getRole() != UserRole.PARENT) {
-            throw new ForbiddenException("Only linked parents can access this child.");
-        }
+    private ParentStudentLink requireLinkedChild(RequestContext actor, String studentId) {
+        authorizationGuard.requireRole(actor, "PARENT");
+        authorizationGuard.requireStudentRecordVisible(actor, studentId);
         ParentStudentLink linkedChild = parentStudentLinkRepository
-                .findByParentUserIdAndStudentId(actor.user().getId(), studentId)
+                .findByParentUserIdAndStudentId(actor.userId().toString(), studentId)
                 .orElseThrow(() -> new ForbiddenException("Parent is not linked to this child."));
-        if (!linkedChild.getTenant().getId().equals(actor.user().getTenant().getId())
-                || !linkedChild.getStudent().getTenant().getId().equals(actor.user().getTenant().getId())
-                || !linkedChild.getSchool().getTenant().getId().equals(actor.user().getTenant().getId())) {
+        String tenantId = actor.tenantId().toString();
+        if (!linkedChild.getTenant().getId().equals(tenantId)
+                || !linkedChild.getStudent().getTenant().getId().equals(tenantId)
+                || !linkedChild.getSchool().getTenant().getId().equals(tenantId)) {
             throw new ForbiddenException("Parent link tenant scope is invalid.");
         }
-        String activeSchoolId = actor.activeSchoolId();
-        if (activeSchoolId == null || activeSchoolId.isBlank()) {
-            throw new ForbiddenException("An active school is required for parent access.");
-        }
-        if (!linkedChild.getSchool().getId().equals(activeSchoolId)) {
+        if (!linkedChild.getSchool().getId().equals(actor.activeSchoolId().toString())) {
             throw new ForbiddenException("Parent is not linked to this child in the active school.");
         }
         return linkedChild;

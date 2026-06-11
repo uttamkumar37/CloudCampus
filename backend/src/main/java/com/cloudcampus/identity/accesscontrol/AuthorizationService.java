@@ -1,11 +1,13 @@
 package com.cloudcampus.identity.accesscontrol;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.TreeSet;
 
 import com.cloudcampus.academic.TeacherAssignmentRepository;
 import com.cloudcampus.common.exception.ForbiddenException;
@@ -28,6 +30,7 @@ public class AuthorizationService {
 
     private final UserRoleAssignmentRepository userRoleAssignmentRepository;
     private final RolePermissionRepository rolePermissionRepository;
+    private final PermissionRepository permissionRepository;
     private final UserPermissionOverrideRepository userPermissionOverrideRepository;
     private final UserSchoolAccessRepository userSchoolAccessRepository;
     private final SchoolRepository schoolRepository;
@@ -41,6 +44,7 @@ public class AuthorizationService {
     public AuthorizationService(
             UserRoleAssignmentRepository userRoleAssignmentRepository,
             RolePermissionRepository rolePermissionRepository,
+            PermissionRepository permissionRepository,
             UserPermissionOverrideRepository userPermissionOverrideRepository,
             UserSchoolAccessRepository userSchoolAccessRepository,
             SchoolRepository schoolRepository,
@@ -53,6 +57,7 @@ public class AuthorizationService {
     ) {
         this.userRoleAssignmentRepository = userRoleAssignmentRepository;
         this.rolePermissionRepository = rolePermissionRepository;
+        this.permissionRepository = permissionRepository;
         this.userPermissionOverrideRepository = userPermissionOverrideRepository;
         this.userSchoolAccessRepository = userSchoolAccessRepository;
         this.schoolRepository = schoolRepository;
@@ -72,6 +77,55 @@ public class AuthorizationService {
     @Transactional(readOnly = true)
     public boolean hasAnyRole(UserAccount user, Set<UserRole> roles) {
         return rolesFor(user).stream().anyMatch(roles::contains);
+    }
+
+    @Transactional(readOnly = true)
+    public Set<String> roleNamesFor(UserAccount user) {
+        Set<String> roleNames = new TreeSet<>();
+        rolesFor(user).stream()
+                .map(UserRole::name)
+                .forEach(roleNames::add);
+        return Collections.unmodifiableSet(roleNames);
+    }
+
+    @Transactional(readOnly = true)
+    public Set<String> effectivePermissionCodesFor(UserAccount user, String tenantId, String schoolId) {
+        Set<UserRole> roles = rolesFor(user);
+        Set<String> permissions = new TreeSet<>();
+
+        if (roles.contains(UserRole.SUPER_ADMIN)) {
+            permissionRepository.findByActiveTrueOrderByCategoryAscCodeAsc()
+                    .stream()
+                    .map(permission -> normalizeCode(permission.getCode()))
+                    .forEach(permissions::add);
+            return Collections.unmodifiableSet(permissions);
+        }
+
+        Set<UserRole> scopedRoles = scopedRolesFor(user, tenantId, schoolId);
+        if (!scopedRoles.isEmpty()) {
+            rolePermissionRepository.findByRoleInWithPermission(scopedRoles)
+                    .stream()
+                    .map(rolePermission -> normalizeCode(rolePermission.getPermission().getCode()))
+                    .forEach(permissions::add);
+        }
+
+        Instant now = Instant.now();
+        List<UserPermissionOverride> overrides = userPermissionOverrideRepository.findByUserIdWithPermissionOrderByCreatedAtDesc(user.getId())
+                .stream()
+                .filter(override -> override.currentlyActive(now))
+                .filter(override -> overrideMatches(override, tenantId, schoolId))
+                .toList();
+
+        overrides.stream()
+                .filter(UserPermissionOverride::isAllowed)
+                .map(override -> normalizeCode(override.getPermission().getCode()))
+                .forEach(permissions::add);
+        overrides.stream()
+                .filter(override -> !override.isAllowed())
+                .map(override -> normalizeCode(override.getPermission().getCode()))
+                .forEach(permissions::remove);
+
+        return Collections.unmodifiableSet(permissions);
     }
 
     @Transactional(readOnly = true)

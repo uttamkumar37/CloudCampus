@@ -13,6 +13,8 @@ import com.cloudcampus.academic.ClassLevel;
 import com.cloudcampus.academic.ClassLevelRepository;
 import com.cloudcampus.academic.Section;
 import com.cloudcampus.academic.SectionRepository;
+import com.cloudcampus.academic.TeacherAssignment;
+import com.cloudcampus.academic.TeacherAssignmentRepository;
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogRepository;
 import com.cloudcampus.identity.auth.UserAccount;
@@ -71,6 +73,9 @@ class NoticeFlowTest {
 
     @Autowired
     private UserAccountRepository userAccountRepository;
+
+    @Autowired
+    private TeacherAssignmentRepository teacherAssignmentRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -292,6 +297,58 @@ class NoticeFlowTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(studentToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void teacherNoticesAreScopedToAssignedSection() throws Exception {
+        JsonNode onboarding = onboard("notice-life-section", "notice-school-section", "notice-admin-section@example.com");
+        String schoolAdminToken = activateSchoolAdmin(onboarding);
+        Tenant tenant = tenantRepository.findById(onboarding.at("/tenant/id").asText()).orElseThrow();
+        AcademicSetup setup = academicSetup(schoolAdminToken, "2026-2027", "Class 4");
+        Section otherSection = sectionRepository.save(new Section(setup.classLevel(), "B", 40));
+        JsonNode subject = createSubject(schoolAdminToken, "bio", "Biology");
+        JsonNode classSubject = assignSubjectToClass(
+                schoolAdminToken,
+                setup.classLevelId(),
+                subject.at("/id").asText()
+        );
+        UserAccount teacher = createTeacher(tenant, "notice-section-teacher@example.com", "Section Notice Teacher");
+        assignTeacher(schoolAdminToken, teacher.getId(), classSubject.at("/id").asText());
+        TeacherAssignment assignment = teacherAssignmentRepository
+                .findByTeacherIdAndClassSubjectAssignmentId(teacher.getId(), classSubject.at("/id").asText())
+                .orElseThrow();
+        assignment.updateScope(setup.section(), "SECTION_TEACHER", true, teacher);
+        teacherAssignmentRepository.saveAndFlush(assignment);
+        String teacherToken = login("notice-section-teacher@example.com", "TeacherStrong123!").at("/accessToken").asText();
+
+        String assignedNoticeId = createNotice(
+                schoolAdminToken,
+                setup.classLevelId(),
+                setup.sectionId(),
+                "ALL",
+                "Assigned section notice",
+                "Assigned section body."
+        ).at("/id").asText();
+        String otherSectionNoticeId = createNotice(
+                schoolAdminToken,
+                setup.classLevelId(),
+                otherSection.getId(),
+                "ALL",
+                "Other section notice",
+                "Other section body."
+        ).at("/id").asText();
+        mockMvc.perform(post("/v1/school-admin/notices/{noticeId}/publish", assignedNoticeId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(schoolAdminToken)))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/v1/school-admin/notices/{noticeId}/publish", otherSectionNoticeId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(schoolAdminToken)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/v1/teacher/notices")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(assignedNoticeId));
     }
 
     private JsonNode createNotice(

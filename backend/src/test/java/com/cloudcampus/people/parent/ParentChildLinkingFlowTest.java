@@ -150,6 +150,33 @@ class ParentChildLinkingFlowTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        JsonNode secondLink = jsonBody(mockMvc.perform(post("/v1/school-admin/parent-links")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(schoolAdminToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "studentId": "%s",
+                                  "parentFullName": "Anaya Sharma",
+                                  "parentEmail": "anaya.parent@example.com",
+                                  "relationship": "Mother",
+                                  "primaryContact": true
+                                }
+                                """.formatted(unlinkedStudent.getId())))
+                .andExpect(status().isCreated())
+                .andReturn());
+        acceptInvitation(secondLink.at("/invitationToken").asText(), "SecondParentStrong123!", "Anaya Sharma");
+        String secondParentToken = login("anaya.parent@example.com", "SecondParentStrong123!").at("/accessToken").asText();
+
+        mockMvc.perform(get("/v1/parent/children/{studentId}", unlinkedStudent.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(parentToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(get("/v1/parent/children/{studentId}", unlinkedStudent.getId())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(secondParentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.studentId").value(unlinkedStudent.getId()));
     }
 
     @Test

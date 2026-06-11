@@ -4,7 +4,7 @@ import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
+import com.cloudcampus.common.context.RequestContextResolver;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,20 +16,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/parent/children")
 public class ParentPortalController {
 
-    private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final ParentLinkService parentLinkService;
 
     public ParentPortalController(
-            AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             ParentLinkService parentLinkService
     ) {
-        this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.parentLinkService = parentLinkService;
     }
 
     @GetMapping
     ResponseEntity<List<ParentChildResponse>> children(HttpServletRequest request) {
-        return ResponseEntity.ok(parentLinkService.children(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(parentLinkService.children(requestContextResolver.requireContext(request)));
     }
 
     @GetMapping("/{studentId}")
@@ -38,7 +38,7 @@ public class ParentPortalController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(parentLinkService.child(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 studentId
         ));
     }

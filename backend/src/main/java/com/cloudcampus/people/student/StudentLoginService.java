@@ -7,12 +7,14 @@ import java.util.Map;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
@@ -30,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class StudentLoginService {
 
     private final StudentRepository studentRepository;
+    private final StudentUserLinkRepository studentUserLinkRepository;
     private final UserAccountRepository userAccountRepository;
     private final UserSchoolAccessRepository userSchoolAccessRepository;
     private final InvitationRepository invitationRepository;
@@ -37,18 +40,22 @@ public class StudentLoginService {
     private final SchoolAccessService schoolAccessService;
     private final AuditLogService auditLogService;
     private final InvitationEmailDeliveryService invitationEmailDeliveryService;
+    private final AuthorizationGuard authorizationGuard;
 
     public StudentLoginService(
             StudentRepository studentRepository,
+            StudentUserLinkRepository studentUserLinkRepository,
             UserAccountRepository userAccountRepository,
             UserSchoolAccessRepository userSchoolAccessRepository,
             InvitationRepository invitationRepository,
             InvitationTokenService invitationTokenService,
             SchoolAccessService schoolAccessService,
             AuditLogService auditLogService,
-            InvitationEmailDeliveryService invitationEmailDeliveryService
+            InvitationEmailDeliveryService invitationEmailDeliveryService,
+            AuthorizationGuard authorizationGuard
     ) {
         this.studentRepository = studentRepository;
+        this.studentUserLinkRepository = studentUserLinkRepository;
         this.userAccountRepository = userAccountRepository;
         this.userSchoolAccessRepository = userSchoolAccessRepository;
         this.invitationRepository = invitationRepository;
@@ -56,6 +63,7 @@ public class StudentLoginService {
         this.schoolAccessService = schoolAccessService;
         this.auditLogService = auditLogService;
         this.invitationEmailDeliveryService = invitationEmailDeliveryService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional
@@ -76,7 +84,7 @@ public class StudentLoginService {
         if (user.getStatus() == UserStatus.DISABLED) {
             throw new ForbiddenException("Disabled users cannot be invited.");
         }
-        linkStudentToUser(student, user, email);
+        linkStudentToUser(student, user, email, actor.user());
 
         UserSchoolAccess access = grantSchoolAccessIfMissing(student, user);
         IssuedInvitation issuedInvitation = null;
@@ -93,21 +101,22 @@ public class StudentLoginService {
     }
 
     @Transactional(readOnly = true)
-    public StudentSelfProfileResponse selfProfile(AuthenticatedUser actor) {
-        if (actor.user().getRole() != UserRole.STUDENT) {
-            throw new ForbiddenException("Student access is required.");
-        }
-        Student student = studentRepository.findByUserId(actor.user().getId())
-                .filter(candidate -> candidate.getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(candidate -> candidate.getUser() != null && candidate.getUser().getId().equals(actor.user().getId()))
-                .orElseThrow(() -> new ForbiddenException("Student profile is not linked to this user."));
-        if (actor.activeSchoolId() == null || actor.activeSchoolId().isBlank()) {
-            throw new ForbiddenException("An active school is required.");
-        }
-        if (!student.getSchool().getId().equals(actor.activeSchoolId())) {
-            throw new ForbiddenException("Student profile is not linked to the active school.");
-        }
+    public StudentSelfProfileResponse selfProfile(RequestContext actor) {
+        Student student = requireStudentProfile(actor);
         return toSelfProfileResponse(student);
+    }
+
+    private Student requireStudentProfile(RequestContext actor) {
+        authorizationGuard.requireRole(actor, "STUDENT");
+        String userId = actor.userId().toString();
+        Student student = studentRepository.findByUserId(userId)
+                .filter(candidate -> actor.tenantId() != null
+                        && candidate.getTenant().getId().equals(actor.tenantId().toString()))
+                .filter(candidate -> candidate.getUser() != null && candidate.getUser().getId().equals(userId))
+                .orElseThrow(() -> new ForbiddenException("Student profile is not linked to this user."));
+        authorizationGuard.requireStudentSelfAccess(actor, student.getId());
+        authorizationGuard.requireStudentRecordVisible(actor, student.getId());
+        return student;
     }
 
     private UserAccount findOrCreateStudentUser(Student student, String email) {
@@ -120,7 +129,7 @@ public class StudentLoginService {
                 )));
     }
 
-    private void linkStudentToUser(Student student, UserAccount user, String requestedEmail) {
+    private void linkStudentToUser(Student student, UserAccount user, String requestedEmail, UserAccount actor) {
         UserAccount existingLinkedUser = student.getUser();
         if (existingLinkedUser != null) {
             if (!existingLinkedUser.getId().equals(user.getId())) {
@@ -129,9 +138,23 @@ public class StudentLoginService {
             if (!existingLinkedUser.getEmail().equalsIgnoreCase(requestedEmail)) {
                 throw new ConflictException("Student login email does not match the linked user.");
             }
+            ensureActiveStudentUserLink(student, user, actor);
             return;
         }
         student.attachUser(user);
+        ensureActiveStudentUserLink(student, user, actor);
+    }
+
+    private void ensureActiveStudentUserLink(Student student, UserAccount user, UserAccount actor) {
+        studentUserLinkRepository.findByUserIdAndStudentId(user.getId(), student.getId())
+                .ifPresentOrElse(
+                        existing -> {
+                            if (!existing.isActive()) {
+                                existing.activate(actor);
+                            }
+                        },
+                        () -> studentUserLinkRepository.save(new StudentUserLink(student, user, actor))
+                );
     }
 
     private UserSchoolAccess grantSchoolAccessIfMissing(Student student, UserAccount user) {

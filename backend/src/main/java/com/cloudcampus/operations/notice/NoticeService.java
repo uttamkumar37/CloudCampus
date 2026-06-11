@@ -3,21 +3,21 @@ package com.cloudcampus.operations.notice;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.cloudcampus.academic.ClassLevel;
 import com.cloudcampus.academic.ClassLevelRepository;
 import com.cloudcampus.academic.Section;
 import com.cloudcampus.academic.SectionRepository;
+import com.cloudcampus.academic.TeacherAssignment;
 import com.cloudcampus.academic.TeacherAssignmentRepository;
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccount;
-import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
 import com.cloudcampus.people.parent.ParentStudentLinkRepository;
 import com.cloudcampus.people.student.Student;
@@ -40,6 +40,7 @@ public class NoticeService {
     private final SchoolRepository schoolRepository;
     private final SchoolAccessService schoolAccessService;
     private final AuditLogService auditLogService;
+    private final AuthorizationGuard authorizationGuard;
 
     public NoticeService(
             NoticeRepository noticeRepository,
@@ -50,7 +51,8 @@ public class NoticeService {
             ParentStudentLinkRepository parentStudentLinkRepository,
             SchoolRepository schoolRepository,
             SchoolAccessService schoolAccessService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            AuthorizationGuard authorizationGuard
     ) {
         this.noticeRepository = noticeRepository;
         this.classLevelRepository = classLevelRepository;
@@ -61,6 +63,7 @@ public class NoticeService {
         this.schoolRepository = schoolRepository;
         this.schoolAccessService = schoolAccessService;
         this.auditLogService = auditLogService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional
@@ -107,35 +110,33 @@ public class NoticeService {
     }
 
     @Transactional(readOnly = true)
-    public List<NoticeResponse> teacherNotices(AuthenticatedUser actor) {
-        if (actor.user().getRole() != UserRole.TEACHER) {
-            throw new ForbiddenException("Teacher access is required.");
-        }
-        String activeSchoolId = activeTeacherSchoolId(actor);
-        if (activeSchoolId == null) {
+    public List<NoticeResponse> teacherNotices(RequestContext actor) {
+        authorizationGuard.requireRole(actor, "TEACHER");
+        String activeSchoolId = authorizationGuard.requireActiveSchool(actor).toString();
+        authorizationGuard.requireUserSchoolAccess(actor, actor.activeSchoolId());
+        List<TeacherAssignment> assignments = activeTeacherAssignments(actor, activeSchoolId);
+        if (assignments.isEmpty()) {
             return List.of();
         }
-        Set<String> assignedClassLevelIds = activeTeacherClassLevelIds(actor, activeSchoolId);
         return noticeRepository.findBySchoolIdInAndStatusAndAudienceInOrderByPublishedAtDescCreatedAtDesc(
                         List.of(activeSchoolId),
                         NoticeStatus.PUBLISHED,
                         List.of(NoticeAudience.ALL, NoticeAudience.TEACHERS)
                 )
                 .stream()
-                .filter(notice -> notice.getClassLevel() == null
-                        || assignedClassLevelIds.contains(notice.getClassLevel().getId()))
+                .filter(notice -> teacherCanSeeNotice(assignments, notice))
                 .map(this::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<NoticeResponse> parentChildNotices(AuthenticatedUser actor, String studentId) {
+    public List<NoticeResponse> parentChildNotices(RequestContext actor, String studentId) {
         Student student = requireParentLinkedToStudent(actor, studentId);
         return visibleStudentNotices(student, List.of(NoticeAudience.ALL, NoticeAudience.PARENTS));
     }
 
     @Transactional(readOnly = true)
-    public List<NoticeResponse> studentNotices(AuthenticatedUser actor) {
+    public List<NoticeResponse> studentNotices(RequestContext actor) {
         Student student = requireStudentProfile(actor);
         return visibleStudentNotices(student, List.of(NoticeAudience.ALL, NoticeAudience.STUDENTS));
     }
@@ -179,41 +180,22 @@ public class NoticeService {
         return section;
     }
 
-    private Student requireParentLinkedToStudent(AuthenticatedUser actor, String studentId) {
-        if (actor.user().getRole() != UserRole.PARENT) {
-            throw new ForbiddenException("Parent access is required.");
-        }
-        String activeSchoolId = actor.activeSchoolId();
-        if (activeSchoolId == null || activeSchoolId.isBlank()) {
-            throw new ForbiddenException("An active school is required for parent access.");
-        }
-        return parentStudentLinkRepository.findByParentUserIdAndStudentId(actor.user().getId(), studentId)
-                .filter(link -> link.getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getStudent().getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getSchool().getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getSchool().getId().equals(activeSchoolId))
-                .map(link -> link.getStudent())
-                .orElseThrow(() -> new ForbiddenException("Parent is not linked to this child."));
+    private Student requireParentLinkedToStudent(RequestContext actor, String studentId) {
+        authorizationGuard.requireRole(actor, "PARENT");
+        authorizationGuard.requireStudentRecordVisible(actor, studentId);
+        return studentRepository.findById(studentId)
+                .orElseThrow(() -> new NotFoundException("Student was not found."));
     }
 
-    private Student requireStudentProfile(AuthenticatedUser actor) {
-        if (actor.user().getRole() != UserRole.STUDENT) {
-            throw new ForbiddenException("Student access is required.");
-        }
-        Student student = studentRepository.findByUserId(actor.user().getId())
-                .filter(candidate -> candidate.getTenant().getId().equals(actor.user().getTenant().getId()))
+    private Student requireStudentProfile(RequestContext actor) {
+        authorizationGuard.requireRole(actor, "STUDENT");
+        Student student = studentRepository.findByUserId(actor.userId().toString())
+                .filter(candidate -> actor.tenantId() != null
+                        && candidate.getTenant().getId().equals(actor.tenantId().toString()))
                 .orElseThrow(() -> new ForbiddenException("Student profile is not linked to this user."));
-        requireActiveStudentSchool(actor, student);
+        authorizationGuard.requireStudentSelfAccess(actor, student.getId());
+        authorizationGuard.requireStudentRecordVisible(actor, student.getId());
         return student;
-    }
-
-    private void requireActiveStudentSchool(AuthenticatedUser actor, Student student) {
-        if (actor.activeSchoolId() == null || actor.activeSchoolId().isBlank()) {
-            throw new ForbiddenException("An active school is required.");
-        }
-        if (!student.getSchool().getId().equals(actor.activeSchoolId())) {
-            throw new ForbiddenException("Student profile is not linked to the active school.");
-        }
     }
 
     private List<NoticeResponse> visibleStudentNotices(Student student, List<NoticeAudience> audiences) {
@@ -231,33 +213,28 @@ public class NoticeService {
                 .toList();
     }
 
-    private String activeTeacherSchoolId(AuthenticatedUser actor) {
-        String activeSchoolId = actor.activeSchoolId();
-        if (activeSchoolId == null || activeSchoolId.isBlank()) {
-            throw new ForbiddenException("An active school is required.");
-        }
-        boolean hasAssignment = teacherAssignmentRepository
-                .findByTeacherIdOrderByClassSubjectAssignmentClassLevelNameAscClassSubjectAssignmentSubjectNameAsc(
-                        actor.user().getId()
-                )
-                .stream()
-                .anyMatch(assignment -> assignment.isActive()
-                        && assignment.getTenant().getId().equals(actor.user().getTenant().getId())
-                        && assignment.getSchool().getId().equals(activeSchoolId));
-        return hasAssignment ? activeSchoolId : null;
-    }
-
-    private Set<String> activeTeacherClassLevelIds(AuthenticatedUser actor, String activeSchoolId) {
+    private List<TeacherAssignment> activeTeacherAssignments(RequestContext actor, String activeSchoolId) {
         return teacherAssignmentRepository
                 .findByTeacherIdOrderByClassSubjectAssignmentClassLevelNameAscClassSubjectAssignmentSubjectNameAsc(
-                        actor.user().getId()
+                        actor.userId().toString()
                 )
                 .stream()
                 .filter(assignment -> assignment.isActive()
-                        && assignment.getTenant().getId().equals(actor.user().getTenant().getId())
+                        && assignment.getTenant().getId().equals(actor.tenantId().toString())
                         && assignment.getSchool().getId().equals(activeSchoolId))
-                .map(assignment -> assignment.getClassSubjectAssignment().getClassLevel().getId())
-                .collect(Collectors.toSet());
+                .toList();
+    }
+
+    private boolean teacherCanSeeNotice(List<TeacherAssignment> assignments, Notice notice) {
+        if (notice.getClassLevel() == null) {
+            return true;
+        }
+        return assignments.stream().anyMatch(assignment ->
+                assignment.getClassLevel().getId().equals(notice.getClassLevel().getId())
+                        && (notice.getSection() == null
+                        || assignment.getSection() == null
+                        || assignment.getSection().getId().equals(notice.getSection().getId()))
+        );
     }
 
     private Notice requireNotice(String noticeId) {

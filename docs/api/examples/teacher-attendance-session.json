@@ -1,0 +1,45 @@
+{
+  "request": {
+    "classLevelId": "class-8",
+    "sectionId": "section-a",
+    "subjectId": "math",
+    "attendanceDate": "2026-06-11",
+    "records": [
+      {
+        "studentId": "63b5bf91-bfb7-43d6-a391-eac71d4fa001",
+        "status": "PRESENT",
+        "remark": "Morning session"
+      }
+    ]
+  },
+  "response": {
+    "id": "a7d61ff9-9f41-4ef2-b467-00b33da1a001",
+    "tenantId": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+    "schoolId": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+    "classLevelId": "class-8",
+    "classLevelName": "Class 8",
+    "sectionId": "section-a",
+    "sectionName": "A",
+    "subjectId": "math",
+    "subjectCode": "MATH",
+    "subjectName": "Mathematics",
+    "submittedByUserId": "62e2fb80-9877-4e80-8b15-163ffdf3a001",
+    "submittedByRole": "TEACHER",
+    "attendanceDate": "2026-06-11",
+    "presentCount": 1,
+    "absentCount": 0,
+    "lateCount": 0,
+    "excusedCount": 0,
+    "createdAt": "2026-06-11T10:15:30Z",
+    "records": [
+      {
+        "id": "81f8cf63-b81c-4afe-bbe3-2bf0362ca001",
+        "studentId": "63b5bf91-bfb7-43d6-a391-eac71d4fa001",
+        "admissionNumber": "GV-2026-001",
+        "studentName": "Nisha Iyer",
+        "status": "PRESENT",
+        "remark": "Morning session"
+      }
+    ]
+  }
+}

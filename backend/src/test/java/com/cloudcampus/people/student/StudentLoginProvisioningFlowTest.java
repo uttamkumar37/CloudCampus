@@ -65,6 +65,9 @@ class StudentLoginProvisioningFlowTest {
     private UserSchoolAccessRepository userSchoolAccessRepository;
 
     @Autowired
+    private StudentUserLinkRepository studentUserLinkRepository;
+
+    @Autowired
     private InvitationRepository invitationRepository;
 
     @Autowired
@@ -120,6 +123,10 @@ class StudentLoginProvisioningFlowTest {
                 .get()
                 .extracting(access -> access.getRole())
                 .isEqualTo(UserRole.STUDENT);
+        StudentUserLink studentUserLink = studentUserLinkRepository
+                .findByUserIdAndStudentId(studentUserId, student.getId())
+                .orElseThrow();
+        assertThat(studentUserLink.isActive()).isTrue();
         assertThat(invitationRepository.findById(invitation.at("/invitationId").asText())).isPresent();
 
         Map<AuditAction, AuditLog> auditByAction = auditLogRepository.findByTenantId(tenant.getId())
@@ -158,6 +165,13 @@ class StudentLoginProvisioningFlowTest {
                 .andExpect(jsonPath("$.schoolId").value(school.getId()))
                 .andExpect(jsonPath("$.admissionNumber").value("STU-100"))
                 .andExpect(jsonPath("$.fullName").value("Asha Student"));
+
+        studentUserLink.deactivate(studentUser);
+        studentUserLinkRepository.save(studentUserLink);
+        mockMvc.perform(get("/v1/student/profile")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(studentToken)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.cloudcampus.operations.notice;
 
 import java.util.List;
 
+import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,13 +22,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class NoticeController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final NoticeService noticeService;
 
     public NoticeController(
             AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             NoticeService noticeService
     ) {
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.noticeService = noticeService;
     }
 
@@ -71,7 +75,7 @@ public class NoticeController {
 
     @GetMapping("/v1/teacher/notices")
     ResponseEntity<List<NoticeResponse>> teacherNotices(HttpServletRequest request) {
-        return ResponseEntity.ok(noticeService.teacherNotices(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(noticeService.teacherNotices(requestContextResolver.requireContext(request)));
     }
 
     @GetMapping("/v1/parent/children/{studentId}/notices")
@@ -80,13 +84,13 @@ public class NoticeController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(noticeService.parentChildNotices(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 studentId
         ));
     }
 
     @GetMapping("/v1/student/notices")
     ResponseEntity<List<NoticeResponse>> studentNotices(HttpServletRequest request) {
-        return ResponseEntity.ok(noticeService.studentNotices(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(noticeService.studentNotices(requestContextResolver.requireContext(request)));
     }
 }

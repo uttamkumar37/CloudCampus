@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.UnauthorizedException;
+import com.cloudcampus.common.context.RequestContextAttributes;
+import com.cloudcampus.common.context.RequestContextFactory;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
 import com.cloudcampus.identity.auth.UserAccount;
@@ -26,23 +28,31 @@ public class AuthenticatedUserResolver {
     private final SessionTokenService sessionTokenService;
     private final UserAccountRepository userAccountRepository;
     private final UserSchoolAccessRepository userSchoolAccessRepository;
+    private final RequestContextFactory requestContextFactory;
 
     public AuthenticatedUserResolver(
             JwtAccessTokenService jwtAccessTokenService,
             RevokedAccessTokenRepository revokedAccessTokenRepository,
             SessionTokenService sessionTokenService,
             UserAccountRepository userAccountRepository,
-            UserSchoolAccessRepository userSchoolAccessRepository
+            UserSchoolAccessRepository userSchoolAccessRepository,
+            RequestContextFactory requestContextFactory
     ) {
         this.jwtAccessTokenService = jwtAccessTokenService;
         this.revokedAccessTokenRepository = revokedAccessTokenRepository;
         this.sessionTokenService = sessionTokenService;
         this.userAccountRepository = userAccountRepository;
         this.userSchoolAccessRepository = userSchoolAccessRepository;
+        this.requestContextFactory = requestContextFactory;
     }
 
     @Transactional(readOnly = true)
     public AuthenticatedUser requireUser(HttpServletRequest request) {
+        Object cachedUser = request.getAttribute(RequestContextAttributes.AUTHENTICATED_USER);
+        if (cachedUser instanceof AuthenticatedUser authenticatedUser) {
+            return authenticatedUser;
+        }
+
         String token = extractBearerToken(request);
         if (revokedAccessTokenRepository.existsByTokenHash(sessionTokenService.hash(token))) {
             throw new UnauthorizedException("Access token has been revoked.");
@@ -62,7 +72,10 @@ public class AuthenticatedUserResolver {
         }
 
         String activeSchoolId = resolveActiveSchoolId(user, claims.activeSchoolId());
-        return new AuthenticatedUser(user, activeSchoolId);
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(user, activeSchoolId);
+        request.setAttribute(RequestContextAttributes.AUTHENTICATED_USER, authenticatedUser);
+        request.setAttribute(RequestContextAttributes.REQUEST_CONTEXT, requestContextFactory.from(request, authenticatedUser));
+        return authenticatedUser;
     }
 
     public String extractBearerToken(HttpServletRequest request) {

@@ -1,0 +1,23 @@
+{
+  "request": {
+    "rows": [
+      {
+        "admissionNumber": "GV-2026-001",
+        "fullName": "Nisha Iyer",
+        "classLevelId": "class-8",
+        "sectionId": "section-a",
+        "rollNumber": "12",
+        "dateOfBirth": "2013-08-14",
+        "gender": "FEMALE",
+        "guardianName": "Ravi Iyer",
+        "guardianEmail": "ravi.iyer@example.com",
+        "guardianMobile": "+919876543210"
+      }
+    ]
+  },
+  "response": {
+    "valid": true,
+    "rowCount": 1,
+    "errors": []
+  }
+}

@@ -2,6 +2,7 @@ package com.cloudcampus.operations.attendance;
 
 import java.util.List;
 
+import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,13 +24,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class AttendanceController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final AttendanceService attendanceService;
 
     public AttendanceController(
             AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             AttendanceService attendanceService
     ) {
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.attendanceService = attendanceService;
     }
 
@@ -66,7 +70,7 @@ public class AttendanceController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(attendanceService.createTeacherSession(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 requestBody
         ));
     }
@@ -78,7 +82,7 @@ public class AttendanceController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(attendanceService.teacherSessions(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 classLevelId,
                 subjectId
         ));
@@ -90,7 +94,7 @@ public class AttendanceController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(attendanceService.teacherSession(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 sessionId
         ));
     }
@@ -101,13 +105,13 @@ public class AttendanceController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(attendanceService.parentChildAttendance(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 studentId
         ));
     }
 
     @GetMapping("/v1/student/attendance")
     ResponseEntity<List<StudentAttendanceResponse>> studentAttendance(HttpServletRequest request) {
-        return ResponseEntity.ok(attendanceService.studentAttendance(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(attendanceService.studentAttendance(requestContextResolver.requireContext(request)));
     }
 }

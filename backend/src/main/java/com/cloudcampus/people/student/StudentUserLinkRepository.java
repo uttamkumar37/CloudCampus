@@ -8,5 +8,7 @@ public interface StudentUserLinkRepository extends JpaRepository<StudentUserLink
 
     boolean existsByUserIdAndStudentIdAndActiveTrue(String userId, String studentId);
 
+    Optional<StudentUserLink> findByUserIdAndStudentId(String userId, String studentId);
+
     Optional<StudentUserLink> findByUserIdAndActiveTrue(String userId);
 }

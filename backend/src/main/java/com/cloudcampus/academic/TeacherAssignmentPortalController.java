@@ -2,7 +2,7 @@ package com.cloudcampus.academic;
 
 import java.util.List;
 
-import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
+import com.cloudcampus.common.context.RequestContextResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -16,14 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/teacher/assignments")
 public class TeacherAssignmentPortalController {
 
-    private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final AcademicAssignmentService academicAssignmentService;
 
     public TeacherAssignmentPortalController(
-            AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             AcademicAssignmentService academicAssignmentService
     ) {
-        this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.academicAssignmentService = academicAssignmentService;
     }
 
@@ -34,11 +34,11 @@ public class TeacherAssignmentPortalController {
     ) {
         if (classLevelId == null || classLevelId.isBlank()) {
             return ResponseEntity.ok(academicAssignmentService.myAssignments(
-                    authenticatedUserResolver.requireUser(request)
+                    requestContextResolver.requireContext(request)
             ));
         }
         return ResponseEntity.ok(academicAssignmentService.myAssignmentsForClass(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 classLevelId
         ));
     }

@@ -1,0 +1,45 @@
+{
+  "request": {
+    "tenant": {
+      "code": "green-valley",
+      "name": "Green Valley Education Trust"
+    },
+    "firstSchool": {
+      "code": "green-valley-main",
+      "name": "Green Valley School"
+    },
+    "primaryAdmin": {
+      "fullName": "Asha Rao",
+      "email": "school.admin@greenvalley.edu"
+    }
+  },
+  "response": {
+    "tenant": {
+      "id": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+      "code": "green-valley",
+      "name": "Green Valley Education Trust",
+      "status": "ACTIVE"
+    },
+    "school": {
+      "id": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+      "code": "green-valley-main",
+      "name": "Green Valley School",
+      "primarySchool": true
+    },
+    "schoolAdminInvitation": {
+      "invitationId": "a976c3b8-4372-4e6c-a9a4-84fe764aa001",
+      "userId": "8ee5ac7e-8b5f-42d3-a5f1-1ff1a12aa001",
+      "email": "school.admin@greenvalley.edu",
+      "role": "SCHOOL_ADMIN",
+      "expiresAt": "2026-06-18T10:15:30Z",
+      "token": "redacted-invitation-token",
+      "acceptanceUrl": "https://app.cloudcampus.example/invitations/accept?token=redacted"
+    },
+    "schoolAccess": {
+      "userId": "8ee5ac7e-8b5f-42d3-a5f1-1ff1a12aa001",
+      "schoolId": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+      "role": "SCHOOL_ADMIN",
+      "primaryAccess": true
+    }
+  }
+}

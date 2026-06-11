@@ -1,22 +1,25 @@
 package com.cloudcampus.identity.auth.session;
 
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.exception.UnauthorizedException;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
@@ -53,6 +56,7 @@ public class AuthSessionService {
     private final MfaChallengeRepository mfaChallengeRepository;
     private final LoginRateLimiterService loginRateLimiterService;
     private final AuditLogService auditLogService;
+    private final AuthorizationGuard authorizationGuard;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public AuthSessionService(
@@ -67,7 +71,8 @@ public class AuthSessionService {
             PasswordResetTokenRepository passwordResetTokenRepository,
             MfaChallengeRepository mfaChallengeRepository,
             LoginRateLimiterService loginRateLimiterService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            AuthorizationGuard authorizationGuard
     ) {
         this.userAccountRepository = userAccountRepository;
         this.userSchoolAccessRepository = userSchoolAccessRepository;
@@ -81,6 +86,7 @@ public class AuthSessionService {
         this.mfaChallengeRepository = mfaChallengeRepository;
         this.loginRateLimiterService = loginRateLimiterService;
         this.auditLogService = auditLogService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional
@@ -342,16 +348,23 @@ public class AuthSessionService {
     }
 
     @Transactional
-    public AuthSessionResponse activateSchool(AuthenticatedUser authenticatedUser, String schoolId) {
-        UserAccount user = authenticatedUser.user();
+    public AuthSessionResponse activateSchool(RequestContext context, String schoolId) {
+        authorizationGuard.requireAuthenticated(context);
+        UserAccount user = userAccountRepository.findById(context.userId().toString())
+                .orElseThrow(() -> new UnauthorizedException("Authenticated user was not found."));
         if (isNonWorkspaceSessionRole(user.getRole())) {
             throw new ForbiddenException("This role cannot activate school context.");
         }
+        ensureTenantActive(user);
+        authorizationGuard.requireTenantScope(context, storedUuid(user.getTenant().getId()));
+
         School school = schoolRepository.findById(schoolId)
                 .orElseThrow(() -> new NotFoundException("School was not found."));
-        if (!school.getTenant().getId().equals(user.getTenant().getId())) {
-            throw new ForbiddenException("User cannot activate a school outside their tenant.");
+        authorizationGuard.requireTenantScope(context, storedUuid(school.getTenant().getId()));
+        if (!school.isActive()) {
+            throw new ForbiddenException("Inactive school cannot be activated.");
         }
+        authorizationGuard.requireUserSchoolGrant(context, storedUuid(school.getId()));
 
         UserSchoolAccess access = userSchoolAccessRepository.findByUserIdAndSchoolId(user.getId(), schoolId)
                 .orElseThrow(() -> new ForbiddenException("User is not assigned to this school."));
@@ -452,6 +465,17 @@ public class AuthSessionService {
 
     private String normalizeEmail(String rawEmail) {
         return rawEmail.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private UUID storedUuid(String value) {
+        if (value == null || value.isBlank()) {
+            throw new ForbiddenException("Stored identifier is invalid.");
+        }
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException ex) {
+            throw new ForbiddenException("Stored identifier is invalid.");
+        }
     }
 
     private AuthSessionResponse issueSession(UserAccount user, String activeSchoolId, boolean includeRefreshToken) {

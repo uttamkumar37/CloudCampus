@@ -15,10 +15,12 @@ import com.cloudcampus.academic.SectionRepository;
 import com.cloudcampus.academic.TeacherAssignment;
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
@@ -45,6 +47,7 @@ public class ExamService {
     private final SchoolAccessService schoolAccessService;
     private final AcademicAssignmentService academicAssignmentService;
     private final AuditLogService auditLogService;
+    private final AuthorizationGuard authorizationGuard;
 
     public ExamService(
             ExamRepository examRepository,
@@ -57,7 +60,8 @@ public class ExamService {
             SchoolRepository schoolRepository,
             SchoolAccessService schoolAccessService,
             AcademicAssignmentService academicAssignmentService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            AuthorizationGuard authorizationGuard
     ) {
         this.examRepository = examRepository;
         this.examResultRepository = examResultRepository;
@@ -70,6 +74,7 @@ public class ExamService {
         this.schoolAccessService = schoolAccessService;
         this.academicAssignmentService = academicAssignmentService;
         this.auditLogService = auditLogService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional
@@ -128,7 +133,7 @@ public class ExamService {
     }
 
     @Transactional(readOnly = true)
-    public List<ExamResponse> teacherExams(AuthenticatedUser teacher, String classLevelId, String subjectId) {
+    public List<ExamResponse> teacherExams(RequestContext teacher, String classLevelId, String subjectId) {
         TeacherAssignment assignment = academicAssignmentService.requireTeacherAssignment(teacher, classLevelId, subjectId);
         return examRepository.findBySchoolIdAndClassLevelIdAndSubjectIdOrderByExamDateAscCreatedAtAsc(
                         assignment.getSchool().getId(),
@@ -136,27 +141,30 @@ public class ExamService {
                         subjectId
                 )
                 .stream()
+                .filter(exam -> teacherAssignmentCoversSection(assignment, exam.getSection()))
                 .map(this::toResponseWithResults)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public ExamResponse teacherExam(AuthenticatedUser teacher, String examId) {
+    public ExamResponse teacherExam(RequestContext teacher, String examId) {
         Exam exam = requireExam(examId);
         academicAssignmentService.requireTeacherAssignment(
                 teacher,
                 exam.getClassLevel().getId(),
+                exam.getSection() == null ? null : exam.getSection().getId(),
                 exam.getSubject().getId()
         );
         return toResponseWithResults(exam);
     }
 
     @Transactional(readOnly = true)
-    public List<ExamRosterStudentResponse> teacherExamRoster(AuthenticatedUser teacher, String examId) {
+    public List<ExamRosterStudentResponse> teacherExamRoster(RequestContext teacher, String examId) {
         Exam exam = requireExam(examId);
         academicAssignmentService.requireTeacherAssignment(
                 teacher,
                 exam.getClassLevel().getId(),
+                exam.getSection() == null ? null : exam.getSection().getId(),
                 exam.getSubject().getId()
         );
         Map<String, ExamResult> resultsByStudentId = examResultRepository
@@ -170,19 +178,20 @@ public class ExamService {
     }
 
     @Transactional
-    public ExamResponse recordTeacherMarks(AuthenticatedUser teacher, String examId, ExamMarksRequest request) {
+    public ExamResponse recordTeacherMarks(RequestContext teacher, String examId, ExamMarksRequest request) {
         Exam exam = requireExam(examId);
-        academicAssignmentService.requireTeacherAssignment(
+        TeacherAssignment assignment = academicAssignmentService.requireTeacherAssignment(
                 teacher,
                 exam.getClassLevel().getId(),
+                exam.getSection() == null ? null : exam.getSection().getId(),
                 exam.getSubject().getId()
         );
-        ExamResult result = recordMarks(teacher.user(), exam, request);
+        ExamResult result = recordMarks(assignment.getTeacher(), exam, request);
         return toResponse(exam, List.of(result));
     }
 
     @Transactional(readOnly = true)
-    public List<ExamResponse> parentChildResults(AuthenticatedUser actor, String studentId) {
+    public List<ExamResponse> parentChildResults(RequestContext actor, String studentId) {
         Student student = requireParentLinkedToStudent(actor, studentId);
         return publishedResultsForStudent(student)
                 .stream()
@@ -191,7 +200,7 @@ public class ExamService {
     }
 
     @Transactional(readOnly = true)
-    public List<ExamResponse> studentResults(AuthenticatedUser actor) {
+    public List<ExamResponse> studentResults(RequestContext actor) {
         Student student = requireStudentProfile(actor);
         return publishedResultsForStudent(student)
                 .stream()
@@ -299,41 +308,27 @@ public class ExamService {
         }
     }
 
-    private Student requireParentLinkedToStudent(AuthenticatedUser actor, String studentId) {
-        if (actor.user().getRole() != UserRole.PARENT) {
-            throw new ForbiddenException("Parent access is required.");
-        }
-        String activeSchoolId = actor.activeSchoolId();
-        if (activeSchoolId == null || activeSchoolId.isBlank()) {
-            throw new ForbiddenException("An active school is required for parent access.");
-        }
-        return parentStudentLinkRepository.findByParentUserIdAndStudentId(actor.user().getId(), studentId)
-                .filter(link -> link.getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getStudent().getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getSchool().getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getSchool().getId().equals(activeSchoolId))
-                .map(link -> link.getStudent())
-                .orElseThrow(() -> new ForbiddenException("Parent is not linked to this child."));
+    private boolean teacherAssignmentCoversSection(TeacherAssignment assignment, Section section) {
+        return assignment.getSection() == null
+                || (section != null && assignment.getSection().getId().equals(section.getId()));
     }
 
-    private Student requireStudentProfile(AuthenticatedUser actor) {
-        if (actor.user().getRole() != UserRole.STUDENT) {
-            throw new ForbiddenException("Student access is required.");
-        }
-        Student student = studentRepository.findByUserId(actor.user().getId())
-                .filter(candidate -> candidate.getTenant().getId().equals(actor.user().getTenant().getId()))
+    private Student requireParentLinkedToStudent(RequestContext actor, String studentId) {
+        authorizationGuard.requireRole(actor, "PARENT");
+        authorizationGuard.requireStudentRecordVisible(actor, studentId);
+        return studentRepository.findById(studentId)
+                .orElseThrow(() -> new NotFoundException("Student was not found."));
+    }
+
+    private Student requireStudentProfile(RequestContext actor) {
+        authorizationGuard.requireRole(actor, "STUDENT");
+        Student student = studentRepository.findByUserId(actor.userId().toString())
+                .filter(candidate -> actor.tenantId() != null
+                        && candidate.getTenant().getId().equals(actor.tenantId().toString()))
                 .orElseThrow(() -> new ForbiddenException("Student profile is not linked to this user."));
-        requireActiveStudentSchool(actor, student);
+        authorizationGuard.requireStudentSelfAccess(actor, student.getId());
+        authorizationGuard.requireStudentRecordVisible(actor, student.getId());
         return student;
-    }
-
-    private void requireActiveStudentSchool(AuthenticatedUser actor, Student student) {
-        if (actor.activeSchoolId() == null || actor.activeSchoolId().isBlank()) {
-            throw new ForbiddenException("An active school is required.");
-        }
-        if (!student.getSchool().getId().equals(actor.activeSchoolId())) {
-            throw new ForbiddenException("Student profile is not linked to the active school.");
-        }
     }
 
     private List<ExamResult> publishedResultsForStudent(Student student) {

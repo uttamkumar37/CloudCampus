@@ -2,6 +2,7 @@ package com.cloudcampus.operations.exam;
 
 import java.util.List;
 
+import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,10 +24,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class ExamController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final ExamService examService;
 
-    public ExamController(AuthenticatedUserResolver authenticatedUserResolver, ExamService examService) {
+    public ExamController(
+            AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
+            ExamService examService
+    ) {
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.examService = examService;
     }
 
@@ -82,7 +89,7 @@ public class ExamController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(examService.teacherExams(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 classLevelId,
                 subjectId
         ));
@@ -91,7 +98,7 @@ public class ExamController {
     @GetMapping("/v1/teacher/exams/{examId}")
     ResponseEntity<ExamResponse> teacherExam(@PathVariable String examId, HttpServletRequest request) {
         return ResponseEntity.ok(examService.teacherExam(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 examId
         ));
     }
@@ -102,7 +109,7 @@ public class ExamController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(examService.teacherExamRoster(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 examId
         ));
     }
@@ -114,7 +121,7 @@ public class ExamController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(examService.recordTeacherMarks(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 examId,
                 requestBody
         ));
@@ -126,13 +133,13 @@ public class ExamController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(examService.parentChildResults(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 studentId
         ));
     }
 
     @GetMapping("/v1/student/results")
     ResponseEntity<List<ExamResponse>> studentResults(HttpServletRequest request) {
-        return ResponseEntity.ok(examService.studentResults(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(examService.studentResults(requestContextResolver.requireContext(request)));
     }
 }
