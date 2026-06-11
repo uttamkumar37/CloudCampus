@@ -27,21 +27,23 @@ Useful notes:
 - The frontend defaults to `http://localhost:18080` for backend API calls.
 - Set `VITE_CLOUDCAMPUS_API_BASE_URL` if the backend runs elsewhere.
 - The mock AI provider returns deterministic output without an external AI key.
-- Use local demo users from `LocalDemoDataSeeder`.
+- Use local demo users from `LocalDemoDataSeeder`; local accounts use `DemoPass123!`.
+- In local profile, the MFA code is returned to the frontend and prefilled for demo speed. Production must keep `CLOUDCAMPUS_AUTH_EXPOSE_MFA_CODE=false`.
 - The role preview selector is for demo UI exploration only; backend authorization still comes from the login token.
 
 ## Frontend Demo Flow
 
-1. Log in and activate a school when the account has more than one school.
-2. Open the AI dashboard from the sidebar.
-3. Use a role-specific quick prompt from the dashboard to open the assistant drawer.
-4. Copy and regenerate an assistant response.
-5. Open AI Recommendations and filter by priority, category, and status.
-6. Approve, reject, accept, dismiss, or execute a recommendation depending on the visible action state.
-7. Open a generator page and create a notice, homework, lesson plan, quiz, or report summary.
-8. Show the "Use this" review state without claiming the content has been published.
-9. Open AI Settings to show entitlement, budget, enabled features, and disabled pending-save controls.
-10. Open AI Audit Logs and point out that only safe metadata is shown.
+1. Open `http://127.0.0.1:5173/` and confirm the dashboard loads without horizontal scrolling.
+2. Log in with a local demo user, complete the MFA step, and confirm the active school appears.
+3. Open the AI dashboard from the sidebar.
+4. Use a role-specific quick prompt from the dashboard to open the assistant drawer.
+5. Copy and regenerate an assistant response.
+6. Open AI Recommendations and filter by priority, category, and status.
+7. Approve, reject, accept, dismiss, or execute a recommendation depending on the visible action state.
+8. Open a generator page and create a notice, homework, lesson plan, quiz, or report summary.
+9. Show the "Use this" review state without claiming the content has been published.
+10. Open AI Settings to show entitlement, budget, enabled features, and disabled pending-save controls.
+11. Open AI Audit Logs and point out that only safe metadata is shown.
 
 ## Role-Wise Walkthrough
 
