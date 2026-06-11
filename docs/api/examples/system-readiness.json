@@ -1,0 +1,12 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/v1/system/readiness"
+  },
+  "response": {
+    "status": "UP",
+    "application": "cloudcampus-backend",
+    "mode": "scaffold",
+    "checkedAt": "2026-06-11T10:15:30Z"
+  }
+}

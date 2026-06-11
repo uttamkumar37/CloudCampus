@@ -44,6 +44,19 @@ management:
       probes:
         enabled: true
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: false
+  writer-with-order-by-keys: true
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.orm.jdbc.bind: INFO
+
 cloudcampus:
   auth:
     jwt-secret: ${CLOUDCAMPUS_AUTH_JWT_SECRET:dev-only-cloudcampus-auth-token-secret-change-me}

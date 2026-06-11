@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/v1/ai/recommendations/9fe6ccf0-87f7-49db-a99a-c20d5d87a001/approve"
+  },
+  "response": {
+    "recommendationId": "9fe6ccf0-87f7-49db-a99a-c20d5d87a001",
+    "tenantId": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+    "schoolId": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+    "targetType": "STUDENT",
+    "targetId": "63b5bf91-bfb7-43d6-a391-eac71d4fa001",
+    "recommendationType": "ATTENDANCE_INTERVENTION",
+    "title": "Follow up on attendance trend",
+    "summary": "Student attendance dropped below the configured policy threshold.",
+    "rationale": "The recommendation is based on the last 30 days of attendance records.",
+    "confidenceScore": 0.82,
+    "riskLevel": "MEDIUM",
+    "status": "APPROVED",
+    "approvalRequired": true,
+    "metadataJson": "{\"windowDays\":30}",
+    "createdAt": "2026-06-11T10:15:30Z"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "request": {
+    "code": "green-valley-north",
+    "name": "Green Valley North Campus"
+  },
+  "response": {
+    "id": "7c1ac8f5-5336-4955-b9f7-6764c154a001",
+    "tenantId": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+    "code": "green-valley-north",
+    "name": "Green Valley North Campus",
+    "primarySchool": false,
+    "active": true,
+    "maxSchools": 10,
+    "schoolsUsed": 2
+  }
+}

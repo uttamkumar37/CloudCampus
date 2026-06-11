@@ -2,6 +2,7 @@ package com.cloudcampus.operations.finance;
 
 import java.util.List;
 
+import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
@@ -22,10 +23,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class FeeController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final FeeService feeService;
 
-    public FeeController(AuthenticatedUserResolver authenticatedUserResolver, FeeService feeService) {
+    public FeeController(
+            AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
+            FeeService feeService
+    ) {
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.feeService = feeService;
     }
 
@@ -122,7 +129,7 @@ public class FeeController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(feeService.parentChildFees(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 studentId
         ));
     }
@@ -135,7 +142,7 @@ public class FeeController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(feeService.recordParentPayment(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 studentId,
                 demandId,
                 requestBody
@@ -144,6 +151,6 @@ public class FeeController {
 
     @GetMapping("/v1/student/fees")
     ResponseEntity<List<FeeDemandResponse>> studentFees(HttpServletRequest request) {
-        return ResponseEntity.ok(feeService.studentFees(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(feeService.studentFees(requestContextResolver.requireContext(request)));
     }
 }

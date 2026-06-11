@@ -1,0 +1,30 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/v1/school-admin/students?page=0&size=50&status=active"
+  },
+  "response": {
+    "items": [
+      {
+        "id": "63b5bf91-bfb7-43d6-a391-eac71d4fa001",
+        "tenantId": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+        "schoolId": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+        "admissionNumber": "GV-2026-001",
+        "fullName": "Nisha Iyer",
+        "classLevelId": "class-8",
+        "sectionId": "section-a",
+        "rollNumber": "12",
+        "dateOfBirth": "2013-08-14",
+        "gender": "FEMALE",
+        "guardianName": "Ravi Iyer",
+        "guardianEmail": "ravi.iyer@example.com",
+        "guardianMobile": "+919876543210",
+        "active": true
+      }
+    ],
+    "page": 0,
+    "size": 50,
+    "totalItems": 1,
+    "totalPages": 1
+  }
+}

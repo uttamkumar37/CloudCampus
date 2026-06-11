@@ -6,10 +6,12 @@ import java.util.Map;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
@@ -31,6 +33,7 @@ public class AcademicAssignmentService {
     private final SchoolRepository schoolRepository;
     private final SchoolAccessService schoolAccessService;
     private final AuditLogService auditLogService;
+    private final AuthorizationGuard authorizationGuard;
 
     public AcademicAssignmentService(
             SubjectRepository subjectRepository,
@@ -40,7 +43,8 @@ public class AcademicAssignmentService {
             UserAccountRepository userAccountRepository,
             SchoolRepository schoolRepository,
             SchoolAccessService schoolAccessService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            AuthorizationGuard authorizationGuard
     ) {
         this.subjectRepository = subjectRepository;
         this.classLevelRepository = classLevelRepository;
@@ -50,6 +54,7 @@ public class AcademicAssignmentService {
         this.schoolRepository = schoolRepository;
         this.schoolAccessService = schoolAccessService;
         this.auditLogService = auditLogService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional
@@ -155,6 +160,20 @@ public class AcademicAssignmentService {
     }
 
     @Transactional(readOnly = true)
+    public List<TeacherAssignmentResponse> myAssignments(RequestContext teacher) {
+        String activeSchoolId = requireActiveTeacherSchoolId(teacher);
+        return teacherAssignmentRepository.findByTeacherIdOrderByClassSubjectAssignmentClassLevelNameAscClassSubjectAssignmentSubjectNameAsc(
+                        teacher.userId().toString()
+                )
+                .stream()
+                .filter(assignment -> assignment.isActive()
+                        && assignment.getTenant().getId().equals(teacher.tenantId().toString())
+                        && assignment.getSchool().getId().equals(activeSchoolId))
+                .map(this::toTeacherAssignmentResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<TeacherAssignmentResponse> myAssignmentsForClass(AuthenticatedUser teacher, String classLevelId) {
         String activeSchoolId = requireActiveTeacherSchoolId(teacher);
         List<TeacherAssignment> assignments = teacherAssignmentRepository
@@ -165,6 +184,30 @@ public class AcademicAssignmentService {
                 .stream()
                 .filter(assignment -> assignment.isActive()
                         && assignment.getTenant().getId().equals(teacher.user().getTenant().getId())
+                        && assignment.getSchool().getId().equals(activeSchoolId))
+                .toList();
+        if (assignments.isEmpty()) {
+            throw new ForbiddenException("Teacher is not assigned to this class.");
+        }
+        return assignments.stream().map(this::toTeacherAssignmentResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeacherAssignmentResponse> myAssignmentsForClass(RequestContext teacher, String classLevelId) {
+        String activeSchoolId = requireActiveTeacherSchoolId(teacher);
+        ClassLevel classLevel = classLevelRepository.findById(classLevelId)
+                .orElseThrow(() -> new NotFoundException("Class was not found."));
+        authorizationGuard.requireTenantScope(teacher, java.util.UUID.fromString(classLevel.getTenant().getId()));
+        authorizationGuard.requireUserSchoolAccess(teacher, java.util.UUID.fromString(classLevel.getSchool().getId()));
+        authorizationGuard.requireTeacherAssignedToClass(teacher, java.util.UUID.fromString(classLevel.getId()));
+        List<TeacherAssignment> assignments = teacherAssignmentRepository
+                .findByTeacherIdAndClassSubjectAssignmentClassLevelIdOrderByClassSubjectAssignmentSubjectNameAsc(
+                        teacher.userId().toString(),
+                        classLevelId
+                )
+                .stream()
+                .filter(assignment -> assignment.isActive()
+                        && assignment.getTenant().getId().equals(teacher.tenantId().toString())
                         && assignment.getSchool().getId().equals(activeSchoolId))
                 .toList();
         if (assignments.isEmpty()) {
@@ -186,6 +229,55 @@ public class AcademicAssignmentService {
                         && assignment.getTenant().getId().equals(teacher.user().getTenant().getId())
                         && assignment.getSchool().getId().equals(activeSchoolId))
                 .orElseThrow(() -> new ForbiddenException("Teacher is not assigned to this class subject."));
+    }
+
+    @Transactional(readOnly = true)
+    public TeacherAssignment requireTeacherAssignment(RequestContext teacher, String classLevelId, String subjectId) {
+        String activeSchoolId = requireActiveTeacherSchoolId(teacher);
+        TeacherAssignment assignment = teacherAssignmentRepository
+                .findByTeacherIdAndClassSubjectAssignmentClassLevelIdAndClassSubjectAssignmentSubjectId(
+                        teacher.userId().toString(),
+                        classLevelId,
+                        subjectId
+                )
+                .filter(candidate -> candidate.isActive()
+                        && candidate.getTenant().getId().equals(teacher.tenantId().toString())
+                        && candidate.getSchool().getId().equals(activeSchoolId))
+                .orElseThrow(() -> new ForbiddenException("Teacher is not assigned to this class subject."));
+        authorizationGuard.requireTeacherAssignedToScope(
+                teacher,
+                assignment.getTenant().getId(),
+                assignment.getSchool().getId(),
+                assignment.getClassLevel().getId(),
+                null,
+                assignment.getSubject().getId()
+        );
+        return assignment;
+    }
+
+    @Transactional(readOnly = true)
+    public TeacherAssignment requireTeacherAssignment(
+            RequestContext teacher,
+            String classLevelId,
+            String sectionId,
+            String subjectId
+    ) {
+        TeacherAssignment assignment = requireTeacherAssignment(teacher, classLevelId, subjectId);
+        if (assignment.getSection() != null) {
+            if (sectionId == null || sectionId.isBlank()
+                    || !assignment.getSection().getId().equals(sectionId)) {
+                throw new ForbiddenException("Teacher is not assigned to this class section.");
+            }
+        }
+        authorizationGuard.requireTeacherAssignedToScope(
+                teacher,
+                assignment.getTenant().getId(),
+                assignment.getSchool().getId(),
+                assignment.getClassLevel().getId(),
+                sectionId,
+                assignment.getSubject().getId()
+        );
+        return assignment;
     }
 
     private School requireActiveSchoolAdminSchool(AuthenticatedUser actor) {
@@ -233,6 +325,13 @@ public class AcademicAssignmentService {
         }
         schoolAccessService.requireSchoolTeacherAccess(teacher.user().getId(), activeSchoolId);
         return activeSchoolId;
+    }
+
+    private String requireActiveTeacherSchoolId(RequestContext teacher) {
+        authorizationGuard.requireRole(teacher, "TEACHER");
+        java.util.UUID activeSchoolId = authorizationGuard.requireActiveSchool(teacher);
+        authorizationGuard.requireUserSchoolAccess(teacher, activeSchoolId);
+        return activeSchoolId.toString();
     }
 
     private String normalizeCode(String code) {

@@ -13,10 +13,12 @@ import com.cloudcampus.academic.SectionRepository;
 import com.cloudcampus.academic.TeacherAssignment;
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
@@ -43,6 +45,7 @@ public class HomeworkService {
     private final SchoolAccessService schoolAccessService;
     private final AcademicAssignmentService academicAssignmentService;
     private final AuditLogService auditLogService;
+    private final AuthorizationGuard authorizationGuard;
 
     public HomeworkService(
             HomeworkRepository homeworkRepository,
@@ -55,7 +58,8 @@ public class HomeworkService {
             SchoolRepository schoolRepository,
             SchoolAccessService schoolAccessService,
             AcademicAssignmentService academicAssignmentService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            AuthorizationGuard authorizationGuard
     ) {
         this.homeworkRepository = homeworkRepository;
         this.homeworkSubmissionRepository = homeworkSubmissionRepository;
@@ -68,6 +72,7 @@ public class HomeworkService {
         this.schoolAccessService = schoolAccessService;
         this.academicAssignmentService = academicAssignmentService;
         this.auditLogService = auditLogService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional
@@ -99,19 +104,20 @@ public class HomeworkService {
     }
 
     @Transactional
-    public HomeworkResponse createTeacherHomework(AuthenticatedUser actor, HomeworkRequest request) {
+    public HomeworkResponse createTeacherHomework(RequestContext actor, HomeworkRequest request) {
         TeacherAssignment assignment = academicAssignmentService.requireTeacherAssignment(
                 actor,
                 request.classLevelId(),
+                request.sectionId(),
                 request.subjectId()
         );
         ClassLevel classLevel = assignment.getClassSubjectAssignment().getClassLevel();
         Section section = requireSectionForClass(classLevel, request.sectionId());
-        return createHomework(actor.user(), classLevel, section, assignment.getClassSubjectAssignment(), request);
+        return createHomework(assignment.getTeacher(), classLevel, section, assignment.getClassSubjectAssignment(), request);
     }
 
     @Transactional(readOnly = true)
-    public List<HomeworkResponse> teacherHomework(AuthenticatedUser teacher, String classLevelId, String subjectId) {
+    public List<HomeworkResponse> teacherHomework(RequestContext teacher, String classLevelId, String subjectId) {
         TeacherAssignment assignment = academicAssignmentService.requireTeacherAssignment(teacher, classLevelId, subjectId);
         return homeworkRepository.findBySchoolIdAndClassLevelIdAndSubjectIdOrderByDueDateAscCreatedAtAsc(
                         assignment.getSchool().getId(),
@@ -119,23 +125,25 @@ public class HomeworkService {
                         subjectId
                 )
                 .stream()
+                .filter(homework -> teacherAssignmentCoversSection(assignment, homework.getSection()))
                 .map(this::toResponseWithAllSubmissions)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public HomeworkResponse teacherHomework(AuthenticatedUser teacher, String homeworkId) {
+    public HomeworkResponse teacherHomework(RequestContext teacher, String homeworkId) {
         Homework homework = requireHomework(homeworkId);
         academicAssignmentService.requireTeacherAssignment(
                 teacher,
                 homework.getClassLevel().getId(),
+                homework.getSection() == null ? null : homework.getSection().getId(),
                 homework.getSubject().getId()
         );
         return toResponseWithAllSubmissions(homework);
     }
 
     @Transactional(readOnly = true)
-    public List<HomeworkResponse> parentChildHomework(AuthenticatedUser actor, String studentId) {
+    public List<HomeworkResponse> parentChildHomework(RequestContext actor, String studentId) {
         Student student = requireParentLinkedToStudent(actor, studentId);
         return visibleHomework(student)
                 .stream()
@@ -144,7 +152,7 @@ public class HomeworkService {
     }
 
     @Transactional(readOnly = true)
-    public List<HomeworkResponse> studentHomework(AuthenticatedUser actor) {
+    public List<HomeworkResponse> studentHomework(RequestContext actor) {
         Student student = requireStudentProfile(actor);
         return visibleHomework(student)
                 .stream()
@@ -154,7 +162,7 @@ public class HomeworkService {
 
     @Transactional
     public HomeworkResponse submitStudentHomework(
-            AuthenticatedUser actor,
+            RequestContext actor,
             String homeworkId,
             HomeworkSubmissionRequest request
     ) {
@@ -168,10 +176,10 @@ public class HomeworkService {
         HomeworkSubmission submission = homeworkSubmissionRepository.save(new HomeworkSubmission(
                 homework,
                 student,
-                actor.user(),
+                student.getUser(),
                 request.content().trim()
         ));
-        recordHomeworkSubmitted(actor.user(), submission);
+        recordHomeworkSubmitted(submission.getSubmittedByUser(), submission);
         return toResponse(homework, List.of(submission));
     }
 
@@ -235,41 +243,22 @@ public class HomeworkService {
         return section;
     }
 
-    private Student requireParentLinkedToStudent(AuthenticatedUser actor, String studentId) {
-        if (actor.user().getRole() != UserRole.PARENT) {
-            throw new ForbiddenException("Parent access is required.");
-        }
-        String activeSchoolId = actor.activeSchoolId();
-        if (activeSchoolId == null || activeSchoolId.isBlank()) {
-            throw new ForbiddenException("An active school is required for parent access.");
-        }
-        return parentStudentLinkRepository.findByParentUserIdAndStudentId(actor.user().getId(), studentId)
-                .filter(link -> link.getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getStudent().getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getSchool().getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getSchool().getId().equals(activeSchoolId))
-                .map(link -> link.getStudent())
-                .orElseThrow(() -> new ForbiddenException("Parent is not linked to this child."));
+    private Student requireParentLinkedToStudent(RequestContext actor, String studentId) {
+        authorizationGuard.requireRole(actor, "PARENT");
+        authorizationGuard.requireStudentRecordVisible(actor, studentId);
+        return studentRepository.findById(studentId)
+                .orElseThrow(() -> new NotFoundException("Student was not found."));
     }
 
-    private Student requireStudentProfile(AuthenticatedUser actor) {
-        if (actor.user().getRole() != UserRole.STUDENT) {
-            throw new ForbiddenException("Student access is required.");
-        }
-        Student student = studentRepository.findByUserId(actor.user().getId())
-                .filter(candidate -> candidate.getTenant().getId().equals(actor.user().getTenant().getId()))
+    private Student requireStudentProfile(RequestContext actor) {
+        authorizationGuard.requireRole(actor, "STUDENT");
+        Student student = studentRepository.findByUserId(actor.userId().toString())
+                .filter(candidate -> actor.tenantId() != null
+                        && candidate.getTenant().getId().equals(actor.tenantId().toString()))
                 .orElseThrow(() -> new ForbiddenException("Student profile is not linked to this user."));
-        requireActiveStudentSchool(actor, student);
+        authorizationGuard.requireStudentSelfAccess(actor, student.getId());
+        authorizationGuard.requireStudentRecordVisible(actor, student.getId());
         return student;
-    }
-
-    private void requireActiveStudentSchool(AuthenticatedUser actor, Student student) {
-        if (actor.activeSchoolId() == null || actor.activeSchoolId().isBlank()) {
-            throw new ForbiddenException("An active school is required.");
-        }
-        if (!student.getSchool().getId().equals(actor.activeSchoolId())) {
-            throw new ForbiddenException("Student profile is not linked to the active school.");
-        }
     }
 
     private List<Homework> visibleHomework(Student student) {
@@ -294,6 +283,11 @@ public class HomeworkService {
                 && (student.getSection() == null || !homework.getSection().getId().equals(student.getSection().getId()))) {
             throw new ForbiddenException("Homework is not assigned to this student.");
         }
+    }
+
+    private boolean teacherAssignmentCoversSection(TeacherAssignment assignment, Section section) {
+        return assignment.getSection() == null
+                || (section != null && assignment.getSection().getId().equals(section.getId()));
     }
 
     private Homework requireHomework(String homeworkId) {

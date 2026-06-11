@@ -2,6 +2,7 @@ package com.cloudcampus.operations.timetable;
 
 import java.util.List;
 
+import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,13 +22,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class TimetableController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final TimetableService timetableService;
 
     public TimetableController(
             AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             TimetableService timetableService
     ) {
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.timetableService = timetableService;
     }
 
@@ -60,7 +64,7 @@ public class TimetableController {
 
     @GetMapping("/v1/teacher/timetable")
     ResponseEntity<List<TimetableEntryResponse>> teacherTimetable(HttpServletRequest request) {
-        return ResponseEntity.ok(timetableService.teacherTimetable(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(timetableService.teacherTimetable(requestContextResolver.requireContext(request)));
     }
 
     @GetMapping("/v1/parent/children/{studentId}/timetable")
@@ -69,13 +73,13 @@ public class TimetableController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(timetableService.parentChildTimetable(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 studentId
         ));
     }
 
     @GetMapping("/v1/student/timetable")
     ResponseEntity<List<TimetableEntryResponse>> studentTimetable(HttpServletRequest request) {
-        return ResponseEntity.ok(timetableService.studentTimetable(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(timetableService.studentTimetable(requestContextResolver.requireContext(request)));
     }
 }

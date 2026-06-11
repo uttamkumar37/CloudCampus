@@ -6,15 +6,18 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
@@ -42,6 +45,7 @@ public class ParentLinkService {
     private final UserSchoolAccessRepository userSchoolAccessRepository;
     private final AuditLogService auditLogService;
     private final InvitationEmailDeliveryService invitationEmailDeliveryService;
+    private final AuthorizationGuard authorizationGuard;
 
     public ParentLinkService(
             StudentRepository studentRepository,
@@ -52,7 +56,8 @@ public class ParentLinkService {
             SchoolAccessService schoolAccessService,
             UserSchoolAccessRepository userSchoolAccessRepository,
             AuditLogService auditLogService,
-            InvitationEmailDeliveryService invitationEmailDeliveryService
+            InvitationEmailDeliveryService invitationEmailDeliveryService,
+            AuthorizationGuard authorizationGuard
     ) {
         this.studentRepository = studentRepository;
         this.parentStudentLinkRepository = parentStudentLinkRepository;
@@ -63,6 +68,7 @@ public class ParentLinkService {
         this.userSchoolAccessRepository = userSchoolAccessRepository;
         this.auditLogService = auditLogService;
         this.invitationEmailDeliveryService = invitationEmailDeliveryService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional
@@ -104,26 +110,28 @@ public class ParentLinkService {
     }
 
     @Transactional(readOnly = true)
-    public List<ParentChildResponse> children(AuthenticatedUser parentUser) {
-        requireParent(parentUser);
-        String tenantId = parentUser.user().getTenant().getId();
-        String activeSchoolId = requireActiveParentSchool(parentUser);
-        return parentStudentLinkRepository.findByParentUserId(parentUser.user().getId())
+    public List<ParentChildResponse> children(RequestContext context) {
+        authorizationGuard.requireRole(context, "PARENT");
+        UUID activeSchoolId = authorizationGuard.requireActiveSchool(context);
+        authorizationGuard.requireUserSchoolAccess(context, activeSchoolId);
+        String tenantId = context.tenantId().toString();
+        return parentStudentLinkRepository.findByParentUserId(context.userId().toString())
                 .stream()
                 .filter(link -> tenantConsistent(link, tenantId))
-                .filter(link -> link.getSchool().getId().equals(activeSchoolId))
+                .filter(link -> link.getSchool().getId().equals(activeSchoolId.toString()))
                 .sorted(Comparator.comparing(link -> link.getStudent().getFullName()))
                 .map(this::toParentChildResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public ParentChildResponse child(AuthenticatedUser parentUser, String studentId) {
-        requireParent(parentUser);
-        String tenantId = parentUser.user().getTenant().getId();
-        String activeSchoolId = requireActiveParentSchool(parentUser);
+    public ParentChildResponse child(RequestContext context, String studentId) {
+        authorizationGuard.requireRole(context, "PARENT");
+        authorizationGuard.requireStudentRecordVisible(context, studentId);
+        String tenantId = context.tenantId().toString();
+        String activeSchoolId = context.activeSchoolId().toString();
         ParentStudentLink link = parentStudentLinkRepository
-                .findByParentUserIdAndStudentId(parentUser.user().getId(), studentId)
+                .findByParentUserIdAndStudentId(context.userId().toString(), studentId)
                 .filter(candidate -> tenantConsistent(candidate, tenantId))
                 .filter(candidate -> candidate.getSchool().getId().equals(activeSchoolId))
                 .orElseThrow(() -> new ForbiddenException("Parent is not linked to this child."));
@@ -209,20 +217,6 @@ public class ParentLinkService {
                 link.getRelationship(),
                 link.isPrimaryContact()
         );
-    }
-
-    private void requireParent(AuthenticatedUser authenticatedUser) {
-        if (authenticatedUser.user().getRole() != UserRole.PARENT) {
-            throw new ForbiddenException("Parent access is required.");
-        }
-    }
-
-    private String requireActiveParentSchool(AuthenticatedUser authenticatedUser) {
-        String activeSchoolId = authenticatedUser.activeSchoolId();
-        if (activeSchoolId == null || activeSchoolId.isBlank()) {
-            throw new ForbiddenException("An active school is required for parent access.");
-        }
-        return activeSchoolId;
     }
 
     private boolean tenantConsistent(ParentStudentLink link, String tenantId) {

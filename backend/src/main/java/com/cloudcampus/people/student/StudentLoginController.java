@@ -1,5 +1,6 @@
 package com.cloudcampus.people.student;
 
+import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,13 +19,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class StudentLoginController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final StudentLoginService studentLoginService;
 
     public StudentLoginController(
             AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             StudentLoginService studentLoginService
     ) {
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.studentLoginService = studentLoginService;
     }
 
@@ -43,6 +47,6 @@ public class StudentLoginController {
 
     @GetMapping("/v1/student/profile")
     ResponseEntity<StudentSelfProfileResponse> selfProfile(HttpServletRequest request) {
-        return ResponseEntity.ok(studentLoginService.selfProfile(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(studentLoginService.selfProfile(requestContextResolver.requireContext(request)));
     }
 }

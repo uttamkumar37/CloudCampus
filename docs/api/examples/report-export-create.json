@@ -1,0 +1,26 @@
+{
+  "request": {
+    "reportType": "STUDENT_DIRECTORY",
+    "format": "CSV",
+    "parameters": {
+      "classLevelId": "class-8",
+      "sectionId": "section-a"
+    }
+  },
+  "response": {
+    "id": "0b78a1de-a219-42e2-b10e-e8d7a717a001",
+    "tenantId": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+    "schoolId": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+    "requestedByUserId": "8ee5ac7e-8b5f-42d3-a5f1-1ff1a12aa001",
+    "bulkJobId": "47cf71dd-cea9-4124-bd83-7820934ba001",
+    "reportType": "STUDENT_DIRECTORY",
+    "format": "CSV",
+    "status": "QUEUED",
+    "fileName": null,
+    "contentType": null,
+    "sizeBytes": null,
+    "checksumSha256": null,
+    "requestedAt": "2026-06-11T10:15:30Z",
+    "completedAt": null
+  }
+}

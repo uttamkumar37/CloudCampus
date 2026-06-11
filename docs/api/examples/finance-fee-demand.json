@@ -1,0 +1,24 @@
+{
+  "request": {
+    "studentId": "63b5bf91-bfb7-43d6-a391-eac71d4fa001",
+    "description": "Term 1 tuition fee",
+    "amount": 25000.00,
+    "dueDate": "2026-07-10"
+  },
+  "response": {
+    "id": "ca27726d-6f47-4b44-b7f6-2a9144a9a001",
+    "tenantId": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+    "schoolId": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+    "studentId": "63b5bf91-bfb7-43d6-a391-eac71d4fa001",
+    "studentName": "Nisha Iyer",
+    "admissionNumber": "GV-2026-001",
+    "description": "Term 1 tuition fee",
+    "amountDue": 25000.00,
+    "amountPaid": 0.00,
+    "outstandingAmount": 25000.00,
+    "dueDate": "2026-07-10",
+    "status": "PENDING",
+    "createdAt": "2026-06-11T10:15:30Z",
+    "payments": []
+  }
+}

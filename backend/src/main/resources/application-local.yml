@@ -6,3 +6,7 @@ cloudcampus:
       password: ${CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_PASSWORD:SuperAdmin123!}
       display-name: ${CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_DISPLAY_NAME:CloudCampus Super Admin}
       tenant-code: ${CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_TENANT_CODE:CLOUDCAMPUS}
+
+springdoc:
+  swagger-ui:
+    enabled: true

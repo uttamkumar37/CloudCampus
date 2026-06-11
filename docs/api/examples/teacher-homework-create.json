@@ -1,0 +1,31 @@
+{
+  "request": {
+    "classLevelId": "class-8",
+    "sectionId": "section-a",
+    "subjectId": "math",
+    "title": "Linear equations worksheet",
+    "instructions": "Complete exercises 1 to 10 before the next class.",
+    "dueDate": "2026-06-18"
+  },
+  "response": {
+    "id": "c3ed4449-b222-42f1-9215-38a7ec3ca001",
+    "tenantId": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+    "schoolId": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+    "classLevelId": "class-8",
+    "className": "Class 8",
+    "sectionId": "section-a",
+    "sectionName": "A",
+    "subjectId": "math",
+    "subjectCode": "MATH",
+    "subjectName": "Mathematics",
+    "title": "Linear equations worksheet",
+    "instructions": "Complete exercises 1 to 10 before the next class.",
+    "dueDate": "2026-06-18",
+    "status": "PUBLISHED",
+    "createdByUserId": "62e2fb80-9877-4e80-8b15-163ffdf3a001",
+    "createdByRole": "TEACHER",
+    "createdAt": "2026-06-11T10:15:30Z",
+    "publishedAt": "2026-06-11T10:15:30Z",
+    "submissions": []
+  }
+}

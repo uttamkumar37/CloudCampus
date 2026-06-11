@@ -2,6 +2,7 @@ package com.cloudcampus.people.parent;
 
 import java.util.List;
 
+import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
@@ -23,15 +24,18 @@ public class ParentLeaveRequestController {
     @SuppressWarnings("unused")
     private final SchoolAccessService schoolAccessServiceGuardMarker;
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final ParentLeaveRequestService parentLeaveRequestService;
 
     public ParentLeaveRequestController(
             SchoolAccessService schoolAccessServiceGuardMarker,
             AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             ParentLeaveRequestService parentLeaveRequestService
     ) {
         this.schoolAccessServiceGuardMarker = schoolAccessServiceGuardMarker;
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.parentLeaveRequestService = parentLeaveRequestService;
     }
 
@@ -42,7 +46,7 @@ public class ParentLeaveRequestController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(parentLeaveRequestService.create(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 studentId,
                 requestBody
         ));
@@ -54,7 +58,7 @@ public class ParentLeaveRequestController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(parentLeaveRequestService.parentRequests(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 studentId
         ));
     }

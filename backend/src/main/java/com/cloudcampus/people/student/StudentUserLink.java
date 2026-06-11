@@ -96,6 +96,11 @@ public class StudentUserLink {
         updatedBy = actor;
     }
 
+    public void activate(UserAccount actor) {
+        active = true;
+        updatedBy = actor;
+    }
+
     public Student getStudent() {
         return student;
     }

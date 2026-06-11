@@ -13,6 +13,8 @@ import com.cloudcampus.academic.ClassLevel;
 import com.cloudcampus.academic.ClassLevelRepository;
 import com.cloudcampus.academic.Section;
 import com.cloudcampus.academic.SectionRepository;
+import com.cloudcampus.academic.TeacherAssignment;
+import com.cloudcampus.academic.TeacherAssignmentRepository;
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogRepository;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
@@ -25,6 +27,8 @@ import com.cloudcampus.people.parent.ParentStudentLink;
 import com.cloudcampus.people.parent.ParentStudentLinkRepository;
 import com.cloudcampus.people.student.Student;
 import com.cloudcampus.people.student.StudentRepository;
+import com.cloudcampus.people.student.StudentUserLink;
+import com.cloudcampus.people.student.StudentUserLinkRepository;
 import com.cloudcampus.platform.tenant.Tenant;
 import com.cloudcampus.platform.tenant.TenantRepository;
 import com.cloudcampus.school.School;
@@ -68,6 +72,9 @@ class AttendanceFlowTest {
     private StudentRepository studentRepository;
 
     @Autowired
+    private StudentUserLinkRepository studentUserLinkRepository;
+
+    @Autowired
     private ParentStudentLinkRepository parentStudentLinkRepository;
 
     @Autowired
@@ -84,6 +91,9 @@ class AttendanceFlowTest {
 
     @Autowired
     private UserSchoolAccessRepository userSchoolAccessRepository;
+
+    @Autowired
+    private TeacherAssignmentRepository teacherAssignmentRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -367,6 +377,105 @@ class AttendanceFlowTest {
     }
 
     @Test
+    void teacherCannotSubmitAttendanceForUnassignedSectionInSameClassSubject() throws Exception {
+        JsonNode onboarding = onboard("att-life-cs", "att-school-cs", "att-admin-cs@example.com");
+        String schoolAdminToken = activateSchoolAdmin(onboarding);
+        Tenant tenant = tenantRepository.findById(onboarding.at("/tenant/id").asText()).orElseThrow();
+        School school = schoolRepository.findById(onboarding.at("/school/id").asText()).orElseThrow();
+        AcademicSetup setup = academicSetup(schoolAdminToken, "2026-2027", "Class 4");
+        Section otherSection = sectionRepository.save(new Section(setup.classLevel(), "B", 40));
+        JsonNode subject = createSubject(schoolAdminToken, "bio", "Biology");
+        JsonNode classSubject = assignSubjectToClass(
+                schoolAdminToken,
+                setup.classLevelId(),
+                subject.at("/id").asText()
+        );
+        UserAccount teacher = createTeacher(tenant, "attendance-section-teacher@example.com", "Section Teacher");
+        assignTeacher(schoolAdminToken, teacher.getId(), classSubject.at("/id").asText());
+        TeacherAssignment assignment = teacherAssignmentRepository
+                .findByTeacherIdAndClassSubjectAssignmentId(teacher.getId(), classSubject.at("/id").asText())
+                .orElseThrow();
+        assignment.updateScope(setup.section(), "SECTION_TEACHER", true, teacher);
+        teacherAssignmentRepository.saveAndFlush(assignment);
+        String teacherToken = login("attendance-section-teacher@example.com", "TeacherStrong123!").at("/accessToken").asText();
+
+        Student assignedSectionStudent = studentRepository.save(new Student(
+                tenant,
+                school,
+                "ATT-350",
+                "Assigned Section Student",
+                setup.classLevel(),
+                setup.section(),
+                "1",
+                null,
+                null,
+                null,
+                null,
+                null,
+                Instant.now()
+        ));
+        Student otherSectionStudent = studentRepository.save(new Student(
+                tenant,
+                school,
+                "ATT-351",
+                "Other Section Student",
+                setup.classLevel(),
+                otherSection,
+                "2",
+                null,
+                null,
+                null,
+                null,
+                null,
+                Instant.now()
+        ));
+
+        mockMvc.perform(post("/v1/teacher/attendance/sessions")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "classLevelId": "%s",
+                                  "sectionId": "%s",
+                                  "subjectId": "%s",
+                                  "attendanceDate": "2026-06-07",
+                                  "records": [
+                                    {"studentId": "%s", "status": "PRESENT"}
+                                  ]
+                                }
+                                """.formatted(
+                                setup.classLevelId(),
+                                setup.sectionId(),
+                                subject.at("/id").asText(),
+                                assignedSectionStudent.getId()
+                        )))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.sectionId").value(setup.sectionId()));
+
+        mockMvc.perform(post("/v1/teacher/attendance/sessions")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(teacherToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "classLevelId": "%s",
+                                  "sectionId": "%s",
+                                  "subjectId": "%s",
+                                  "attendanceDate": "2026-06-08",
+                                  "records": [
+                                    {"studentId": "%s", "status": "PRESENT"}
+                                  ]
+                                }
+                                """.formatted(
+                                setup.classLevelId(),
+                                otherSection.getId(),
+                                subject.at("/id").asText(),
+                                otherSectionStudent.getId()
+                        )))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
     void parentAndStudentCanReadOnlyTheirOwnAttendanceRecords() throws Exception {
         JsonNode onboarding = onboard("att-life-d", "att-school-d", "att-admin-d@example.com");
         String schoolAdminToken = activateSchoolAdmin(onboarding);
@@ -420,6 +529,7 @@ class AttendanceFlowTest {
         UserAccount studentUser = createStudentUser(tenant, "attendance-student@example.com", "Attendance Student");
         linkedStudent.attachUser(studentUser);
         studentRepository.save(linkedStudent);
+        studentUserLinkRepository.save(new StudentUserLink(linkedStudent, studentUser, studentUser));
         userSchoolAccessRepository.save(new UserSchoolAccess(tenant, school, studentUser, UserRole.STUDENT, true));
         String parentToken = jwtAccessTokenService.issueToken(parent.getId(), tenant.getId(), UserRole.PARENT, school.getId());
         String studentToken = jwtAccessTokenService.issueToken(studentUser.getId(), tenant.getId(), UserRole.STUDENT, school.getId());

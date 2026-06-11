@@ -2,6 +2,7 @@ package com.cloudcampus.operations.homework;
 
 import java.util.List;
 
+import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,13 +24,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class HomeworkController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final HomeworkService homeworkService;
 
     public HomeworkController(
             AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             HomeworkService homeworkService
     ) {
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.homeworkService = homeworkService;
     }
 
@@ -66,7 +70,7 @@ public class HomeworkController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(homeworkService.createTeacherHomework(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 requestBody
         ));
     }
@@ -78,7 +82,7 @@ public class HomeworkController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(homeworkService.teacherHomework(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 classLevelId,
                 subjectId
         ));
@@ -90,7 +94,7 @@ public class HomeworkController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(homeworkService.teacherHomework(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 homeworkId
         ));
     }
@@ -101,14 +105,14 @@ public class HomeworkController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(homeworkService.parentChildHomework(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 studentId
         ));
     }
 
     @GetMapping("/v1/student/homework")
     ResponseEntity<List<HomeworkResponse>> studentHomework(HttpServletRequest request) {
-        return ResponseEntity.ok(homeworkService.studentHomework(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(homeworkService.studentHomework(requestContextResolver.requireContext(request)));
     }
 
     @PostMapping("/v1/student/homework/{homeworkId}/submissions")
@@ -118,7 +122,7 @@ public class HomeworkController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(homeworkService.submitStudentHomework(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 homeworkId,
                 requestBody
         ));

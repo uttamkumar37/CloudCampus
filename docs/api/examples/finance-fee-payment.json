@@ -1,0 +1,19 @@
+{
+  "request": {
+    "amount": 10000.00,
+    "paymentMethod": "UPI",
+    "paymentReference": "upi-20260611-0001"
+  },
+  "response": {
+    "id": "2e50dc69-aed9-410f-b3cb-aeb1f9efa001",
+    "tenantId": "6b7c0f46-8382-4ab5-bc49-15741f0dd001",
+    "schoolId": "1d3dd5dc-4df7-4952-8d19-226a9ecaa001",
+    "demandId": "ca27726d-6f47-4b44-b7f6-2a9144a9a001",
+    "studentId": "63b5bf91-bfb7-43d6-a391-eac71d4fa001",
+    "amount": 10000.00,
+    "paymentMethod": "UPI",
+    "paymentReference": "upi-20260611-0001",
+    "receiptNumber": "GV-2026-RCPT-0001",
+    "paidAt": "2026-06-11T10:15:30Z"
+  }
+}

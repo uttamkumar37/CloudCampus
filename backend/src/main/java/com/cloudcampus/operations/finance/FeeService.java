@@ -12,14 +12,18 @@ import java.util.TreeMap;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
+import com.cloudcampus.common.exception.UnauthorizedException;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.common.web.PageResponses;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccount;
+import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
 import com.cloudcampus.people.parent.ParentStudentLinkRepository;
@@ -47,26 +51,32 @@ public class FeeService {
     private final FeePaymentRepository feePaymentRepository;
     private final StudentRepository studentRepository;
     private final ParentStudentLinkRepository parentStudentLinkRepository;
+    private final UserAccountRepository userAccountRepository;
     private final SchoolRepository schoolRepository;
     private final SchoolAccessService schoolAccessService;
     private final AuditLogService auditLogService;
+    private final AuthorizationGuard authorizationGuard;
 
     public FeeService(
             FeeDemandRepository feeDemandRepository,
             FeePaymentRepository feePaymentRepository,
             StudentRepository studentRepository,
             ParentStudentLinkRepository parentStudentLinkRepository,
+            UserAccountRepository userAccountRepository,
             SchoolRepository schoolRepository,
             SchoolAccessService schoolAccessService,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            AuthorizationGuard authorizationGuard
     ) {
         this.feeDemandRepository = feeDemandRepository;
         this.feePaymentRepository = feePaymentRepository;
         this.studentRepository = studentRepository;
         this.parentStudentLinkRepository = parentStudentLinkRepository;
+        this.userAccountRepository = userAccountRepository;
         this.schoolRepository = schoolRepository;
         this.schoolAccessService = schoolAccessService;
         this.auditLogService = auditLogService;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional
@@ -166,7 +176,7 @@ public class FeeService {
     }
 
     @Transactional(readOnly = true)
-    public List<FeeDemandResponse> parentChildFees(AuthenticatedUser actor, String studentId) {
+    public List<FeeDemandResponse> parentChildFees(RequestContext actor, String studentId) {
         requireParentLinkedToStudent(actor, studentId);
         return feeDemandRepository.findByStudentIdOrderByDueDateAscCreatedAtAsc(studentId)
                 .stream()
@@ -176,7 +186,7 @@ public class FeeService {
 
     @Transactional
     public FeeDemandResponse recordParentPayment(
-            AuthenticatedUser actor,
+            RequestContext actor,
             String studentId,
             String demandId,
             FeePaymentRequest request
@@ -184,12 +194,12 @@ public class FeeService {
         requireParentLinkedToStudent(actor, studentId);
         FeeDemand demand = requireDemand(demandId);
         requireDemandForStudent(demand, studentId);
-        recordPayment(actor.user(), demand, request);
+        recordPayment(requireActor(actor), demand, request);
         return toResponse(demand);
     }
 
     @Transactional(readOnly = true)
-    public List<FeeDemandResponse> studentFees(AuthenticatedUser actor) {
+    public List<FeeDemandResponse> studentFees(RequestContext actor) {
         Student student = requireStudentProfile(actor);
         return feeDemandRepository.findByStudentIdOrderByDueDateAscCreatedAtAsc(student.getId())
                 .stream()
@@ -265,40 +275,25 @@ public class FeeService {
         }
     }
 
-    private void requireParentLinkedToStudent(AuthenticatedUser actor, String studentId) {
-        if (actor.user().getRole() != UserRole.PARENT) {
-            throw new ForbiddenException("Parent access is required.");
-        }
-        String activeSchoolId = actor.activeSchoolId();
-        if (activeSchoolId == null || activeSchoolId.isBlank()) {
-            throw new ForbiddenException("An active school is required for parent access.");
-        }
-        parentStudentLinkRepository.findByParentUserIdAndStudentId(actor.user().getId(), studentId)
-                .filter(link -> link.getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getStudent().getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getSchool().getTenant().getId().equals(actor.user().getTenant().getId()))
-                .filter(link -> link.getSchool().getId().equals(activeSchoolId))
-                .orElseThrow(() -> new ForbiddenException("Parent is not linked to this child."));
+    private void requireParentLinkedToStudent(RequestContext actor, String studentId) {
+        authorizationGuard.requireRole(actor, "PARENT");
+        authorizationGuard.requireStudentRecordVisible(actor, studentId);
     }
 
-    private Student requireStudentProfile(AuthenticatedUser actor) {
-        if (actor.user().getRole() != UserRole.STUDENT) {
-            throw new ForbiddenException("Student access is required.");
-        }
-        Student student = studentRepository.findByUserId(actor.user().getId())
-                .filter(candidate -> candidate.getTenant().getId().equals(actor.user().getTenant().getId()))
+    private UserAccount requireActor(RequestContext actor) {
+        return userAccountRepository.findById(actor.userId().toString())
+                .orElseThrow(() -> new UnauthorizedException("Authenticated user was not found."));
+    }
+
+    private Student requireStudentProfile(RequestContext actor) {
+        authorizationGuard.requireRole(actor, "STUDENT");
+        Student student = studentRepository.findByUserId(actor.userId().toString())
+                .filter(candidate -> actor.tenantId() != null
+                        && candidate.getTenant().getId().equals(actor.tenantId().toString()))
                 .orElseThrow(() -> new ForbiddenException("Student profile is not linked to this user."));
-        requireActiveStudentSchool(actor, student);
+        authorizationGuard.requireStudentSelfAccess(actor, student.getId());
+        authorizationGuard.requireStudentRecordVisible(actor, student.getId());
         return student;
-    }
-
-    private void requireActiveStudentSchool(AuthenticatedUser actor, Student student) {
-        if (actor.activeSchoolId() == null || actor.activeSchoolId().isBlank()) {
-            throw new ForbiddenException("An active school is required.");
-        }
-        if (!student.getSchool().getId().equals(actor.activeSchoolId())) {
-            throw new ForbiddenException("Student profile is not linked to the active school.");
-        }
     }
 
     private FeeDemand requireDemand(String demandId) {
