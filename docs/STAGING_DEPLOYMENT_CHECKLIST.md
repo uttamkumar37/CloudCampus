@@ -30,20 +30,28 @@ nginx -v
 curl --version
 ```
 
-## 3. Required Domains
+## 3. DNS Checklist
 
-Choose real staging domains before filling env files.
+Use these staging domains exactly:
 
-Recommended shape:
-
-- Frontend: `https://staging.mycloudcampus.in`
-- Backend API: `https://api-staging.mycloudcampus.in`
+- Frontend staging: `https://staging.mycloudcampous.in`
+- Backend API staging: `https://api-staging.mycloudcampous.in`
 
 DNS requirements:
 
-- `staging.mycloudcampus.in` points to the frontend host.
-- `api-staging.mycloudcampus.in` points to the backend reverse proxy host.
+- `staging.mycloudcampous.in` points to the frontend host.
+- `api-staging.mycloudcampous.in` points to the backend reverse proxy host.
 - TLS certificates exist for both names.
+- HTTP redirects to HTTPS after certificates are installed.
+
+DNS verification commands:
+
+```bash
+dig +short staging.mycloudcampous.in
+dig +short api-staging.mycloudcampous.in
+curl -I http://staging.mycloudcampous.in
+curl -I http://api-staging.mycloudcampous.in
+```
 
 ## 4. Required Environment Files
 
@@ -67,37 +75,44 @@ The first command should print a `.gitignore` rule. The second command should pr
 
 Fill `.env.staging` with real staging values:
 
-| Variable | Real value needed |
-| --- | --- |
-| `SPRING_PROFILES_ACTIVE` | `staging` |
-| `CLOUDCAMPUS_DB_NAME` | Staging database name, for example `cloudcampus` |
-| `CLOUDCAMPUS_DB_USERNAME` | Staging database user |
-| `CLOUDCAMPUS_DB_PASSWORD` | Strong staging database password |
-| `CLOUDCAMPUS_JDBC_URL` | `jdbc:postgresql://postgres:5432/<db>` for bundled Compose Postgres, or managed PostgreSQL URL |
-| `CLOUDCAMPUS_JDBC_USERNAME` | Same staging DB user unless using separate app user |
-| `CLOUDCAMPUS_JDBC_PASSWORD` | Same staging DB password unless using separate app password |
-| `CLOUDCAMPUS_AUTH_JWT_SECRET` | At least 64 random characters; generate with `openssl rand -base64 64` |
-| `CLOUDCAMPUS_AUTH_EXPOSE_MFA_CODE` | `false` for real staging; use `true` only for private local demos |
-| `CLOUDCAMPUS_EMAIL_MODE` | `log` for first staging, or `smtp` when testing real mail |
-| `CLOUDCAMPUS_EMAIL_FROM` | Staging sender address |
-| `CLOUDCAMPUS_APP_BASE_URL` | Frontend staging URL, for example `https://staging.mycloudcampus.in` |
-| `CLOUDCAMPUS_CORS_ALLOWED_ORIGINS` | Frontend staging URL only, for example `https://staging.mycloudcampus.in` |
-| `CLOUDCAMPUS_AI_ENABLED` | `true` or `false` for staging test scope |
-| `CLOUDCAMPUS_AI_PROVIDER` | `mock` unless a real provider is intentionally tested |
-| `CLOUDCAMPUS_AI_API_KEY` | Empty for `mock`; real key from secret manager when using a real provider |
-| `CLOUDCAMPUS_SMTP_*` | Required only when `CLOUDCAMPUS_EMAIL_MODE=smtp` |
-| `CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED` | `false` |
-| `CLOUDCAMPUS_BACKEND_PORT` | Usually `18080`; backend binds to localhost for reverse proxy |
-| `CLOUDCAMPUS_BACKEND_IMAGE` | Registry image tag, for example `ghcr.io/<owner>/cloudcampus-backend:<tag>` |
-| `JAVA_OPTS` | Keep current memory settings unless server sizing changes |
+| Variable | Example format | Secret | Validate | Common mistake |
+| --- | --- | --- | --- | --- |
+| `SPRING_PROFILES_ACTIVE` | `staging` | No | Must equal `staging` | Using `prod` or `local` |
+| `CLOUDCAMPUS_DB_NAME` | `cloudcampus` | No | Matches Postgres database name | Changing DB name without changing JDBC URL |
+| `CLOUDCAMPUS_DB_USERNAME` | `cloudcampus` | No | Matches Postgres user | Using a user not created in Postgres |
+| `CLOUDCAMPUS_DB_PASSWORD` | strong random value | Yes | No placeholders; works with Postgres health check | Reusing local password |
+| `CLOUDCAMPUS_POSTGRES_PORT` | `15432` | No | Only needed for host port mapping | Exposing Postgres publicly |
+| `CLOUDCAMPUS_JDBC_URL` | `jdbc:postgresql://postgres:5432/cloudcampus` | No | Starts with `jdbc:postgresql://` | Using localhost from inside Compose |
+| `CLOUDCAMPUS_JDBC_USERNAME` | `cloudcampus` | No | Matches app DB user | Mismatch with `CLOUDCAMPUS_DB_USERNAME` |
+| `CLOUDCAMPUS_JDBC_PASSWORD` | strong random value | Yes | No placeholders; app can connect | Mismatch with `CLOUDCAMPUS_DB_PASSWORD` |
+| `CLOUDCAMPUS_AUTH_JWT_SECRET` | output of `openssl rand -base64 64` | Yes | At least 64 characters | Short or copied example secret |
+| `CLOUDCAMPUS_AUTH_EXPOSE_MFA_CODE` | `false` | No | Must be `false` for real staging | Treating staging like local demo |
+| `CLOUDCAMPUS_EMAIL_MODE` | `log` or `smtp` | No | `log` for first staging, `smtp` for mail testing | Enabling `smtp` without credentials |
+| `CLOUDCAMPUS_EMAIL_FROM` | `no-reply@staging.mycloudcampous.in` | No | Valid sender domain | Leaving `.example` domain |
+| `CLOUDCAMPUS_APP_BASE_URL` | `https://staging.mycloudcampous.in` | No | Must be frontend URL | Using API URL here |
+| `CLOUDCAMPUS_CORS_ALLOWED_ORIGINS` | `https://staging.mycloudcampous.in` | No | Must exactly match frontend origin | Wildcard or API origin |
+| `CLOUDCAMPUS_AI_ENABLED` | `true` or `false` | No | Matches staging test scope | Enabling real provider accidentally |
+| `CLOUDCAMPUS_AI_PROVIDER` | `mock` | No | Use `mock` unless testing a real provider | Setting real provider without key |
+| `CLOUDCAMPUS_AI_API_KEY` | blank for `mock` | Yes when real provider | Required only for real provider | Committing provider key |
+| `CLOUDCAMPUS_SMTP_HOST` | SMTP hostname | No | Required only when email mode is `smtp` | Blank with `smtp` mode |
+| `CLOUDCAMPUS_SMTP_USERNAME` | SMTP user | Yes | Required only when email mode is `smtp` | Committing SMTP user |
+| `CLOUDCAMPUS_SMTP_PASSWORD` | SMTP password | Yes | Required only when email mode is `smtp` | Committing SMTP password |
+| `CLOUDCAMPUS_BOOTSTRAP_SUPER_ADMIN_ENABLED` | `false` | No | Must remain false for staging | Enabling bootstrap on shared staging |
+| `CLOUDCAMPUS_BACKEND_PORT` | `18080` | No | Nginx proxies to this local port | Confusing with `SERVER_PORT` |
+| `CLOUDCAMPUS_BACKEND_IMAGE` | `ghcr.io/<GHCR_OWNER>/cloudcampus-backend:staging-ad6d994` | No | Image exists and can be pulled | Local-only image tag |
+| `JAVA_OPTS` | `-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError` | No | JVM starts within server memory | Over-allocating RAM |
+
+CloudCampus staging Compose does not currently require Redis, RabbitMQ, MinIO, or S3 variables. Add those only if the Compose files gain those services.
 
 Fill `frontend/.env.staging` with:
 
 ```env
-VITE_CLOUDCAMPUS_API_BASE_URL=https://api-staging.mycloudcampus.in
+VITE_CLOUDCAMPUS_API_BASE_URL=https://api-staging.mycloudcampous.in
+VITE_APP_ENV=staging
+VITE_APP_NAME=CloudCampus
 ```
 
-The API URL must match the backend domain and CORS must allow the frontend domain.
+The app currently reads `VITE_CLOUDCAMPUS_API_BASE_URL`. `VITE_APP_ENV` and `VITE_APP_NAME` are safe metadata for staging build environments, but no frontend AI feature flag is currently read by the app. The API URL must match the backend domain and CORS must allow the frontend domain.
 
 ## 6. Backend Image Registry Plan
 
@@ -108,7 +123,7 @@ Set placeholders:
 ```bash
 export GHCR_OWNER=<github-owner-or-org>
 export IMAGE_NAME=cloudcampus-backend
-export IMAGE_TAG=staging-$(git rev-parse --short HEAD)
+export IMAGE_TAG=staging-ad6d994
 export IMAGE_REF=ghcr.io/$GHCR_OWNER/$IMAGE_NAME:$IMAGE_TAG
 ```
 
@@ -121,7 +136,8 @@ echo "<github-token-with-write-packages>" | docker login ghcr.io -u <github-user
 Build, tag, and push:
 
 ```bash
-docker build -f backend/Dockerfile -t "$IMAGE_REF" .
+docker build -f backend/Dockerfile -t cloudcampus-backend:staging-ad6d994 .
+docker tag cloudcampus-backend:staging-ad6d994 "$IMAGE_REF"
 docker push "$IMAGE_REF"
 ```
 
@@ -134,7 +150,7 @@ docker pull "$IMAGE_REF"
 Set this exact value in `.env.staging`:
 
 ```env
-CLOUDCAMPUS_BACKEND_IMAGE=ghcr.io/<owner>/cloudcampus-backend:<tag>
+CLOUDCAMPUS_BACKEND_IMAGE=ghcr.io/<GHCR_OWNER>/cloudcampus-backend:staging-ad6d994
 ```
 
 Do not use local-only image tags such as `cloudcampus-backend:local`, `cloudcampus-backend:readiness`, or `cloudcampus-backend:release-check` for staging.
@@ -186,7 +202,7 @@ Minimum Nginx behavior:
 - Serve `index.html` for SPA routes.
 - Serve static assets with cache headers.
 - Add basic security headers.
-- Terminate TLS for `staging.mycloudcampus.in`.
+- Terminate TLS for `staging.mycloudcampous.in`.
 - Do not hardcode fake certificates in the repository.
 
 Example Nginx shape, to adapt on the server:
@@ -194,7 +210,7 @@ Example Nginx shape, to adapt on the server:
 ```nginx
 server {
     listen 443 ssl http2;
-    server_name staging.mycloudcampus.in;
+    server_name staging.mycloudcampous.in;
 
     root /var/www/cloudcampus-staging;
     index index.html;
@@ -220,7 +236,7 @@ Backend API reverse proxy shape:
 ```nginx
 server {
     listen 443 ssl http2;
-    server_name api-staging.mycloudcampus.in;
+    server_name api-staging.mycloudcampous.in;
 
     location / {
         proxy_pass http://127.0.0.1:18080;
@@ -239,6 +255,17 @@ nginx -t
 sudo systemctl reload nginx
 ```
 
+Certbot TLS setup, after DNS points to the server and Nginx HTTP server blocks are reachable:
+
+```bash
+sudo certbot --nginx -d staging.mycloudcampous.in -d api-staging.mycloudcampous.in
+sudo certbot renew --dry-run
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+If the frontend and API use different servers, run Certbot on each server with only the domain hosted there.
+
 ## 9. DNS and TLS Setup
 
 Before go-live for staging:
@@ -251,8 +278,8 @@ Before go-live for staging:
 Check:
 
 ```bash
-curl -I https://staging.mycloudcampus.in
-curl -I https://api-staging.mycloudcampus.in/actuator/health/readiness
+curl -I https://staging.mycloudcampous.in
+curl -I https://api-staging.mycloudcampous.in/actuator/health/readiness
 ```
 
 ## 10. Backup Setup
@@ -298,16 +325,16 @@ Backend smoke:
 
 ```bash
 docker compose --env-file .env.staging -f docker-compose.staging.yml ps
-curl -fsS https://api-staging.mycloudcampus.in/actuator/health/readiness
-curl -fsS https://api-staging.mycloudcampus.in/v1/system/readiness
-./scripts/deploy/smoke.sh https://api-staging.mycloudcampus.in
+curl -fsS https://api-staging.mycloudcampous.in/actuator/health/readiness
+curl -fsS https://api-staging.mycloudcampous.in/v1/system/readiness
+./scripts/deploy/smoke.sh https://api-staging.mycloudcampous.in
 ```
 
 Frontend smoke:
 
 ```bash
-curl -fsSI https://staging.mycloudcampus.in
-curl -fsS https://staging.mycloudcampus.in | grep -E "CloudCampus|/assets/"
+curl -fsSI https://staging.mycloudcampous.in
+curl -fsS https://staging.mycloudcampous.in | grep -E "CloudCampus|/assets/"
 ```
 
 Manual browser smoke:
@@ -315,7 +342,7 @@ Manual browser smoke:
 - Frontend returns HTTP 200.
 - Static assets load without 404s.
 - Login page loads.
-- Browser network requests call `https://api-staging.mycloudcampus.in`.
+- Browser network requests call `https://api-staging.mycloudcampous.in`.
 - CORS allows the frontend domain.
 - MFA flow works as configured.
 - AI dashboard loads after authentication.
@@ -329,7 +356,7 @@ Rollback backend:
 ```bash
 # Edit .env.staging and set CLOUDCAMPUS_BACKEND_IMAGE to the previous known-good image.
 docker compose --env-file .env.staging -f docker-compose.staging.yml up -d
-./scripts/deploy/smoke.sh https://api-staging.mycloudcampus.in
+./scripts/deploy/smoke.sh https://api-staging.mycloudcampous.in
 ```
 
 Rollback frontend:
