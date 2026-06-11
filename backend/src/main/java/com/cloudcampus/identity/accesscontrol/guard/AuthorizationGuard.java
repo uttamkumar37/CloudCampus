@@ -14,6 +14,9 @@ import com.cloudcampus.operations.finance.FeeDemand;
 import com.cloudcampus.operations.finance.FeeDemandRepository;
 import com.cloudcampus.operations.finance.FeePayment;
 import com.cloudcampus.operations.finance.FeePaymentRepository;
+import com.cloudcampus.operations.report.ReportExportJob;
+import com.cloudcampus.operations.report.ReportExportJobRepository;
+import com.cloudcampus.operations.report.ReportType;
 import com.cloudcampus.people.parent.ParentStudentLinkRepository;
 import com.cloudcampus.people.student.Student;
 import com.cloudcampus.people.student.StudentRepository;
@@ -32,6 +35,7 @@ public class AuthorizationGuard {
     private final StudentRepository studentRepository;
     private final FeeDemandRepository feeDemandRepository;
     private final FeePaymentRepository feePaymentRepository;
+    private final ReportExportJobRepository reportExportJobRepository;
 
     public AuthorizationGuard(
             UserSchoolAccessRepository userSchoolAccessRepository,
@@ -40,7 +44,8 @@ public class AuthorizationGuard {
             TeacherAssignmentRepository teacherAssignmentRepository,
             StudentRepository studentRepository,
             FeeDemandRepository feeDemandRepository,
-            FeePaymentRepository feePaymentRepository
+            FeePaymentRepository feePaymentRepository,
+            ReportExportJobRepository reportExportJobRepository
     ) {
         this.userSchoolAccessRepository = userSchoolAccessRepository;
         this.parentStudentLinkRepository = parentStudentLinkRepository;
@@ -49,6 +54,7 @@ public class AuthorizationGuard {
         this.studentRepository = studentRepository;
         this.feeDemandRepository = feeDemandRepository;
         this.feePaymentRepository = feePaymentRepository;
+        this.reportExportJobRepository = reportExportJobRepository;
     }
 
     public RequestContext requireAuthenticated(RequestContext context) {
@@ -302,10 +308,170 @@ public class AuthorizationGuard {
     }
 
     @Transactional(readOnly = true)
+    public void requireFeeDemandVisible(RequestContext context, String demandId) {
+        requireFeeDemandVisible(context, uuid(demandId));
+    }
+
+    @Transactional(readOnly = true)
     public void requireFeePaymentVisible(RequestContext context, UUID paymentId) {
         FeePayment payment = feePaymentRepository.findById(id(paymentId))
                 .orElseThrow(() -> new NotFoundException("Fee payment was not found."));
         requireFinanceOrStudentParty(context, uuid(payment.getTenant().getId()), uuid(payment.getSchool().getId()), uuid(payment.getStudent().getId()));
+    }
+
+    @Transactional(readOnly = true)
+    public void requireFeePaymentVisible(RequestContext context, String paymentId) {
+        requireFeePaymentVisible(context, uuid(paymentId));
+    }
+
+    public UUID requireFinanceDashboardAccess(RequestContext context) {
+        return requireFinanceSchoolAccess(context, "VIEW_FINANCE_DASHBOARD");
+    }
+
+    public UUID requireFeeDemandCreateAccess(RequestContext context) {
+        return requireFinanceSchoolAccess(context, "MANAGE_FEE_STRUCTURE", "ISSUE_INVOICES");
+    }
+
+    @Transactional(readOnly = true)
+    public void requireFeeDemandManageAccess(RequestContext context, UUID demandId) {
+        FeeDemand demand = feeDemandRepository.findById(id(demandId))
+                .orElseThrow(() -> new NotFoundException("Fee demand was not found."));
+        requireFinanceSchoolAccess(
+                context,
+                uuid(demand.getTenant().getId()),
+                uuid(demand.getSchool().getId()),
+                "MANAGE_FEE_STRUCTURE",
+                "ISSUE_INVOICES",
+                "RECORD_PAYMENTS"
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public void requireFeeDemandFinanceAccess(RequestContext context, UUID demandId) {
+        FeeDemand demand = feeDemandRepository.findById(id(demandId))
+                .orElseThrow(() -> new NotFoundException("Fee demand was not found."));
+        requireFinanceSchoolAccess(
+                context,
+                uuid(demand.getTenant().getId()),
+                uuid(demand.getSchool().getId()),
+                "VIEW_FINANCE_DASHBOARD",
+                "VIEW_FINANCE_REPORTS",
+                "MANAGE_FEE_STRUCTURE"
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public void requireFeeDemandFinanceAccess(RequestContext context, String demandId) {
+        requireFeeDemandFinanceAccess(context, uuid(demandId));
+    }
+
+    @Transactional(readOnly = true)
+    public void requireFeeDemandManageAccess(RequestContext context, String demandId) {
+        requireFeeDemandManageAccess(context, uuid(demandId));
+    }
+
+    @Transactional(readOnly = true)
+    public void requireFinanceReceiptAccess(RequestContext context, UUID paymentId) {
+        FeePayment payment = feePaymentRepository.findById(id(paymentId))
+                .orElseThrow(() -> new NotFoundException("Fee payment was not found."));
+        requireFinanceSchoolAccess(
+                context,
+                uuid(payment.getTenant().getId()),
+                uuid(payment.getSchool().getId()),
+                "VIEW_FINANCE_REPORTS",
+                "RECORD_PAYMENTS"
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public void requireFinanceReceiptAccess(RequestContext context, String paymentId) {
+        requireFinanceReceiptAccess(context, uuid(paymentId));
+    }
+
+    public UUID requireFinanceReportViewAccess(RequestContext context) {
+        return requireFinanceSchoolAccess(context, "VIEW_FINANCE_REPORTS", "VIEW_FINANCE_DASHBOARD");
+    }
+
+    public UUID requireFinanceReportExportAccess(RequestContext context) {
+        return requireFinanceSchoolAccess(context, "EXPORT_FINANCE_REPORTS");
+    }
+
+    public UUID requireSchoolReportViewAccess(RequestContext context) {
+        return requireSchoolReportAccess(context);
+    }
+
+    public UUID requireSchoolReportExportAccess(RequestContext context) {
+        return requireSchoolReportAccess(context);
+    }
+
+    @Transactional(readOnly = true)
+    public void requireFinanceReportExportVisible(RequestContext context, UUID exportId) {
+        ReportExportJob exportJob = reportExportJobRepository.findById(id(exportId))
+                .orElseThrow(() -> new NotFoundException("Report export was not found."));
+        if (exportJob.getSchool() == null) {
+            throw new ForbiddenException("Report export is not school-scoped.");
+        }
+        if (exportJob.getReportType() != ReportType.FEE_DEMANDS) {
+            throw new ForbiddenException("Finance staff can only access finance report exports.");
+        }
+        requireFinanceSchoolAccess(
+                context,
+                uuid(exportJob.getTenant().getId()),
+                uuid(exportJob.getSchool().getId()),
+                "VIEW_FINANCE_REPORTS",
+                "EXPORT_FINANCE_REPORTS"
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public void requireFinanceReportExportVisible(RequestContext context, String exportId) {
+        requireFinanceReportExportVisible(context, uuid(exportId));
+    }
+
+    @Transactional(readOnly = true)
+    public void requireSchoolReportExportVisible(RequestContext context, UUID exportId) {
+        ReportExportJob exportJob = reportExportJobRepository.findById(id(exportId))
+                .orElseThrow(() -> new NotFoundException("Report export was not found."));
+        if (exportJob.getSchool() == null) {
+            throw new ForbiddenException("Report export is not school-scoped.");
+        }
+        requireTenantScope(context, uuid(exportJob.getTenant().getId()));
+        requireSchoolScope(context, uuid(exportJob.getSchool().getId()));
+        requireSchoolReportAccess(context);
+    }
+
+    @Transactional(readOnly = true)
+    public void requireSchoolReportExportVisible(RequestContext context, String exportId) {
+        requireSchoolReportExportVisible(context, uuid(exportId));
+    }
+
+    private UUID requireFinanceSchoolAccess(RequestContext context, String... financePermissions) {
+        UUID schoolId = requireActiveSchool(context);
+        requireFinanceSchoolAccess(context, context.tenantId(), schoolId, financePermissions);
+        return schoolId;
+    }
+
+    private void requireFinanceSchoolAccess(RequestContext context, UUID tenantId, UUID schoolId, String... financePermissions) {
+        requireTenantScope(context, tenantId);
+        requireSchoolScope(context, schoolId);
+        requireUserSchoolAccess(context, schoolId);
+        if (context.hasRole("SCHOOL_ADMIN")) {
+            return;
+        }
+        if (context.hasRole("FINANCE_STAFF")) {
+            requireAnyPermission(context, financePermissions);
+            return;
+        }
+        throw new ForbiddenException("Finance access is required.");
+    }
+
+    private UUID requireSchoolReportAccess(RequestContext context) {
+        UUID schoolId = requireActiveSchool(context);
+        requireUserSchoolAccess(context, schoolId);
+        if (!context.hasRole("SCHOOL_ADMIN") && !context.hasRole("PRINCIPAL")) {
+            throw new ForbiddenException("School report access is required.");
+        }
+        return schoolId;
     }
 
     private void requireFinanceOrStudentParty(RequestContext context, UUID tenantId, UUID schoolId, UUID studentId) {

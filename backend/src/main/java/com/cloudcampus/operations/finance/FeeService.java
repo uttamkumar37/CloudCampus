@@ -20,12 +20,9 @@ import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.common.exception.UnauthorizedException;
 import com.cloudcampus.common.web.PageResponse;
 import com.cloudcampus.common.web.PageResponses;
-import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
 import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
-import com.cloudcampus.identity.auth.UserRole;
-import com.cloudcampus.identity.auth.session.AuthenticatedUser;
 import com.cloudcampus.people.parent.ParentStudentLinkRepository;
 import com.cloudcampus.people.student.Student;
 import com.cloudcampus.people.student.StudentRepository;
@@ -53,7 +50,6 @@ public class FeeService {
     private final ParentStudentLinkRepository parentStudentLinkRepository;
     private final UserAccountRepository userAccountRepository;
     private final SchoolRepository schoolRepository;
-    private final SchoolAccessService schoolAccessService;
     private final AuditLogService auditLogService;
     private final AuthorizationGuard authorizationGuard;
 
@@ -64,7 +60,6 @@ public class FeeService {
             ParentStudentLinkRepository parentStudentLinkRepository,
             UserAccountRepository userAccountRepository,
             SchoolRepository schoolRepository,
-            SchoolAccessService schoolAccessService,
             AuditLogService auditLogService,
             AuthorizationGuard authorizationGuard
     ) {
@@ -74,17 +69,17 @@ public class FeeService {
         this.parentStudentLinkRepository = parentStudentLinkRepository;
         this.userAccountRepository = userAccountRepository;
         this.schoolRepository = schoolRepository;
-        this.schoolAccessService = schoolAccessService;
         this.auditLogService = auditLogService;
         this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional
-    public FeeDemandResponse createDemand(AuthenticatedUser actor, FeeDemandRequest request) {
-        School school = requireActiveFinanceSchool(actor);
+    public FeeDemandResponse createDemand(RequestContext actor, FeeDemandRequest request) {
+        School school = requireFeeDemandCreateSchool(actor);
         Student student = studentRepository.findById(request.studentId())
                 .orElseThrow(() -> new NotFoundException("Student was not found."));
         requireStudentInSchool(student, school.getId());
+        UserAccount actorUser = requireActor(actor);
 
         FeeDemand demand = feeDemandRepository.save(new FeeDemand(
                 school.getTenant(),
@@ -94,13 +89,13 @@ public class FeeService {
                 money(request.amount()),
                 request.dueDate()
         ));
-        recordDemandCreated(actor.user(), demand);
+        recordDemandCreated(actorUser, demand);
         return toResponse(demand);
     }
 
     @Transactional(readOnly = true)
-    public List<FeeDemandResponse> schoolDemands(AuthenticatedUser actor) {
-        School school = requireActiveFinanceSchool(actor);
+    public List<FeeDemandResponse> schoolDemands(RequestContext actor) {
+        School school = requireFinanceDashboardSchool(actor);
         return feeDemandRepository.findBySchoolIdOrderByDueDateAscCreatedAtAsc(school.getId())
                 .stream()
                 .map(this::toResponse)
@@ -108,8 +103,8 @@ public class FeeService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<FinanceReceiptResponse> financeReceipts(AuthenticatedUser actor, int page, int size) {
-        School school = requireActiveFinanceSchool(actor);
+    public PageResponse<FinanceReceiptResponse> financeReceipts(RequestContext actor, int page, int size) {
+        School school = requireFinanceReportSchool(actor);
         return PageResponses.of(feePaymentRepository.findBySchoolIdOrderByPaidAtDesc(school.getId())
                 .stream()
                 .map(this::toReceiptResponse)
@@ -117,8 +112,8 @@ public class FeeService {
     }
 
     @Transactional(readOnly = true)
-    public FinanceReportSummaryResponse financeReportSummary(AuthenticatedUser actor) {
-        School school = requireActiveFinanceSchool(actor);
+    public FinanceReportSummaryResponse financeReportSummary(RequestContext actor) {
+        School school = requireFinanceReportSchool(actor);
         List<FeeDemand> demands = feeDemandRepository.findBySchoolIdOrderByDueDateAscCreatedAtAsc(school.getId());
         List<FeePayment> payments = feePaymentRepository.findBySchoolIdOrderByPaidAtDesc(school.getId());
         BigDecimal totalDemanded = demands.stream()
@@ -143,8 +138,8 @@ public class FeeService {
     }
 
     @Transactional(readOnly = true)
-    public FinanceCollectionResponse financeCollections(AuthenticatedUser actor) {
-        School school = requireActiveFinanceSchool(actor);
+    public FinanceCollectionResponse financeCollections(RequestContext actor) {
+        School school = requireFinanceReportSchool(actor);
         Map<LocalDate, List<FeePayment>> byDate = feePaymentRepository.findBySchoolIdOrderByPaidAtDesc(school.getId())
                 .stream()
                 .collect(java.util.stream.Collectors.groupingBy(
@@ -163,15 +158,15 @@ public class FeeService {
     }
 
     @Transactional(readOnly = true)
-    public FeeDemandResponse schoolDemand(AuthenticatedUser actor, String demandId) {
-        FeeDemand demand = requireActiveFinanceDemand(actor, demandId);
+    public FeeDemandResponse schoolDemand(RequestContext actor, String demandId) {
+        FeeDemand demand = requireVisibleFinanceDemand(actor, demandId);
         return toResponse(demand);
     }
 
     @Transactional
-    public FeeDemandResponse recordSchoolPayment(AuthenticatedUser actor, String demandId, FeePaymentRequest request) {
-        FeeDemand demand = requireActiveFinanceDemand(actor, demandId);
-        recordPayment(actor.user(), demand, request);
+    public FeeDemandResponse recordSchoolPayment(RequestContext actor, String demandId, FeePaymentRequest request) {
+        FeeDemand demand = requireManageableFinanceDemand(actor, demandId);
+        recordPayment(requireActor(actor), demand, request);
         return toResponse(demand);
     }
 
@@ -240,24 +235,33 @@ public class FeeService {
         return payment;
     }
 
-    private School requireActiveFinanceSchool(AuthenticatedUser actor) {
-        String activeSchoolId = actor.activeSchoolId();
-        if (activeSchoolId == null || activeSchoolId.isBlank()) {
-            throw new ForbiddenException("An active school is required.");
-        }
-        schoolAccessService.requireSchoolFinanceAccess(actor.user().getId(), activeSchoolId);
-        return schoolRepository.findById(activeSchoolId)
+    private School requireFeeDemandCreateSchool(RequestContext actor) {
+        return requireActiveSchool(authorizationGuard.requireFeeDemandCreateAccess(actor));
+    }
+
+    private School requireFinanceDashboardSchool(RequestContext actor) {
+        return requireActiveSchool(authorizationGuard.requireFinanceDashboardAccess(actor));
+    }
+
+    private School requireFinanceReportSchool(RequestContext actor) {
+        return requireActiveSchool(authorizationGuard.requireFinanceReportViewAccess(actor));
+    }
+
+    private School requireActiveSchool(java.util.UUID schoolId) {
+        return schoolRepository.findById(schoolId.toString())
                 .filter(School::isActive)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }
 
-    private FeeDemand requireActiveFinanceDemand(AuthenticatedUser actor, String demandId) {
-        School activeSchool = requireActiveFinanceSchool(actor);
+    private FeeDemand requireVisibleFinanceDemand(RequestContext actor, String demandId) {
+        authorizationGuard.requireFeeDemandFinanceAccess(actor, demandId);
         FeeDemand demand = requireDemand(demandId);
-        if (!demand.getSchool().getId().equals(activeSchool.getId())) {
-            throw new ForbiddenException("Fee demand does not belong to the active school.");
-        }
         return demand;
+    }
+
+    private FeeDemand requireManageableFinanceDemand(RequestContext actor, String demandId) {
+        authorizationGuard.requireFeeDemandManageAccess(actor, demandId);
+        return requireDemand(demandId);
     }
 
     private void requireStudentInSchool(Student student, String schoolId) {

@@ -10,8 +10,11 @@ import java.nio.charset.StandardCharsets;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogRepository;
+import com.cloudcampus.identity.accesscontrol.PermissionRepository;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccess;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
+import com.cloudcampus.identity.accesscontrol.UserPermissionOverride;
+import com.cloudcampus.identity.accesscontrol.UserPermissionOverrideRepository;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
@@ -68,6 +71,12 @@ class FeeLifecycleFlowTest {
 
     @Autowired
     private UserSchoolAccessRepository userSchoolAccessRepository;
+
+    @Autowired
+    private PermissionRepository permissionRepository;
+
+    @Autowired
+    private UserPermissionOverrideRepository userPermissionOverrideRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -506,6 +515,50 @@ class FeeLifecycleFlowTest {
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
     }
 
+    @Test
+    void financeStaffDeniedWritePermissionsCannotCreateDemandOrRecordPayment() throws Exception {
+        JsonNode onboarding = onboard("fee-life-h", "fee-school-h", "fee-admin-h@example.com");
+        String schoolAdminToken = activateSchoolAdmin(onboarding, "FeeAdminStrong123!");
+        String financeEmail = "finance-h@example.com";
+        String financeToken = financeStaffToken(schoolAdminToken, financeEmail);
+        Tenant tenant = tenantRepository.findById(onboarding.at("/tenant/id").asText()).orElseThrow();
+        School school = schoolRepository.findById(onboarding.at("/school/id").asText()).orElseThrow();
+        Student student = studentRepository.save(new Student(tenant, school, "FEE-800", "Denied Finance Student"));
+        String demandId = jsonBody(createDemand(schoolAdminToken, student.getId(), "School admin fee", "400.00"))
+                .at("/id")
+                .asText();
+        UserAccount financeUser = userAccountRepository.findByEmailIgnoreCase(financeEmail).getFirst();
+        denyPermission(financeUser, tenant, school, "MANAGE_FEE_STRUCTURE");
+        denyPermission(financeUser, tenant, school, "ISSUE_INVOICES");
+        denyPermission(financeUser, tenant, school, "RECORD_PAYMENTS");
+
+        mockMvc.perform(post("/v1/finance/fees/demands")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "studentId": "%s",
+                                  "description": "Blocked denied finance fee",
+                                  "amount": 50.00,
+                                  "dueDate": "2026-06-30"
+                                }
+                                """.formatted(student.getId())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+
+        mockMvc.perform(post("/v1/finance/fees/demands/{demandId}/payments", demandId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(financeToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "amount": 50.00,
+                                  "paymentMethod": "cash"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
     private MvcResult createDemand(String token, String studentId, String description, String amount) throws Exception {
         return mockMvc.perform(post("/v1/school-admin/fees/demands")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))
@@ -660,6 +713,22 @@ class FeeLifecycleFlowTest {
                 .andExpect(status().isOk())
                 .andReturn();
         return jsonBody(verified);
+    }
+
+    private void denyPermission(UserAccount user, Tenant tenant, School school, String permissionCode) {
+        userPermissionOverrideRepository.save(new UserPermissionOverride(
+                user,
+                permissionRepository.findByCode(permissionCode).orElseThrow(),
+                false,
+                tenant,
+                school,
+                "SCHOOL",
+                school.getId(),
+                "Test deny override",
+                null,
+                null,
+                user
+        ));
     }
 
     private JsonNode jsonBody(MvcResult result) throws Exception {

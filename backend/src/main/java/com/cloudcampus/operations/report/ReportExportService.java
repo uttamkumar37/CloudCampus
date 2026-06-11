@@ -8,14 +8,16 @@ import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.cloudcampus.audit.AuditAction;
 import com.cloudcampus.audit.AuditLogService;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.BadRequestException;
 import com.cloudcampus.common.exception.ConflictException;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
-import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccount;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
 import com.cloudcampus.operations.bulk.BulkJobCreateRequest;
@@ -48,9 +50,9 @@ public class ReportExportService {
     private final FeeDemandRepository feeDemandRepository;
     private final BulkJobRepository bulkJobRepository;
     private final SchoolRepository schoolRepository;
-    private final SchoolAccessService schoolAccessService;
     private final BulkJobService bulkJobService;
     private final AuditLogService auditLogService;
+    private final AuthorizationGuard authorizationGuard;
     private final ObjectMapper objectMapper;
 
     public ReportExportService(
@@ -60,9 +62,9 @@ public class ReportExportService {
             FeeDemandRepository feeDemandRepository,
             BulkJobRepository bulkJobRepository,
             SchoolRepository schoolRepository,
-            SchoolAccessService schoolAccessService,
             BulkJobService bulkJobService,
             AuditLogService auditLogService,
+            AuthorizationGuard authorizationGuard,
             ObjectMapper objectMapper
     ) {
         this.reportExportJobRepository = reportExportJobRepository;
@@ -71,15 +73,15 @@ public class ReportExportService {
         this.feeDemandRepository = feeDemandRepository;
         this.bulkJobRepository = bulkJobRepository;
         this.schoolRepository = schoolRepository;
-        this.schoolAccessService = schoolAccessService;
         this.bulkJobService = bulkJobService;
         this.auditLogService = auditLogService;
+        this.authorizationGuard = authorizationGuard;
         this.objectMapper = objectMapper;
     }
 
     @Transactional
-    public ReportExportResponse requestExport(AuthenticatedUser actor, ReportExportRequest request) {
-        School school = requireActiveSchoolLeadershipSchool(actor);
+    public ReportExportResponse requestExport(RequestContext context, AuthenticatedUser actor, ReportExportRequest request) {
+        School school = requireSchoolReportSchool(context);
         BulkJobResponse bulkJob = bulkJobService.createForSchoolLeadership(
                 actor,
                 new BulkJobCreateRequest(
@@ -105,9 +107,9 @@ public class ReportExportService {
     }
 
     @Transactional
-    public ReportExportResponse requestFinanceExport(AuthenticatedUser actor, ReportExportRequest request) {
+    public ReportExportResponse requestFinanceExport(RequestContext context, AuthenticatedUser actor, ReportExportRequest request) {
         requireFinanceReportRequest(request);
-        School school = requireActiveFinanceSchool(actor);
+        School school = requireFinanceReportExportSchool(context);
         BulkJobResponse bulkJob = bulkJobService.createForSchoolFinance(
                 actor,
                 new BulkJobCreateRequest(
@@ -133,8 +135,8 @@ public class ReportExportService {
     }
 
     @Transactional(readOnly = true)
-    public List<ReportExportResponse> listExports(AuthenticatedUser actor) {
-        School school = requireActiveSchoolLeadershipSchool(actor);
+    public List<ReportExportResponse> listExports(RequestContext context) {
+        School school = requireSchoolReportSchool(context);
         return reportExportJobRepository.findBySchoolIdOrderByRequestedAtDesc(school.getId())
                 .stream()
                 .map(this::toResponse)
@@ -142,8 +144,8 @@ public class ReportExportService {
     }
 
     @Transactional(readOnly = true)
-    public List<ReportExportResponse> listFinanceExports(AuthenticatedUser actor) {
-        School school = requireActiveFinanceSchool(actor);
+    public List<ReportExportResponse> listFinanceExports(RequestContext context) {
+        School school = requireFinanceReportViewSchool(context);
         return reportExportJobRepository.findBySchoolIdOrderByRequestedAtDesc(school.getId())
                 .stream()
                 .filter(exportJob -> exportJob.getReportType() == ReportType.FEE_DEMANDS)
@@ -152,20 +154,20 @@ public class ReportExportService {
     }
 
     @Transactional(readOnly = true)
-    public ReportExportResponse getExport(AuthenticatedUser actor, String exportId) {
-        ReportExportJob exportJob = requireAccessibleExport(actor, exportId);
+    public ReportExportResponse getExport(RequestContext context, String exportId) {
+        ReportExportJob exportJob = requireAccessibleExport(context, exportId);
         return toResponse(exportJob);
     }
 
     @Transactional(readOnly = true)
-    public ReportExportResponse getFinanceExport(AuthenticatedUser actor, String exportId) {
-        ReportExportJob exportJob = requireAccessibleFinanceExport(actor, exportId);
+    public ReportExportResponse getFinanceExport(RequestContext context, String exportId) {
+        ReportExportJob exportJob = requireAccessibleFinanceExport(context, exportId);
         return toResponse(exportJob);
     }
 
     @Transactional
-    public ReportExportFileResponse downloadExport(AuthenticatedUser actor, String exportId) {
-        ReportExportJob exportJob = requireAccessibleExport(actor, exportId);
+    public ReportExportFileResponse downloadExport(RequestContext context, AuthenticatedUser actor, String exportId) {
+        ReportExportJob exportJob = requireAccessibleExport(context, exportId);
         if (exportJob.getBulkJob().getStatus() != BulkJobStatus.COMPLETED) {
             throw new ConflictException("Report export file is not ready.");
         }
@@ -182,8 +184,8 @@ public class ReportExportService {
     }
 
     @Transactional
-    public ReportExportFileResponse downloadFinanceExport(AuthenticatedUser actor, String exportId) {
-        ReportExportJob exportJob = requireAccessibleFinanceExport(actor, exportId);
+    public ReportExportFileResponse downloadFinanceExport(RequestContext context, AuthenticatedUser actor, String exportId) {
+        ReportExportJob exportJob = requireAccessibleFinanceExport(context, exportId);
         if (exportJob.getBulkJob().getStatus() != BulkJobStatus.COMPLETED) {
             throw new ConflictException("Report export file is not ready.");
         }
@@ -236,48 +238,37 @@ public class ReportExportService {
         }
     }
 
-    private School requireActiveSchoolLeadershipSchool(AuthenticatedUser actor) {
-        String activeSchoolId = actor.activeSchoolId();
-        if (activeSchoolId == null || activeSchoolId.isBlank()) {
-            throw new ForbiddenException("An active school is required.");
-        }
-        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), activeSchoolId);
-        return schoolRepository.findById(activeSchoolId)
+    private School requireSchoolReportSchool(RequestContext context) {
+        UUID schoolId = authorizationGuard.requireSchoolReportExportAccess(context);
+        return schoolRepository.findById(schoolId.toString())
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }
 
-    private School requireActiveFinanceSchool(AuthenticatedUser actor) {
-        String activeSchoolId = actor.activeSchoolId();
-        if (activeSchoolId == null || activeSchoolId.isBlank()) {
-            throw new ForbiddenException("An active school is required.");
-        }
-        schoolAccessService.requireSchoolFinanceAccess(actor.user().getId(), activeSchoolId);
-        return schoolRepository.findById(activeSchoolId)
+    private School requireFinanceReportViewSchool(RequestContext context) {
+        UUID schoolId = authorizationGuard.requireFinanceReportViewAccess(context);
+        return schoolRepository.findById(schoolId.toString())
                 .filter(School::isActive)
                 .orElseThrow(() -> new NotFoundException("Active school was not found."));
     }
 
-    private ReportExportJob requireAccessibleExport(AuthenticatedUser actor, String exportId) {
+    private School requireFinanceReportExportSchool(RequestContext context) {
+        UUID schoolId = authorizationGuard.requireFinanceReportExportAccess(context);
+        return schoolRepository.findById(schoolId.toString())
+                .filter(School::isActive)
+                .orElseThrow(() -> new NotFoundException("Active school was not found."));
+    }
+
+    private ReportExportJob requireAccessibleExport(RequestContext context, String exportId) {
+        authorizationGuard.requireSchoolReportExportVisible(context, exportId);
         ReportExportJob exportJob = reportExportJobRepository.findById(exportId)
                 .orElseThrow(() -> new NotFoundException("Report export was not found."));
-        if (exportJob.getSchool() == null) {
-            throw new ForbiddenException("Report export is not school-scoped.");
-        }
-        schoolAccessService.requireSchoolLeadershipAccess(actor.user().getId(), exportJob.getSchool().getId());
         return exportJob;
     }
 
-    private ReportExportJob requireAccessibleFinanceExport(AuthenticatedUser actor, String exportId) {
-        School activeSchool = requireActiveFinanceSchool(actor);
-        ReportExportJob exportJob = reportExportJobRepository.findById(exportId)
+    private ReportExportJob requireAccessibleFinanceExport(RequestContext context, String exportId) {
+        authorizationGuard.requireFinanceReportExportVisible(context, exportId);
+        return reportExportJobRepository.findById(exportId)
                 .orElseThrow(() -> new NotFoundException("Report export was not found."));
-        if (exportJob.getSchool() == null || !exportJob.getSchool().getId().equals(activeSchool.getId())) {
-            throw new ForbiddenException("Report export does not belong to the active school.");
-        }
-        if (exportJob.getReportType() != ReportType.FEE_DEMANDS) {
-            throw new ForbiddenException("Finance staff can only access finance report exports.");
-        }
-        return exportJob;
     }
 
     private void requireFinanceReportRequest(ReportExportRequest request) {

@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.common.web.PageResponse;
-import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -22,16 +21,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class FeeController {
 
-    private final AuthenticatedUserResolver authenticatedUserResolver;
     private final RequestContextResolver requestContextResolver;
     private final FeeService feeService;
 
     public FeeController(
-            AuthenticatedUserResolver authenticatedUserResolver,
             RequestContextResolver requestContextResolver,
             FeeService feeService
     ) {
-        this.authenticatedUserResolver = authenticatedUserResolver;
         this.requestContextResolver = requestContextResolver;
         this.feeService = feeService;
     }
@@ -42,7 +38,7 @@ public class FeeController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(feeService.createDemand(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 requestBody
         ));
     }
@@ -53,29 +49,29 @@ public class FeeController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(feeService.createDemand(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 requestBody
         ));
     }
 
     @GetMapping("/v1/school-admin/fees/demands")
     ResponseEntity<List<FeeDemandResponse>> schoolDemands(HttpServletRequest request) {
-        return ResponseEntity.ok(feeService.schoolDemands(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(feeService.schoolDemands(requestContextResolver.requireContext(request)));
     }
 
     @GetMapping("/v1/finance/fees/demands")
     ResponseEntity<List<FeeDemandResponse>> financeDemands(HttpServletRequest request) {
-        return ResponseEntity.ok(feeService.schoolDemands(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(feeService.schoolDemands(requestContextResolver.requireContext(request)));
     }
 
     @GetMapping("/v1/school-admin/fees/demands/{demandId}")
     ResponseEntity<FeeDemandResponse> schoolDemand(@PathVariable String demandId, HttpServletRequest request) {
-        return ResponseEntity.ok(feeService.schoolDemand(authenticatedUserResolver.requireUser(request), demandId));
+        return ResponseEntity.ok(feeService.schoolDemand(requestContextResolver.requireContext(request), demandId));
     }
 
     @GetMapping("/v1/finance/fees/demands/{demandId}")
     ResponseEntity<FeeDemandResponse> financeDemand(@PathVariable String demandId, HttpServletRequest request) {
-        return ResponseEntity.ok(feeService.schoolDemand(authenticatedUserResolver.requireUser(request), demandId));
+        return ResponseEntity.ok(feeService.schoolDemand(requestContextResolver.requireContext(request), demandId));
     }
 
     @GetMapping("/v1/finance/receipts")
@@ -84,17 +80,17 @@ public class FeeController {
             @RequestParam(defaultValue = "50") int size,
             HttpServletRequest request
     ) {
-        return ResponseEntity.ok(feeService.financeReceipts(authenticatedUserResolver.requireUser(request), page, size));
+        return ResponseEntity.ok(feeService.financeReceipts(requestContextResolver.requireContext(request), page, size));
     }
 
     @GetMapping("/v1/finance/reports/summary")
     ResponseEntity<FinanceReportSummaryResponse> financeReportSummary(HttpServletRequest request) {
-        return ResponseEntity.ok(feeService.financeReportSummary(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(feeService.financeReportSummary(requestContextResolver.requireContext(request)));
     }
 
     @GetMapping("/v1/finance/reports/collections")
     ResponseEntity<FinanceCollectionResponse> financeCollections(HttpServletRequest request) {
-        return ResponseEntity.ok(feeService.financeCollections(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(feeService.financeCollections(requestContextResolver.requireContext(request)));
     }
 
     @PostMapping("/v1/school-admin/fees/demands/{demandId}/payments")
@@ -104,7 +100,7 @@ public class FeeController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(feeService.recordSchoolPayment(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 demandId,
                 requestBody
         ));
@@ -117,7 +113,7 @@ public class FeeController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(feeService.recordSchoolPayment(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 demandId,
                 requestBody
         ));

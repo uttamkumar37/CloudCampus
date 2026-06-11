@@ -299,6 +299,66 @@ class ReportExportFlowTest {
     }
 
     @Test
+    void financeStaffCannotReadReportExportFromGrantedButNonActiveSchool() throws Exception {
+        SchoolUserContext finance = schoolUserContext(UserRole.FINANCE_STAFF, UserRole.FINANCE_STAFF);
+        School otherSchool = schoolRepository.save(new School(
+                finance.tenant(),
+                "REPORT-FIN-ALT-" + SEQUENCE.incrementAndGet(),
+                "Report Finance Alternate School",
+                true
+        ));
+        userSchoolAccessRepository.save(new UserSchoolAccess(
+                finance.tenant(),
+                otherSchool,
+                finance.user(),
+                UserRole.FINANCE_STAFF,
+                false
+        ));
+        Student otherStudent = studentRepository.save(new Student(
+                finance.tenant(),
+                otherSchool,
+                "REP-FIN-ALT-100",
+                "Alternate Finance Student"
+        ));
+        feeDemandRepository.save(new FeeDemand(
+                finance.tenant(),
+                otherSchool,
+                otherStudent,
+                "Alternate finance fee",
+                new java.math.BigDecimal("900.00"),
+                LocalDate.of(2026, 7, 1)
+        ));
+        String otherActiveSchoolToken = jwtAccessTokenService.issueToken(
+                finance.user().getId(),
+                finance.tenant().getId(),
+                UserRole.FINANCE_STAFF,
+                otherSchool.getId()
+        );
+        String exportId = jsonBody(mockMvc.perform(post("/v1/finance/reports/exports")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(otherActiveSchoolToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "reportType": "FEE_DEMANDS",
+                                  "format": "CSV"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.schoolId").value(otherSchool.getId()))
+                .andReturn()).at("/id").asText();
+        reportExportService.processExport(exportId);
+
+        mockMvc.perform(get("/v1/finance/reports/exports/{exportId}", exportId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(finance.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/finance/reports/exports/{exportId}/download", exportId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(finance.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
     void principalCanRequestAndListSchoolScopedReportExports() throws Exception {
         SchoolUserContext context = schoolUserContext(UserRole.PRINCIPAL, UserRole.PRINCIPAL);
         studentRepository.save(new Student(context.tenant(), context.school(), "REP-PRN-100", "Principal Report Student"));
@@ -348,6 +408,52 @@ class ReportExportFlowTest {
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
         mockMvc.perform(get("/v1/school-admin/reports/exports/{exportId}/download", secondExportId)
                         .header(HttpHeaders.AUTHORIZATION, bearer(first.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+    }
+
+    @Test
+    void schoolAdminCannotReadReportExportFromGrantedButNonActiveSchool() throws Exception {
+        SchoolUserContext schoolAdmin = schoolUserContext(UserRole.SCHOOL_ADMIN, UserRole.SCHOOL_ADMIN);
+        School otherSchool = schoolRepository.save(new School(
+                schoolAdmin.tenant(),
+                "REPORT-ADM-ALT-" + SEQUENCE.incrementAndGet(),
+                "Report Admin Alternate School",
+                true
+        ));
+        userSchoolAccessRepository.save(new UserSchoolAccess(
+                schoolAdmin.tenant(),
+                otherSchool,
+                schoolAdmin.user(),
+                UserRole.SCHOOL_ADMIN,
+                false
+        ));
+        String otherActiveSchoolToken = jwtAccessTokenService.issueToken(
+                schoolAdmin.user().getId(),
+                schoolAdmin.tenant().getId(),
+                UserRole.SCHOOL_ADMIN,
+                otherSchool.getId()
+        );
+        String exportId = jsonBody(mockMvc.perform(post("/v1/school-admin/reports/exports")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(otherActiveSchoolToken))
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "reportType": "STUDENT_DIRECTORY",
+                                  "format": "CSV"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.schoolId").value(otherSchool.getId()))
+                .andReturn()).at("/id").asText();
+        reportExportService.processExport(exportId);
+
+        mockMvc.perform(get("/v1/school-admin/reports/exports/{exportId}", exportId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(schoolAdmin.accessToken())))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
+        mockMvc.perform(get("/v1/school-admin/reports/exports/{exportId}/download", exportId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(schoolAdmin.accessToken())))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }

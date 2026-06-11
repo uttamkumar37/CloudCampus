@@ -7,11 +7,13 @@ import java.util.List;
 
 import com.cloudcampus.academic.TeacherAssignmentRepository;
 import com.cloudcampus.audit.AuditLogRepository;
+import com.cloudcampus.common.context.RequestContext;
 import com.cloudcampus.common.exception.ForbiddenException;
 import com.cloudcampus.common.exception.NotFoundException;
 import com.cloudcampus.events.outbox.OutboxEventRepository;
 import com.cloudcampus.events.outbox.OutboxEventStatus;
 import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
+import com.cloudcampus.identity.accesscontrol.guard.AuthorizationGuard;
 import com.cloudcampus.identity.auth.UserAccountRepository;
 import com.cloudcampus.identity.auth.UserRole;
 import com.cloudcampus.identity.auth.session.AuthenticatedUser;
@@ -71,6 +73,7 @@ public class DashboardSummaryService {
     private final NotificationDeliveryRepository notificationDeliveryRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final AuditLogRepository auditLogRepository;
+    private final AuthorizationGuard authorizationGuard;
 
     public DashboardSummaryService(
             TenantRepository tenantRepository,
@@ -94,7 +97,8 @@ public class DashboardSummaryService {
             TenantInvoiceRepository tenantInvoiceRepository,
             NotificationDeliveryRepository notificationDeliveryRepository,
             OutboxEventRepository outboxEventRepository,
-            AuditLogRepository auditLogRepository
+            AuditLogRepository auditLogRepository,
+            AuthorizationGuard authorizationGuard
     ) {
         this.tenantRepository = tenantRepository;
         this.schoolRepository = schoolRepository;
@@ -118,6 +122,7 @@ public class DashboardSummaryService {
         this.notificationDeliveryRepository = notificationDeliveryRepository;
         this.outboxEventRepository = outboxEventRepository;
         this.auditLogRepository = auditLogRepository;
+        this.authorizationGuard = authorizationGuard;
     }
 
     @Transactional(readOnly = true)
@@ -216,9 +221,14 @@ public class DashboardSummaryService {
     }
 
     @Transactional(readOnly = true)
-    public DashboardSummaryResponse finance(AuthenticatedUser actor) {
-        requireRole(actor, UserRole.FINANCE_STAFF);
-        String schoolId = requireActiveFinanceSchool(actor);
+    public DashboardSummaryResponse finance(RequestContext actor) {
+        String schoolId = authorizationGuard.requireFinanceDashboardAccess(actor).toString();
+        boolean active = schoolRepository.findById(schoolId)
+                .map(com.cloudcampus.school.School::isActive)
+                .orElse(false);
+        if (!active) {
+            throw new ForbiddenException("Active school is not available.");
+        }
         return financeSummary(schoolId);
     }
 

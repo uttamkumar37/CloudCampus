@@ -2,6 +2,7 @@ package com.cloudcampus.operations.report;
 
 import java.util.List;
 
+import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,13 +23,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReportExportController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final ReportExportService reportExportService;
 
     public ReportExportController(
             AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             ReportExportService reportExportService
     ) {
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.reportExportService = reportExportService;
     }
 
@@ -38,6 +42,7 @@ public class ReportExportController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(reportExportService.requestExport(
+                requestContextResolver.requireContext(request),
                 authenticatedUserResolver.requireUser(request),
                 requestBody
         ));
@@ -49,6 +54,7 @@ public class ReportExportController {
             HttpServletRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(reportExportService.requestFinanceExport(
+                requestContextResolver.requireContext(request),
                 authenticatedUserResolver.requireUser(request),
                 requestBody
         ));
@@ -56,12 +62,16 @@ public class ReportExportController {
 
     @GetMapping("/v1/school-admin/reports/exports")
     ResponseEntity<List<ReportExportResponse>> listExports(HttpServletRequest request) {
-        return ResponseEntity.ok(reportExportService.listExports(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(reportExportService.listExports(
+                requestContextResolver.requireContext(request)
+        ));
     }
 
     @GetMapping("/v1/finance/reports/exports")
     ResponseEntity<List<ReportExportResponse>> listFinanceExports(HttpServletRequest request) {
-        return ResponseEntity.ok(reportExportService.listFinanceExports(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(reportExportService.listFinanceExports(
+                requestContextResolver.requireContext(request)
+        ));
     }
 
     @GetMapping("/v1/school-admin/reports/exports/{exportId}")
@@ -70,7 +80,7 @@ public class ReportExportController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(reportExportService.getExport(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 exportId
         ));
     }
@@ -81,7 +91,7 @@ public class ReportExportController {
             HttpServletRequest request
     ) {
         return ResponseEntity.ok(reportExportService.getFinanceExport(
-                authenticatedUserResolver.requireUser(request),
+                requestContextResolver.requireContext(request),
                 exportId
         ));
     }
@@ -92,6 +102,7 @@ public class ReportExportController {
             HttpServletRequest request
     ) {
         ReportExportFileResponse file = reportExportService.downloadExport(
+                requestContextResolver.requireContext(request),
                 authenticatedUserResolver.requireUser(request),
                 exportId
         );
@@ -110,6 +121,7 @@ public class ReportExportController {
             HttpServletRequest request
     ) {
         ReportExportFileResponse file = reportExportService.downloadFinanceExport(
+                requestContextResolver.requireContext(request),
                 authenticatedUserResolver.requireUser(request),
                 exportId
         );

@@ -1,5 +1,6 @@
 package com.cloudcampus.portal.dashboard;
 
+import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.identity.auth.session.AuthenticatedUserResolver;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,13 +13,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class DashboardSummaryController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
+    private final RequestContextResolver requestContextResolver;
     private final DashboardSummaryService dashboardSummaryService;
 
     public DashboardSummaryController(
             AuthenticatedUserResolver authenticatedUserResolver,
+            RequestContextResolver requestContextResolver,
             DashboardSummaryService dashboardSummaryService
     ) {
         this.authenticatedUserResolver = authenticatedUserResolver;
+        this.requestContextResolver = requestContextResolver;
         this.dashboardSummaryService = dashboardSummaryService;
     }
 
@@ -44,7 +48,7 @@ public class DashboardSummaryController {
 
     @GetMapping("/v1/finance/dashboard/summary")
     ResponseEntity<DashboardSummaryResponse> finance(HttpServletRequest request) {
-        return ResponseEntity.ok(dashboardSummaryService.finance(authenticatedUserResolver.requireUser(request)));
+        return ResponseEntity.ok(dashboardSummaryService.finance(requestContextResolver.requireContext(request)));
     }
 
     @GetMapping("/v1/staff/dashboard/summary")

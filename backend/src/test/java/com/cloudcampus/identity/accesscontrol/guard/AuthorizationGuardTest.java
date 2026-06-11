@@ -17,6 +17,9 @@ import com.cloudcampus.identity.accesscontrol.UserSchoolAccessRepository;
 import com.cloudcampus.operations.finance.FeeDemand;
 import com.cloudcampus.operations.finance.FeeDemandRepository;
 import com.cloudcampus.operations.finance.FeePaymentRepository;
+import com.cloudcampus.operations.report.ReportExportJob;
+import com.cloudcampus.operations.report.ReportExportJobRepository;
+import com.cloudcampus.operations.report.ReportType;
 import com.cloudcampus.people.parent.ParentStudentLinkRepository;
 import com.cloudcampus.people.student.Student;
 import com.cloudcampus.people.student.StudentRepository;
@@ -36,6 +39,7 @@ class AuthorizationGuardTest {
     private final StudentRepository studentRepository = mock(StudentRepository.class);
     private final FeeDemandRepository feeDemandRepository = mock(FeeDemandRepository.class);
     private final FeePaymentRepository feePaymentRepository = mock(FeePaymentRepository.class);
+    private final ReportExportJobRepository reportExportJobRepository = mock(ReportExportJobRepository.class);
 
     private AuthorizationGuard guard;
 
@@ -48,7 +52,8 @@ class AuthorizationGuardTest {
                 teacherAssignmentRepository,
                 studentRepository,
                 feeDemandRepository,
-                feePaymentRepository
+                feePaymentRepository,
+                reportExportJobRepository
         );
     }
 
@@ -166,6 +171,60 @@ class AuthorizationGuardTest {
                 .doesNotThrowAnyException();
     }
 
+    @Test
+    void financeDemandManageRequiresActiveSchoolScope() {
+        UUID tenantId = UUID.randomUUID();
+        UUID activeSchoolId = UUID.randomUUID();
+        UUID otherSchoolId = UUID.randomUUID();
+        UUID studentId = UUID.randomUUID();
+        UUID demandId = UUID.randomUUID();
+        RequestContext context = context(
+                Set.of("FINANCE_STAFF"),
+                Set.of("MANAGE_FEE_STRUCTURE", "RECORD_PAYMENTS"),
+                tenantId,
+                activeSchoolId,
+                false
+        );
+        FeeDemand demand = feeDemand(tenantId, otherSchoolId, studentId);
+        when(feeDemandRepository.findById(demandId.toString())).thenReturn(Optional.of(demand));
+
+        assertThatThrownBy(() -> guard.requireFeeDemandManageAccess(context, demandId))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void financeReportExportRejectsNonFinanceReportType() {
+        UUID tenantId = UUID.randomUUID();
+        UUID schoolId = UUID.randomUUID();
+        UUID exportId = UUID.randomUUID();
+        RequestContext context = context(
+                Set.of("FINANCE_STAFF"),
+                Set.of("VIEW_FINANCE_REPORTS", "EXPORT_FINANCE_REPORTS"),
+                tenantId,
+                schoolId,
+                false
+        );
+        ReportExportJob exportJob = reportExportJob(tenantId, schoolId, ReportType.STUDENT_DIRECTORY);
+        when(reportExportJobRepository.findById(exportId.toString())).thenReturn(Optional.of(exportJob));
+
+        assertThatThrownBy(() -> guard.requireFinanceReportExportVisible(context, exportId))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void schoolReportExportRequiresActiveSchoolScope() {
+        UUID tenantId = UUID.randomUUID();
+        UUID activeSchoolId = UUID.randomUUID();
+        UUID otherSchoolId = UUID.randomUUID();
+        UUID exportId = UUID.randomUUID();
+        RequestContext context = context(Set.of("SCHOOL_ADMIN"), Set.of("VIEW_REPORTS"), tenantId, activeSchoolId, false);
+        ReportExportJob exportJob = reportExportJob(tenantId, otherSchoolId, ReportType.STUDENT_DIRECTORY);
+        when(reportExportJobRepository.findById(exportId.toString())).thenReturn(Optional.of(exportJob));
+
+        assertThatThrownBy(() -> guard.requireSchoolReportExportVisible(context, exportId))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
     private RequestContext context(Set<String> roles, Set<String> permissions, UUID tenantId, UUID schoolId, boolean superAdmin) {
         return new RequestContext(
                 UUID.randomUUID(),
@@ -191,5 +250,17 @@ class AuthorizationGuardTest {
         when(demand.getSchool()).thenReturn(school);
         when(demand.getStudent()).thenReturn(student);
         return demand;
+    }
+
+    private ReportExportJob reportExportJob(UUID tenantId, UUID schoolId, ReportType reportType) {
+        ReportExportJob exportJob = mock(ReportExportJob.class);
+        Tenant tenant = mock(Tenant.class);
+        School school = mock(School.class);
+        when(tenant.getId()).thenReturn(tenantId.toString());
+        when(school.getId()).thenReturn(schoolId.toString());
+        when(exportJob.getTenant()).thenReturn(tenant);
+        when(exportJob.getSchool()).thenReturn(school);
+        when(exportJob.getReportType()).thenReturn(reportType);
+        return exportJob;
     }
 }
