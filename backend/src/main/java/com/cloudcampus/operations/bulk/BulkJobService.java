@@ -289,7 +289,7 @@ public class BulkJobService {
         try {
             return objectMapper.writeValueAsString(metadata);
         } catch (JsonProcessingException exception) {
-            throw new BadRequestException("Bulk job metadata must be JSON serializable.");
+            throw new BadRequestException("Bulk job metadata must be JSON serializable.", exception);
         }
     }
 

@@ -111,7 +111,7 @@ public class JwtAccessTokenService {
             return objectMapper.readValue(json, new TypeReference<>() {
             });
         } catch (Exception ex) {
-            throw new UnauthorizedException("Access token payload is invalid.");
+            throw new UnauthorizedException("Access token payload is invalid.", ex);
         }
     }
 
@@ -150,7 +150,7 @@ public class JwtAccessTokenService {
         try {
             return UserRole.valueOf(stringClaim(payload, "role"));
         } catch (IllegalArgumentException ex) {
-            throw new UnauthorizedException("Access token role is invalid.");
+            throw new UnauthorizedException("Access token role is invalid.", ex);
         }
     }
 }

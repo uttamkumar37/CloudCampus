@@ -289,7 +289,7 @@ public class ReportExportService {
         try {
             return objectMapper.writeValueAsString(parameters);
         } catch (JsonProcessingException exception) {
-            throw new BadRequestException("Report export parameters must be JSON serializable.");
+            throw new BadRequestException("Report export parameters must be JSON serializable.", exception);
         }
     }
 

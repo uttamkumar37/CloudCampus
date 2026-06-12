@@ -1,6 +1,7 @@
 package com.cloudcampus.people.parent;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.cloudcampus.common.context.RequestContextResolver;
 import com.cloudcampus.identity.accesscontrol.SchoolAccessService;
@@ -21,8 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ParentLeaveRequestController {
 
-    @SuppressWarnings("unused")
-    private final SchoolAccessService schoolAccessServiceGuardMarker;
     private final AuthenticatedUserResolver authenticatedUserResolver;
     private final RequestContextResolver requestContextResolver;
     private final ParentLeaveRequestService parentLeaveRequestService;
@@ -33,7 +32,7 @@ public class ParentLeaveRequestController {
             RequestContextResolver requestContextResolver,
             ParentLeaveRequestService parentLeaveRequestService
     ) {
-        this.schoolAccessServiceGuardMarker = schoolAccessServiceGuardMarker;
+        Objects.requireNonNull(schoolAccessServiceGuardMarker, "schoolAccessServiceGuardMarker");
         this.authenticatedUserResolver = authenticatedUserResolver;
         this.requestContextResolver = requestContextResolver;
         this.parentLeaveRequestService = parentLeaveRequestService;

@@ -55,7 +55,7 @@ public class RequestContextFactory {
         try {
             return UUID.fromString(value);
         } catch (IllegalArgumentException ex) {
-            throw new UnauthorizedException("Authenticated " + fieldName + " is invalid.");
+            throw new UnauthorizedException("Authenticated " + fieldName + " is invalid.", ex);
         }
     }
 

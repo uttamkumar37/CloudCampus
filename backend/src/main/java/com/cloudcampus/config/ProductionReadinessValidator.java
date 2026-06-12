@@ -203,7 +203,7 @@ public class ProductionReadinessValidator {
         try {
             URI uri = URI.create(value);
             return "https".equalsIgnoreCase(uri.getScheme()) && !isBlank(uri.getHost());
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException ignored) {
             return false;
         }
     }

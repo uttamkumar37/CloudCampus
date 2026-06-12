@@ -83,7 +83,7 @@ public class AiRecommendationPortalController {
     }
 
     @PatchMapping("/automation-rules/{id}")
-    ResponseEntity<Void> automationRuleUpdateNotAvailable(@PathVariable String id) {
+    ResponseEntity<Void> automationRuleUpdateNotAvailable() {
         return ResponseEntity.status(405).build();
     }
 

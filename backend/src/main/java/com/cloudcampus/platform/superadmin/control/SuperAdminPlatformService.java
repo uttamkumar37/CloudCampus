@@ -1124,7 +1124,7 @@ public class SuperAdminPlatformService {
             ZoneId.of(timezone);
             return timezone;
         } catch (RuntimeException exception) {
-            throw new BadRequestException("Default timezone must be valid.");
+            throw new BadRequestException("Default timezone must be valid.", exception);
         }
     }
 
@@ -1139,7 +1139,7 @@ public class SuperAdminPlatformService {
         try {
             return Enum.valueOf(type, value.trim().toUpperCase(Locale.ROOT));
         } catch (RuntimeException exception) {
-            throw new BadRequestException(message);
+            throw new BadRequestException(message, exception);
         }
     }
 
@@ -1150,7 +1150,7 @@ public class SuperAdminPlatformService {
         try {
             return objectMapper.writeValueAsString(filters);
         } catch (JsonProcessingException exception) {
-            throw new BadRequestException("Report export filters must be JSON serializable.");
+            throw new BadRequestException("Report export filters must be JSON serializable.", exception);
         }
     }
 
@@ -1239,7 +1239,7 @@ public class SuperAdminPlatformService {
         try {
             return LocalDate.parse(value.trim()).atStartOfDay().toInstant(ZoneOffset.UTC);
         } catch (RuntimeException exception) {
-            throw new BadRequestException(message);
+            throw new BadRequestException(message, exception);
         }
     }
 
@@ -1250,7 +1250,7 @@ public class SuperAdminPlatformService {
         try {
             return LocalDate.parse(value.trim()).plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
         } catch (RuntimeException exception) {
-            throw new BadRequestException(message);
+            throw new BadRequestException(message, exception);
         }
     }
 

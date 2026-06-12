@@ -118,7 +118,7 @@ public class RoutePolicyEnforcementInterceptor implements HandlerInterceptor {
         try {
             return HttpMethod.valueOf(request.getMethod());
         } catch (IllegalArgumentException ex) {
-            throw new UnauthorizedException("HTTP method is not supported.");
+            throw new UnauthorizedException("HTTP method is not supported.", ex);
         }
     }
 

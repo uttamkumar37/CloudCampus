@@ -437,7 +437,7 @@ public class StudentImportService {
         }
         try {
             return LocalDate.parse(normalized);
-        } catch (DateTimeParseException ex) {
+        } catch (DateTimeParseException ignored) {
             errors.add(new StudentImportError(rowNumber, "dateOfBirth", "Date must use ISO format yyyy-MM-dd."));
             return null;
         }
@@ -525,7 +525,7 @@ public class StudentImportService {
         try {
             return objectMapper.writeValueAsString(rows);
         } catch (JsonProcessingException exception) {
-            throw new BadRequestException("Student import rows must be JSON serializable.");
+            throw new BadRequestException("Student import rows must be JSON serializable.", exception);
         }
     }
 

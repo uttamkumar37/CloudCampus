@@ -494,7 +494,7 @@ public class AuthSessionService {
         try {
             return UUID.fromString(value);
         } catch (IllegalArgumentException ex) {
-            throw new ForbiddenException("Stored identifier is invalid.");
+            throw new ForbiddenException("Stored identifier is invalid.", ex);
         }
     }
 
