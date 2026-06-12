@@ -538,14 +538,15 @@ public class SuperAdminAccessControlService {
         if (request.role() == UserRole.STAFF) {
             throw new BadRequestException("Use OFFICE_STAFF for new office staff assignments; STAFF is a legacy alias.");
         }
+        if (request.role() == UserRole.SUPER_ADMIN) {
+            return new RoleScope(request.role(), null, null, "PLATFORM", null);
+        }
+
         String tenantId = blankDefault(request.tenantId(), target.getTenant().getId());
-        Tenant tenant = null;
+        Tenant tenant = requireTenant(tenantId);
         School school = null;
-        if (request.role() != UserRole.SUPER_ADMIN) {
-            tenant = requireTenant(tenantId);
-            if (!target.getTenant().getId().equals(tenant.getId())) {
-                throw new BadRequestException("Role assignment tenant must match the user's tenant.");
-            }
+        if (!target.getTenant().getId().equals(tenant.getId())) {
+            throw new BadRequestException("Role assignment tenant must match the user's tenant.");
         }
         if (SCHOOL_SCOPED_ROLES.contains(request.role())) {
             String schoolId = normalizeRequired(request.schoolId(), "School-scoped roles require schoolId.");
@@ -558,11 +559,8 @@ public class SuperAdminAccessControlService {
         if (request.role() == UserRole.TENANT_ADMIN) {
             return new RoleScope(request.role(), tenant, null, "TENANT", tenant.getId());
         }
-        if (request.role() == UserRole.SUPER_ADMIN) {
-            return new RoleScope(request.role(), null, null, "PLATFORM", null);
-        }
         String scopeType = blankDefault(request.scopeType(), "TENANT").toUpperCase(Locale.ROOT);
-        return new RoleScope(request.role(), tenant, null, scopeType, blankDefault(request.scopeId(), tenant == null ? null : tenant.getId()));
+        return new RoleScope(request.role(), tenant, null, scopeType, blankDefault(request.scopeId(), tenant.getId()));
     }
 
     private Scope validateScope(UserAccount target, String rawTenantId, String rawSchoolId, String rawScopeType, String rawScopeId) {

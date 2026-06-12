@@ -291,8 +291,11 @@ public class SuperAdminAiGovernanceService {
     @Transactional
     public SuperAdminAiPolicyResponse updatePolicy(AuthenticatedUser actor, String tenantId, AiPolicyUpdateRequest request) {
         UserAccount superAdmin = requireSuperAdmin(actor);
+        if (request == null) {
+            throw new BadRequestException("AI policy update request is required.");
+        }
         Tenant tenant = requireTenant(tenantId);
-        School school = resolveSchool(request == null ? null : request.schoolId(), tenant);
+        School school = resolveSchool(request.schoolId(), tenant);
         AiPolicy policy = school == null
                 ? aiPolicyRepository.findByTenantIdAndSchoolIsNull(tenantId).orElse(null)
                 : aiPolicyRepository.findByTenantIdAndSchoolId(tenantId, school.getId()).orElse(null);
